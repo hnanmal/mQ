@@ -72,13 +72,25 @@ namespace mQ
     {
         private Revit_Elements()
         {
-
         }
         public static Revit.Elements.Category GetCategory(Revit.Elements.Element InputElement)
         {
             Revit.Elements.Category CatFromInput;
             CatFromInput = InputElement.GetCategory;
             return CatFromInput;
+        }
+
+        public static Autodesk.Revit.DB.ElementId GetElementId(Revit.Elements.Element InputElement)
+        {
+            // Unwrapping part for InputElement
+            Autodesk.Revit.DB.Element UnwrappedElements;
+            UnwrappedElements = InputElement.InternalElement;
+            //
+
+            Autodesk.Revit.DB.ElementId UnwrappedElementId;
+            UnwrappedElementId = UnwrappedElements.Id;
+
+            return UnwrappedElementId;
         }
     }
 }
