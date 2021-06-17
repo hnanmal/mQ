@@ -92,5 +92,16 @@ namespace mQ
 
             return UnwrappedElementId;
         }
+        //public static Autodesk.Revit.DB.CompoundStructureLayer GetWallLayers(Revit.Elements.Element InputWall)
+        //{
+        //    Autodesk.Revit.DB.Element UnwrappedWall;
+        //    UnwrappedWall = InputWall.InternalElement
+
+        //    Revit.Elements.Category.
+
+            
+            
+
+        //}
     }
 }
