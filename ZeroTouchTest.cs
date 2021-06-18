@@ -7,10 +7,14 @@ using Autodesk.DesignScript.Runtime;
 using Autodesk.DesignScript.Interfaces;
 using Autodesk.DesignScript.Geometry;
 using Autodesk.Revit.DB;
+using RevitServices.Persistence;
+using Autodesk.Revit.ApplicationServices;
 using Revit.Elements;
+using Autodesk.Revit.UI;
 
 namespace mQ
 {
+    [Autodesk.Revit.Attributes.Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     public class ZeroTouchTest
     {
         private double _x;
@@ -73,18 +77,18 @@ namespace mQ
         private Revit_Elements()
         {
         }
-        public static Revit.Elements.Category GetCategory(Revit.Elements.Element InputElement)
+        public static Revit.Elements.Category GetCategory(Revit.Elements.Element InputElements)
         {
             Revit.Elements.Category CatFromInput;
-            CatFromInput = InputElement.GetCategory;
+            CatFromInput = InputElements.GetCategory;
             return CatFromInput;
         }
 
-        public static Autodesk.Revit.DB.ElementId GetElementId(Revit.Elements.Element InputElement)
+        public static Autodesk.Revit.DB.ElementId GetElementId(Revit.Elements.Element InputElements)
         {
             // Unwrapping part for InputElement
             Autodesk.Revit.DB.Element UnwrappedElements;
-            UnwrappedElements = InputElement.InternalElement;
+            UnwrappedElements = InputElements.InternalElement;
             //
 
             Autodesk.Revit.DB.ElementId UnwrappedElementId;
@@ -92,16 +96,53 @@ namespace mQ
 
             return UnwrappedElementId;
         }
-        //public static Autodesk.Revit.DB.CompoundStructureLayer GetWallLayers(Revit.Elements.Element InputWall)
-        //{
-        //    Autodesk.Revit.DB.Element UnwrappedWall;
-        //    UnwrappedWall = InputWall.InternalElement
+        public static Autodesk.Revit.DB.ElementId GetWall_Id(Revit.Elements.Wall InputWalls)
+        {
+            Autodesk.Revit.DB.Element UnwrappedWalls;
+            UnwrappedWalls = InputWalls.InternalElement;
 
-        //    Revit.Elements.Category.
+            Autodesk.Revit.DB.ElementId UnwrappedElementId;
+            UnwrappedElementId = UnwrappedWalls.Id;
 
-            
-            
+            return UnwrappedElementId;
+        }
+        public static Revit.Elements.Element GetWall(Revit.Elements.Wall InputWalls)
+        {
+            Autodesk.Revit.DB.Element UnwrappedWalls;
+            UnwrappedWalls = InputWalls.InternalElement;
 
-        //}
+            Revit.Elements.Element Qwall;
+            Qwall = UnwrappedWalls.ToDSType(true);
+
+            return Qwall;
+        }
+        public static int CountAllWalls()
+        {
+            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
+            //setup collector and filter
+            var WallCollector = new FilteredElementCollector(doc);
+            var PrimeFilter = new ElementCategoryFilter(BuiltInCategory.OST_Walls);
+            //collect all mechanical equipment
+            var CountedWallsNumber = WallCollector.WherePasses(PrimeFilter).GetElementCount();
+
+
+            return CountedWallsNumber;
+        }
+        public static List<Revit.Elements.Element> GetAllWallElements()
+        {
+            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
+            //setup collector and filter
+
+            FilteredElementCollector WallCollector = new FilteredElementCollector(doc);
+            var Walls = WallCollector.OfClass(typeof(Autodesk.Revit.DB.Wall)).ToElements();
+            List<Revit.Elements.Element> Elements = new List<Revit.Elements.Element>();
+            Elements.Clear();
+            foreach (var i in Walls)
+            {
+                Elements.Add(i.ToDSType(true));
+            }
+
+            return Elements;
+        }
     }
 }
