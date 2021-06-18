@@ -14,7 +14,7 @@ using Autodesk.Revit.UI;
 
 namespace mQ
 {
-    [Autodesk.Revit.Attributes.Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
+    //[Autodesk.Revit.Attributes.Transaction(Autodesk.Revit.Attributes.TransactionMode.Manual)]
     public class ZeroTouchTest
     {
         private double _x;
@@ -53,7 +53,7 @@ namespace mQ
             return MidPoint;
         }
 
-        [MultiReturn(new[] {"Line","MiddlePoint"})]
+        [MultiReturn(new[] { "Line", "MiddlePoint" })]
         public static Dictionary<string, object> MakeLine_MidPoint(Autodesk.DesignScript.Geometry.Point StartPoint, Autodesk.DesignScript.Geometry.Point EndPoint)
         {
             Autodesk.DesignScript.Geometry.Line line;
@@ -70,79 +70,23 @@ namespace mQ
             };
             return MultiOutPutPort;
         }
-    }
-
-    public class Revit_Elements
-    {
-        private Revit_Elements()
-        {
-        }
-        public static Revit.Elements.Category GetCategory(Revit.Elements.Element InputElements)
-        {
-            Revit.Elements.Category CatFromInput;
-            CatFromInput = InputElements.GetCategory;
-            return CatFromInput;
-        }
-
-        public static Autodesk.Revit.DB.ElementId GetElementId(Revit.Elements.Element InputElements)
-        {
-            // Unwrapping part for InputElement
-            Autodesk.Revit.DB.Element UnwrappedElements;
-            UnwrappedElements = InputElements.InternalElement;
-            //
-
-            Autodesk.Revit.DB.ElementId UnwrappedElementId;
-            UnwrappedElementId = UnwrappedElements.Id;
-
-            return UnwrappedElementId;
-        }
-        public static Autodesk.Revit.DB.ElementId GetWall_Id(Revit.Elements.Wall InputWalls)
-        {
-            Autodesk.Revit.DB.Element UnwrappedWalls;
-            UnwrappedWalls = InputWalls.InternalElement;
-
-            Autodesk.Revit.DB.ElementId UnwrappedElementId;
-            UnwrappedElementId = UnwrappedWalls.Id;
-
-            return UnwrappedElementId;
-        }
-        public static Revit.Elements.Element GetWall(Revit.Elements.Wall InputWalls)
-        {
-            Autodesk.Revit.DB.Element UnwrappedWalls;
-            UnwrappedWalls = InputWalls.InternalElement;
-
-            Revit.Elements.Element Qwall;
-            Qwall = UnwrappedWalls.ToDSType(true);
-
-            return Qwall;
-        }
-        public static int CountAllWalls()
+        public static List<Revit.Elements.Element> GetAllStrColumnsElements()
         {
             Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
             //setup collector and filter
-            var WallCollector = new FilteredElementCollector(doc);
-            var PrimeFilter = new ElementCategoryFilter(BuiltInCategory.OST_Walls);
-            //collect all mechanical equipment
-            var CountedWallsNumber = WallCollector.WherePasses(PrimeFilter).GetElementCount();
+            var ElementCollector = new FilteredElementCollector(doc);
+            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralColumns);
 
+            List<Revit.Elements.Element> OutList = new List<Revit.Elements.Element>();
 
-            return CountedWallsNumber;
-        }
-        public static List<Revit.Elements.Element> GetAllWallElements()
-        {
-            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
-            //setup collector and filter
+            var StrColumns = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.FamilyInstance>();
 
-            FilteredElementCollector WallCollector = new FilteredElementCollector(doc);
-            var Walls = WallCollector.OfClass(typeof(Autodesk.Revit.DB.Wall)).ToElements();
-            List<Revit.Elements.Element> Elements = new List<Revit.Elements.Element>();
-            Elements.Clear();
-            foreach (var i in Walls)
+            foreach (var i in StrColumns)
             {
-                Elements.Add(i.ToDSType(true));
+                OutList.Add(i.ToDSType(true));
             }
 
-            return Elements;
+            return OutList; //정상동작하지만, 노드가 꺼내져 있는상태에서 레빗 모델링이 추가되거나 삭제되면 오토매틱이라도 즉시 반영되지 않는 문제가 있음
         }
     }
 }
