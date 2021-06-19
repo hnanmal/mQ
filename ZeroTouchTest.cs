@@ -70,23 +70,49 @@ namespace mQ
             };
             return MultiOutPutPort;
         }
-        public static List<Revit.Elements.Element> GetAllStrColumnsElements()
+        public static List<Revit.Elements.Element> GetAllStrFoundationsSOG()
         {
             Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
             //setup collector and filter
             var ElementCollector = new FilteredElementCollector(doc);
-            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralColumns);
+            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralFoundation);
 
             List<Revit.Elements.Element> OutList = new List<Revit.Elements.Element>();
 
-            var StrColumns = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.FamilyInstance>();
+            var StrFoundations = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.Element>();
+            var FoundationFloors = from i in StrFoundations
+                                   where i.Name.ToString().Contains("SOG")
+                                   select i;
 
-            foreach (var i in StrColumns)
+
+            foreach (var i in FoundationFloors)
             {
                 OutList.Add(i.ToDSType(true));
             }
 
-            return OutList; //정상동작하지만, 노드가 꺼내져 있는상태에서 레빗 모델링이 추가되거나 삭제되면 오토매틱이라도 즉시 반영되지 않는 문제가 있음
+            return OutList;
+        }
+        public static List<Revit.Elements.Element> GetAllStrFoundationsByName(string familyName)
+        {
+            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
+            //setup collector and filter
+            var ElementCollector = new FilteredElementCollector(doc);
+            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralFoundation);
+
+            List<Revit.Elements.Element> OutList = new List<Revit.Elements.Element>();
+
+            var StrFoundations = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.Element>();
+            var FoundationFloors = from i in StrFoundations
+                                   where i.Name.ToString().Contains(familyName)
+                                   select i;
+
+
+            foreach (var i in FoundationFloors)
+            {
+                OutList.Add(i.ToDSType(true));
+            }
+
+            return OutList;
         }
     }
 }
