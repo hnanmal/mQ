@@ -70,49 +70,6 @@ namespace mQ
             };
             return MultiOutPutPort;
         }
-        public static List<Revit.Elements.Element> GetAllStrFoundationsSOG()
-        {
-            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
-            //setup collector and filter
-            var ElementCollector = new FilteredElementCollector(doc);
-            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralFoundation);
 
-            List<Revit.Elements.Element> OutList = new List<Revit.Elements.Element>();
-
-            var StrFoundations = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.Element>();
-            var FoundationFloors = from i in StrFoundations
-                                   where i.Name.ToString().Contains("SOG")
-                                   select i;
-
-
-            foreach (var i in FoundationFloors)
-            {
-                OutList.Add(i.ToDSType(true));
-            }
-
-            return OutList;
-        }
-        public static List<Revit.Elements.Element> GetAllStrFoundationsByName(string familyName)
-        {
-            Autodesk.Revit.DB.Document doc = DocumentManager.Instance.CurrentDBDocument;
-            //setup collector and filter
-            var ElementCollector = new FilteredElementCollector(doc);
-            var CategoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_StructuralFoundation);
-
-            List<Revit.Elements.Element> OutList = new List<Revit.Elements.Element>();
-
-            var StrFoundations = ElementCollector.WherePasses(CategoryFilter).WhereElementIsNotElementType().Cast<Autodesk.Revit.DB.Element>();
-            var FoundationFloors = from i in StrFoundations
-                                   where i.Name.ToString().Contains(familyName)
-                                   select i;
-
-
-            foreach (var i in FoundationFloors)
-            {
-                OutList.Add(i.ToDSType(true));
-            }
-
-            return OutList;
-        }
     }
 }
