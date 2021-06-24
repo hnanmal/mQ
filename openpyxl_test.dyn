@@ -39,12 +39,12 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "포함된 Python 스크립트를 실행합니다."
+      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nsys.path.append(r'C:\\Users\\HEC\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom collections import Iterable\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninList = IN[0]\r\n\r\n# Place your code below this line\r\nimport datetime\r\nimport openpyxl\r\nfrom openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment\r\n\r\nsample_items = inList\r\n\r\n\r\ndef write_to_file(filepath):\r\n    wb = openpyxl.Workbook()\r\n    for sheet in wb.sheetnames:\r\n        wb.remove(wb[sheet])\r\n\r\n    thin = Side(border_style=\"thin\", color=\"000000\")\r\n    double = Side(border_style=\"double\", color=\"000000\")\r\n\r\n    ws = wb.create_sheet(title='Wall_Calc', index=0)\r\n\r\n    ws.merge_cells('A1:E1')\r\n    ws['A1'] = 'Wall Calculation Sheet'\r\n    cell = ws['A1']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=20)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid',\r\n                                                  fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))\r\n\r\n    ws['A2'] = 'Item Number'\r\n    ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['B2'] = 'Family Type'\r\n    ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['C2'] = 'WorkMaster Code'\r\n    ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['D2'] = 'Volume'\r\n    ws['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['E2'] = 'Total Price'\r\n    ws['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n#    ws['F2'] = 'Total'\r\n\r\n## 칼럼별 너비 조정 구간\r\n#    for col in range(ws.max_column):\r\n#        ws.column_dimensions[chr(ord('A') + col)].width = 15\r\n    ws.column_dimensions['A'].width = 15\r\n    ws.column_dimensions['B'].width = 45\r\n    ws.column_dimensions['C'].width = 60\r\n    ws.column_dimensions['D'].width = 15\r\n    ws.column_dimensions['E'].width = 15\r\n\r\n###\r\n    start_row = 3\r\n    for (row, item) in enumerate(sample_items, start_row):\r\n        cell = ws.cell(row=row, column=1, value=row - 2)\r\n        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')\r\n\r\n#        cell = ws.cell(row=row, column=2, value=item[0])\r\n#        cell.number_format = openpyxl.styles.numbers.FORMAT_DATE_YYYYMMDD2  # 'yyyy-mm-dd'\r\n        ws.cell(row=row, column=2, value=item[0]) ## Family Type 칼럼\r\n\r\n        ws.cell(row=row, column=3, value=item[1]) ## WorkMaster Code 칼럼\r\n\r\n        cell = ws.cell(row=row, column=4, value=item[2]) ## Volume 칼럼\r\n        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'\r\n\r\n        cell = ws.cell(row=row, column=5, value='= D{current_row} * 350'.format(current_row=cell.row))\r\n        cell.number_format = '#,##0'\r\n\r\n#        cell = ws.cell(row=row, column=6, value='= D{current_row} * E{current_row}'.format(current_row=cell.row))\r\n#        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n\r\n    total_row = ws.max_row + 1\r\n    if total_row > start_row:\r\n        cell1 = ws.cell(row=total_row, column=4, value='Total')\r\n        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n        \r\n        cell2 = ws.cell(row=total_row, column=5, value='= SUM(E{}:E{})'.format(start_row, total_row - 1))\r\n        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n        cell2.border = Border(top=double, left=thin, right=thin, bottom=double)\r\n        cell2.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n    \r\n\r\n    wb.save(filepath)\r\n    wb.close()\r\n\r\n\r\n##if __name__ == '__main__':\r\nwrite_to_file('C:\\\\Users\\\\HEC\\\\Desktop\\\\test.xlsx')\r\n\r\na = chr(ord('A') + 1)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = a",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport os\r\n#sys.path.append(r'C:\\Users\\HEC\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\n#sys.path.append(r'C:\\Users\\pjmk0\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom collections import Iterable\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nListIn = IN[0]\r\n\r\n# Place your code below this line\r\nimport datetime\r\nimport openpyxl\r\nfrom openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment\r\n\r\nsample_items = ListIn\r\n\r\n\r\ndef write_to_file(filepath):\r\n    wb = openpyxl.Workbook()\r\n    for sheet in wb.sheetnames:\r\n        wb.remove(wb[sheet])\r\n\r\n    thin = Side(border_style=\"thin\", color=\"000000\")\r\n    double = Side(border_style=\"double\", color=\"000000\")\r\n\r\n    ws = wb.create_sheet(title='Wall_Calc_instance', index=0)\r\n\r\n    ws.merge_cells('A1:E1')\r\n    ws['A1'] = 'Wall Calculation Sheet'\r\n    cell = ws['A1']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=20)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid',\r\n                                                  fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))\r\n\r\n    ws['A2'] = 'Item Number'\r\n    ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['B2'] = 'Family Type'\r\n    ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['C2'] = 'WorkMaster Code'\r\n    ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['D2'] = 'Volume'\r\n    ws['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n    ws['E2'] = 'Total Price'\r\n    ws['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n#    ws['F2'] = 'Total'\r\n\r\n## 칼럼별 너비 조정 구간\r\n#    for col in range(ws.max_column):\r\n#        ws.column_dimensions[chr(ord('A') + col)].width = 15\r\n    ws.column_dimensions['A'].width = 15\r\n    ws.column_dimensions['B'].width = 45\r\n    ws.column_dimensions['C'].width = 60\r\n    ws.column_dimensions['D'].width = 15\r\n    ws.column_dimensions['E'].width = 15\r\n\r\n###\r\n    start_row = 3\r\n    for (row, item) in enumerate(sample_items, start_row):\r\n        cell = ws.cell(row=row, column=1, value=row - 2)\r\n        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')\r\n\r\n#        cell = ws.cell(row=row, column=2, value=item[0])\r\n#        cell.number_format = openpyxl.styles.numbers.FORMAT_DATE_YYYYMMDD2  # 'yyyy-mm-dd'\r\n        ws.cell(row=row, column=2, value=item[0]) ## Family Type 칼럼\r\n\r\n        ws.cell(row=row, column=3, value=item[1]) ## WorkMaster Code 칼럼\r\n\r\n        cell = ws.cell(row=row, column=4, value=item[2]) ## Volume 칼럼\r\n        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'\r\n\r\n        cell = ws.cell(row=row, column=5, value='= D{current_row} * 350'.format(current_row=cell.row))\r\n        cell.number_format = '#,##0'\r\n\r\n#        cell = ws.cell(row=row, column=6, value='= D{current_row} * E{current_row}'.format(current_row=cell.row))\r\n#        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n\r\n    total_row = ws.max_row + 1\r\n    if total_row > start_row:\r\n        cell1 = ws.cell(row=total_row, column=4, value='Total')\r\n        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n        \r\n        cell2 = ws.cell(row=total_row, column=5, value='= SUM(E{}:E{})'.format(start_row, total_row - 1))\r\n        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n        cell2.border = Border(top=double, left=thin, right=thin, bottom=double)\r\n        cell2.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n    \r\n\r\n    wb.save(filepath)\r\n    wb.close()\r\n\r\n\r\n##if __name__ == '__main__':\r\n#write_to_file('C:\\\\Users\\\\pjmk0\\\\AppData\\\\Roaming\\\\test.xlsx')\r\nwrite_to_file(os.getenv('APPDATA').replace('\\\\','\\\\\\\\') + r'\\test.xlsx')\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = os.getenv('APPDATA')",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "312644750647420e9b75e3007d64f1ca",
@@ -71,7 +71,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "포함된 Python 스크립트를 실행합니다."
+      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
@@ -100,11 +100,11 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "모델에서 지정된 카테고리의 모든 요소를 가져옵니다."
+      "Description": "Get all elements of the specified category from the model."
     },
     {
       "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
-      "SelectedIndex": 374,
+      "SelectedIndex": 686,
       "SelectedString": "OST_Walls",
       "NodeType": "ExtensionNode",
       "Id": "4ffff40cf39243a19c5ea4973b1b58c0",
@@ -121,7 +121,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "모든 내장 카테고리."
+      "Description": "All built-in categories."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -151,7 +151,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "요소의 이름 가져오기\n\nElement.Name: string"
+      "Description": "Get the Name of the Element\n\nElement.Name: string"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -181,7 +181,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "이 객체와 연관된 모든 형상 가져오기\n\nElement.Geometry ( ): var[]"
+      "Description": "Get all of the Geometry associated with this object\n\nElement.Geometry ( ): var[]"
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
@@ -210,7 +210,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "노드의 출력을 시각화합니다."
+      "Description": "Visualize the output of node."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -221,7 +221,7 @@
         {
           "Id": "74dcd33ce978436c9626aadb966f7843",
           "Name": "list",
-          "Description": "항목이 있는지 확인할 리스트.\n\nvar[]..[]",
+          "Description": "List to check for items.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": true,
@@ -232,7 +232,7 @@
         {
           "Id": "13d7def40aef44ae99266e15b3f2bf2f",
           "Name": "bool",
-          "Description": "리스트가 비어 있는지 여부.",
+          "Description": "Whether the list is empty.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -240,7 +240,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 리스트가 비어 있는지 확인합니다.\n\nList.IsEmpty (list: var[]..[]): bool"
+      "Description": "Determines if the given list is empty.\n\nList.IsEmpty (list: var[]..[]): bool"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -251,7 +251,7 @@
         {
           "Id": "2790842f2b374f3a87139d55fed2223a",
           "Name": "list",
-          "Description": "필터링할 리스트.\n\nvar[]..[]",
+          "Description": "List to filter.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -260,7 +260,7 @@
         {
           "Id": "2872ec9509024ed39c64222509bfb18f",
           "Name": "mask",
-          "Description": "마스크를 나타내는 부울 리스트.\n\nvar[]..[]",
+          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -271,7 +271,7 @@
         {
           "Id": "b073277ac3584328a4559d388f554680",
           "Name": "in",
-          "Description": "마스크 인덱스가 true인 항목.",
+          "Description": "Items whose mask index is true.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -280,7 +280,7 @@
         {
           "Id": "f5f05aafafa54773915c0aa6e5c8c936",
           "Name": "out",
-          "Description": "마스크 인덱스가 false인 항목.",
+          "Description": "Items whose mask index is false.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -288,7 +288,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "별도의 부울 리스트에서 해당하는 인덱스를 조회하여 시퀀스를 필터링합니다.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
+      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -318,7 +318,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "솔리드의 총 체적\n\nSolid.Volume: double"
+      "Description": "The total volume of the Solid\n\nSolid.Volume: double"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -340,7 +340,7 @@
         {
           "Id": "1633110031e946b9806e0dd7fac09a54",
           "Name": "",
-          "Description": "선 1의 표현식 값",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -348,7 +348,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -359,7 +359,7 @@
         {
           "Id": "9c856fd1805945a7a9b84fe404bf8017",
           "Name": "list",
-          "Description": "필터링할 리스트.\n\nvar[]..[]",
+          "Description": "List to filter.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -368,7 +368,7 @@
         {
           "Id": "64f10a0e6f3642d798c478b4313650ef",
           "Name": "mask",
-          "Description": "마스크를 나타내는 부울 리스트.\n\nvar[]..[]",
+          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -379,7 +379,7 @@
         {
           "Id": "e2f0d7d1ed3f4decad19183eced4c4cd",
           "Name": "in",
-          "Description": "마스크 인덱스가 true인 항목.",
+          "Description": "Items whose mask index is true.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -388,7 +388,7 @@
         {
           "Id": "46ff11311c6c43f982054259c8bef79c",
           "Name": "out",
-          "Description": "마스크 인덱스가 false인 항목.",
+          "Description": "Items whose mask index is false.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -396,7 +396,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "별도의 부울 리스트에서 해당하는 인덱스를 조회하여 시퀀스를 필터링합니다.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
+      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -407,7 +407,7 @@
         {
           "Id": "ea6a5ed4f5f54f059a81c13294d5e503",
           "Name": "list",
-          "Description": "항목이 있는지 확인할 리스트.\n\nvar[]..[]",
+          "Description": "List to check for items.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": true,
@@ -418,7 +418,7 @@
         {
           "Id": "25f1bfbfba0b491b85eec6aee35b8c7f",
           "Name": "bool",
-          "Description": "리스트가 비어 있는지 여부.",
+          "Description": "Whether the list is empty.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -426,7 +426,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 리스트가 비어 있는지 확인합니다.\n\nList.IsEmpty (list: var[]..[]): bool"
+      "Description": "Determines if the given list is empty.\n\nList.IsEmpty (list: var[]..[]): bool"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -437,7 +437,7 @@
         {
           "Id": "b39fecf01ce9401e9b2b79b676572091",
           "Name": "list",
-          "Description": "단순화할 리스트.\n\nvar[]..[]",
+          "Description": "List to flatten.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -446,7 +446,7 @@
         {
           "Id": "c6b02099bfcc45028cb53288e81dc3b8",
           "Name": "amt",
-          "Description": "제거할 내포 레이어.\n\nint\n기본값 : -1",
+          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -465,7 +465,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "리스트의 내포된 리스트를 특정한 양만큼 단순화합니다.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -487,7 +487,7 @@
         {
           "Id": "81054d07ff504bcf837bae63ee0ba328",
           "Name": "",
-          "Description": "선 1의 표현식 값",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -495,7 +495,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -515,7 +515,7 @@
         {
           "Id": "f4283102b4564ec0ab068cb9844a58d5",
           "Name": "paintMaterials",
-          "Description": "페인트 재료\n\nbool\n기본값 : false",
+          "Description": "Paint Materials\n\nbool\nDefault value : false",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -526,7 +526,7 @@
         {
           "Id": "988544df41c94eb5bc839f6700899047",
           "Name": "Material[]",
-          "Description": "이름 리스트",
+          "Description": "List of Names",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -534,7 +534,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Revit 요소에서 재료 이름을 가져옵니다\n\nElement.GetMaterials (paintMaterials: bool = false): Material[]"
+      "Description": "Get Material Names from a Revit Element\n\nElement.GetMaterials (paintMaterials: bool = false): Material[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -545,7 +545,7 @@
         {
           "Id": "d62389922d7c4db4ae3bf54a920c3797",
           "Name": "list",
-          "Description": "항목이 있는지 확인할 리스트.\n\nvar[]..[]",
+          "Description": "List to check for items.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": true,
@@ -556,7 +556,7 @@
         {
           "Id": "d28e5565847f48128336563d880de0f6",
           "Name": "bool",
-          "Description": "리스트가 비어 있는지 여부.",
+          "Description": "Whether the list is empty.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -564,7 +564,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 리스트가 비어 있는지 확인합니다.\n\nList.IsEmpty (list: var[]..[]): bool"
+      "Description": "Determines if the given list is empty.\n\nList.IsEmpty (list: var[]..[]): bool"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -575,7 +575,7 @@
         {
           "Id": "80d33f9905474888b60f11109d3ea57b",
           "Name": "list",
-          "Description": "필터링할 리스트.\n\nvar[]..[]",
+          "Description": "List to filter.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -584,7 +584,7 @@
         {
           "Id": "2231d618420d44949af03b945dd66d42",
           "Name": "mask",
-          "Description": "마스크를 나타내는 부울 리스트.\n\nvar[]..[]",
+          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -595,7 +595,7 @@
         {
           "Id": "be7be20f90264b9db018e5a7b85fbbf2",
           "Name": "in",
-          "Description": "마스크 인덱스가 true인 항목.",
+          "Description": "Items whose mask index is true.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -604,7 +604,7 @@
         {
           "Id": "4b7f6a69c1604b5db7f9e4d7da2c3b58",
           "Name": "out",
-          "Description": "마스크 인덱스가 false인 항목.",
+          "Description": "Items whose mask index is false.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -612,7 +612,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "별도의 부울 리스트에서 해당하는 인덱스를 조회하여 시퀀스를 필터링합니다.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
+      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -642,7 +642,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "요소의 이름 가져오기\n\nElement.Name: string"
+      "Description": "Get the Name of the Element\n\nElement.Name: string"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -653,7 +653,7 @@
         {
           "Id": "43bd6e68ae1c4c289759d6ff9a57fa30",
           "Name": "list",
-          "Description": "항목 수를 가져올 리스트.\n\nvar[]..[]",
+          "Description": "List to get the item count of.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": true,
@@ -664,7 +664,7 @@
         {
           "Id": "0928eeded0714931bf91800bf5265dcf",
           "Name": "count",
-          "Description": "리스트 길이.",
+          "Description": "List length.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -672,7 +672,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 리스트에 저장된 항목의 개수를 반환합니다.\n\nList.Count (list: var[]..[]): int"
+      "Description": "Returns the number of items stored in the given list.\n\nList.Count (list: var[]..[]): int"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -683,7 +683,7 @@
         {
           "Id": "7b929e2015494fab8e064854838590cf",
           "Name": "item",
-          "Description": "반복할 항목.\n\nvar[]..[]",
+          "Description": "The item to repeat.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 1,
           "UseLevels": true,
@@ -692,7 +692,7 @@
         {
           "Id": "7cf13606cfc04133bb7a123b56e86ae2",
           "Name": "amount",
-          "Description": "반복할 횟수.\n\nint",
+          "Description": "The number of times to repeat.\n\nint",
           "UsingDefaultValue": false,
           "Level": 1,
           "UseLevels": true,
@@ -703,7 +703,7 @@
         {
           "Id": "dd3cea4ef99944d3b17c26f186ec7122",
           "Name": "list",
-          "Description": "반복된 항목의 리스트.",
+          "Description": "List of repeated items.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -711,7 +711,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 항목이 지정된 횟수만큼 포함된 리스트를 만듭니다.\n\nList.OfRepeatedItem (item: var[]..[], amount: int): var[]..[]"
+      "Description": "Creates a list containing the given item the given number of times.\n\nList.OfRepeatedItem (item: var[]..[], amount: int): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -722,7 +722,7 @@
         {
           "Id": "76937ed94f294bb18dab5fc943cc62ef",
           "Name": "item",
-          "Description": "반복할 항목.\n\nvar[]..[]",
+          "Description": "The item to repeat.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 1,
           "UseLevels": true,
@@ -731,7 +731,7 @@
         {
           "Id": "f4ffcd4fb2bb41ba8d9c2524738b3981",
           "Name": "amount",
-          "Description": "반복할 횟수.\n\nint",
+          "Description": "The number of times to repeat.\n\nint",
           "UsingDefaultValue": false,
           "Level": 1,
           "UseLevels": true,
@@ -742,7 +742,7 @@
         {
           "Id": "6cd264be106747fea414ca6c6b1ee291",
           "Name": "list",
-          "Description": "반복된 항목의 리스트.",
+          "Description": "List of repeated items.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -750,7 +750,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "지정된 항목이 지정된 횟수만큼 포함된 리스트를 만듭니다.\n\nList.OfRepeatedItem (item: var[]..[], amount: int): var[]..[]"
+      "Description": "Creates a list containing the given item the given number of times.\n\nList.OfRepeatedItem (item: var[]..[], amount: int): var[]..[]"
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
@@ -779,7 +779,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "노드의 출력을 시각화합니다."
+      "Description": "Visualize the output of node."
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
@@ -808,7 +808,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "노드의 출력을 시각화합니다."
+      "Description": "Visualize the output of node."
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
@@ -837,7 +837,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "노드의 출력을 시각화합니다."
+      "Description": "Visualize the output of node."
     },
     {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
@@ -866,7 +866,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "노드의 출력을 시각화합니다."
+      "Description": "Visualize the output of node."
     },
     {
       "ConcreteType": "CoreNodeModels.FromObject, CoreNodeModels",
@@ -895,7 +895,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "객체를 문자열 표현으로 변환합니다."
+      "Description": "Convert an object to a string representation."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -906,7 +906,7 @@
         {
           "Id": "54ff03a2b2fb427782c1a843a7b9c191",
           "Name": "list",
-          "Description": "단순화할 리스트.\n\nvar[]..[]",
+          "Description": "List to flatten.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -915,7 +915,7 @@
         {
           "Id": "ed40bc3081a64bfca0a04cdcb537a0a3",
           "Name": "amt",
-          "Description": "제거할 내포 레이어.\n\nint\n기본값 : -1",
+          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -934,7 +934,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "리스트의 내포된 리스트를 특정한 양만큼 단순화합니다.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -945,7 +945,7 @@
         {
           "Id": "80c7fe7ee41e45e9a09d95bdd92c9db3",
           "Name": "list",
-          "Description": "단순화할 리스트.\n\nvar[]..[]",
+          "Description": "List to flatten.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -954,7 +954,7 @@
         {
           "Id": "69d1d08f579448c082928b71b80e13b1",
           "Name": "amt",
-          "Description": "제거할 내포 레이어.\n\nint\n기본값 : -1",
+          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -973,7 +973,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "리스트의 내포된 리스트를 특정한 양만큼 단순화합니다.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -984,7 +984,7 @@
         {
           "Id": "4250827aa03a408b8991b111fc0c9b6a",
           "Name": "list",
-          "Description": "단순화할 리스트.\n\nvar[]..[]",
+          "Description": "List to flatten.\n\nvar[]..[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -993,7 +993,7 @@
         {
           "Id": "b5da6311052b40be98e9b1e5d5dc3852",
           "Name": "amt",
-          "Description": "제거할 내포 레이어.\n\nint\n기본값 : -1",
+          "Description": "Layers of nesting to remove.\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -1012,7 +1012,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "리스트의 내포된 리스트를 특정한 양만큼 단순화합니다.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -1052,7 +1052,7 @@
         {
           "Id": "b4ca6cae2ff546b996a518a9374ad132",
           "Name": "",
-          "Description": "선 1의 표현식 값",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1060,7 +1060,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
@@ -1072,7 +1072,7 @@
         {
           "Id": "c6b44754f2c44c939951307af3c83a77",
           "Name": "str",
-          "Description": "분할할 문자열.\n\nstring",
+          "Description": "String to split up.\n\nstring",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1081,7 +1081,7 @@
         {
           "Id": "edcf6b97248f4f93a8ba941d537836a3",
           "Name": "separator0",
-          "Description": "분할의 시작과 끝을 지정하는 문자열(존재하는 경우).\n\nstring[]",
+          "Description": "Strings that, if present, determine the end and start of a split.\n\nstring[]",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1092,7 +1092,7 @@
         {
           "Id": "e796adc9968447f085732c7aa0da8f8b",
           "Name": "strings",
-          "Description": "입력 문자열에서 작성된 문자열의 리스트.",
+          "Description": "List of strings made from the input string.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1100,7 +1100,7 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "단일 문자열을 지정된 구분 기호 문자열을 사용하여 문자열 리스트로 구분합니다.\n\nString.Split (str: string, separators: string[]): string[]"
+      "Description": "Divides a single string into a list of strings, with divisions determined by the given separator strings.\n\nString.Split (str: string, separators: string[]): string[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -1112,7 +1112,7 @@
         {
           "Id": "c9029767211145feb3797d1850ce1076",
           "Name": "",
-          "Description": "선 1의 표현식 값",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1120,7 +1120,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -1328,7 +1328,7 @@
       "RunPeriod": "1000"
     },
     "Camera": {
-      "Name": "배경 미리보기",
+      "Name": "Background Preview",
       "EyeX": -5237.18212890625,
       "EyeY": 7490.6220703125,
       "EyeZ": -7589.0439453125,
@@ -1357,8 +1357,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5023.2462031889063,
-        "Y": -112.14106163847481
+        "X": 5157.1337038861275,
+        "Y": -122.28405411553695
       },
       {
         "ShowGeometry": true,
@@ -1672,8 +1672,8 @@
       }
     ],
     "Annotations": [],
-    "X": -1067.8175968290632,
-    "Y": 152.594759663784,
-    "Zoom": 0.47870833255739992
+    "X": -8418.6990780059459,
+    "Y": 638.81757653227078,
+    "Zoom": 1.838711745322323
   }
 }
