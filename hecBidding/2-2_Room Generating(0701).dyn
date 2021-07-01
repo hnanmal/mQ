@@ -1,0 +1,195 @@
+{
+  "Uuid": "2aa6e99c-6781-4af7-a751-2b07975bdc42",
+  "IsCustomNode": false,
+  "Description": null,
+  "Name": "2-2_Room Generating(0701)",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\n\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\ncollector = FilteredElementCollector(doc)\r\nlevels = collector.OfClass(Level).ToElements()\r\n\r\nphase = UnwrapElement(IN[0])\r\nlimitoffset = 8\r\nlistout = []\r\n\r\nfor j,level in enumerate(levels):\r\n\ttry:\r\n\t\tplanTopology = doc.get_PlanTopology(level)\r\n\t\trooms = []\r\n\t\t\r\n\t\tfor i,plancircuit in enumerate(planTopology.Circuits):\r\n\t\t\tif plancircuit.IsRoomLocated == True:\r\n\t\t\t\tcontinue\r\n\t\t\tTransactionManager.Instance.EnsureInTransaction(doc)\r\n\t\t\troom = doc.Create.NewRoom(phase)\r\n\t\t\troom.Name = \"Name\" + str(i)\r\n\t\t\troom.Number = str(j) + \".\" + str(i)\r\n\t\t\troom.LimitOffset = limitoffset\r\n\t\t\ttry:\r\n\t\t\t\troom2 = doc.Create.NewRoom(room,plancircuit)\r\n\t\t\texcept:\r\n\t\t\t\tcontinue\r\n\t\t\tTransactionManager.Instance.TransactionTaskDone()\r\n\t\t\trooms.append(room2)\r\n\t\tlistout.append(rooms)\r\n\texcept:\r\n\t\tcontinue\r\n\r\n\r\nOUT = listout",
+      "Engine": "IronPython2",
+      "VariableInputPorts": true,
+      "Id": "f88da84b7f4c45df9e22addbcc27ea06",
+      "Inputs": [
+        {
+          "Id": "d97108817e6e4e76b5d22723f790a810",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ab20c61e032448d484eefa6c1e5e0acb",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.RevitPhases, DSRevitNodesUI",
+      "SelectedIndex": 1,
+      "SelectedString": "New Construction",
+      "NodeType": "ExtensionNode",
+      "Id": "69b47c7a63544e8893772e7fce20d58b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0f5aa13095ae4ba9a173234088e0b71a",
+          "Name": "Phase",
+          "Description": "The selected Phase",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select an existing Revit Phase from the active document."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Function, DynamoCore",
+      "FunctionSignature": "8c3667d4-0905-44f6-9150-a65a755c2518",
+      "FunctionType": "Graph",
+      "NodeType": "FunctionNode",
+      "Id": "288192cf6413416ea675abf411be38bf",
+      "Inputs": [
+        {
+          "Id": "76aefa0f44b44da59f6ea265d9acc33e",
+          "Name": "Phase",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6fe4e4a0a6024c3b86bb888f9d3fc7cc",
+          "Name": "Rooms",
+          "Description": "return value",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "This node will attempt to create rooms automatically for every level"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "0f5aa13095ae4ba9a173234088e0b71a",
+      "End": "76aefa0f44b44da59f6ea265d9acc33e",
+      "Id": "61c5dc23fa274ee4a6b2be9a7cb4a471"
+    }
+  ],
+  "Dependencies": [
+    "8c3667d4-0905-44f6-9150-a65a755c2518"
+  ],
+  "NodeLibraryDependencies": [
+    {
+      "Name": "MEPover",
+      "Version": "2020.6.2",
+      "ReferenceType": "Package",
+      "Nodes": [
+        "288192cf6413416ea675abf411be38bf"
+      ]
+    }
+  ],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.10.1.3976",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "NodeViews": [
+      {
+        "Id": "f88da84b7f4c45df9e22addbcc27ea06",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 287.0,
+        "Y": 283.0
+      },
+      {
+        "Id": "69b47c7a63544e8893772e7fce20d58b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Select Phase",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 443.5,
+        "Y": 406.5
+      },
+      {
+        "Id": "288192cf6413416ea675abf411be38bf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Rooms place automatically for all levels",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 720.5,
+        "Y": 406.5
+      }
+    ],
+    "Annotations": [
+      {
+        "Id": "4f09db86793c4e5aa19c6adb9359b758",
+        "Title": "Room 자동 생성 구간",
+        "Nodes": [
+          "f88da84b7f4c45df9e22addbcc27ea06",
+          "69b47c7a63544e8893772e7fce20d58b",
+          "288192cf6413416ea675abf411be38bf"
+        ],
+        "Left": 277.0,
+        "Top": 230.0,
+        "Width": 716.5,
+        "Height": 269.5,
+        "FontSize": 36.0,
+        "InitialTop": 283.0,
+        "InitialHeight": 188.0,
+        "TextblockHeight": 43.0,
+        "Background": "#FFC1D676"
+      }
+    ],
+    "X": -111.54903598850768,
+    "Y": -133.17570010945565,
+    "Zoom": 1.4425890929331346
+  }
+}
