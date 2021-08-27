@@ -1,0 +1,183 @@
+{
+  "Uuid": "a8d28071-ed0e-45e7-b0a1-696a539403cc",
+  "IsCustomNode": true,
+  "Category": "mQSpace",
+  "Description": "ShakeRoomSurfaces",
+  "Name": "ShakeRoomSurfaces",
+  "ElementResolver": {
+    "ResolutionMap": {
+      "DesignScript.Builtin.Dictionary": {
+        "Key": "DesignScript.Builtin.Dictionary",
+        "Value": "DesignScriptBuiltin.dll"
+      },
+      "Math": {
+        "Key": "DSCore.Math",
+        "Value": "DSCoreNodes.dll"
+      },
+      "Color": {
+        "Key": "DSCore.Color",
+        "Value": "DSCoreNodes.dll"
+      },
+      "Surface": {
+        "Key": "Autodesk.DesignScript.Geometry.Surface",
+        "Value": "ProtoGeometry.dll"
+      }
+    }
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n\r\n\r\ndef GetXOrderSurfaces(sl):\r\n    ls = []\r\n    for s in sl:\r\n        ls.append(SortByMinX(s))\r\n\r\n    ls.sort()\r\n\r\n    r = []\r\n    for l in ls:\r\n        r.append(l.val)\r\n\r\n    return r\r\n\r\ndef GetYOrderSurfaces(sl):\r\n    ls = []\r\n    for s in sl:\r\n        ls.append(SortByMinY(s))\r\n\r\n    ls.sort()\r\n\r\n    r = []\r\n    for l in ls:\r\n        r.append(l.val)\r\n\r\n    return r\r\n\r\ndef GetIndexOfSurface(s, sl):\r\n    for i in range(0, len(sl)):\r\n        if sl[i] == s:\r\n            return i\r\n\r\ndef GetSurfaceMinX(s):\r\n    a1 = Math.Min(s.PointAtParameter(0,0).X, s.PointAtParameter(0,1).X)\r\n    a2 = Math.Min(s.PointAtParameter(1,0).X, s.PointAtParameter(1,1).X)\r\n    return Math.Min(a1, a2)\r\n\r\ndef GetSurfaceMaxX(s):\r\n    a1 = Math.Max(s.PointAtParameter(0,0).X, s.PointAtParameter(0,1).X)\r\n    a2 = Math.Max(s.PointAtParameter(1,0).X, s.PointAtParameter(1,1).X)\r\n    return Math.Max(a1, a2)\r\n\r\ndef GetSurfaceMinY(s):\r\n    a1 = Math.Min(s.PointAtParameter(0,0).Y, s.PointAtParameter(0,1).Y)\r\n    a2 = Math.Min(s.PointAtParameter(1,0).Y, s.PointAtParameter(1,1).Y)\r\n    return Math.Min(a1, a2)\r\n\r\ndef GetSurfaceMaxY(s):\r\n    a1 = Math.Max(s.PointAtParameter(0,0).Y, s.PointAtParameter(0,1).Y)\r\n    a2 = Math.Max(s.PointAtParameter(1,0).Y, s.PointAtParameter(1,1).Y)\r\n    return Math.Max(a1, a2)\r\n\r\n\r\nclass SortByMinX(object):\r\n     def __init__(self, val):\r\n         self.val = val\r\n\r\n     def __lt__(self, other):\r\n         return GetSurfaceMinX(self.val) < GetSurfaceMinX(other.val)\r\n\r\nclass SortByMinY(object):\r\n     def __init__(self, val):\r\n         self.val = val\r\n\r\n     def __lt__(self, other):\r\n         return GetSurfaceMinY(self.val) < GetSurfaceMinY(other.val)\r\n\r\n\r\ndef CreateXCheckerSurface(s):\r\n    minX = GetSurfaceMinX(s)\r\n    minY = GetSurfaceMinY(s)\r\n    maxX = GetSurfaceMaxX(s)\r\n    maxY = GetSurfaceMaxY(s)\r\n    minZ = s.PointAtParameter(0,0).Z\r\n    pl = [\r\n            Point.ByCoordinates(minX - 100000, minY + 0.1, minZ),\r\n            Point.ByCoordinates(minX - 100000, maxY - 0.1, minZ),\r\n            Point.ByCoordinates(minX, maxY - 0.1, minZ),\r\n            Point.ByCoordinates(minX, minY + 0.1, minZ),\r\n        ]\r\n\r\n    checkerX = Surface.ByPerimeterPoints(pl)\r\n\r\n    return checkerX\r\n\r\ndef CreateYCheckerSurface(s):\r\n    minX = GetSurfaceMinX(s)\r\n    minY = GetSurfaceMinY(s)\r\n    maxX = GetSurfaceMaxX(s)\r\n    maxY = GetSurfaceMaxY(s)\r\n    minZ = s.PointAtParameter(0,0).Z\r\n    pl = [\r\n            Point.ByCoordinates(minX + 0.1, minY - 100000, minZ),\r\n            Point.ByCoordinates(minX + 0.1, minY, minZ),\r\n            Point.ByCoordinates(maxX - 0.1, minY, minZ),\r\n            Point.ByCoordinates(maxX - 0.1, minY - 100000, minZ),\r\n        ]\r\n\r\n    checkerX = Surface.ByPerimeterPoints(pl)\r\n\r\n    return checkerX\r\n\r\ndef GetDistanceXToMove(s, sl):\r\n    checkerX = CreateXCheckerSurface(s)\r\n\r\n    cl = []\r\n\r\n    noHit = True\r\n\r\n    for si in sl:\r\n        if si == s:\r\n            continue\r\n        else:\r\n            if checkerX.DoesIntersect(si) == True:\r\n                noHit = False\r\n\r\n                cl.append(si.PointAtParameter(0,0).X)\r\n                cl.append(si.PointAtParameter(0,1).X)\r\n                cl.append(si.PointAtParameter(1,0).X)\r\n                cl.append(si.PointAtParameter(1,1).X)\r\n\r\n    if noHit == True:\r\n        return - GetSurfaceMinX(s)\r\n    else:\r\n        cl.sort(reverse=True)\r\n        return cl[0] - GetSurfaceMinX(s)\r\n\r\ndef GetDistanceYToMove(s, sl):\r\n    checkerY = CreateYCheckerSurface(s)\r\n\r\n    cl = []\r\n\r\n    noHit = True\r\n\r\n    for si in sl:\r\n        if si == s:\r\n            continue\r\n        else:\r\n            if checkerY.DoesIntersect(si) == True:\r\n                noHit = False\r\n\r\n                cl.append(si.PointAtParameter(0,0).Y)\r\n                cl.append(si.PointAtParameter(0,1).Y)\r\n                cl.append(si.PointAtParameter(1,0).Y)\r\n                cl.append(si.PointAtParameter(1,1).Y)\r\n\r\n    if noHit == True:\r\n        return - GetSurfaceMinY(s)\r\n    else:\r\n        cl.sort(reverse=True)\r\n        return cl[0] - GetSurfaceMinY(s)\r\n\r\n\r\ndef MoveX():\r\n    xOrdered = GetXOrderSurfaces(surfacelist)\r\n\r\n    for s in xOrdered:    \r\n        toMoveX = GetDistanceXToMove(s, surfacelist)\r\n        idx = GetIndexOfSurface(s, surfacelist)\r\n        surfacelist[idx] = Geometry.Translate(surfacelist[idx], toMoveX, 0, 0)\r\n\r\ndef MoveY():\r\n    yOrdered = GetYOrderSurfaces(surfacelist)\r\n\r\n    for s in yOrdered:\r\n        toMoveY = GetDistanceYToMove(s, surfacelist)\r\n        idx = GetIndexOfSurface(s, surfacelist)\r\n        surfacelist[idx] = Geometry.Translate(surfacelist[idx], 0, toMoveY, 0)\r\n\r\ndef SplitX():\r\n    xOrdered = GetXOrderSurfaces(surfacelist)\r\n\r\n    offsetX = 0   \r\n    for i in range(0, len(xOrdered)):\r\n        idx = GetIndexOfSurface(xOrdered[i], surfacelist)\r\n\r\n        mx = offsetX - GetSurfaceMinX(surfacelist[idx])\r\n        surfacelist[idx] = Geometry.Translate(surfacelist[idx], mx, 0, 0)\r\n\r\n        sx = GetSurfaceMaxX(surfacelist[idx]) - GetSurfaceMinX(surfacelist[idx])\r\n        offsetX = offsetX + sx\r\n\r\ndef SplitY():\r\n    yOrdered = GetYOrderSurfaces(surfacelist)\r\n\r\n    offsetY = 0   \r\n    for i in range(0, len(yOrdered)):\r\n        idx = GetIndexOfSurface(yOrdered[i], surfacelist)\r\n\r\n        my = offsetY - GetSurfaceMinY(surfacelist[idx])\r\n        surfacelist[idx] = Geometry.Translate(surfacelist[idx], 0, my, 0)\r\n\r\n        sy = GetSurfaceMaxY(surfacelist[idx]) - GetSurfaceMinY(surfacelist[idx])\r\n        offsetY = offsetY + sy\r\n\r\ndef MinofAll():\r\n    allX = []\r\n    allY = []\r\n    for s in surfacelist:\r\n        allX.append(GetSurfaceMinX(s))\r\n        allY.append(GetSurfaceMinY(s))\r\n    allX.sort()\r\n    allY.sort()\r\n    x = 0\r\n    if allX[0] < 0:\r\n        x = -allX[0]\r\n    y = 0\r\n    if allY[0] < 0:\r\n        y = -allY[0]\r\n\r\n    return x,y\r\n\r\n#def FindBoundaryPoint(crv):\r\n#    x = crv.PointAtParameter(0).X\r\n#    y = crv.PointAtParameter(0).Y\r\n#    \r\n#    return x,y\r\n\r\n\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\n# 코드를 이 선 아래에 배치\r\n\r\nsurfaces = IN[0]\r\n#bdCrv = IN[1]\r\n\r\nsurfacelist = []\r\nfor s in surfaces:\r\n    surfacelist.append(s)\r\n\r\n(basX, basY) = MinofAll()\r\n#(basX, basY) = FindBoundaryPoint(bdCrv)\r\n#(basX, basY) = 0, 0\r\n\r\nfor i in range(0, len(surfacelist)):\r\n    surfacelist[i] = Geometry.Translate(surfacelist[i], basX, basY, 0)\r\n\r\n    if randint(0, 1) == 0:\r\n        SplitX()\r\n        MoveX()\r\n        MoveY()\r\n        MoveX()\r\n        MoveY()\r\n    else:\r\n        SplitY()\r\n        MoveY()\r\n        MoveX()\r\n        MoveY()\r\n        MoveX()\r\n\r\n# testnum = IN[1]\r\n# xOrdered = GetXOrderSurfaces(surfacelist)\r\n\r\n# # for s in xOrdered:    \r\n# toMoveX = GetDistanceXToMove(xOrdered[testnum], surfacelist)\r\n# idx = GetIndexOfSurface(xOrdered[testnum], surfacelist)\r\n# surfacelist[idx] = Geometry.Translate(surfacelist[idx], toMoveX, 0, 0)\r\n\r\n\r\n\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = surfacelist",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d486d11644f0420b9a2484a966651888",
+      "Inputs": [
+        {
+          "Id": "699d67e94bbb4f3e92578ca9d09ed2f7",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "911a0f4102764616919b6ac25f967c61",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Symbol, DynamoCore",
+      "NodeType": "InputNode",
+      "Parameter": {
+        "Name": "i",
+        "TypeName": "var",
+        "TypeRank": 1,
+        "DefaultValue": null,
+        "Description": ""
+      },
+      "Id": "1ebad716a24348eb940ae5a4131d6c55",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "4c7a4df4becc4df79551360d6a931cc3",
+          "Name": "",
+          "Description": "Symbol",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A function parameter, use with custom nodes.\r\n\r\nYou can specify the type and default value for parameter. E.g.,\r\n\r\ninput : var[]..[]\r\nvalue : bool = false"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CustomNodes.Output, DynamoCore",
+      "NodeType": "OutputNode",
+      "ElementResolver": null,
+      "Symbol": "OUT",
+      "Id": "b0d6e52d536a45f8b0c08a4b7cfd29c4",
+      "Inputs": [
+        {
+          "Id": "e86a05d999cf4fd78f8ca3575c1b12f2",
+          "Name": "",
+          "Description": "",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [],
+      "Replication": "Disabled",
+      "Description": "A function output, use with custom nodes"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "911a0f4102764616919b6ac25f967c61",
+      "End": "e86a05d999cf4fd78f8ca3575c1b12f2",
+      "Id": "4b7b81f0701e495e87c531e56ac126e8"
+    },
+    {
+      "Start": "4c7a4df4becc4df79551360d6a931cc3",
+      "End": "699d67e94bbb4f3e92578ca9d09ed2f7",
+      "Id": "257a6fe8d4b447b88b9914b958e8271e"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": false,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.10.1.3976",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": 24374.771484375,
+      "EyeY": 61236.33203125,
+      "EyeZ": -108565.6953125,
+      "LookX": -30161.091796875,
+      "LookY": -55165.12890625,
+      "LookZ": 104569.203125,
+      "UpX": -0.069393590092659,
+      "UpY": 0.96814578771591187,
+      "UpZ": 0.24057909846305847
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "d486d11644f0420b9a2484a966651888",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 250.0,
+        "Y": 0.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Input",
+        "Id": "1ebad716a24348eb940ae5a4131d6c55",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 0.0,
+        "Y": 0.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Output",
+        "Id": "b0d6e52d536a45f8b0c08a4b7cfd29c4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 449.79999999999927,
+        "Y": 0.0
+      }
+    ],
+    "Annotations": [],
+    "X": 222.46959163738521,
+    "Y": 374.71880461883006,
+    "Zoom": 2.0566802683342771
+  }
+}
