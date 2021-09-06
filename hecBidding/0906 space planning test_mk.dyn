@@ -70,7 +70,7 @@
   "Nodes": [
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecBidding\\상상진화\\20210824\\space planning test 0802mk 001.xlsx",
+      "HintPath": "C:\\Users\\pjmk0\\Downloads\\MK\\mQ\\hecBidding\\상상진화\\20210824\\space planning test 0802mk 001.xlsx",
       "InputValue": "상상진화\\20210824\\space planning test 0802mk 001.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "49410f97c05949e2afc671073cce62bf",
@@ -13794,7 +13794,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport Tessellation\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nclr.AddReference('Tessellation')\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n##----------------------For ConvexHull----------------------------------\r\n##----------------------------------------------------------------------\r\ndef ToVals(pt):\r\n\treturn [pt.X,pt.Y,pt.Z]\r\n\r\ndef ToPts(ptVals):\r\n\treturn Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\r\ndef CreateOutline(pts):\r\n\tcrvs = []\r\n\ti = 0\r\n\twhile i < len(pts):\r\n\t\tif i == len(pts)-1:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n\t\telse:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n\t\ti = i+1\r\n\treturn PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\ndef convex_hull_graham(points):\r\n\t\r\n\tTURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n\tdef cmp(a, b):\r\n\t\treturn (a > b) - (a < b)\r\n\t\r\n\tdef turn(p, q, r):\r\n\t\treturn cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n\tdef _keep_left(hull, r):\r\n\t\twhile len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n\t\t\thull.pop()\r\n\t\tif not len(hull) or hull[-1] != r:\r\n\t\t\thull.append(r)\r\n\t\treturn hull\r\n\r\n\tpoints = [ToVals(p) for p in points]\t\r\n\tpoints = sorted(points)\r\n\tl = reduce(_keep_left, points, [])\r\n\tu = reduce(_keep_left, reversed(points), [])\r\n\tpoints = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n\tpoints = [ToPts(p) for p in points]\r\n\treturn CreateOutline(points)\r\n##----------------------------------------------------------------------\r\n##----------------------------------------------------------------------\r\n\r\ndef FindIP(surface):\r\n\tperimeter = surface.PerimeterCurves() ##인자로 받은 surface의 테두리를 추출\r\n\t#poly_perimeter = PolyCurve.ByJoinedCurves(perimeter)\r\n\t_points = []\r\n\tfor i in perimeter:\r\n\t\ttmp = i.StartPoint\r\n\t\t_points.append(tmp)\r\n\tconvex_crv = convex_hull_graham(_points)\r\n\toff_convex_crv = Curve.Offset(convex_crv,-0.1)\r\n\toff_convex_srf = Surface.ByPatch(off_convex_crv)\r\n\t\r\n\treturn (perimeter, convex_crv, _points, off_convex_srf)\r\n\r\nclass NestedListHandler:\r\n    def __init__(self, inList):\r\n        self.inList = inList\r\n        outList = []\r\n        for li in inList:\r\n            sublist = []\r\n            for i in li:\r\n                sublist.append(i)\r\n            outList.append(sublist)\r\n            sublist = []\r\n        self.OutList = outList\r\n\r\nclass ClusterComplex:\r\n    def __init__(self, clusterSet):\r\n        self.clusterSet = clusterSet\r\n        \r\n        JoinedSrf= PolySurface.ByJoinedSurfaces(clusterSet)\r\n        self.JoinedSrf = JoinedSrf\r\n        \r\n        #MovingPoint = FindIP(JoinedSrf)\r\n        #self.MovingPoint = MovingPoint\r\n\t\t\r\n\t\t\r\n# Place your code below this line\r\n\r\n\t\r\n\r\n\t\r\nnestedlist = NestedListHandler(InList)\r\nc = ClusterComplex(InList[6])\r\n# Assign your output to the OUT variable.\r\nOUT = FindIP(c.JoinedSrf)#c.result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n##----------------------For ConvexHull----------------------------------\r\n##----------------------------------------------------------------------\r\ndef ToVals(pt):\r\n\treturn [pt.X,pt.Y,pt.Z]\r\n\r\ndef ToPts(ptVals):\r\n\treturn Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\r\ndef CreateOutline(pts):\r\n\tcrvs = []\r\n\ti = 0\r\n\twhile i < len(pts):\r\n\t\tif i == len(pts)-1:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n\t\telse:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n\t\ti = i+1\r\n\treturn PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\ndef convex_hull_graham(points):\r\n\t\r\n\tTURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n\tdef cmp(a, b):\r\n\t\treturn (a > b) - (a < b)\r\n\t\r\n\tdef turn(p, q, r):\r\n\t\treturn cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n\tdef _keep_left(hull, r):\r\n\t\twhile len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n\t\t\thull.pop()\r\n\t\tif not len(hull) or hull[-1] != r:\r\n\t\t\thull.append(r)\r\n\t\treturn hull\r\n\r\n\tpoints = [ToVals(p) for p in points]\t\r\n\tpoints = sorted(points)\r\n\tl = reduce(_keep_left, points, [])\r\n\tu = reduce(_keep_left, reversed(points), [])\r\n\tpoints = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n\tpoints = [ToPts(p) for p in points]\r\n\treturn CreateOutline(points)\r\n##----------------------------------------------------------------------\r\n##----------------------------------------------------------------------\r\n\r\n#def FindIP(surface):\r\n#\tperimeter = surface.PerimeterCurves() ##인자로 받은 surface의 테두리를 추출\r\n#\t\r\n#\t_points = []\r\n#\tfor i in perimeter:\r\n#\t\ttmp = i.StartPoint\r\n#\t\t_points.append(tmp)\r\n#\tconvex_crv = convex_hull_graham(_points)\r\n#\toff_convex_crv = Curve.Offset(convex_crv,-0.1)\r\n#\toff_convex_srf = Surface.ByPatch(off_convex_crv)\r\n#\t\r\n#\t\r\n#\treturn (perimeter, convex_crv, off_convex_crv, _points, off_convex_srf)\r\n\r\nclass NestedListHandler:\r\n    def __init__(self, inList):\r\n        self.inList = inList\r\n        outList = []\r\n        for li in inList:\r\n            sublist = []\r\n            for i in li:\r\n                sublist.append(i)\r\n            outList.append(sublist)\r\n            sublist = []\r\n        self.OutList = outList\r\n\r\nclass ClusterComplex:\r\n    def __init__(self, clusterSet):\r\n        self.clusterSet = clusterSet\r\n        \r\n        JoinedSrf= PolySurface.ByJoinedSurfaces(clusterSet)\r\n        self.JoinedSrf = JoinedSrf\r\n        \r\n        perimeter = JoinedSrf.PerimeterCurves()\r\n        _points = []\r\n        \r\n        for i in perimeter: ## 페리미터 커브들의 시작점 추출\r\n            tmp = i.StartPoint\r\n            _points.append(tmp)\r\n            \r\n        convex_crv = convex_hull_graham(_points)\r\n        self.convex_crv = convex_crv\r\n        off_convex_crv = Curve.Offset(convex_crv,-0.1)\r\n        self.off_convex_crv = off_convex_crv\r\n        off_convex_srf = Surface.ByPatch(off_convex_crv)\r\n        \r\n        differed_srf = Surface.Difference(off_convex_srf, clusterSet)\r\n        self.differed_srf = differed_srf\r\n        \r\n        div_differed_srflist = PolySurface.Surfaces(differed_srf)\r\n        self.div_differed_srflist = div_differed_srflist\r\n        inner_srflist = []\r\n\r\n        for i in div_differed_srflist:\r\n            if not Geometry.Intersect(convex_crv, i):\r\n                inner_srflist.append(i)\r\n\r\n        self.inner_srflist = inner_srflist\r\n\r\n\t\t\r\n\t\t\r\n# Place your code below this line\r\n\r\n\t\r\n\r\n\t\r\nnestedlist = NestedListHandler(InList)\r\nc = ClusterComplex(InList[6])\r\n# Assign your output to the OUT variable.\r\nOUT = (c.off_convex_crv, c.div_differed_srflist, c.inner_srflist)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "37d321feba7440a39161a79e8e10c2fd",
@@ -13900,6 +13900,212 @@
       ],
       "Replication": "Auto",
       "Description": "Make PolyCurve by joining curves. Flips curve as needed for connectivity. Choose a preferred join tolerance between 1e-6 and 1e-3 units.\n\nPolyCurve.ByJoinedCurves (curves: Curve[], joinTolerance: double = 0.001): PolyCurve"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];\ni[1][2];",
+      "Id": "7c065831c34644d2aad2ec23d7ed9577",
+      "Inputs": [
+        {
+          "Id": "12b9aefc609340f9ac46f0408c8026a2",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "fe1fefbd8af84e72a28a0e5879710997",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b857887063a34fa484e87ea1d008c0a2",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.DoesIntersect@Autodesk.DesignScript.Geometry.Geometry",
+      "Id": "01491da2f0924f6ea7ed9c3298815227",
+      "Inputs": [
+        {
+          "Id": "44354f181f3e486eb9afa838e70f3f2a",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "52fba314218344a4960dc7b2f67361ec",
+          "Name": "other",
+          "Description": "Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "04a8e35bfc924792a64930f8cb24c374",
+          "Name": "bool",
+          "Description": "bool",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Determine if another Geometry object intersects with this one\n\nGeometry.DoesIntersect (other: Geometry): bool"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.Intersect@Autodesk.DesignScript.Geometry.Geometry",
+      "Id": "7a0b1549d57b4d5e8f4549b2c81e8234",
+      "Inputs": [
+        {
+          "Id": "28559b1bc3424d0ea191c2a24328d8b5",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5025e1aaeb7540feb79452a997e02f45",
+          "Name": "other",
+          "Description": "Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "62a05071590d44a2abd0ac3495b65cae",
+          "Name": "Geometry[]",
+          "Description": "Geometry[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the intersection Geometry for this object and another\n\nGeometry.Intersect (other: Geometry): Geometry[]"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "57df916469234471bbdb7e833d3d75d8",
+      "Inputs": [
+        {
+          "Id": "f82be2fe19c242fc85d8eb36ad69f43a",
+          "Name": "",
+          "Description": "Node to evaluate.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "76a54703decf4cfcb4a7177ef6bfaaa4",
+          "Name": "",
+          "Description": "Watch contents.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualize the output of node."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.PolyCurve.Curves",
+      "Id": "ed75d5d4ab62483f83c842612c8f3e9e",
+      "Inputs": [
+        {
+          "Id": "ccfbbe896ed8433eb7d2b31d19ebab9f",
+          "Name": "polyCurve",
+          "Description": "Autodesk.DesignScript.Geometry.PolyCurve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3a5277f0af61435a9bf86d995ad2f8c3",
+          "Name": "Curve[]",
+          "Description": "Curve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns curves of the polycurve\n\nPolyCurve.Curves ( ): Curve[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[2];",
+      "Id": "91b414d39ee048fab518fa877ca7645f",
+      "Inputs": [
+        {
+          "Id": "1ff0990795dc445da002e500281244ff",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e649f3a5c1fc4511bdc963c6b6877c71",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -15871,7 +16077,7 @@
     {
       "Start": "de27faf3dee14d828da788705482057b",
       "End": "597aeaaf75314a2090b8e712650982bc",
-      "Id": "c1546be430864b54ac3b0dcd2b088b27"
+      "Id": "1eec1333eb22489fbd601843fb867875"
     },
     {
       "Start": "4be9aeee746346b89cab72ba73be8b85",
@@ -15914,11 +16120,6 @@
       "Id": "8cf7f5f1e1ae46028d43ebac963ee4fc"
     },
     {
-      "Start": "f0730924b8b942eeaf1107a8dd0d96c2",
-      "End": "06ab120713f44437babb6139d36e92ea",
-      "Id": "5613d5d3ce154ebe9360a898df940af9"
-    },
-    {
       "Start": "59d8991f4ff64ef4915674a18e68d43e",
       "End": "cbf1049fc7de46e9a93de51d0d898a52",
       "Id": "8b917985021f4ad39304056f9d1e1fe6"
@@ -15927,6 +16128,11 @@
       "Start": "59d8991f4ff64ef4915674a18e68d43e",
       "End": "a4c99469b30445b89f0425b0a75659d4",
       "Id": "44c30a7aa3b54b8db681928245084e54"
+    },
+    {
+      "Start": "59d8991f4ff64ef4915674a18e68d43e",
+      "End": "06ab120713f44437babb6139d36e92ea",
+      "Id": "e213d2729ba14a5e9beef067886c4b3c"
     },
     {
       "Start": "6094155d82054da1aa03165dcf32b3e7",
@@ -16522,6 +16728,46 @@
       "Start": "8295c86b84354be4904053977bc8952a",
       "End": "a677fc495a0046109b425f9fc3106374",
       "Id": "5c0a47768b9548c2b380133fde9f7dac"
+    },
+    {
+      "Start": "2e7d1ea2d63b43839fac9064fc459400",
+      "End": "12b9aefc609340f9ac46f0408c8026a2",
+      "Id": "f0f17f8bafda4121a040a884942abbaa"
+    },
+    {
+      "Start": "2e7d1ea2d63b43839fac9064fc459400",
+      "End": "1ff0990795dc445da002e500281244ff",
+      "Id": "a36dc3146d05484e897c8e08f365b2d7"
+    },
+    {
+      "Start": "fe1fefbd8af84e72a28a0e5879710997",
+      "End": "3ee6b1685f4c416488634f436a76d2b6",
+      "Id": "1ecb1f0e9dd84426a44ca2770eded911"
+    },
+    {
+      "Start": "fe1fefbd8af84e72a28a0e5879710997",
+      "End": "44354f181f3e486eb9afa838e70f3f2a",
+      "Id": "189883a8ef664a838255a6e8ccd261f6"
+    },
+    {
+      "Start": "fe1fefbd8af84e72a28a0e5879710997",
+      "End": "28559b1bc3424d0ea191c2a24328d8b5",
+      "Id": "508de1ba687c484f8d6881ede551e3b7"
+    },
+    {
+      "Start": "fe1fefbd8af84e72a28a0e5879710997",
+      "End": "f82be2fe19c242fc85d8eb36ad69f43a",
+      "Id": "80f8bf53cb1b49189b7192bb95b44c69"
+    },
+    {
+      "Start": "b857887063a34fa484e87ea1d008c0a2",
+      "End": "52fba314218344a4960dc7b2f67361ec",
+      "Id": "a256a251ea70472087816036edfbaf86"
+    },
+    {
+      "Start": "b857887063a34fa484e87ea1d008c0a2",
+      "End": "5025e1aaeb7540feb79452a997e02f45",
+      "Id": "c836039bf52443dda7b5e8b5cc147f33"
     }
   ],
   "Dependencies": [
@@ -16569,15 +16815,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 44341.72265625,
-      "EyeY": 43344.01171875,
-      "EyeZ": 34648.19921875,
-      "LookX": -43893.66015625,
-      "LookY": -44785.65234375,
-      "LookZ": -44964.15625,
-      "UpX": -0.27407503128051758,
-      "UpY": 0.91981267929077148,
-      "UpZ": -0.28076213598251343
+      "EyeX": 30325.5703125,
+      "EyeY": 55556.0625,
+      "EyeZ": 11935.319580078125,
+      "LookX": -19820.302734375,
+      "LookY": -62121.1484375,
+      "LookZ": -22954.033203125,
+      "UpX": -0.51218998432159424,
+      "UpY": 0.62113016843795776,
+      "UpZ": -0.59317678213119507
     },
     "NodeViews": [
       {
@@ -19837,8 +20083,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12935.619196112795,
-        "Y": 10406.086706507449
+        "X": 12934.188502605837,
+        "Y": 10401.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19847,8 +20093,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12313.619196112795,
-        "Y": 10488.300039840782
+        "X": 12312.188502605837,
+        "Y": 10484.00795931991
       },
       {
         "ShowGeometry": false,
@@ -19857,8 +20103,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12624.619196112795,
-        "Y": 10406.086706507449
+        "X": 12623.188502605837,
+        "Y": 10401.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19867,8 +20113,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13416.619196112795,
-        "Y": 10815.086706507449
+        "X": 13415.188502605837,
+        "Y": 10810.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19877,8 +20123,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13416.619196112795,
-        "Y": 10707.086706507449
+        "X": 13415.188502605837,
+        "Y": 10702.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19887,8 +20133,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13416.619196112795,
-        "Y": 10599.086706507449
+        "X": 13415.188502605837,
+        "Y": 10594.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19897,8 +20143,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13954.619196112795,
-        "Y": 10587.086706507449
+        "X": 13953.188502605837,
+        "Y": 10582.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19907,8 +20153,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13416.619196112795,
-        "Y": 10491.086706507449
+        "X": 13415.188502605837,
+        "Y": 10486.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19917,8 +20163,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13417.753337278493,
-        "Y": 10932.764148625944
+        "X": 13416.322643771535,
+        "Y": 10928.472068105071
       },
       {
         "ShowGeometry": false,
@@ -19927,8 +20173,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13417.753337278493,
-        "Y": 11026.945692688822
+        "X": 13416.322643771535,
+        "Y": 11022.653612167949
       },
       {
         "ShowGeometry": false,
@@ -19937,8 +20183,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13669.619196112795,
-        "Y": 10667.086706507449
+        "X": 13668.188502605837,
+        "Y": 10662.794625986577
       },
       {
         "ShowGeometry": false,
@@ -19947,8 +20193,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12935.619196112795,
-        "Y": 10800.36670650745
+        "X": 12934.188502605837,
+        "Y": 10796.074625986577
       },
       {
         "ShowGeometry": false,
@@ -19957,8 +20203,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14272.619196112795,
-        "Y": 10591.300039840782
+        "X": 14271.188502605837,
+        "Y": 10587.00795931991
       },
       {
         "ShowGeometry": false,
@@ -19967,8 +20213,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14918.546640761204,
-        "Y": 10494.931344427512
+        "X": 14917.115947254246,
+        "Y": 10490.63926390664
       },
       {
         "ShowGeometry": false,
@@ -19977,8 +20223,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13417.753337278493,
-        "Y": 11134.945692688822
+        "X": 13416.322643771535,
+        "Y": 11130.653612167949
       },
       {
         "ShowGeometry": false,
@@ -20457,8 +20703,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11923.619196112795,
-        "Y": 10477.800039840782
+        "X": 11922.188502605837,
+        "Y": 10473.50795931991
       },
       {
         "ShowGeometry": false,
@@ -20467,8 +20713,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11923.619196112795,
-        "Y": 10368.300039840782
+        "X": 11922.188502605837,
+        "Y": 10364.00795931991
       },
       {
         "ShowGeometry": false,
@@ -20477,8 +20723,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12313.619196112795,
-        "Y": 10354.086706507449
+        "X": 12312.188502605837,
+        "Y": 10349.794625986577
       },
       {
         "ShowGeometry": false,
@@ -20487,8 +20733,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13669.619196112795,
-        "Y": 10533.086706507449
+        "X": 13668.188502605837,
+        "Y": 10528.794625986577
       },
       {
         "ShowGeometry": false,
@@ -20711,14 +20957,14 @@
         "Y": 9568.7084647033225
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Python Script",
         "Id": "37d321feba7440a39161a79e8e10c2fd",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14384.811233241544,
-        "Y": 9812.2803932432
+        "X": 14253.131706147249,
+        "Y": 9832.538782026937
       },
       {
         "ShowGeometry": false,
@@ -20731,14 +20977,74 @@
         "Y": 9792.9958929397617
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "PolyCurve.ByJoinedCurves",
         "Id": "5de6f62bd8694ee6b1d4141b691a08ed",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14815.064395653335,
-        "Y": 9839.5357051949
+        "X": 14914.381966128727,
+        "Y": 9971.0625562586047
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "7c065831c34644d2aad2ec23d7ed9577",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14632.56815095873,
+        "Y": 9615.1000999661119
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Geometry.DoesIntersect",
+        "Id": "01491da2f0924f6ea7ed9c3298815227",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14945.201829963244,
+        "Y": 9767.3718571915542
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Geometry.Intersect",
+        "Id": "7a0b1549d57b4d5e8f4549b2c81e8234",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14877.800170464861,
+        "Y": 9480.5581126148118
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Watch",
+        "Id": "57df916469234471bbdb7e833d3d75d8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14674.139359327612,
+        "Y": 9393.2687204523827
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "PolyCurve.Curves",
+        "Id": "ed75d5d4ab62483f83c842612c8f3e9e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 15236.270811426013,
+        "Y": 10011.922718742142
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "91b414d39ee048fab518fa877ca7645f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14570.148545487022,
+        "Y": 10046.326711666045
       }
     ],
     "Annotations": [
@@ -20754,13 +21060,13 @@
           "6de43be0fd2841709db3592fd0883c0b"
         ],
         "Left": 308.68134818734939,
-        "Top": 1724.8995696242489,
-        "Width": 1685.9186518126505,
-        "Height": 603.1186518126508,
+        "Top": 1725.0995696242489,
+        "Width": 1687.3186518126506,
+        "Height": 604.31865181265084,
         "FontSize": 96.0,
         "InitialTop": 1850.0995696242489,
         "InitialHeight": 315.5319851459908,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFFFB8D8"
       },
       {
@@ -20774,13 +21080,13 @@
           "80905c8e8f834f3ba963188dce1491b4"
         ],
         "Left": 1942.78982209474,
-        "Top": 3028.3437178249405,
-        "Width": 1035.1999999999998,
-        "Height": 299.12733326273519,
+        "Top": 3028.1437178249407,
+        "Width": 1034.0,
+        "Height": 300.12733326273519,
         "FontSize": 24.0,
         "InitialTop": 3067.1437178249407,
         "InitialHeight": 287.12733326273519,
-        "TextblockHeight": 28.8,
+        "TextblockHeight": 29.0,
         "Background": "#FFD4B6DB"
       },
       {
@@ -20795,13 +21101,13 @@
           "acdeddd959a04903a57156e62499d144"
         ],
         "Left": 332.77760228167404,
-        "Top": 2799.2171966726924,
-        "Width": 1043.3999999999999,
-        "Height": 313.0,
+        "Top": 2799.4171966726922,
+        "Width": 1043.0,
+        "Height": 312.0,
         "FontSize": 96.0,
         "InitialTop": 2924.4171966726922,
         "InitialHeight": 213.0,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFFFB8D8"
       },
       {
@@ -20811,13 +21117,13 @@
           "525de1c003054ce384873891fb5f35fe"
         ],
         "Left": 7539.8144686654887,
-        "Top": 6654.6898426386088,
-        "Width": 319.19999999999982,
-        "Height": 308.19999999999982,
+        "Top": 6655.0898426386084,
+        "Width": 319.0,
+        "Height": 308.0,
         "FontSize": 96.0,
         "InitialTop": 6895.0898426386084,
         "InitialHeight": 145.0,
-        "TextblockHeight": 230.4,
+        "TextblockHeight": 230.0,
         "Background": "#FFFF7BAC"
       },
       {
@@ -20827,13 +21133,13 @@
           "68f26a67d881438fa17744bce91ff9c6"
         ],
         "Left": 7537.0241941960467,
-        "Top": 6304.3753451802149,
-        "Width": 319.19999999999982,
-        "Height": 308.19999999999982,
+        "Top": 6304.7753451802146,
+        "Width": 319.0,
+        "Height": 308.0,
         "FontSize": 96.0,
         "InitialTop": 6544.7753451802146,
         "InitialHeight": 145.0,
-        "TextblockHeight": 230.4,
+        "TextblockHeight": 230.0,
         "Background": "#FFFF7BAC"
       },
       {
@@ -20885,13 +21191,13 @@
           "6fe5d2e523824083807a5b606b20a1b9"
         ],
         "Left": 3547.9247270525452,
-        "Top": 635.68040886838787,
-        "Width": 2331.2000000000003,
-        "Height": 4536.10666666667,
+        "Top": 635.88040886838792,
+        "Width": 2331.4,
+        "Height": 4537.3066666666691,
         "FontSize": 96.0,
         "InitialTop": 760.88040886838792,
         "InitialHeight": 4222.5200000000023,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFBB87C6"
       },
       {
@@ -20928,13 +21234,13 @@
           "40814e4d6f4541a78b3d25b22c010b31"
         ],
         "Left": 7049.0629921598693,
-        "Top": 532.446573966193,
-        "Width": 2077.6000000000013,
-        "Height": 1645.3199999999995,
+        "Top": 532.646573966193,
+        "Width": 2078.4000000000005,
+        "Height": 1645.5199999999995,
         "FontSize": 36.0,
         "InitialTop": 585.646573966193,
         "InitialHeight": 1644.5199999999995,
-        "TextblockHeight": 43.2,
+        "TextblockHeight": 43.0,
         "Background": "#FFC1D676"
       },
       {
@@ -20944,13 +21250,13 @@
           "85ce26ecf8814aef903ab22aa925fe75"
         ],
         "Left": 7565.98985472136,
-        "Top": 6994.80223562638,
-        "Width": 319.19999999999982,
-        "Height": 308.19999999999982,
+        "Top": 6995.20223562638,
+        "Width": 319.0,
+        "Height": 308.0,
         "FontSize": 96.0,
         "InitialTop": 7235.20223562638,
         "InitialHeight": 145.0,
-        "TextblockHeight": 230.4,
+        "TextblockHeight": 230.0,
         "Background": "#FFFF7BAC"
       },
       {
@@ -20960,13 +21266,13 @@
           "27cd1542b5804abba64042aea4c90fa1"
         ],
         "Left": 7592.0282310746752,
-        "Top": 7374.1511168989136,
-        "Width": 269.60000000000036,
+        "Top": 7374.5511168989133,
+        "Width": 269.0,
         "Height": 333.0,
         "FontSize": 96.0,
         "InitialTop": 7614.5511168989133,
         "InitialHeight": 145.0,
-        "TextblockHeight": 230.4,
+        "TextblockHeight": 230.0,
         "Background": "#FFFF7BAC"
       },
       {
@@ -20993,13 +21299,13 @@
           "630d69ad8c8e4f46a729f1e699326ee2"
         ],
         "Left": 10433.947288815727,
-        "Top": 444.634646912277,
-        "Width": 3357.532196677741,
-        "Height": 762.15999999999963,
+        "Top": 444.834646912277,
+        "Width": 3358.3321966777403,
+        "Height": 762.35999999999979,
         "FontSize": 96.0,
         "InitialTop": 569.834646912277,
         "InitialHeight": 689.35999999999979,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21061,13 +21367,13 @@
           "172a8049fee949bc89326e02ca042ad8"
         ],
         "Left": 10437.568889517635,
-        "Top": 2013.2197973908931,
-        "Width": 4654.4,
-        "Height": 1118.0133333333331,
+        "Top": 2013.4197973908931,
+        "Width": 4655.0,
+        "Height": 1118.2133333333331,
         "FontSize": 96.0,
         "InitialTop": 2138.4197973908931,
         "InitialHeight": 1045.2133333333331,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21095,13 +21401,13 @@
           "b9c421c73dee40d9b221c82bf5c693e9"
         ],
         "Left": 10437.509464654979,
-        "Top": 3255.1311372993878,
-        "Width": 3496.0,
-        "Height": 847.33776479192693,
+        "Top": 3255.3311372993876,
+        "Width": 3496.7999999999993,
+        "Height": 848.5377647919272,
         "FontSize": 96.0,
         "InitialTop": 3380.3311372993876,
         "InitialHeight": 528.71333333333314,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21123,13 +21429,13 @@
           "738d6433b1d2471498726107d81c26c6"
         ],
         "Left": 10458.91668201782,
-        "Top": 5155.6397580392331,
-        "Width": 3180.8000000000011,
-        "Height": 409.61333333333369,
+        "Top": 5155.8397580392329,
+        "Width": 3181.6000000000004,
+        "Height": 409.8133333333335,
         "FontSize": 96.0,
         "InitialTop": 5280.8397580392329,
         "InitialHeight": 336.8133333333335,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21167,13 +21473,13 @@
           "e18c6e6edf9f4301a952ad4bc44fc5a5"
         ],
         "Left": 10445.717098188652,
-        "Top": 5768.0398831173106,
-        "Width": 5004.4,
-        "Height": 881.80000000000018,
+        "Top": 5768.2398831173105,
+        "Width": 5005.0,
+        "Height": 882.0,
         "FontSize": 96.0,
         "InitialTop": 5893.2398831173105,
         "InitialHeight": 809.0,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21237,13 +21543,13 @@
           "a3625b48a8f447018d37f3e3444212aa"
         ],
         "Left": 10459.503028034291,
-        "Top": 6866.96584914824,
-        "Width": 7925.6000000000022,
-        "Height": 882.80000000000018,
+        "Top": 6867.1658491482394,
+        "Width": 7926.4000000000015,
+        "Height": 883.0,
         "FontSize": 96.0,
         "InitialTop": 6992.1658491482394,
         "InitialHeight": 810.0,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21268,13 +21574,13 @@
           "b7540df255e843d4a687794717ee33fd"
         ],
         "Left": 10463.097838496489,
-        "Top": 7924.1459704582276,
-        "Width": 3379.2000000000007,
-        "Height": 587.01333333333878,
+        "Top": 7924.3459704582274,
+        "Width": 3380.0,
+        "Height": 587.2133333333386,
         "FontSize": 96.0,
         "InitialTop": 8049.3459704582274,
         "InitialHeight": 514.2133333333386,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21313,13 +21619,13 @@
           "1516a84bb55245b4aa96df631b401744"
         ],
         "Left": 10465.637174789083,
-        "Top": 8683.4944134620346,
-        "Width": 5172.2000000000007,
-        "Height": 677.80000000000109,
+        "Top": 8683.6944134620353,
+        "Width": 5173.0,
+        "Height": 678.0,
         "FontSize": 96.0,
         "InitialTop": 8808.6944134620353,
         "InitialHeight": 605.0,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21346,14 +21652,14 @@
           "3e53309a72ad493b8e6ef560fe135b26",
           "ac87b8dbe8554209afe368ba4c258ac0"
         ],
-        "Left": 11913.619196112795,
-        "Top": 10228.886706507448,
-        "Width": 3258.1274446484094,
-        "Height": 998.65898618137362,
+        "Left": 11912.188502605837,
+        "Top": 10224.794625986577,
+        "Width": 3258.9274446484087,
+        "Height": 998.85898618137253,
         "FontSize": 96.0,
-        "InitialTop": 10354.086706507449,
+        "InitialTop": 10349.794625986577,
         "InitialHeight": 925.85898618137253,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFE8F7AD"
       },
       {
@@ -21380,13 +21686,13 @@
           "5b9f10b366e9404c800ca1f5b8118640"
         ],
         "Left": 15796.017420925806,
-        "Top": 10250.553192861105,
-        "Width": 2976.9978340571197,
-        "Height": 851.71243144706386,
+        "Top": 10250.753192861106,
+        "Width": 2977.3978340571211,
+        "Height": 852.31243144706241,
         "FontSize": 96.0,
         "InitialTop": 10375.753192861106,
         "InitialHeight": 773.0,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFE8F7AD"
       },
       {
@@ -21422,13 +21728,13 @@
           "c11b44fc061e48e8b777d692baa8bb8f"
         ],
         "Left": 19344.909010361462,
-        "Top": 10228.617394350924,
-        "Width": 5161.8154645825816,
-        "Height": 1218.9297043637544,
+        "Top": 10228.817394350925,
+        "Width": 5160.8154645825816,
+        "Height": 1219.1297043637533,
         "FontSize": 96.0,
         "InitialTop": 10353.817394350925,
         "InitialHeight": 1146.1297043637533,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21439,13 +21745,13 @@
           "3ab5de4f94794be3aa877358f2dd09ab"
         ],
         "Left": 10432.220939077155,
-        "Top": 1484.6999570857442,
-        "Width": 3381.7020097900931,
-        "Height": 251.58603851350222,
+        "Top": 1484.8999570857443,
+        "Width": 3382.1020097900928,
+        "Height": 251.78603851350226,
         "FontSize": 96.0,
         "InitialTop": 1609.8999570857443,
         "InitialHeight": 178.78603851350226,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21456,13 +21762,13 @@
           "5309a6464c844d89983d5beb763401a5"
         ],
         "Left": 10451.916443190366,
-        "Top": 4299.441646796563,
-        "Width": 3101.2750876899081,
-        "Height": 225.46908066326523,
+        "Top": 4299.6416467965628,
+        "Width": 3102.0750876899074,
+        "Height": 225.66908066326505,
         "FontSize": 96.0,
         "InitialTop": 4424.6416467965628,
         "InitialHeight": 152.66908066326505,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21473,13 +21779,13 @@
           "46a7091c87374ec39b02302e3eb75194"
         ],
         "Left": 10447.838705434287,
-        "Top": 4710.00001428329,
-        "Width": 3093.0371173190924,
-        "Height": 238.78638370148474,
+        "Top": 4710.2000142832894,
+        "Width": 3093.8371173190917,
+        "Height": 238.98638370148456,
         "FontSize": 96.0,
         "InitialTop": 4835.2000142832894,
         "InitialHeight": 165.98638370148456,
-        "TextblockHeight": 115.2,
+        "TextblockHeight": 115.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21539,8 +21845,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -14222.006579982497,
-    "Y": -9559.9307990436446,
-    "Zoom": 1.0163050505053723
+    "X": -10537.945656159372,
+    "Y": -6869.7741798335064,
+    "Zoom": 0.737951929049599
   }
 }
