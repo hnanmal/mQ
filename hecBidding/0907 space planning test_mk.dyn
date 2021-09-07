@@ -13794,7 +13794,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n##----------------------For ConvexHull----------------------------------\r\n##----------------------------------------------------------------------\r\ndef ToVals(pt):\r\n\treturn [pt.X,pt.Y,pt.Z]\r\n\r\ndef ToPts(ptVals):\r\n\treturn Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\r\ndef CreateOutline(pts):\r\n\tcrvs = []\r\n\ti = 0\r\n\twhile i < len(pts):\r\n\t\tif i == len(pts)-1:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n\t\telse:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n\t\ti = i+1\r\n\treturn PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\ndef convex_hull_graham(points):\r\n\t\r\n\tTURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n\tdef cmp(a, b):\r\n\t\treturn (a > b) - (a < b)\r\n\t\r\n\tdef turn(p, q, r):\r\n\t\treturn cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n\tdef _keep_left(hull, r):\r\n\t\twhile len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n\t\t\thull.pop()\r\n\t\tif not len(hull) or hull[-1] != r:\r\n\t\t\thull.append(r)\r\n\t\treturn hull\r\n\r\n\tpoints = [ToVals(p) for p in points]\t\r\n\tpoints = sorted(points)\r\n\tl = reduce(_keep_left, points, [])\r\n\tu = reduce(_keep_left, reversed(points), [])\r\n\tpoints = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n\tpoints = [ToPts(p) for p in points]\r\n\treturn CreateOutline(points)\r\n##----------------------------------------------------------------------\r\n##----------------------------------------------------------------------\r\n\r\n#def FindIP(surface):\r\n#\tperimeter = surface.PerimeterCurves() ##인자로 받은 surface의 테두리를 추출\r\n#\t\r\n#\t_points = []\r\n#\tfor i in perimeter:\r\n#\t\ttmp = i.StartPoint\r\n#\t\t_points.append(tmp)\r\n#\tconvex_crv = convex_hull_graham(_points)\r\n#\toff_convex_crv = Curve.Offset(convex_crv,-0.1)\r\n#\toff_convex_srf = Surface.ByPatch(off_convex_crv)\r\n#\t\r\n#\t\r\n#\treturn (perimeter, convex_crv, off_convex_crv, _points, off_convex_srf)\r\n\r\nclass NestedListHandler:\r\n    def __init__(self, inList):\r\n        self.inList = inList\r\n        outList = []\r\n        for li in inList:\r\n            sublist = []\r\n            for i in li:\r\n                sublist.append(i)\r\n            outList.append(sublist)\r\n            sublist = []\r\n        self.OutList = outList\r\n\r\nclass ClusterComplex:\r\n    def __init__(self, clusterSet):\r\n        self.clusterSet = clusterSet\r\n        \r\n        JoinedSrf= PolySurface.ByJoinedSurfaces(clusterSet)\r\n        self.JoinedSrf = JoinedSrf\r\n        \r\n        perimeter = JoinedSrf.PerimeterCurves()\r\n        _points = []\r\n        \r\n        for i in perimeter: ## 페리미터 커브들의 시작점 추출\r\n            tmp = i.StartPoint\r\n            _points.append(tmp)\r\n            \r\n        convex_crv = convex_hull_graham(_points) # 클러스터 포인트들의 볼록껍질 커브\r\n        self.convex_crv = convex_crv\r\n        off_convex_crv = Curve.Offset(convex_crv,-10) # 볼록껍질의 내부 측 오프셋 커브\r\n        self.off_convex_crv = off_convex_crv\r\n        off_convex_srf = Surface.ByPatch(off_convex_crv)\r\n        \r\n        convex_bdry_srf = Surface.ByLoft([Curve.Offset(convex_crv,10), off_convex_crv])\r\n        convex_bdry_solid = Surface.Thicken(convex_bdry_srf, 1, True)\r\n        \r\n        differed_srf = Surface.Difference(off_convex_srf, clusterSet)\r\n        self.differed_srf = differed_srf\r\n        \r\n        div_differed_srflist = PolySurface.Surfaces(differed_srf)\r\n        self.div_differed_srflist = div_differed_srflist\r\n        outer_srflist = []\r\n\r\n        for i in div_differed_srflist:\r\n            if Geometry.Intersect(convex_bdry_solid, i):\r\n                outer_srflist.append(i)\r\n\r\n        self.outer_srflist = outer_srflist\r\n        crvForIP = PolySurface.ByJoinedSurfaces(outer_srflist).PerimeterCurves()\r\n        self.crvForIP = crvForIP\r\n        \r\n        IPlist = []\r\n        NIPlist = []\r\n        for i in crvForIP:\r\n            tmp = i.StartPoint\r\n            if not Geometry.DoesIntersect(convex_bdry_solid, tmp):\r\n                IPlist.append(tmp)\r\n            else:\r\n                NIPlist.append(tmp)\r\n        \r\n        self.IPlist = IPlist\r\n        self.NIPlist = NIPlist\r\n        \r\n\t\t\r\n# Place your code below this line\r\nnestedlist = NestedListHandler(InList).OutList\r\nc = ClusterComplex(InList[6])\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = (c.off_convex_crv, c.IPlist, c.NIPlist, c.outer_srflist)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n##----------------------For ConvexHull----------------------------------\r\n##----------------------------------------------------------------------\r\ndef ToVals(pt):\r\n\treturn [pt.X,pt.Y,pt.Z]\r\n\r\ndef ToPts(ptVals):\r\n\treturn Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\r\ndef CreateOutline(pts):\r\n\tcrvs = []\r\n\ti = 0\r\n\twhile i < len(pts):\r\n\t\tif i == len(pts)-1:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n\t\telse:\r\n\t\t\tcrvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n\t\ti = i+1\r\n\treturn PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\ndef convex_hull_graham(points):\r\n\t\r\n\tTURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n\tdef cmp(a, b):\r\n\t\treturn (a > b) - (a < b)\r\n\t\r\n\tdef turn(p, q, r):\r\n\t\treturn cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n\tdef _keep_left(hull, r):\r\n\t\twhile len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n\t\t\thull.pop()\r\n\t\tif not len(hull) or hull[-1] != r:\r\n\t\t\thull.append(r)\r\n\t\treturn hull\r\n\r\n\tpoints = [ToVals(p) for p in points]\t\r\n\tpoints = sorted(points)\r\n\tl = reduce(_keep_left, points, [])\r\n\tu = reduce(_keep_left, reversed(points), [])\r\n\tpoints = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n\tpoints = [ToPts(p) for p in points]\r\n\treturn CreateOutline(points)\r\n##----------------------------------------------------------------------\r\n##----------------------------------------------------------------------\r\n\r\n#def FindIP(surface):\r\n#\tperimeter = surface.PerimeterCurves() ##인자로 받은 surface의 테두리를 추출\r\n#\t\r\n#\t_points = []\r\n#\tfor i in perimeter:\r\n#\t\ttmp = i.StartPoint\r\n#\t\t_points.append(tmp)\r\n#\tconvex_crv = convex_hull_graham(_points)\r\n#\toff_convex_crv = Curve.Offset(convex_crv,-0.1)\r\n#\toff_convex_srf = Surface.ByPatch(off_convex_crv)\r\n#\t\r\n#\t\r\n#\treturn (perimeter, convex_crv, off_convex_crv, _points, off_convex_srf)\r\n\r\nclass NestedListHandler:\r\n    def __init__(self, inList):\r\n        self.inList = inList\r\n        outList = []\r\n        for li in inList:\r\n            sublist = []\r\n            for i in li:\r\n                sublist.append(i)\r\n            outList.append(sublist)\r\n            sublist = []\r\n        self.OutList = outList\r\n\r\nclass ClusterComplex:\r\n    def __init__(self, clusterSetList):\r\n        self.clusterSetList = clusterSetList\r\n        \r\n        JoinedSrf= PolySurface.ByJoinedSurfaces(clusterSetList)\r\n        self.JoinedSrf = JoinedSrf\r\n        \r\n        perimeter = JoinedSrf.PerimeterCurves()\r\n        _points = []\r\n        \r\n        for i in perimeter: ## 페리미터 커브들의 시작점 추출\r\n            tmp = i.StartPoint\r\n            _points.append(tmp)\r\n            \r\n        convex_crv = convex_hull_graham(_points) # 클러스터 포인트들의 볼록껍질 커브\r\n        self.convex_crv = convex_crv\r\n        off_convex_crv = Curve.Offset(convex_crv,-10) # 볼록껍질의 내부 측 오프셋 커브\r\n        self.off_convex_crv = off_convex_crv\r\n        off_convex_srf = Surface.ByPatch(off_convex_crv)\r\n        \r\n        convex_bdry_srf = Surface.ByLoft([Curve.Offset(convex_crv,10), off_convex_crv])\r\n        convex_bdry_solid = Surface.Thicken(convex_bdry_srf, 1, True)\r\n        \r\n        differed_srf = Surface.Difference(off_convex_srf, clusterSetList)\r\n        self.differed_srf = differed_srf\r\n        \r\n        div_differed_srflist = PolySurface.Surfaces(differed_srf)\r\n        self.div_differed_srflist = div_differed_srflist\r\n        outer_srflist = []\r\n\r\n        for i in div_differed_srflist:\r\n            if Geometry.Intersect(convex_bdry_solid, i):\r\n                outer_srflist.append(i)\r\n\r\n        self.outer_srflist = outer_srflist\r\n        crvForIP = PolySurface.ByJoinedSurfaces(outer_srflist).PerimeterCurves()\r\n        self.crvForIP = crvForIP\r\n        \r\n        IPlist = []\r\n        NIPlist = []\r\n        for i in crvForIP:\r\n            tmp = i.StartPoint\r\n            if not Geometry.DoesIntersect(convex_bdry_solid, tmp):\r\n                IPlist.append(tmp)\r\n            else:\r\n                NIPlist.append(tmp)\r\n        \r\n        self.IPlist = IPlist\r\n        self.NIPlist = NIPlist\r\n        \r\n\t\t\r\n# Place your code below this line\r\nnestedlist = NestedListHandler(InList).OutList\r\nc = ClusterComplex(InList[6])\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = (c.off_convex_crv, c.IPlist, c.NIPlist, c.outer_srflist)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "37d321feba7440a39161a79e8e10c2fd",
@@ -14106,54 +14106,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.Thicken@double,bool",
-      "Id": "84424145dc044635b71d54834234dd87",
-      "Inputs": [
-        {
-          "Id": "697afa5663fd492fa7a0a8340f140825",
-          "Name": "surface",
-          "Description": "Autodesk.DesignScript.Geometry.Surface",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b10189816b9f4917ae4c04cc91d742d7",
-          "Name": "thickness",
-          "Description": "double\nDefault value : 1",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "7d4b7f87cd814b478f2e4899813532c7",
-          "Name": "both_sides",
-          "Description": "bool\nDefault value : true",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "0e5840f040f74850a77b538d253423de",
-          "Name": "Solid",
-          "Description": "Solid",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Thicken Surface into a Solid, extruding in the direction of Surface normals. If both_sides parameter is true, surface is thickened on both sides.\n\nSurface.Thicken (thickness: double = 1, both_sides: bool = true): Solid"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -16903,15 +16855,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 1403.794921875,
-      "EyeY": 58048.609375,
-      "EyeZ": 61725.20703125,
-      "LookX": 25733.798828125,
-      "LookY": -49708.94140625,
-      "LookZ": -40565.3125,
-      "UpX": 0.29645237326622009,
-      "UpY": 0.832909107208252,
-      "UpZ": -0.46730968356132507
+      "EyeX": 14588.111328125,
+      "EyeY": 64347.57421875,
+      "EyeZ": 49707.6875,
+      "LookX": -5500.376953125,
+      "LookY": -56750.09765625,
+      "LookZ": -39088.69921875,
+      "UpX": -0.094676576554775238,
+      "UpY": 0.73371505737304688,
+      "UpZ": -0.6728287935256958
     },
     "NodeViews": [
       {
@@ -21051,8 +21003,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14246.057016726951,
-        "Y": 9737.4235131540445
+        "X": 14242.067385147751,
+        "Y": 9736.0936359609786
       },
       {
         "ShowGeometry": false,
@@ -21071,8 +21023,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14914.381966128727,
-        "Y": 9971.0625562586047
+        "X": 15325.314018786197,
+        "Y": 9903.238819412225
       },
       {
         "ShowGeometry": false,
@@ -21081,8 +21033,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14632.56815095873,
-        "Y": 9615.1000999661119
+        "X": 15043.5002036162,
+        "Y": 9547.2763631197322
       },
       {
         "ShowGeometry": false,
@@ -21091,8 +21043,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14945.201829963244,
-        "Y": 9767.3718571915542
+        "X": 15356.133882620714,
+        "Y": 9699.5481203451745
       },
       {
         "ShowGeometry": false,
@@ -21101,8 +21053,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14877.800170464861,
-        "Y": 9480.5581126148118
+        "X": 15431.02908278042,
+        "Y": 9505.82577928307
       },
       {
         "ShowGeometry": false,
@@ -21111,8 +21063,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14674.139359327612,
-        "Y": 9393.2687204523827
+        "X": 15204.760359361046,
+        "Y": 9389.2790888731834
       },
       {
         "ShowGeometry": true,
@@ -21133,16 +21085,6 @@
         "Excluded": false,
         "X": 14440.762427934293,
         "Y": 9775.9933922443124
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Surface.Thicken",
-        "Id": "84424145dc044635b71d54834234dd87",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 14545.888199181931,
-        "Y": 9926.4174138442249
       },
       {
         "ShowGeometry": true,
@@ -21953,8 +21895,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -11362.643156694847,
-    "Y": -7676.8722176414167,
-    "Zoom": 0.8086537192855161
+    "X": -6707.1510962170887,
+    "Y": -4594.6133336136772,
+    "Zoom": 0.50282930751488242
   }
 }
