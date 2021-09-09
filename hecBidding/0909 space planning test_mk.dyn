@@ -2,7 +2,7 @@
   "Uuid": "a79fa74f-e34d-4d89-a973-37aaa8faa714",
   "IsCustomNode": false,
   "Description": null,
-  "Name": "0908 space planning test_mk",
+  "Name": "0909 space planning test_mk",
   "ElementResolver": {
     "ResolutionMap": {
       "DesignScript.Builtin.Dictionary": {
@@ -14367,7 +14367,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n\r\n###########################################################################\r\nclass ConvexHull_Maker:\r\n    def __init__(self,points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\nclass ClusterComplex: ## clst: cluster set, cl: cluster, clem: cluster elements\r\n    def __init__(self, clst):\r\n        self.clst = clst\r\n        \r\n        def create_JoinedSrfBy_clst(clst):\r\n            return PolySurface.ByJoinedSurfaces(clst)\r\n        \r\n        def find_PerimeterCrvsOn_srf(srf):\r\n            return srf.PerimeterCurves()\r\n            \r\n        def get_PointOf_PerimeterCrvs(crvs):\r\n            _points = []\r\n            for i in crvs:\r\n                _points.append(i.StartPoint)\r\n            return _points\r\n            \r\n        def get_ConvexHullFor_cl(cl):\r\n            return ConvexHull_Maker(cl).result\r\n            \r\n        def patch_ConvexHull_cl(cl):\r\n            pass\r\n            \r\n        def create_offsetcrv(crv, offset):\r\n            return Curve.Offset(crv, offset)\r\n            \r\n        def create_bdrysolid_forInsp(crv):\r\n            offin_convex_crv = Curve.Offset(crv,-10)\r\n            offout_convex_crv = Curve.Offset(crv,10)\r\n            convex_bdry_srf = Surface.ByLoft([offout_convex_crv, offin_convex_crv])\r\n            convex_bdry_solid = Surface.Thicken(convex_bdry_srf, 1, True)\r\n            return convex_bdry_solid\r\n            \r\n        def find_boundary_point(cl):\r\n            pass\r\n        #---------------------------------------------\r\n        \r\n        srf = []\r\n        for i in clst:\r\n            srf.append(create_JoinedSrfBy_clst(i))\r\n        self.srf = srf\r\n            \r\n        crvs = []\r\n        for i in srf:\r\n            crvs.append(find_PerimeterCrvsOn_srf(i))\r\n            \r\n        startpt_crv = []\r\n        for i in crvs:\r\n            startpt_crv.append(get_PointOf_PerimeterCrvs(i))\r\n        self.startpt_crv = startpt_crv\r\n        \r\n        crv_convexhull_clst = []\r\n        for i in startpt_crv:\r\n            crv_convexhull_clst.append(get_ConvexHullFor_cl(i))\r\n        self.crv_convexhull_clst = crv_convexhull_clst\r\n        \r\n        bdrysolid_convexhull_clst = []\r\n        for i in crv_convexhull_clst:\r\n            bdrysolid_convexhull_clst.append(create_bdrysolid_forInsp(i))\r\n        self.bdrysolid_convexhull_clst = bdrysolid_convexhull_clst\r\n\r\n# Place your code below this line\r\n\r\na = ClusterComplex(InList).srf\r\nb = ClusterComplex(InList).startpt_crv\r\nc = ClusterComplex(InList).crv_convexhull_clst\r\nd = ClusterComplex(InList).bdrysolid_convexhull_clst\r\n# Assign your output to the OUT variable.\r\nOUT = (a,b,c,d)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom DSCore import Color\r\nclr.AddReference('GeometryColor')\r\nfrom Modifiers import GeometryColor\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n\r\n###########################################################################\r\nclass FuncCurrying:\r\n    pass\r\n\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\nclass ClusterComplex: ## clst: cluster set, cl: cluster, clem: cluster elements\r\n    def __init__(self, clst):\r\n        self.clst = clst\r\n        \r\n        def create_JoinedSrfBy_clst(clst):\r\n            return PolySurface.ByJoinedSurfaces(clst)\r\n        \r\n        def find_PerimeterCrvsOn_srf(srf):\r\n            return srf.PerimeterCurves()\r\n            \r\n        def get_PointOf_PerimeterCrvs(crvs):\r\n            _points = []\r\n            for i in crvs:\r\n                _points.append(i.StartPoint)\r\n            return _points\r\n            \r\n        def get_ConvexHullFor_cl(cl):\r\n            return ConvexHull_Maker(cl).result\r\n            \r\n        def patch_ConvexHull_cl(cl):\r\n            pass\r\n            \r\n        def create_offsetcrv(crv, offset):\r\n            return Curve.Offset(crv, offset)\r\n            \r\n        def create_bdrysolid_forInsp(crv):\r\n            offin_convex_crv = Curve.Offset(crv,-10)\r\n            offout_convex_crv = Curve.Offset(crv,300)\r\n            convex_bdry_srf = Surface.ByLoft([offout_convex_crv, offin_convex_crv])\r\n            convex_bdry_solid = Surface.Thicken(convex_bdry_srf, 1, True)\r\n            return convex_bdry_solid\r\n            \r\n        def find_boundary_point(cl):\r\n            \r\n            pass\r\n        #---------------------------------------------\r\n        \r\n        srf = []\r\n        for i in clst:\r\n            srf.append(create_JoinedSrfBy_clst(i))\r\n        self.srf = srf\r\n            \r\n        crvs = []\r\n        for i in srf:\r\n            crvs.append(find_PerimeterCrvsOn_srf(i))\r\n            \r\n        startpt_crv = []\r\n        for i in crvs:\r\n            startpt_crv.append(get_PointOf_PerimeterCrvs(i))\r\n        self.startpt_crv = startpt_crv\r\n        \r\n        crv_convexhull_clst = []\r\n        for i in startpt_crv:\r\n            crv_convexhull_clst.append(get_ConvexHullFor_cl(i))\r\n        self.crv_convexhull_clst = crv_convexhull_clst\r\n        \r\n        bdrysolid_convexhull_clst = []\r\n        for i in crv_convexhull_clst:\r\n            bdrysolid_convexhull_clst.append(create_bdrysolid_forInsp(i))\r\n        self.bdrysolid_convexhull_clst = bdrysolid_convexhull_clst\r\n\r\n# Place your code below this line\r\ndef f_vision(i):\r\n\treturn GeometryColor.ByGeometryColor(i, Color.ByARGB(125, 255, 0, 0))\r\n#d = f_vision(ClusterComplex(InList).bdrysolid_convexhull_clst[6])\r\ne = ClusterComplex(InList).bdrysolid_convexhull_clst[6]\r\na = ClusterComplex(InList).srf\r\nb = ClusterComplex(InList).startpt_crv\r\nc = ClusterComplex(InList).crv_convexhull_clst\r\n#d = []\r\n#for i in ClusterComplex(InList).bdrysolid_convexhull_clst:\r\n#    d.append(GeometryColor.ByGeometryColor(i, Color.ByARGB(125, 255, 0, 0)))\r\nd = list(map(f_vision,ClusterComplex(InList).bdrysolid_convexhull_clst))\r\n# Assign your output to the OUT variable.\r\nOUT = (a,b,c,d)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "bcd49e3fb1204b898059c2ddb45479ec",
@@ -14463,6 +14463,159 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.ColorPalette, CoreNodeModels",
+      "InputValue": {
+        "R": 255,
+        "G": 0,
+        "B": 0,
+        "A": 124
+      },
+      "NodeType": "ColorInputNode",
+      "Id": "5ba5084a09c7405eb7dac6a16a4a8b16",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a105c7bd7e624e5f9624869ba52bb8f4",
+          "Name": "Color",
+          "Description": "Selected Color.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a Color from the palette"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Modifiers.GeometryColor.ByGeometryColor@Autodesk.DesignScript.Geometry.Geometry,DSCore.Color",
+      "Id": "558511a6a5fc499ca82bdd8a8e3b1fcd",
+      "Inputs": [
+        {
+          "Id": "d1dbce4e064d43339f7e69100fd0db00",
+          "Name": "geometry",
+          "Description": "The geometry to which you would like to apply color.\n\nGeometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f7de641ad6f94e89a061a7919bdf5692",
+          "Name": "color",
+          "Description": "The color.\n\nColor",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "21133cd513414263a24a099f6805a83d",
+          "Name": "GeometryColor",
+          "Description": "A Display object.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Display geometry using a color.\n\nGeometryColor.ByGeometryColor (geometry: Geometry, color: Color): GeometryColor"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\na = Color.ByARGB(125, 255, 0, 0)\r\n# Assign your output to the OUT variable.\r\nOUT = a",
+      "Engine": "IronPython2",
+      "VariableInputPorts": true,
+      "Id": "0cb225e13cf44948b7275580c67615f7",
+      "Inputs": [
+        {
+          "Id": "f2b79a2bee934cba85f546b8b6cd7ac3",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ad7c4dd169f747efaeac60ebcd6fd785",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Color.ByARGB@int,int,int,int",
+      "Id": "9747b62d03634e539850e649c05bec15",
+      "Inputs": [
+        {
+          "Id": "2b733009b89043d3af0d413beee54b87",
+          "Name": "a",
+          "Description": "The alpha value.\n\nint\nDefault value : 255",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "05fea460e12a4fd99be4ba645553fe85",
+          "Name": "r",
+          "Description": "The red value.\n\nint\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "83dabf70e9c64a87a508aceef42b360b",
+          "Name": "g",
+          "Description": "The green value.\n\nint\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7718617abaac478c9464ffe26986ce66",
+          "Name": "b",
+          "Description": "The blue value.\n\nint\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c9894e6146c64cba877af729019f1109",
+          "Name": "color",
+          "Description": "Color.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Construct a color by alpha, red, green, and blue components.\n\nColor.ByARGB (a: int = 255, r: int = 0, g: int = 0, b: int = 0): Color"
     }
   ],
   "Connectors": [
@@ -17237,15 +17390,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 24504.162109375,
-      "EyeY": 35442.890625,
-      "EyeZ": 23414.91796875,
-      "LookX": -26396.755859375,
-      "LookY": -33988.86328125,
-      "LookZ": -35017.30078125,
-      "UpX": -0.25820940732955933,
-      "UpY": 0.90332639217376709,
-      "UpZ": -0.34253361821174622
+      "EyeX": 11049.359375,
+      "EyeY": 35575.390625,
+      "EyeZ": 32716.55859375,
+      "LookX": -23726.40625,
+      "LookY": -42534.796875,
+      "LookZ": -38252.2265625,
+      "UpX": -0.27148696780204773,
+      "UpY": 0.85715651512146,
+      "UpZ": -0.43769583106040955
     },
     "NodeViews": [
       {
@@ -21385,8 +21538,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14228.526460070416,
-        "Y": 9592.5775325824416
+        "X": 14231.261758984178,
+        "Y": 9493.5597119042432
       },
       {
         "ShowGeometry": false,
@@ -21569,7 +21722,7 @@
         "Y": 9563.60127614279
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Code Block",
         "Id": "dd01f273e17742fb9025914d40d0ece4",
         "IsSetAsInput": false,
@@ -21577,6 +21730,46 @@
         "Excluded": false,
         "X": 13976.76624493441,
         "Y": 9790.6690230821587
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Color Palette",
+        "Id": "5ba5084a09c7405eb7dac6a16a4a8b16",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14544.042247683867,
+        "Y": 9824.7084930891087
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "GeometryColor.ByGeometryColor",
+        "Id": "558511a6a5fc499ca82bdd8a8e3b1fcd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14782.833730670161,
+        "Y": 9925.1954067439747
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "0cb225e13cf44948b7275580c67615f7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14478.968523982323,
+        "Y": 10030.301133586965
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Color.ByARGB",
+        "Id": "9747b62d03634e539850e649c05bec15",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14774.189695086947,
+        "Y": 10022.440807055134
       }
     ],
     "Annotations": [
@@ -22377,8 +22570,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -9636.4123082643036,
-    "Y": -6711.18868045721,
-    "Zoom": 0.7096235849109418
+    "X": -15235.768871627446,
+    "Y": -10656.984740741473,
+    "Zoom": 1.0947735648440904
   }
 }
