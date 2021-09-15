@@ -2,7 +2,7 @@
   "Uuid": "a79fa74f-e34d-4d89-a973-37aaa8faa714",
   "IsCustomNode": false,
   "Description": null,
-  "Name": "0914 space planning test_mk",
+  "Name": "0915 space planning test_mk",
   "ElementResolver": {
     "ResolutionMap": {
       "DesignScript.Builtin.Dictionary": {
@@ -13835,11 +13835,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[3];\ni[6];",
+      "Code": "i[3];\ni[6];\ni;",
       "Id": "cb567fac5d8346a0a7499297b1421080",
       "Inputs": [
         {
-          "Id": "b4f7f5b45ad54463af0d561351eefcf3",
+          "Id": "ce199cd83f4043cca8efaa4035c12f03",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -13850,7 +13850,7 @@
       ],
       "Outputs": [
         {
-          "Id": "29c1329951d24d6188057a13940b4337",
+          "Id": "701e6e6132514e4b8b9f06b0fe3e0529",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -13859,9 +13859,18 @@
           "KeepListStructure": false
         },
         {
-          "Id": "1b33eb3f80d649c0b62d0976c47bbb0d",
+          "Id": "bf007ce270344f769e5eea0e10bf38b1",
           "Name": "",
           "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9ccb9eece169433db6cfc4fd4bae7fd8",
+          "Name": "",
+          "Description": "Value of expression at line 3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -14474,34 +14483,9 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "CoreNodeModels.Input.ColorPalette, CoreNodeModels",
-      "InputValue": {
-        "R": 255,
-        "G": 0,
-        "B": 0,
-        "A": 124
-      },
-      "NodeType": "ColorInputNode",
-      "Id": "5ba5084a09c7405eb7dac6a16a4a8b16",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "a105c7bd7e624e5f9624869ba52bb8f4",
-          "Name": "Color",
-          "Description": "Selected Color.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Select a Color from the palette"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom DSCore import Color\r\nclr.AddReference('GeometryColor')\r\nfrom Modifiers import GeometryColor\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n\r\n###########################################################################\r\nclass FuncCurrying:\r\n    pass\r\n\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\nclass Qluster:\r\n    def __init__(self, cl):\r\n        def create_joinedSrf(cl):\r\n            return PolySurface.ByJoinedSurfaces(cl)\r\n        def find_periCrvsOn_srf(srf):\r\n            return srf.PerimeterCurves()\r\n        def get_PointOf_PeriCrvs(crvs):\r\n            return list(map(lambda x: x.StartPoint,crvs))\r\n        def get_cvxHullFor_cl(cl):\r\n            return ConvexHull_Maker(cl).result\r\n        def create_offsetCrv(crv, offset):\r\n            return Curve.Offset(crv, offset)\r\n        def create_bdrySolid_forInsp(pcrv):\r\n            offin_cvx_crv = Curve.Offset(pcrv,-10)\r\n            offout_cvx_crv = Curve.Offset(pcrv,300)\r\n            cvx_bdry_srf = Surface.ByLoft([offout_cvx_crv, offin_cvx_crv])\r\n            cvx_bdry_solid = Surface.Thicken(cvx_bdry_srf, 1, True)\r\n            return cvx_bdry_solid\r\n        def patch_pCrv(pcrv):\r\n            return Surface.ByPatch(pcrv)\r\n        def find_boundary_point(cl):\r\n            pass\r\n            \r\n        self.cl = cl\r\n        \r\n        psrf = create_joinedSrf(cl)\r\n        self.psrf = psrf\r\n        \r\n        crvs = find_periCrvsOn_srf(psrf)\r\n        self.crvs = crvs\r\n        \r\n        startpt_crv = get_PointOf_PeriCrvs(crvs)\r\n        self.startpt_crv = startpt_crv\r\n        \r\n        crv_cvxHull = get_cvxHullFor_cl(startpt_crv)\r\n        self.crv_cvxHull = crv_cvxHull\r\n        \r\n        crv_cvxHull_offin = create_offsetCrv(crv_cvxHull, -10)\r\n        bdrysolid_cvxHull = create_bdrySolid_forInsp(crv_cvxHull)\r\n        self.bdrysolid_cvxHull = bdrysolid_cvxHull\r\n        \r\n        patched_cvxHull = patch_pCrv(crv_cvxHull)\r\n\r\n        try:\r\n            diff_srf = Surface.Difference(patched_cvxHull, cl)\r\n            if isinstance(diff_srf, PolySurface):\r\n                div_diff_srflist = PolySurface.Surfaces(diff_srf)\r\n            else:\r\n                div_diff_srflist = [diff_srf]\r\n        except:\r\n            div_diff_srflist = [patched_cvxHull]\r\n        self.div_diff_srflist = div_diff_srflist\r\n        \r\n        outer_srf_diff = list(\r\n        filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull), div_diff_srflist))\r\n        self.outer_srf_diff = outer_srf_diff\r\n        inner_srf_diff = list(\r\n        filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) == False, div_diff_srflist))\r\n        if len(inner_srf_diff) == 0:\r\n            pt_cl_bdry = startpt_crv\r\n        else:\r\n            joined_inner_srf = PolySurface.ByJoinedSurfaces(inner_srf_diff)\r\n            pre_pt_cl_bdry = list(\r\n            filter(lambda x: Geometry.DoesIntersect(x, joined_inner_srf) == False, startpt_crv))\r\n            pt_cl_bdry = list(\r\n            filter(lambda x: Geometry.DoesIntersect(x, patch_pCrv(crv_cvxHull_offin)) == False, pre_pt_cl_bdry))\r\n        crvlist_outer_srf = list(map(find_periCrvsOn_srf, outer_srf_diff))\r\n        pt_outer_srf = sum(list(map(get_PointOf_PeriCrvs, crvlist_outer_srf)),[])\r\n        self.pt_outer_srf = pt_outer_srf\r\n        pt_cvx_bdry = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull), pt_outer_srf))\r\n \r\n        preip = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) != True, pt_outer_srf))\r\n        \r\n        def f_nip(x):\r\n            return filter(lambda y: Geometry.DoesIntersect(x, y) == False, cir_ip)\r\n\r\n        if len(preip) == 0:\r\n            minX = min(map(lambda x: round(x.X,3), pt_outer_srf))\r\n            maxY = max(map(lambda x: round(x.Y,3), pt_outer_srf))\r\n            pt_X = list(filter(lambda x: round(x.X,3) == minX, pt_outer_srf))\r\n            ip = list(filter(lambda x: round(x.Y,3) == maxY, pt_X))\r\n            cir_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,1), ip))\r\n            uni_cir_ip = Solid.ByUnion(cir_ip)\r\n            nip = list(filter(lambda x: Geometry.DoesIntersect(x, uni_cir_ip) == False, pt_cl_bdry))\r\n        else:\r\n            ip = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) != True, pt_outer_srf))\r\n            cir_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,1), ip))\r\n            uni_cir_ip = Solid.ByUnion(cir_ip)\r\n            nip = list(filter(lambda x: Geometry.DoesIntersect(x, uni_cir_ip) == False, pt_cl_bdry))\r\n        self.cir_ip = cir_ip\r\n        self.ip = ip\r\n        self.nip = nip\r\n        qcircle_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,500), ip))\r\n        self.qcircle_ip = qcircle_ip\r\n        qcircle_nip = list(map(lambda x: Sphere.ByCenterPointRadius(x,500), nip))\r\n        self.qcircle_nip = qcircle_nip\r\n        \r\n    def translate(self, vec):\r\n        return list(map(lambda x: Geometry.Translate(x, vec), self.cl))\r\n\r\nclass Qplacer: ## clst: cluster set, cl: cluster, clem: cluster elements\r\n    pass\r\n\r\n\r\n\r\n# Place your code below this line\r\ndef colorize(i,r,g,b):\r\n\treturn GeometryColor.ByGeometryColor(i, Color.ByARGB(125, r, g, b))\r\n\r\nst_Point = Point.ByCoordinates(0,0,0)\r\nend_Point = Point.ByCoordinates(3000,3000,0)\r\nvec1 = Vector.ByTwoPoints(st_Point,end_Point)\r\n\r\na = Qluster(InList).cl\r\nb = Qluster(InList).crvs\r\nc = Qluster(InList).startpt_crv\r\nd = Qluster(InList).crv_cvxHull\r\ne = colorize(Qluster(InList).bdrysolid_cvxHull, 255,0,0)\r\nf = list(map(lambda x: colorize(x,0,125,0),Qluster(InList).qcircle_ip))\r\ng = Qluster(InList).pt_outer_srf\r\nh = Qluster(InList).ip\r\ni = list(map(lambda x: colorize(x,0,0,125),Qluster(InList).qcircle_nip))\r\nj = Qluster(InList).translate(vec1)\r\n#b = Qluster(InList).startpt_crv\r\n#c = Qluster(InList).crv_convexhull_clst\r\n#d = []\r\n#for i in ClusterComplex(InList).bdrysolid_convexhull_clst:\r\n#    d.append(GeometryColor.ByGeometryColor(i, Color.ByARGB(125, 255, 0, 0)))\r\n#d = list(map(lambda i: f_vision(i,255,0,0), Qluster(InList).bdrysolid_convexhull_clst))\r\n#f = ClusterComplex(InList).crvs\r\n#f = list(map(lambda i: f_vision(i,125,0,0),ClusterComplex(InList).bdrysolid_peri_clst))\r\n# Assign your output to the OUT variable.\r\nOUT = (b,d,e,f,h,i,j)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nfrom random import randint\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import *\r\nfrom DSCore import Color\r\nclr.AddReference('GeometryColor')\r\nfrom Modifiers import GeometryColor\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\n##############################\r\ndataEnteringNode = IN\r\nInList = IN[0]\r\nPlacingBoundary = IN[1]\r\n\r\nPrePlacingList = []\r\nPostPlacingList = []\r\n\r\n###########################################################################\r\nclass FuncCurrying:\r\n    pass\r\n\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\nclass Qluster:\r\n    def __init__(self, cl):\r\n        def create_joinedSrf(cl):\r\n            return PolySurface.ByJoinedSurfaces(cl)\r\n        def find_periCrvsOn_srf(srf):\r\n            return srf.PerimeterCurves()\r\n        def get_PointOf_PeriCrvs(crvs):\r\n            return list(map(lambda x: x.StartPoint,crvs))\r\n        def get_cvxHullFor_cl(cl):\r\n            return ConvexHull_Maker(cl).result\r\n        def create_offsetCrv(crv, offset):\r\n            return Curve.Offset(crv, offset)\r\n        def create_bdrySolid_forInsp(pcrv):\r\n            offin_cvx_crv = Curve.Offset(pcrv,-10)\r\n            offout_cvx_crv = Curve.Offset(pcrv,300)\r\n            cvx_bdry_srf = Surface.ByLoft([offout_cvx_crv, offin_cvx_crv])\r\n            cvx_bdry_solid = Surface.Thicken(cvx_bdry_srf, 1, True)\r\n            return cvx_bdry_solid\r\n        def patch_pCrv(pcrv):\r\n            return Surface.ByPatch(pcrv)\r\n        def find_boundary_point(cl):\r\n            pass\r\n            \r\n        self.cl = cl\r\n        \r\n        psrf = create_joinedSrf(cl)\r\n        self.psrf = psrf\r\n        \r\n        crvs = find_periCrvsOn_srf(psrf)\r\n        self.crvs = crvs\r\n        \r\n        startpt_crv = get_PointOf_PeriCrvs(crvs)\r\n        self.startpt_crv = startpt_crv\r\n        \r\n        crv_cvxHull = get_cvxHullFor_cl(startpt_crv)\r\n        self.crv_cvxHull = crv_cvxHull\r\n        \r\n        crv_cvxHull_offin = create_offsetCrv(crv_cvxHull, -10)\r\n        bdrysolid_cvxHull = create_bdrySolid_forInsp(crv_cvxHull)\r\n        self.bdrysolid_cvxHull = bdrysolid_cvxHull\r\n        \r\n        patched_cvxHull = patch_pCrv(crv_cvxHull)\r\n\r\n        try:\r\n            diff_srf = Surface.Difference(patched_cvxHull, cl)\r\n            if isinstance(diff_srf, PolySurface):\r\n                div_diff_srflist = PolySurface.Surfaces(diff_srf)\r\n            else:\r\n                div_diff_srflist = [diff_srf]\r\n        except:\r\n            div_diff_srflist = [patched_cvxHull]\r\n        self.div_diff_srflist = div_diff_srflist\r\n        \r\n        outer_srf_diff = list(\r\n        filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull), div_diff_srflist))\r\n        self.outer_srf_diff = outer_srf_diff\r\n        inner_srf_diff = list(\r\n        filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) == False, div_diff_srflist))\r\n        if len(inner_srf_diff) == 0:\r\n            pt_cl_bdry = startpt_crv\r\n        else:\r\n            joined_inner_srf = PolySurface.ByJoinedSurfaces(inner_srf_diff)\r\n            pre_pt_cl_bdry = list(\r\n            filter(lambda x: Geometry.DoesIntersect(x, joined_inner_srf) == False, startpt_crv))\r\n            pt_cl_bdry = list(\r\n            filter(lambda x: Geometry.DoesIntersect(x, patch_pCrv(crv_cvxHull_offin)) == False, pre_pt_cl_bdry))\r\n        crvlist_outer_srf = list(map(find_periCrvsOn_srf, outer_srf_diff))\r\n        pt_outer_srf = sum(list(map(get_PointOf_PeriCrvs, crvlist_outer_srf)),[])\r\n        self.pt_outer_srf = pt_outer_srf\r\n        pt_cvx_bdry = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull), pt_outer_srf))\r\n \r\n        preip = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) != True, pt_outer_srf))\r\n        \r\n        def f_nip(x):\r\n            return filter(lambda y: Geometry.DoesIntersect(x, y) == False, cir_ip)\r\n\r\n        if len(preip) == 0:\r\n            minX = min(map(lambda x: round(x.X,3), pt_outer_srf))\r\n            maxY = max(map(lambda x: round(x.Y,3), pt_outer_srf))\r\n            pt_X = list(filter(lambda x: round(x.X,3) == minX, pt_outer_srf))\r\n            ip = list(filter(lambda x: round(x.Y,3) == maxY, pt_X))\r\n            cir_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,1), ip))\r\n            uni_cir_ip = Solid.ByUnion(cir_ip)\r\n            nip = list(filter(lambda x: Geometry.DoesIntersect(x, uni_cir_ip) == False, pt_cl_bdry))\r\n        else:\r\n            ip = list(filter(lambda x: Geometry.DoesIntersect(x, bdrysolid_cvxHull) != True, pt_outer_srf))\r\n            cir_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,1), ip))\r\n            uni_cir_ip = Solid.ByUnion(cir_ip)\r\n            nip = list(filter(lambda x: Geometry.DoesIntersect(x, uni_cir_ip) == False, pt_cl_bdry))\r\n        self.cir_ip = cir_ip\r\n        self.ip = ip\r\n        self.nip = nip\r\n        qcircle_ip = list(map(lambda x: Sphere.ByCenterPointRadius(x,500), ip))\r\n        self.qcircle_ip = qcircle_ip\r\n        qcircle_nip = list(map(lambda x: Sphere.ByCenterPointRadius(x,500), nip))\r\n        self.qcircle_nip = qcircle_nip\r\n        \r\n    def translate(self, vec):\r\n        return list(map(lambda x: Geometry.Translate(x, vec), self.cl))\r\n\r\nclass Qplacer: ## clst: cluster set, cl: cluster, clem: cluster elements\r\n    def __init__(self, clst):\r\n        q_instance = list(map(lambda x: Qluster(x).cl, clst))\r\n        self.q_instance = q_instance\r\n        q_instance\r\n    pass\r\n\r\n\r\n\r\n# Place your code below this line\r\ndef colorize(i,r,g,b):\r\n\treturn GeometryColor.ByGeometryColor(i, Color.ByARGB(125, r, g, b))\r\n\r\nst_Point = Point.ByCoordinates(0,0,0)\r\nend_Point = Point.ByCoordinates(3000,3000,0)\r\nvec1 = Vector.ByTwoPoints(st_Point,end_Point)\r\n\r\n#a = Qluster(InList).cl\r\n#b = Qluster(InList).crvs\r\n#c = Qluster(InList).startpt_crv\r\n#d = Qluster(InList).crv_cvxHull\r\n#e = colorize(Qluster(InList).bdrysolid_cvxHull, 255,0,0)\r\n#f = list(map(lambda x: colorize(x,0,125,0),Qluster(InList).qcircle_ip))\r\n#g = Qluster(InList).pt_outer_srf\r\n#h = Qluster(InList).ip\r\n#i = list(map(lambda x: colorize(x,0,0,125),Qluster(InList).qcircle_nip))\r\n#j = Qluster(InList).translate(vec1)\r\nk = Qplacer(InList).q_instance\r\n#b = Qluster(InList).startpt_crv\r\n#c = Qluster(InList).crv_convexhull_clst\r\n#d = []\r\n#for i in ClusterComplex(InList).bdrysolid_convexhull_clst:\r\n#    d.append(GeometryColor.ByGeometryColor(i, Color.ByARGB(125, 255, 0, 0)))\r\n#d = list(map(lambda i: f_vision(i,255,0,0), Qluster(InList).bdrysolid_convexhull_clst))\r\n#f = ClusterComplex(InList).crvs\r\n#f = list(map(lambda i: f_vision(i,125,0,0),ClusterComplex(InList).bdrysolid_peri_clst))\r\n# Assign your output to the OUT variable.\r\nOUT = k#(b,d,e,f,h,i,j,k)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "2b03d5350ee1429ca6a80f27d282d29a",
@@ -14538,93 +14522,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Vector.ByTwoPoints@Autodesk.DesignScript.Geometry.Point,Autodesk.DesignScript.Geometry.Point",
-      "Id": "9b0d2536f39f47cea24d8e7c8fa8a478",
-      "Inputs": [
-        {
-          "Id": "56a6eba582e94f64b354403e83d4b6fa",
-          "Name": "start",
-          "Description": "Point",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "e7bca15c852a48428a24516b34a63af0",
-          "Name": "end",
-          "Description": "Point",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "97919f725a6b4e5f9f5d7300d6f948a4",
-          "Name": "Vector",
-          "Description": "Vector",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Form a Vector by two end points. The result is a vector from the start to the end point.\n\nVector.ByTwoPoints (start: Point, end: Point): Vector"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Point.ByCoordinates@double,double,double",
-      "Id": "711bc622dea249109c49c47b3feb49c4",
-      "Inputs": [
-        {
-          "Id": "ec0f52b17fbc4c4296a7df79cdda7b72",
-          "Name": "x",
-          "Description": "double\nDefault value : 0",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "321b101f262c45c49500298231c38f36",
-          "Name": "y",
-          "Description": "double\nDefault value : 0",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "1103f36e7689462b85d2b79ed76a5dc0",
-          "Name": "z",
-          "Description": "double\nDefault value : 0",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "e76dcc9a297f48968c0506888bae30ae",
-          "Name": "Point",
-          "Description": "Point",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Form a Point given 3 cartesian coordinates\n\nPoint.ByCoordinates (x: double = 0, y: double = 0, z: double = 0): Point"
     }
   ],
   "Connectors": [
@@ -17195,8 +17092,8 @@
     },
     {
       "Start": "8ed65354df35412c884cc0397b751f65",
-      "End": "b4f7f5b45ad54463af0d561351eefcf3",
-      "Id": "20d51e51aa884bcdb887958aa8082a7e"
+      "End": "ce199cd83f4043cca8efaa4035c12f03",
+      "Id": "d96ae5a577004e908a38a4e8ca085fb3"
     },
     {
       "Start": "48c411d8a25948d181d4fc559de7a8ca",
@@ -17284,14 +17181,14 @@
       "Id": "f26c4866ab4d452698202cbae0d22dba"
     },
     {
-      "Start": "29c1329951d24d6188057a13940b4337",
+      "Start": "701e6e6132514e4b8b9f06b0fe3e0529",
       "End": "51e279d02d1a4469b03ba1551fbd5f44",
-      "Id": "b16c1472d38e4897a164bbc599981c3b"
+      "Id": "c8a55391a5f243a89da6015552440216"
     },
     {
-      "Start": "1b33eb3f80d649c0b62d0976c47bbb0d",
+      "Start": "9ccb9eece169433db6cfc4fd4bae7fd8",
       "End": "52f06f53742442e287688fe202e27459",
-      "Id": "115c99b3e46d44168392d9828ef32fff"
+      "Id": "0f92c75a1da24607b66d8dfbd61fb54d"
     },
     {
       "Start": "fe1fefbd8af84e72a28a0e5879710997",
@@ -17404,15 +17301,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 26528.895751953125,
-      "EyeY": 37787.3203125,
-      "EyeZ": 31965.751953125,
-      "LookX": -27225.2265625,
-      "LookY": -47478.48828125,
-      "LookZ": -42229.546875,
-      "UpX": -0.27908465266227722,
-      "UpY": 0.85715633630752563,
-      "UpZ": -0.4328911304473877
+      "EyeX": 45566.66015625,
+      "EyeY": 19792.15625,
+      "EyeZ": 31435.162109375,
+      "LookX": -47411.828125,
+      "LookY": -30063.47265625,
+      "LookZ": -40337.015625,
+      "UpX": -0.17652648687362671,
+      "UpY": 0.97277092933654785,
+      "UpZ": -0.15018375217914581
     },
     "NodeViews": [
       {
@@ -21747,43 +21644,13 @@
       },
       {
         "ShowGeometry": true,
-        "Name": "Color Palette",
-        "Id": "5ba5084a09c7405eb7dac6a16a4a8b16",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 14937.921020693342,
-        "Y": 9881.414775584637
-      },
-      {
-        "ShowGeometry": true,
         "Name": "Python Script//20210913",
         "Id": "2b03d5350ee1429ca6a80f27d282d29a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14420.177009078892,
-        "Y": 9931.7303997018262
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Vector.ByTwoPoints",
-        "Id": "9b0d2536f39f47cea24d8e7c8fa8a478",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 14572.508886341555,
-        "Y": 10070.130779826974
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Point.ByCoordinates",
-        "Id": "711bc622dea249109c49c47b3feb49c4",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 14690.438567628911,
-        "Y": 9869.8015135375481
+        "X": 14509.380229539844,
+        "Y": 9943.825751628734
       }
     ],
     "Annotations": [
@@ -22612,8 +22479,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -14911.58345541477,
-    "Y": -10334.106899358854,
-    "Zoom": 1.0582577569755438
+    "X": -12244.319493216079,
+    "Y": -8608.2962843136756,
+    "Zoom": 0.89216473782165107
   }
 }
