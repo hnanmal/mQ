@@ -51,7 +51,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nrepeatFuncApply = IN[0][0]\r\ncreate_horizonLine = IN[0][1]\r\ncreate_verticalLine = IN[0][2]\r\ncurveOffset = IN[0][3]\r\nmulti = IN[0][4]\r\n\r\ngridlength = IN[1]\r\ndist = IN[2]\r\nrepeat_X = IN[3]\r\nrepeat_Y = IN[4]\r\n# Place your code below this line\r\nendptX = Point.ByCoordinates(0,gridlength,0)\r\nendptY = Point.ByCoordinates(gridlength,0,0)\r\n\r\nline_primeX = create_horizonLine(endptX)\r\nline_primeY = create_verticalLine(endptY)\r\n\r\nlineforX = repeatFuncApply(lambda x: curveOffset(x, dist), repeat_X, line_primeX)\r\nlineforY = repeatFuncApply(lambda x: curveOffset(x, -dist), repeat_Y, line_primeY)\r\n\r\ngrid_X = list(map(lambda x: x.ToRevitType(), lineforX))\r\ngrid_Y = list(map(lambda x: x.ToRevitType(), lineforY))\r\ngrid = grid_X + grid_Y\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\ngridAll = list(map(lambda x: Autodesk.Revit.DB.Grid.Create(doc, x), grid))\r\nTransactionManager.Instance.TransactionTaskDone()\r\n#result = [line_primeX, line_primeY]\r\nresult = gridAll\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nrepeatFuncApply = IN[0][0]\r\ncreate_horizonLine = IN[0][1]\r\ncreate_verticalLine = IN[0][2]\r\ncurveOffset = IN[0][3]\r\nmulti = IN[0][4]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ngridlength = IN[1]\r\ndist = IN[2]\r\nrepeat_X = IN[3]\r\nrepeat_Y = IN[4]\r\n# Place your code below this line\r\nendptX = Point.ByCoordinates(0,gridlength,0)\r\nendptY = Point.ByCoordinates(gridlength,0,0)\r\n\r\nline_primeX = create_horizonLine(endptX)\r\nline_primeY = create_verticalLine(endptY)\r\n\r\nlineforX = repeatFuncApply(lambda x: curveOffset(x, dist), repeat_X, line_primeX)\r\nlineforY = repeatFuncApply(lambda x: curveOffset(x, -dist), repeat_Y, line_primeY)\r\n\r\ngrid_X = list(map(lambda x: x.ToRevitType(), lineforX))\r\ngrid_Y = list(map(lambda x: x.ToRevitType(), lineforY))\r\ngrid = grid_X + grid_Y\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\ngridAll = list(map(lambda x: Autodesk.Revit.DB.Grid.Create(doc, x), grid))\r\nTransactionManager.Instance.TransactionTaskDone()\r\n#result = [line_primeX, line_primeY]\r\nresult = gridAll\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "f1bd5515ba42499fb58e1d8c29810381",
@@ -119,7 +119,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef multiply_mk(a,b):\r\n    return a * b\r\n\r\n\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nmultiply_mk\r\n]\t\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef multiply_mk(a,b):\r\n    return a * b\r\n\r\n\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nmultiply_mk\r\n]\t\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "128a05c5cbd24a93b96027ca88c32a3c",
@@ -396,74 +396,74 @@
     },
     "NodeViews": [
       {
-        "ShowGeometry": true,
-        "Name": "퀵 그리드 메이커",
         "Id": "f1bd5515ba42499fb58e1d8c29810381",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "퀵 그리드 메이커",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1234.269784162736,
-        "Y": 391.94096467255918
+        "X": 1222.1767683075807,
+        "Y": 285.10817018784405
       },
       {
-        "ShowGeometry": false,
-        "Name": "함수 라이브러리 (함수 임포트 용)",
         "Id": "128a05c5cbd24a93b96027ca88c32a3c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "함수 라이브러리 (함수 임포트 용)",
+        "ShowGeometry": false,
         "Excluded": false,
-        "X": 829.94574217412844,
-        "Y": 170.59176471420321
+        "X": 868.17676830758069,
+        "Y": 246.108170187844
       },
       {
-        "ShowGeometry": true,
-        "Name": "퀵 그리드 메이커 Input",
         "Id": "6aa5f63e50bd498b95af666fcbe67117",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "퀵 그리드 메이커 Input",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 893.0144238575358,
-        "Y": 486.83933119082207
+        "X": 868.17676830758069,
+        "Y": 366.96150352117729
       },
       {
-        "ShowGeometry": true,
-        "Name": "그리드길이",
         "Id": "864f490be1814a559df2517c867a0dd6",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "그리드길이",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 550.40233874382352,
-        "Y": 349.00616332345345
+        "X": 469.17676830758069,
+        "Y": 263.74817018784404
       },
       {
-        "ShowGeometry": true,
-        "Name": "그리드간격",
         "Id": "35549690ebf244099de97ef6d3c0208f",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "그리드간격",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 546.42074572872411,
-        "Y": 428.63802362544681
+        "X": 469.17676830758069,
+        "Y": 347.32150352117742
       },
       {
-        "ShowGeometry": true,
-        "Name": "x축그리드갯수",
         "Id": "8146661db3ea4bcbaa83f488b8cd7951",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "x축그리드갯수",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 455.83950463520682,
-        "Y": 515.23767170386441
+        "X": 469.17676830758069,
+        "Y": 430.89483685451069
       },
       {
-        "ShowGeometry": true,
-        "Name": "y축그리드갯수",
         "Id": "a17db5c27e504774959cc61141307082",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "y축그리드갯수",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 464.47524945743316,
-        "Y": 589.98457566148477
+        "X": 469.17676830758069,
+        "Y": 514.468170187844
       }
     ],
     "Annotations": [],
