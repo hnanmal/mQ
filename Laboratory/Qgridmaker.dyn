@@ -1,0 +1,474 @@
+{
+  "Uuid": "a79fa74f-e34d-4d89-a973-37aaa8faa714",
+  "IsCustomNode": false,
+  "Description": null,
+  "Name": "Qgridmaker",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [
+    {
+      "Id": "864f490be1814a559df2517c867a0dd6",
+      "Name": "그리드길이",
+      "Type": "number",
+      "Value": "50000",
+      "NumberType": "Double",
+      "Description": "Creates a number."
+    },
+    {
+      "Id": "35549690ebf244099de97ef6d3c0208f",
+      "Name": "그리드간격",
+      "Type": "number",
+      "Value": "6000",
+      "NumberType": "Double",
+      "Description": "Creates a number."
+    },
+    {
+      "Id": "8146661db3ea4bcbaa83f488b8cd7951",
+      "Name": "x축그리드갯수",
+      "Type": "number",
+      "Value": "5",
+      "MaximumValue": 100.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "NumberType": "Integer",
+      "Description": "A slider that produces integer values."
+    },
+    {
+      "Id": "a17db5c27e504774959cc61141307082",
+      "Name": "y축그리드갯수",
+      "Type": "number",
+      "Value": "5",
+      "MaximumValue": 100.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "NumberType": "Integer",
+      "Description": "A slider that produces integer values."
+    }
+  ],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nrepeatFuncApply = IN[0][0]\r\ncreate_horizonLine = IN[0][1]\r\ncreate_verticalLine = IN[0][2]\r\ncurveOffset = IN[0][3]\r\nmulti = IN[0][4]\r\n\r\ngridlength = IN[1]\r\ndist = IN[2]\r\nrepeat_X = IN[3]\r\nrepeat_Y = IN[4]\r\n# Place your code below this line\r\nendptX = Point.ByCoordinates(0,gridlength,0)\r\nendptY = Point.ByCoordinates(gridlength,0,0)\r\n\r\nline_primeX = create_horizonLine(endptX)\r\nline_primeY = create_verticalLine(endptY)\r\n\r\nlineforX = repeatFuncApply(lambda x: curveOffset(x, dist), repeat_X, line_primeX)\r\nlineforY = repeatFuncApply(lambda x: curveOffset(x, -dist), repeat_Y, line_primeY)\r\n\r\ngrid_X = list(map(lambda x: x.ToRevitType(), lineforX))\r\ngrid_Y = list(map(lambda x: x.ToRevitType(), lineforY))\r\ngrid = grid_X + grid_Y\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\ngridAll = list(map(lambda x: Autodesk.Revit.DB.Grid.Create(doc, x), grid))\r\nTransactionManager.Instance.TransactionTaskDone()\r\n#result = [line_primeX, line_primeY]\r\nresult = gridAll\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "f1bd5515ba42499fb58e1d8c29810381",
+      "Inputs": [
+        {
+          "Id": "9b31a4b695d14a4c885a7e6e375094eb",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ce50d66bb9a7438eb647c4c788eeb702",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "951ef528aa8244899c8ab8914106e059",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "cae302f566e044549f08e0359232cde1",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "19f95675653043909cf4eea17cd425b9",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7e0f1b165a1f49708a2810b34bf13987",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef multiply_mk(a,b):\r\n    return a * b\r\n\r\n\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nmultiply_mk\r\n]\t\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "128a05c5cbd24a93b96027ca88c32a3c",
+      "Inputs": [
+        {
+          "Id": "cf30825c4ff7439caa6751c908b5b8dc",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1ac3e2356ed04684b63fc4aee3ca9fb1",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "그리드길이;\n그리드간격;\nx축그리드갯수;\ny축그리드갯수;",
+      "Id": "6aa5f63e50bd498b95af666fcbe67117",
+      "Inputs": [
+        {
+          "Id": "07081c0f24f74caab4a749a0e7520663",
+          "Name": "그리드길이",
+          "Description": "그리드길이",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4f285044f78e49149d98463c390d2405",
+          "Name": "그리드간격",
+          "Description": "그리드간격",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ad93cb4fc2324ffc9928b521cf48950d",
+          "Name": "x축그리드갯수",
+          "Description": "x축그리드갯수",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "bd8666566293410d9211bb1817036ca7",
+          "Name": "y축그리드갯수",
+          "Description": "y축그리드갯수",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f44ae5e46abd4207a5778b8c700537e8",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fe305d350ca4407abc847c046f750634",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b6ca9f741a25406f9047a43070d9ca8c",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "92dc93f96fce4a4bb1ddfc4fb2d69210",
+          "Name": "",
+          "Description": "Value of expression at line 4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "InputValue": 50000.0,
+      "Id": "864f490be1814a559df2517c867a0dd6",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "49c91128f3fc4785bc7a2c9126f1188b",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "InputValue": 6000.0,
+      "Id": "35549690ebf244099de97ef6d3c0208f",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "78dbba6794794be5afeed74dd530a41b",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Integer",
+      "InputValue": 5,
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "8146661db3ea4bcbaa83f488b8cd7951",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9cf2396220b84c00a6360a3e1624b529",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces integer values."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Integer",
+      "InputValue": 5,
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "a17db5c27e504774959cc61141307082",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "7e68fc458beb4521b52505b749ead34d",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces integer values."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "1ac3e2356ed04684b63fc4aee3ca9fb1",
+      "End": "9b31a4b695d14a4c885a7e6e375094eb",
+      "Id": "aa83b06ee0104912b8eef5d4fcbffdf8"
+    },
+    {
+      "Start": "f44ae5e46abd4207a5778b8c700537e8",
+      "End": "ce50d66bb9a7438eb647c4c788eeb702",
+      "Id": "23514142f7664180bc1453886d5bd88b"
+    },
+    {
+      "Start": "fe305d350ca4407abc847c046f750634",
+      "End": "951ef528aa8244899c8ab8914106e059",
+      "Id": "f615dca46a4b4597a4a2eb1cf5ba8c6f"
+    },
+    {
+      "Start": "b6ca9f741a25406f9047a43070d9ca8c",
+      "End": "cae302f566e044549f08e0359232cde1",
+      "Id": "49bd43a26e8c4a019a694d918137ce99"
+    },
+    {
+      "Start": "92dc93f96fce4a4bb1ddfc4fb2d69210",
+      "End": "19f95675653043909cf4eea17cd425b9",
+      "Id": "576e96f1a70b47d2900fffd6eeb9fba6"
+    },
+    {
+      "Start": "49c91128f3fc4785bc7a2c9126f1188b",
+      "End": "07081c0f24f74caab4a749a0e7520663",
+      "Id": "4a1b5787112b4b0fa15a9a7d0ff13004"
+    },
+    {
+      "Start": "78dbba6794794be5afeed74dd530a41b",
+      "End": "4f285044f78e49149d98463c390d2405",
+      "Id": "92ef0f1b893641d8ba3c88f732df0949"
+    },
+    {
+      "Start": "9cf2396220b84c00a6360a3e1624b529",
+      "End": "ad93cb4fc2324ffc9928b521cf48950d",
+      "Id": "f68e7c36eb46472aacb9062fe7b25592"
+    },
+    {
+      "Start": "7e68fc458beb4521b52505b749ead34d",
+      "End": "bd8666566293410d9211bb1817036ca7",
+      "Id": "968d2fd634404b3483d0912efd4845ae"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 10000.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.10.1.3976",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -13224.0751953125,
+      "EyeY": 46915.3671875,
+      "EyeZ": 45595.27734375,
+      "LookX": 7512.08984375,
+      "LookY": -55420.7265625,
+      "LookZ": -45927.0703125,
+      "UpX": 0.098490089178085327,
+      "UpY": 0.79228973388671875,
+      "UpZ": -0.602143406867981
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "퀵 그리드 메이커",
+        "Id": "f1bd5515ba42499fb58e1d8c29810381",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1234.269784162736,
+        "Y": 391.94096467255918
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "함수 라이브러리 (함수 임포트 용)",
+        "Id": "128a05c5cbd24a93b96027ca88c32a3c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 829.94574217412844,
+        "Y": 170.59176471420321
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "퀵 그리드 메이커 Input",
+        "Id": "6aa5f63e50bd498b95af666fcbe67117",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 893.0144238575358,
+        "Y": 486.83933119082207
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "그리드길이",
+        "Id": "864f490be1814a559df2517c867a0dd6",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 550.40233874382352,
+        "Y": 349.00616332345345
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "그리드간격",
+        "Id": "35549690ebf244099de97ef6d3c0208f",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 546.42074572872411,
+        "Y": 428.63802362544681
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "x축그리드갯수",
+        "Id": "8146661db3ea4bcbaa83f488b8cd7951",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 455.83950463520682,
+        "Y": 515.23767170386441
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "y축그리드갯수",
+        "Id": "a17db5c27e504774959cc61141307082",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 464.47524945743316,
+        "Y": 589.98457566148477
+      }
+    ],
+    "Annotations": [],
+    "X": -31.742408702749913,
+    "Y": 95.3193785018002,
+    "Zoom": 0.8036984161526366
+  }
+}
