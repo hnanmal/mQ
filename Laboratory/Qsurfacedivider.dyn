@@ -11,363 +11,9 @@
       }
     }
   },
-  "Inputs": [
-    {
-      "Id": "864f490be1814a559df2517c867a0dd6",
-      "Name": "그리드길이",
-      "Type": "number",
-      "Value": "50000",
-      "NumberType": "Double",
-      "Description": "Creates a number."
-    },
-    {
-      "Id": "35549690ebf244099de97ef6d3c0208f",
-      "Name": "그리드간격",
-      "Type": "number",
-      "Value": "6000",
-      "NumberType": "Double",
-      "Description": "Creates a number."
-    },
-    {
-      "Id": "8146661db3ea4bcbaa83f488b8cd7951",
-      "Name": "x축그리드갯수",
-      "Type": "number",
-      "Value": "5",
-      "MaximumValue": 100.0,
-      "MinimumValue": 0.0,
-      "StepValue": 1.0,
-      "NumberType": "Integer",
-      "Description": "A slider that produces integer values."
-    },
-    {
-      "Id": "a17db5c27e504774959cc61141307082",
-      "Name": "y축그리드갯수",
-      "Type": "number",
-      "Value": "5",
-      "MaximumValue": 100.0,
-      "MinimumValue": 0.0,
-      "StepValue": 1.0,
-      "NumberType": "Integer",
-      "Description": "A slider that produces integer values."
-    }
-  ],
+  "Inputs": [],
   "Outputs": [],
   "Nodes": [
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nrepeatFuncApply = IN[0][0]\r\ncreate_horizonLine = IN[0][1]\r\ncreate_verticalLine = IN[0][2]\r\ncurveOffset = IN[0][3]\r\nmulti = IN[0][4]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ngridlength = IN[1]\r\ndist = IN[2]\r\nrepeat_X = IN[3]\r\nrepeat_Y = IN[4]\r\n# Place your code below this line\r\nendptX = Point.ByCoordinates(0,gridlength,0)\r\nendptY = Point.ByCoordinates(gridlength,0,0)\r\n\r\nline_primeX = create_horizonLine(endptX)\r\nline_primeY = create_verticalLine(endptY)\r\n\r\nlineforX = repeatFuncApply(lambda x: curveOffset(x, dist), repeat_X, line_primeX)\r\nlineforY = repeatFuncApply(lambda x: curveOffset(x, -dist), repeat_Y, line_primeY)\r\n\r\ngrid_X = list(map(lambda x: x.ToRevitType(), lineforX))\r\ngrid_Y = list(map(lambda x: x.ToRevitType(), lineforY))\r\ngrid = grid_X + grid_Y\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\ngridAll = list(map(lambda x: Autodesk.Revit.DB.Grid.Create(doc, x), grid))\r\nTransactionManager.Instance.TransactionTaskDone()\r\n#result = [line_primeX, line_primeY]\r\nresult = gridAll\r\n# Assign your output to the OUT variable.\r\nOUT = result",
-      "Engine": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "f1bd5515ba42499fb58e1d8c29810381",
-      "Inputs": [
-        {
-          "Id": "9b31a4b695d14a4c885a7e6e375094eb",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "ce50d66bb9a7438eb647c4c788eeb702",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "951ef528aa8244899c8ab8914106e059",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "cae302f566e044549f08e0359232cde1",
-          "Name": "IN[3]",
-          "Description": "Input #3",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "19f95675653043909cf4eea17cd425b9",
-          "Name": "IN[4]",
-          "Description": "Input #4",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "7e0f1b165a1f49708a2810b34bf13987",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef multiply_mk(a,b):\r\n    return a * b\r\n\r\n\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nmultiply_mk\r\n]\t\r\n# Assign your output to the OUT variable.\r\nOUT = result",
-      "Engine": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "128a05c5cbd24a93b96027ca88c32a3c",
-      "Inputs": [
-        {
-          "Id": "cf30825c4ff7439caa6751c908b5b8dc",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "1ac3e2356ed04684b63fc4aee3ca9fb1",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "그리드길이;\n그리드간격;\nx축그리드갯수;\ny축그리드갯수;",
-      "Id": "6aa5f63e50bd498b95af666fcbe67117",
-      "Inputs": [
-        {
-          "Id": "07081c0f24f74caab4a749a0e7520663",
-          "Name": "그리드길이",
-          "Description": "그리드길이",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "4f285044f78e49149d98463c390d2405",
-          "Name": "그리드간격",
-          "Description": "그리드간격",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "ad93cb4fc2324ffc9928b521cf48950d",
-          "Name": "x축그리드갯수",
-          "Description": "x축그리드갯수",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "bd8666566293410d9211bb1817036ca7",
-          "Name": "y축그리드갯수",
-          "Description": "y축그리드갯수",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "f44ae5e46abd4207a5778b8c700537e8",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "fe305d350ca4407abc847c046f750634",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b6ca9f741a25406f9047a43070d9ca8c",
-          "Name": "",
-          "Description": "Value of expression at line 3",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "92dc93f96fce4a4bb1ddfc4fb2d69210",
-          "Name": "",
-          "Description": "Value of expression at line 4",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
-      "NodeType": "NumberInputNode",
-      "NumberType": "Double",
-      "InputValue": 50000.0,
-      "Id": "864f490be1814a559df2517c867a0dd6",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "49c91128f3fc4785bc7a2c9126f1188b",
-          "Name": "",
-          "Description": "Double",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Creates a number."
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
-      "NodeType": "NumberInputNode",
-      "NumberType": "Double",
-      "InputValue": 6000.0,
-      "Id": "35549690ebf244099de97ef6d3c0208f",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "78dbba6794794be5afeed74dd530a41b",
-          "Name": "",
-          "Description": "Double",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Creates a number."
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
-      "NodeType": "NumberInputNode",
-      "NumberType": "Integer",
-      "InputValue": 5,
-      "MaximumValue": 100,
-      "MinimumValue": 0,
-      "StepValue": 1,
-      "Id": "8146661db3ea4bcbaa83f488b8cd7951",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "9cf2396220b84c00a6360a3e1624b529",
-          "Name": "",
-          "Description": "Int64",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "A slider that produces integer values."
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
-      "NodeType": "NumberInputNode",
-      "NumberType": "Integer",
-      "InputValue": 5,
-      "MaximumValue": 100,
-      "MinimumValue": 0,
-      "StepValue": 1,
-      "Id": "a17db5c27e504774959cc61141307082",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "7e68fc458beb4521b52505b749ead34d",
-          "Name": "",
-          "Description": "Int64",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "A slider that produces integer values."
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nrepeatFuncApply = IN[0][0]\r\ncreate_horizonLine = IN[0][1]\r\ncreate_verticalLine = IN[0][2]\r\ncurveOffset = IN[0][3]\r\nrange_q = IN[0][4]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputSrf = IN[1]\r\n\r\n# Place your code below this line\r\n\r\n\r\nresult = inputSrf.PointAtParameter(0.5, 0.5)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
-      "Engine": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "68f4b34788da446296ec7d62156a293e",
-      "Inputs": [
-        {
-          "Id": "f7fa4009d6c14f688d5e83c5c253e638",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "1cf63011632743a2a935b1f1af76e9aa",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "ad7e1c285cb0450bb15c69b3d506aff3",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
@@ -876,7 +522,7 @@
       "MaximumValue": 999.0,
       "MinimumValue": 0.0,
       "StepValue": 1.0,
-      "InputValue": 138.0,
+      "InputValue": 147.0,
       "Id": "b96141fb2668459c8d541267f04f503f",
       "Inputs": [],
       "Outputs": [
@@ -985,7 +631,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef range_q(start, end, num):\r\n    result = [start]\r\n    between = num - 1\r\n    gap = end - start\r\n    step = gap / between\r\n    for i in range(num):\r\n        if i == 0:\r\n            pass\r\n        else:\r\n            target = start + step * i\r\n            result.append(target)\r\n    return result\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nrange_q\r\n]\t\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef range_q(start, end, num):\r\n    result = [start]\r\n    between = num - 1\r\n    gap = end - start\r\n    step = gap / between\r\n    for i in range(num):\r\n        if i == 0:\r\n            pass\r\n        else:\r\n            target = start + step * i\r\n            result.append(target)\r\n    return result\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nConvexHull_Maker,\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nrange_q\r\n]\t\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "e70e673008604f609332470db2e29599",
@@ -1013,54 +659,1092 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "100;",
+      "Id": "ef0b8232eab4477ca27d10f2df2ead64",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a7ca4266186c4313a1e9e40bb6606b56",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "1500;\n1500;",
+      "Id": "f7dd4f0392e84546808a8625bf1c8e07",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a0a3e91287aa47d09cf576faa19001af",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a9294001af2a4c35b9a949888d843ead",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Rectangle.ByWidthLength@double,double",
+      "Id": "e7188c7e06a5424f8205ed461261a0d3",
+      "Inputs": [
+        {
+          "Id": "561d1ae04b6b43b3b009244cc07fddce",
+          "Name": "width",
+          "Description": "double\nDefault value : 1",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9ab2741597144c9289dcea93738c3160",
+          "Name": "length",
+          "Description": "double\nDefault value : 1",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a57888fe4ec046c19314b0ca71e60190",
+          "Name": "Rectangle",
+          "Description": "Rectangle",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Create a Rectangle centered at the WCS origin in the WCS XY Plane, with specified width (X Axis length), and length (Y Axis length).\n\nRectangle.ByWidthLength (width: double = 1, length: double = 1): Rectangle"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "MaximumValue": 10000.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "InputValue": 4627.0,
+      "Id": "eac0a2b1b0724064913c367d1ca73afd",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "7bb33121b96c45d58c2b28cf35b4f197",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces numeric values."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "다각형생성범위_커브;\n랜덤_시드;\n샘플링_크기;",
+      "Id": "ae7f587370954a16882adfdeac3658c7",
+      "Inputs": [
+        {
+          "Id": "12751831e760426c8aba8189465c2c04",
+          "Name": "다각형생성범위_커브",
+          "Description": "다각형생성범위_커브",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1c88543dcb3a49f8b61e7587e6be5960",
+          "Name": "랜덤_시드",
+          "Description": "랜덤_시드",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c12257042bd34236afefb679bd194dd1",
+          "Name": "샘플링_크기",
+          "Description": "샘플링_크기",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "94886eac4f954c28bac85b585a821b4b",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fa0e3c5987dc4d8881d25a9a7a91adb8",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e3ed45b853a3470e848c6833e854fea1",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nConvexHull_Maker = IN[0][0]\r\nrepeatFuncApply = IN[0][1]\r\ncreate_horizonLine = IN[0][2]\r\ncreate_verticalLine = IN[0][3]\r\ncurveOffset = IN[0][4]\r\nrange_q = IN[0][5]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputCrv = IN[1]\r\nrandomSeed = IN[2]\r\nsampling = IN[3]\r\n\r\n# Place your code below this line\r\nSrfByInputCrv = Surface.ByPatch(inputCrv)\r\ngridParam = range_q(0,1,100)\r\n\r\ngridPts = list(\r\n            map(lambda x: \r\n                map(lambda y: SrfByInputCrv.PointAtParameter(x, y), gridParam), gridParam))\r\ngridPts_flatten = list(itertools.chain(*gridPts))\r\ngridPts_filtered = list(filter(lambda x: x.DoesIntersect(SrfByInputCrv), gridPts_flatten))\r\nrandom.seed(randomSeed)\r\ngridPts_Sampled = random.sample(gridPts_filtered, sampling)\r\ncvxCrv = ConvexHull_Maker(gridPts_Sampled).result\r\ncvxSrf = Surface.ByPatch(cvxCrv)\r\ncvxSolid = cvxSrf.Thicken(30, False)\r\n\r\nresult = cvxSolid\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "c4d165bcf6cb4dcd84fa8cb1f1958814",
+      "Inputs": [
+        {
+          "Id": "bc79869d9d454a718ece74df506732e6",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5f17c067b6784fc3b2409169ba9fb56e",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8fbcdc6cf6c04b6c9b97422d42f81ee7",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5da09f1b348644a0835a2761a88f640d",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "723fcd82e6e344a9b1310621a9b05d9d",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef range_q(start, end, num):\r\n    result = [start]\r\n    between = num - 1\r\n    gap = end - start\r\n    step = gap / between\r\n    for i in range(num):\r\n        if i == 0:\r\n            pass\r\n        else:\r\n            target = start + step * i\r\n            result.append(target)\r\n    return result\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nConvexHull_Maker,\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nrange_q\r\n]\t\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "552c88f8dd0040b59a4c0e2bc2583e10",
+      "Inputs": [
+        {
+          "Id": "35879f208118494aaf5fab55bd9fc09f",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d9f14eaef9aa4db6804965d2b3593edd",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "30;",
+      "Id": "29babae3d84b47bab1d97b218bcdcb1f",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "6a55b8e37c8746b49c871746e5c94c63",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "MaximumValue": 10000.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "InputValue": 5014.0,
+      "Id": "2d9a2354fa01446992b4f037a06c3f5b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "de920da9adc841729fbb2703f0158072",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces numeric values."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "다각형생성범위_커브;\n랜덤_시드;\n샘플링_크기;",
+      "Id": "e493d5ed1a404cd2a8d080b457264c78",
+      "Inputs": [
+        {
+          "Id": "63d65a460d0a4a8998a4e8686afe2633",
+          "Name": "다각형생성범위_커브",
+          "Description": "다각형생성범위_커브",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "db4bc933c31544b4983f2d9795f8d2eb",
+          "Name": "랜덤_시드",
+          "Description": "랜덤_시드",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f8ccb7f2852f4cc9b78cd33b6b2ab098",
+          "Name": "샘플링_크기",
+          "Description": "샘플링_크기",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ceb0aaad99df49aaa7dbf5350b053eb5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d7412494d16a4c32a29822110c679fb5",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ac11fcb0ab8a484395e16f203c5ade12",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.Explode",
+      "Id": "e8f0fc2e6cbd4842acd01a84d0147cc6",
+      "Inputs": [
+        {
+          "Id": "e3ce0973be28482ca412bbb16823d864",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "95b66e5422ff40d7b945d8f3ef4786f7",
+          "Name": "Geometry[]",
+          "Description": "Geometry[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Separates compound or non-separated elements into their component parts.\n\nGeometry.Explode ( ): Geometry[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "404f13e0c84b405eb678930a1263ca06",
+      "Inputs": [
+        {
+          "Id": "70e64012b38d48a6aac07ee03568e905",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f1f9c81d6f96454e8000b3aebe6995c2",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.PerimeterCurves",
+      "Id": "b9df159e35424dc082f5a60ba4fe96e7",
+      "Inputs": [
+        {
+          "Id": "28267c1a8ed2456690e196dabd52728f",
+          "Name": "surface",
+          "Description": "Autodesk.DesignScript.Geometry.Surface",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7ee3c42ded5745dfbfc581be49f5f2b3",
+          "Name": "Curve[]",
+          "Description": "Curve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Return all the boundary Curves of the Surface.\n\nSurface.PerimeterCurves ( ): Curve[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.PolyCurve.ByJoinedCurves@Autodesk.DesignScript.Geometry.Curve[],double",
+      "Id": "9a4c6e819306400b8dbc30ce5664314c",
+      "Inputs": [
+        {
+          "Id": "3476b9105b864039a8b59ec0ae09a78d",
+          "Name": "curves",
+          "Description": "Curves to join into polycurve\n\nCurve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0448dbed8b49489f9598826e611cb95d",
+          "Name": "joinTolerance",
+          "Description": "Tolerance to determine size of gap allowed between curves to be joined\n\ndouble\nDefault value : 0.001",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "adce9e94fa5446c0bd1e789d90924f9b",
+          "Name": "PolyCurve",
+          "Description": "PolyCurve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Make PolyCurve by joining curves. Flips curve as needed for connectivity. Choose a preferred join tolerance between 1e-6 and 1e-3 units.\n\nPolyCurve.ByJoinedCurves (curves: Curve[], joinTolerance: double = 0.001): PolyCurve"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.DoesIntersect@Autodesk.DesignScript.Geometry.Geometry",
+      "Id": "c2b217af53bc48b2a4a22b8524839319",
+      "Inputs": [
+        {
+          "Id": "cdd57a0017734b2ba5f6fbf8bedc7c36",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "36d3ff7b68ea40f7a90ec92658774674",
+          "Name": "other",
+          "Description": "Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b4050da324be4746897fde04bc502fcb",
+          "Name": "bool",
+          "Description": "bool",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Determine if another Geometry object intersects with this one\n\nGeometry.DoesIntersect (other: Geometry): bool"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nConvexHull_Maker = IN[0][0]\r\nrepeatFuncApply = IN[0][1]\r\ncreate_horizonLine = IN[0][2]\r\ncreate_verticalLine = IN[0][3]\r\ncurveOffset = IN[0][4]\r\nrange_q = IN[0][5]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputCrv = IN[1]\r\nrandomSeed = IN[2]\r\nsampling = IN[3]\r\n\r\n# Place your code below this line\r\nSrfByInputCrv = Surface.ByPatch(inputCrv)\r\ngridParam = range_q(0,1,100)\r\n\r\ngridPts = list(\r\n            map(lambda x: \r\n                map(lambda y: SrfByInputCrv.PointAtParameter(x, y), gridParam), gridParam))\r\ngridPts_flatten = list(itertools.chain(*gridPts))\r\ngridPts_filtered = list(filter(lambda x: x.DoesIntersect(SrfByInputCrv), gridPts_flatten))\r\nrandom.seed(randomSeed)\r\ngridPts_Sampled = random.sample(gridPts_filtered, sampling)\r\ncvxCrv = ConvexHull_Maker(gridPts_Sampled).result\r\ncvxSrf = Surface.ByPatch(cvxCrv)\r\ncvxSolid = cvxSrf.Thicken(30, False)\r\n\r\nresult = cvxSolid\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "f5ccfc22a1bc4b8e9d284a0c9aee8a32",
+      "Inputs": [
+        {
+          "Id": "71e80f2ded3b4702872f5a22d1550884",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "07556a0537c141faaea376ff24688129",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "60684f71c1ed45b98ce5f87aa06b4953",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0005363eba4541e39530635bdacdd074",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "82fc40d1ece341d5a49723d6549f6af6",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.Explode",
+      "Id": "25fa6fc7993145ccbe2bda3c0c3a4dbf",
+      "Inputs": [
+        {
+          "Id": "e3f072959dec486789900b295ca97050",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "129f97ef7c1940009950385ce4127cc2",
+          "Name": "Geometry[]",
+          "Description": "Geometry[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Separates compound or non-separated elements into their component parts.\n\nGeometry.Explode ( ): Geometry[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "5d3b2d52416047d79f37b1ed132c823b",
+      "Inputs": [
+        {
+          "Id": "e2d82bfcbf684af7bc5048ce21653de2",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c3077e099ba3439aaf61691853a43bb7",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.PerimeterCurves",
+      "Id": "5ebe46bb52f94996be2867badec94429",
+      "Inputs": [
+        {
+          "Id": "57b769a8f0444932abfa1661eae753cc",
+          "Name": "surface",
+          "Description": "Autodesk.DesignScript.Geometry.Surface",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6f0a025c7f004ff185e63dda7d8f8f13",
+          "Name": "Curve[]",
+          "Description": "Curve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Return all the boundary Curves of the Surface.\n\nSurface.PerimeterCurves ( ): Curve[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.PolyCurve.ByJoinedCurves@Autodesk.DesignScript.Geometry.Curve[],double",
+      "Id": "913a04b424c0442c899e2c7f7f88a478",
+      "Inputs": [
+        {
+          "Id": "b4a5c9d0e9714ae1bd150fc1237d4e7c",
+          "Name": "curves",
+          "Description": "Curves to join into polycurve\n\nCurve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "adb4467859014bd98e365268085f92e9",
+          "Name": "joinTolerance",
+          "Description": "Tolerance to determine size of gap allowed between curves to be joined\n\ndouble\nDefault value : 0.001",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "555ebb69d7a147cc874f92ba4b750877",
+          "Name": "PolyCurve",
+          "Description": "PolyCurve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Make PolyCurve by joining curves. Flips curve as needed for connectivity. Choose a preferred join tolerance between 1e-6 and 1e-3 units.\n\nPolyCurve.ByJoinedCurves (curves: Curve[], joinTolerance: double = 0.001): PolyCurve"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "20;",
+      "Id": "68e2283506974e3085b2c0dee256d3e4",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "4d5a539feccb4fdc988c961d0f502e82",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "MaximumValue": 10000.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "InputValue": 4303.0,
+      "Id": "36b780763dd244ff9bb98c1e3c99398b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "88ca085fd43a41e5a81dd3ea61606b0d",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces numeric values."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\nclass ConvexHull_Maker:\r\n    def __init__(self, points):\r\n        def convex_hull_graham(points):\r\n            def ToVals(pt):\r\n\t            return [pt.X,pt.Y,pt.Z]\r\n            def ToPts(ptVals):\r\n\t            return Point.ByCoordinates(ptVals[0],ptVals[1],ptVals[2])\r\n\t           \r\n            def CreateOutline(pts):\r\n                crvs = []\r\n                i = 0\r\n                while i < len(pts):\r\n                    if i == len(pts)-1:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[0]))\r\n                    else:\r\n                        crvs.append(Line.ByStartPointEndPoint(pts[i],pts[i+1]))\r\n                    i = i+1\r\n                return PolyCurve.ByJoinedCurves(crvs)\r\n\t\r\n            TURN_LEFT, TURN_RIGHT, TURN_NONE = (1, -1, 0)\r\n\r\n            def cmp(a, b):\r\n                return (a > b) - (a < b)\r\n\t\r\n            def turn(p, q, r):\r\n                return cmp((q[0] - p[0])*(r[1] - p[1]) - (r[0] - p[0])*(q[1] - p[1]), 0)\r\n\t\r\n            def _keep_left(hull, r):\r\n                while len(hull) > 1 and turn(hull[-2], hull[-1], r) != TURN_LEFT:\r\n                    hull.pop()\r\n                if not len(hull) or hull[-1] != r:\r\n                    hull.append(r)\r\n                return hull\r\n\r\n            points = [ToVals(p) for p in points]\t\r\n            points = sorted(points)\r\n            l = reduce(_keep_left, points, [])\r\n            u = reduce(_keep_left, reversed(points), [])\r\n            points = l.extend(u[i] for i in range(1, len(u) - 1)) or l\r\n            points = [ToPts(p) for p in points]\r\n            return CreateOutline(points)\r\n            \r\n        self.points = points\r\n        result = convex_hull_graham(points)\r\n        self.result = result\r\n\r\ndef repeatFuncApply(func, repeat, data_input):\r\n    result = []\r\n    input_forFunc = data_input\r\n    while repeat != 0:\r\n        result.append(func(input_forFunc))\r\n        input_forFunc = func(input_forFunc)\r\n        repeat = repeat - 1\r\n    return result\r\n\r\ndef create_horizonLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef create_verticalLine(endpt):\r\n    sttpt = Point.ByCoordinates(0,0,0)\r\n    line_prime = Line.ByStartPointEndPoint(sttpt, endpt)\r\n    return line_prime\r\n    \r\ndef curveOffset(elem, dist):\r\n    result = Curve.Offset(elem, dist)\r\n    return result\r\n    \r\ndef range_q(start, end, num):\r\n    result = [start]\r\n    between = num - 1\r\n    gap = end - start\r\n    step = gap / between\r\n    for i in range(num):\r\n        if i == 0:\r\n            pass\r\n        else:\r\n            target = start + step * i\r\n            result.append(target)\r\n    return result\r\n\r\n\r\n\r\n##########################################################\r\nresult = [\r\nConvexHull_Maker,\r\nrepeatFuncApply,\r\ncreate_horizonLine,\r\ncreate_verticalLine,\r\ncurveOffset,\r\nrange_q\r\n]\t\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "5a674487998b4fab9825b1a9f6ad2184",
+      "Inputs": [
+        {
+          "Id": "da1a52c687824d45b104a0ac8b8cb95c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "34d47ecfd0214eb0b0ae10209dec331d",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "다각형생성범위_커브;\n랜덤_시드;\n샘플링_크기;",
+      "Id": "e565ffc86701482a84765ab46a4b2c9e",
+      "Inputs": [
+        {
+          "Id": "50455d20c942422a8d5f033b67eb6cda",
+          "Name": "다각형생성범위_커브",
+          "Description": "다각형생성범위_커브",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d4b2e1cb6c094a8b81b59fe64c42f7c8",
+          "Name": "랜덤_시드",
+          "Description": "랜덤_시드",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f1009297e72d4086956af476222ce5ad",
+          "Name": "샘플링_크기",
+          "Description": "샘플링_크기",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4969eedbd17549329f05eda512ad7982",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "3c831a9a8fa74ef4ba667918a6b6f870",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "141e66e6fa0245e7b45db82bae43f9d4",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\n\r\n############################################################\r\n############### Function Import part - start ###############\r\nConvexHull_Maker = IN[0][0]\r\nrepeatFuncApply = IN[0][1]\r\ncreate_horizonLine = IN[0][2]\r\ncreate_verticalLine = IN[0][3]\r\ncurveOffset = IN[0][4]\r\nrange_q = IN[0][5]\r\n############### Function Import part - end #################\r\n############################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputCrv = IN[1]\r\nrandomSeed = IN[2]\r\nsampling = IN[3]\r\n\r\n# Place your code below this line\r\nSrfByInputCrv = Surface.ByPatch(inputCrv)\r\ngridParam = range_q(0,1,100)\r\n\r\ngridPts = list(\r\n            map(lambda x: \r\n                map(lambda y: SrfByInputCrv.PointAtParameter(x, y), gridParam), gridParam))\r\ngridPts_flatten = list(itertools.chain(*gridPts))\r\ngridPts_filtered = list(filter(lambda x: x.DoesIntersect(SrfByInputCrv), gridPts_flatten))\r\nrandom.seed(randomSeed)\r\ngridPts_Sampled = random.sample(gridPts_filtered, sampling)\r\ncvxCrv = ConvexHull_Maker(gridPts_Sampled).result\r\ncvxSrf = Surface.ByPatch(cvxCrv)\r\ncvxSolid = cvxSrf.Thicken(30, False)\r\n\r\nresult = cvxSolid\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "3e11bd46f6474ad8911eedada223d473",
+      "Inputs": [
+        {
+          "Id": "693b337998da45bb99a4e72af7299808",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f75098086576448e8ed7c6844c46bfe6",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9380aae58a3b4f7e94d4b00a3a57107a",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "bcf483e9d64248fbaa9ca6cc554842e7",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e279b511257d4e03a28c2ad8a5193102",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
+      "FunctionSignature": "DSCore.List.Join@var[]..[]",
+      "FunctionType": "VariableArgument",
+      "NodeType": "FunctionNode",
+      "Id": "d61ad6f8164049c198b5fbf1b3e0cf10",
+      "Inputs": [
+        {
+          "Id": "bc1cb5f95e214930b61ade49cddf373f",
+          "Name": "list0",
+          "Description": "Lists to join into one.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2b75408ea1fc400c8733b4647cc23875",
+          "Name": "list1",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6653d8b6af964d6296464096d49a5d51",
+          "Name": "list2",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e201728ebb244d50b04ef3237d88f9e7",
+          "Name": "list",
+          "Description": "Joined list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Concatenates all given lists into a single list.\n\nList.Join (lists: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.DirectShape.ByGeometry@Autodesk.DesignScript.Geometry.Geometry,Revit.Elements.Category,Revit.Elements.Material,string",
+      "Id": "cbe0e0f31fdf48b4894fa4522ce9c604",
+      "Inputs": [
+        {
+          "Id": "51863ee14f6c4930a4fc62d09c522c08",
+          "Name": "geometry",
+          "Description": "A Solid or Surface that will be tessellated and placed in the Revit model as a DirectShape\n\nGeometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b1768fbe8d7b4e39a22f75a946075e7c",
+          "Name": "category",
+          "Description": "Must be a top level Built-in Category\n\nCategory",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d831b09370fd4f3685d0e8b35743298f",
+          "Name": "material",
+          "Description": "A Material to apply to the faces of the DirectShape\n\nMaterial\nDefault value : Revit.Elements.DirectShape.DynamoPreviewMaterial",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7823c966acdc48e38146654d726e6e0a",
+          "Name": "name",
+          "Description": "A string name for the DirectShape\n\nstring\nDefault value : \"DirectShape\"",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "99dd13e525f541ed93d75501d4ea74c3",
+          "Name": "DirectShape",
+          "Description": "A DirectShape Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Create a Revit DirectShape given some geometry, a name for the shape, a Category, and Material. The geometry will be tessellated before being placed in the Revit model The category of a DirectShape cannot be changed after creation, so a new DirectShape will be generated if the category input is changed.\n\nDirectShape.ByGeometry (geometry: Geometry, category: Category, material: Material = Revit.Elements.DirectShape.DynamoPreviewMaterial, name: string = \"DirectShape\"): DirectShape"
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 266,
+      "SelectedString": "OST_GenericModel",
+      "NodeType": "ExtensionNode",
+      "Id": "b89d2dd969634e07b60db77206a3d0dd",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c6b946990abc4085ad0734cf17756103",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Test1\";",
+      "Id": "2cc0cbfb4b234ff29a3ba667e4263268",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8a35e84d4cac454bb4b7aad53d3cb3fd",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
-    {
-      "Start": "1ac3e2356ed04684b63fc4aee3ca9fb1",
-      "End": "9b31a4b695d14a4c885a7e6e375094eb",
-      "Id": "aa83b06ee0104912b8eef5d4fcbffdf8"
-    },
-    {
-      "Start": "f44ae5e46abd4207a5778b8c700537e8",
-      "End": "ce50d66bb9a7438eb647c4c788eeb702",
-      "Id": "23514142f7664180bc1453886d5bd88b"
-    },
-    {
-      "Start": "fe305d350ca4407abc847c046f750634",
-      "End": "951ef528aa8244899c8ab8914106e059",
-      "Id": "f615dca46a4b4597a4a2eb1cf5ba8c6f"
-    },
-    {
-      "Start": "b6ca9f741a25406f9047a43070d9ca8c",
-      "End": "cae302f566e044549f08e0359232cde1",
-      "Id": "49bd43a26e8c4a019a694d918137ce99"
-    },
-    {
-      "Start": "92dc93f96fce4a4bb1ddfc4fb2d69210",
-      "End": "19f95675653043909cf4eea17cd425b9",
-      "Id": "576e96f1a70b47d2900fffd6eeb9fba6"
-    },
-    {
-      "Start": "49c91128f3fc4785bc7a2c9126f1188b",
-      "End": "07081c0f24f74caab4a749a0e7520663",
-      "Id": "4a1b5787112b4b0fa15a9a7d0ff13004"
-    },
-    {
-      "Start": "78dbba6794794be5afeed74dd530a41b",
-      "End": "4f285044f78e49149d98463c390d2405",
-      "Id": "92ef0f1b893641d8ba3c88f732df0949"
-    },
-    {
-      "Start": "9cf2396220b84c00a6360a3e1624b529",
-      "End": "ad93cb4fc2324ffc9928b521cf48950d",
-      "Id": "f68e7c36eb46472aacb9062fe7b25592"
-    },
-    {
-      "Start": "7e68fc458beb4521b52505b749ead34d",
-      "End": "bd8666566293410d9211bb1817036ca7",
-      "Id": "968d2fd634404b3483d0912efd4845ae"
-    },
     {
       "Start": "50ab653b2b56426abc795f3e984370f8",
       "End": "bf8542400b864b1b9c0cfbb33b902729",
@@ -1080,11 +1764,6 @@
       "Start": "fa2bf851bef5433593003b855d4121fc",
       "End": "0666be0a7c9441b8a8cf4ac8637f019a",
       "Id": "206fa45a012c41239e4eab9ab2c1ea10"
-    },
-    {
-      "Start": "fa2bf851bef5433593003b855d4121fc",
-      "End": "1cf63011632743a2a935b1f1af76e9aa",
-      "Id": "bb536c01dd804466b436a15ac3ae0c40"
     },
     {
       "Start": "ac3eb6ec50934506b080827aef75355d",
@@ -1173,13 +1852,200 @@
     },
     {
       "Start": "8d4490127cd44ab683923c0c4a19fd51",
-      "End": "f7fa4009d6c14f688d5e83c5c253e638",
-      "Id": "804caae802044088922f631802455c27"
+      "End": "71e80f2ded3b4702872f5a22d1550884",
+      "Id": "c1515a80f9b940df924afc91be892ba5"
+    },
+    {
+      "Start": "a7ca4266186c4313a1e9e40bb6606b56",
+      "End": "c12257042bd34236afefb679bd194dd1",
+      "Id": "c5a9aaa43f094594938fe06ae5f08ccd"
+    },
+    {
+      "Start": "a0a3e91287aa47d09cf576faa19001af",
+      "End": "9ab2741597144c9289dcea93738c3160",
+      "Id": "bb8bde42cac54f2eb6fed147c1cc1971"
+    },
+    {
+      "Start": "a9294001af2a4c35b9a949888d843ead",
+      "End": "561d1ae04b6b43b3b009244cc07fddce",
+      "Id": "7de6824138af471bb1fc841f11892cd4"
+    },
+    {
+      "Start": "a57888fe4ec046c19314b0ca71e60190",
+      "End": "12751831e760426c8aba8189465c2c04",
+      "Id": "3b140112531b4c579ed009b740479e3d"
+    },
+    {
+      "Start": "7bb33121b96c45d58c2b28cf35b4f197",
+      "End": "1c88543dcb3a49f8b61e7587e6be5960",
+      "Id": "8f3f56655423406c85c265bfd84fa7db"
+    },
+    {
+      "Start": "94886eac4f954c28bac85b585a821b4b",
+      "End": "07556a0537c141faaea376ff24688129",
+      "Id": "ee7664925d054b87a29413949ec0d325"
+    },
+    {
+      "Start": "fa0e3c5987dc4d8881d25a9a7a91adb8",
+      "End": "60684f71c1ed45b98ce5f87aa06b4953",
+      "Id": "dec4eeec061142cdb9dbd926f6f2f7f3"
+    },
+    {
+      "Start": "e3ed45b853a3470e848c6833e854fea1",
+      "End": "0005363eba4541e39530635bdacdd074",
+      "Id": "c2d081b316874c95b4fd230255040356"
+    },
+    {
+      "Start": "723fcd82e6e344a9b1310621a9b05d9d",
+      "End": "e3f072959dec486789900b295ca97050",
+      "Id": "258759773edc42c58825f4caffcc5a00"
+    },
+    {
+      "Start": "723fcd82e6e344a9b1310621a9b05d9d",
+      "End": "2b75408ea1fc400c8733b4647cc23875",
+      "Id": "c79d4d5aa9fc41609e2fd626a5d53fc3"
+    },
+    {
+      "Start": "d9f14eaef9aa4db6804965d2b3593edd",
+      "End": "bc79869d9d454a718ece74df506732e6",
+      "Id": "29e523ccceb542d0ba47630145f1f2ab"
+    },
+    {
+      "Start": "6a55b8e37c8746b49c871746e5c94c63",
+      "End": "f8ccb7f2852f4cc9b78cd33b6b2ab098",
+      "Id": "0da855d3580c46f3b354bd580ee9e8c1"
+    },
+    {
+      "Start": "de920da9adc841729fbb2703f0158072",
+      "End": "db4bc933c31544b4983f2d9795f8d2eb",
+      "Id": "c6ebdb180e0c4416b5ca5b2341ee604f"
+    },
+    {
+      "Start": "ceb0aaad99df49aaa7dbf5350b053eb5",
+      "End": "5f17c067b6784fc3b2409169ba9fb56e",
+      "Id": "a1fe69cae7fb4037a5b1e29f88c2d03f"
+    },
+    {
+      "Start": "d7412494d16a4c32a29822110c679fb5",
+      "End": "8fbcdc6cf6c04b6c9b97422d42f81ee7",
+      "Id": "335a26e768454207a924f479b9fe31a7"
+    },
+    {
+      "Start": "ac11fcb0ab8a484395e16f203c5ade12",
+      "End": "5da09f1b348644a0835a2761a88f640d",
+      "Id": "d9e6643b0f2f4f63a6c7e2493afd5a87"
+    },
+    {
+      "Start": "95b66e5422ff40d7b945d8f3ef4786f7",
+      "End": "70e64012b38d48a6aac07ee03568e905",
+      "Id": "e62d95d5515844dcb657c928abd3efdd"
+    },
+    {
+      "Start": "f1f9c81d6f96454e8000b3aebe6995c2",
+      "End": "28267c1a8ed2456690e196dabd52728f",
+      "Id": "dea0a8c798a04a88bf86c5737498140b"
+    },
+    {
+      "Start": "7ee3c42ded5745dfbfc581be49f5f2b3",
+      "End": "3476b9105b864039a8b59ec0ae09a78d",
+      "Id": "7994fd5cf8d346f292877df87527dc12"
+    },
+    {
+      "Start": "adce9e94fa5446c0bd1e789d90924f9b",
+      "End": "63d65a460d0a4a8998a4e8686afe2633",
+      "Id": "37ac698cdb224bf0a7ab7227a642bde8"
+    },
+    {
+      "Start": "82fc40d1ece341d5a49723d6549f6af6",
+      "End": "e3ce0973be28482ca412bbb16823d864",
+      "Id": "c4de960818a04665845d8df7b50ff850"
+    },
+    {
+      "Start": "82fc40d1ece341d5a49723d6549f6af6",
+      "End": "bc1cb5f95e214930b61ade49cddf373f",
+      "Id": "f6194d1235ab4432a7d6d02a6de30120"
+    },
+    {
+      "Start": "129f97ef7c1940009950385ce4127cc2",
+      "End": "e2d82bfcbf684af7bc5048ce21653de2",
+      "Id": "83b7739ee06b459c8ca4b60710c97ca1"
+    },
+    {
+      "Start": "c3077e099ba3439aaf61691853a43bb7",
+      "End": "57b769a8f0444932abfa1661eae753cc",
+      "Id": "020f55dad80c4fc4b9a4150c7833dcd5"
+    },
+    {
+      "Start": "6f0a025c7f004ff185e63dda7d8f8f13",
+      "End": "b4a5c9d0e9714ae1bd150fc1237d4e7c",
+      "Id": "367e0edf44804638bfa666b58f3e868e"
+    },
+    {
+      "Start": "555ebb69d7a147cc874f92ba4b750877",
+      "End": "50455d20c942422a8d5f033b67eb6cda",
+      "Id": "5d9c7973be4e4394aa2bcf489f8fbde2"
+    },
+    {
+      "Start": "4d5a539feccb4fdc988c961d0f502e82",
+      "End": "f1009297e72d4086956af476222ce5ad",
+      "Id": "2815e3d9ef3848e7bf0e90a8c9f65b34"
+    },
+    {
+      "Start": "88ca085fd43a41e5a81dd3ea61606b0d",
+      "End": "d4b2e1cb6c094a8b81b59fe64c42f7c8",
+      "Id": "b65a37a0d0b745419170a9db229c9332"
+    },
+    {
+      "Start": "34d47ecfd0214eb0b0ae10209dec331d",
+      "End": "693b337998da45bb99a4e72af7299808",
+      "Id": "aa0fa244d5f34251b4a242580aa9a1d5"
+    },
+    {
+      "Start": "4969eedbd17549329f05eda512ad7982",
+      "End": "f75098086576448e8ed7c6844c46bfe6",
+      "Id": "2236c38b9e86457499696774759a5b73"
+    },
+    {
+      "Start": "3c831a9a8fa74ef4ba667918a6b6f870",
+      "End": "9380aae58a3b4f7e94d4b00a3a57107a",
+      "Id": "327d28c02b0a4740bf5b721f8c594d9e"
+    },
+    {
+      "Start": "141e66e6fa0245e7b45db82bae43f9d4",
+      "End": "bcf483e9d64248fbaa9ca6cc554842e7",
+      "Id": "d779f5454b81497e870ed59262ace982"
+    },
+    {
+      "Start": "e279b511257d4e03a28c2ad8a5193102",
+      "End": "6653d8b6af964d6296464096d49a5d51",
+      "Id": "cac864666b354d69a77175716bc07ed1"
+    },
+    {
+      "Start": "e201728ebb244d50b04ef3237d88f9e7",
+      "End": "51863ee14f6c4930a4fc62d09c522c08",
+      "Id": "fe40d0f7718a493e9071cddaef090441"
+    },
+    {
+      "Start": "c6b946990abc4085ad0734cf17756103",
+      "End": "b1768fbe8d7b4e39a22f75a946075e7c",
+      "Id": "108a77408b6e4278bcbfb80562426dab"
+    },
+    {
+      "Start": "8a35e84d4cac454bb4b7aad53d3cb3fd",
+      "End": "7823c966acdc48e38146654d726e6e0a",
+      "Id": "b7a9d32650da4575a40e88cd5ce7ead7"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
-  "Bindings": [],
+  "Bindings": [
+    {
+      "NodeId": "cbe0e0f3-1fdf-48b4-894f-a4522ce9c604",
+      "Binding": {
+        "ByGeometry_InClassDecl-1_InFunctionScope-1_Instance1_cbe0e0f3-1fdf-48b4-894f-a4522ce9c604": "PFNPQVAtRU5WOkVudmVsb3BlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOlNPQVAtRU5DPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyIgeG1sbnM6U09BUC1FTlY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczpjbHI9Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vc29hcC9lbmNvZGluZy9jbHIvMS4wIiBTT0FQLUVOVjplbmNvZGluZ1N0eWxlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyI+DQo8U09BUC1FTlY6Qm9keT4NCjxhMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXIgaWQ9InJlZi0xIiB4bWxuczphMT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9jbHIvbnNhc3NlbS9Qcm90b0NvcmUvUHJvdG9Db3JlJTJDJTIwVmVyc2lvbiUzRDIuMTAuMS4zOTc2JTJDJTIwQ3VsdHVyZSUzRG5ldXRyYWwlMkMlMjBQdWJsaWNLZXlUb2tlbiUzRG51bGwiPg0KPE51bWJlck9mRWxlbWVudHM+MTwvTnVtYmVyT2ZFbGVtZW50cz4NCjxCYXNlLTBfSGFzRGF0YT5mYWxzZTwvQmFzZS0wX0hhc0RhdGE+DQo8QmFzZS0wX0hhc05lc3RlZERhdGE+dHJ1ZTwvQmFzZS0wX0hhc05lc3RlZERhdGE+DQo8QmFzZS0wX05lc3RlZERhdGFDb3VudD4zPC9CYXNlLTBfTmVzdGVkRGF0YUNvdW50Pg0KPEJhc2UtMC0wX0hhc0RhdGE+dHJ1ZTwvQmFzZS0wLTBfSGFzRGF0YT4NCjxCYXNlLTAtMF9EYXRhIGlkPSJyZWYtMyI+UEZOUFFWQXRSVTVXT2tWdWRtVnNiM0JsSUhodGJHNXpPbmh6YVQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0V0YVc1emRHRnVZMlVpSUhodGJHNXpPbmh6WkQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0VpSUhodGJHNXpPbE5QUVZBdFJVNURQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SWdlRzFzYm5NNlUwOUJVQzFGVGxZOUltaDBkSEE2THk5elkyaGxiV0Z6TG5odGJITnZZWEF1YjNKbkwzTnZZWEF2Wlc1MlpXeHZjR1V2SWlCNGJXeHVjenBqYkhJOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZjMjloY0M5bGJtTnZaR2x1Wnk5amJISXZNUzR3SWlCVFQwRlFMVVZPVmpwbGJtTnZaR2x1WjFOMGVXeGxQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SStEUW84VTA5QlVDMUZUbFk2UW05a2VUNE5DanhoTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsSUdsa1BTSnlaV1l0TVNJZ2VHMXNibk02WVRFOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZZMnh5TDI1ellYTnpaVzB2VW1WMmFYUXVSV3hsYldWdWRITXZVbVYyYVhST2IyUmxjeVV5UXlVeU1GWmxjbk5wYjI0bE0wUXlMakV3TGpFdU5EQXdNaVV5UXlVeU1FTjFiSFIxY21VbE0wUnVaWFYwY21Gc0pUSkRKVEl3VUhWaWJHbGpTMlY1Vkc5clpXNGxNMFJ1ZFd4c0lqNE5Danh6ZEhKcGJtZEpSQ0JwWkQwaWNtVm1MVE1pUGpBd1pESTNPVGswTFRVd09HTXRORFV4TVMxaU5HSTFMV0V4TlRreFpUZzBPVE5tTUMwd01EQTFOVE15Wmp3dmMzUnlhVzVuU1VRK0RRbzhhVzUwU1VRK016UTRPVGMxUEM5cGJuUkpSRDROQ2p4emVXNWpTV1FnYVdROUluSmxaaTAwSWo0MU1ERXhOMkV6WlMxbFkyUXlMVFJpWXpNdE9ERmpPUzB6Wm1Fek1UTXdZMkppWkRNOEwzTjVibU5KWkQ0TkNqeHRZWFJsY21saGJFbGtQak0wT0Rjd056d3ZiV0YwWlhKcFlXeEpaRDROQ2p3dllURTZSR2x5WldOMFUyaGhjR1ZUZEdGMFpUNE5Dand2VTA5QlVDMUZUbFk2UW05a2VUNE5Dand2VTA5QlVDMUZUbFk2Ulc1MlpXeHZjR1UrRFFvPTwvQmFzZS0wLTBfRGF0YT4NCjxCYXNlLTAtMF9IYXNOZXN0ZWREYXRhPmZhbHNlPC9CYXNlLTAtMF9IYXNOZXN0ZWREYXRhPg0KPEJhc2UtMC0xX0hhc0RhdGE+dHJ1ZTwvQmFzZS0wLTFfSGFzRGF0YT4NCjxCYXNlLTAtMV9EYXRhIGlkPSJyZWYtNCI+UEZOUFFWQXRSVTVXT2tWdWRtVnNiM0JsSUhodGJHNXpPbmh6YVQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0V0YVc1emRHRnVZMlVpSUhodGJHNXpPbmh6WkQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0VpSUhodGJHNXpPbE5QUVZBdFJVNURQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SWdlRzFzYm5NNlUwOUJVQzFGVGxZOUltaDBkSEE2THk5elkyaGxiV0Z6TG5odGJITnZZWEF1YjNKbkwzTnZZWEF2Wlc1MlpXeHZjR1V2SWlCNGJXeHVjenBqYkhJOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZjMjloY0M5bGJtTnZaR2x1Wnk5amJISXZNUzR3SWlCVFQwRlFMVVZPVmpwbGJtTnZaR2x1WjFOMGVXeGxQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SStEUW84VTA5QlVDMUZUbFk2UW05a2VUNE5DanhoTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsSUdsa1BTSnlaV1l0TVNJZ2VHMXNibk02WVRFOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZZMnh5TDI1ellYTnpaVzB2VW1WMmFYUXVSV3hsYldWdWRITXZVbVYyYVhST2IyUmxjeVV5UXlVeU1GWmxjbk5wYjI0bE0wUXlMakV3TGpFdU5EQXdNaVV5UXlVeU1FTjFiSFIxY21VbE0wUnVaWFYwY21Gc0pUSkRKVEl3VUhWaWJHbGpTMlY1Vkc5clpXNGxNMFJ1ZFd4c0lqNE5Danh6ZEhKcGJtZEpSQ0JwWkQwaWNtVm1MVE1pUGpBd1pESTNPVGswTFRVd09HTXRORFV4TVMxaU5HSTFMV0V4TlRreFpUZzBPVE5tTUMwd01EQTFOVE16TUR3dmMzUnlhVzVuU1VRK0RRbzhhVzUwU1VRK016UTRPVGMyUEM5cGJuUkpSRDROQ2p4emVXNWpTV1FnYVdROUluSmxaaTAwSWo1ak5XUXpZbVk1TXkwNE1UazBMVFExWW1JdE9UWTFOaTAwTjJSbE9HVXhaV0kzWkRROEwzTjVibU5KWkQ0TkNqeHRZWFJsY21saGJFbGtQak0wT0Rjd056d3ZiV0YwWlhKcFlXeEpaRDROQ2p3dllURTZSR2x5WldOMFUyaGhjR1ZUZEdGMFpUNE5Dand2VTA5QlVDMUZUbFk2UW05a2VUNE5Dand2VTA5QlVDMUZUbFk2Ulc1MlpXeHZjR1UrRFFvPTwvQmFzZS0wLTFfRGF0YT4NCjxCYXNlLTAtMV9IYXNOZXN0ZWREYXRhPmZhbHNlPC9CYXNlLTAtMV9IYXNOZXN0ZWREYXRhPg0KPEJhc2UtMC0yX0hhc0RhdGE+dHJ1ZTwvQmFzZS0wLTJfSGFzRGF0YT4NCjxCYXNlLTAtMl9EYXRhIGlkPSJyZWYtNSI+UEZOUFFWQXRSVTVXT2tWdWRtVnNiM0JsSUhodGJHNXpPbmh6YVQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0V0YVc1emRHRnVZMlVpSUhodGJHNXpPbmh6WkQwaWFIUjBjRG92TDNkM2R5NTNNeTV2Y21jdk1qQXdNUzlZVFV4VFkyaGxiV0VpSUhodGJHNXpPbE5QUVZBdFJVNURQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SWdlRzFzYm5NNlUwOUJVQzFGVGxZOUltaDBkSEE2THk5elkyaGxiV0Z6TG5odGJITnZZWEF1YjNKbkwzTnZZWEF2Wlc1MlpXeHZjR1V2SWlCNGJXeHVjenBqYkhJOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZjMjloY0M5bGJtTnZaR2x1Wnk5amJISXZNUzR3SWlCVFQwRlFMVVZPVmpwbGJtTnZaR2x1WjFOMGVXeGxQU0pvZEhSd09pOHZjMk5vWlcxaGN5NTRiV3h6YjJGd0xtOXlaeTl6YjJGd0wyVnVZMjlrYVc1bkx5SStEUW84VTA5QlVDMUZUbFk2UW05a2VUNE5DanhoTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsSUdsa1BTSnlaV1l0TVNJZ2VHMXNibk02WVRFOUltaDBkSEE2THk5elkyaGxiV0Z6TG0xcFkzSnZjMjltZEM1amIyMHZZMnh5TDI1ellYTnpaVzB2VW1WMmFYUXVSV3hsYldWdWRITXZVbVYyYVhST2IyUmxjeVV5UXlVeU1GWmxjbk5wYjI0bE0wUXlMakV3TGpFdU5EQXdNaVV5UXlVeU1FTjFiSFIxY21VbE0wUnVaWFYwY21Gc0pUSkRKVEl3VUhWaWJHbGpTMlY1Vkc5clpXNGxNMFJ1ZFd4c0lqNE5Danh6ZEhKcGJtZEpSQ0JwWkQwaWNtVm1MVE1pUGpBd1pESTNPVGswTFRVd09HTXRORFV4TVMxaU5HSTFMV0V4TlRreFpUZzBPVE5tTUMwd01EQTFOVE16TVR3dmMzUnlhVzVuU1VRK0RRbzhhVzUwU1VRK016UTRPVGMzUEM5cGJuUkpSRDROQ2p4emVXNWpTV1FnYVdROUluSmxaaTAwSWo1a056QTRNRFZqWXkweU5XSTVMVFExWVRNdFlqZzFPQzFsWXpnMVpqYzFNREl4TURFOEwzTjVibU5KWkQ0TkNqeHRZWFJsY21saGJFbGtQak0wT0Rjd056d3ZiV0YwWlhKcFlXeEpaRDROQ2p3dllURTZSR2x5WldOMFUyaGhjR1ZUZEdGMFpUNE5Dand2VTA5QlVDMUZUbFk2UW05a2VUNE5Dand2VTA5QlVDMUZUbFk2Ulc1MlpXeHZjR1UrRFFvPTwvQmFzZS0wLTJfRGF0YT4NCjxCYXNlLTAtMl9IYXNOZXN0ZWREYXRhPmZhbHNlPC9CYXNlLTAtMl9IYXNOZXN0ZWREYXRhPg0KPC9hMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXI+DQo8L1NPQVAtRU5WOkJvZHk+DQo8L1NPQVAtRU5WOkVudmVsb3BlPg0K"
+      }
+    }
+  ],
   "View": {
     "Dynamo": {
       "ScaleFactor": 10000.0,
@@ -1191,106 +2057,26 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 59.4080810546875,
-      "EyeY": 1626.2491455078125,
-      "EyeZ": 940.33343505859375,
-      "LookX": 64.8987045288086,
-      "LookY": -1734.197998046875,
-      "LookZ": -979.836669921875,
-      "UpX": 0.049190714955329895,
-      "UpY": 0.66783273220062256,
-      "UpZ": -0.74268418550491333
+      "EyeX": 28.323081970214844,
+      "EyeY": 967.73193359375,
+      "EyeZ": 971.78033447265625,
+      "LookX": -192.265869140625,
+      "LookY": -1130.409912109375,
+      "LookZ": -859.40863037109375,
+      "UpX": -0.13945764303207397,
+      "UpY": 0.76939964294433594,
+      "UpZ": -0.62335848808288574
     },
     "NodeViews": [
-      {
-        "ShowGeometry": true,
-        "Name": "퀵 그리드 메이커",
-        "Id": "f1bd5515ba42499fb58e1d8c29810381",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": 834.23246995549039,
-        "Y": 44.736151683827245
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "함수 라이브러리 (함수 임포트 용)",
-        "Id": "128a05c5cbd24a93b96027ca88c32a3c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 480.23246995549039,
-        "Y": -67.263848316172769
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "퀵 그리드 메이커 Input",
-        "Id": "6aa5f63e50bd498b95af666fcbe67117",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 480.23246995549039,
-        "Y": 87.589485017160484
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "그리드길이",
-        "Id": "864f490be1814a559df2517c867a0dd6",
-        "IsSetAsInput": true,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 81.232469955490387,
-        "Y": -15.623848316172825
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "그리드간격",
-        "Id": "35549690ebf244099de97ef6d3c0208f",
-        "IsSetAsInput": true,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 81.232469955490387,
-        "Y": 67.949485017160583
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "x축그리드갯수",
-        "Id": "8146661db3ea4bcbaa83f488b8cd7951",
-        "IsSetAsInput": true,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 81.232469955490387,
-        "Y": 151.52281835049388
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "y축그리드갯수",
-        "Id": "a17db5c27e504774959cc61141307082",
-        "IsSetAsInput": true,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 81.232469955490387,
-        "Y": 235.09615168382726
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "?",
-        "Id": "68f4b34788da446296ec7d62156a293e",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1497.4101724392526,
-        "Y": 1364.9718275132616
-      },
       {
         "ShowGeometry": false,
         "Name": "Rectangle.ByWidthLength",
         "Id": "36a0118f1ae04f6abef20cd456102308",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1194.1565082256411,
-        "Y": 943.44025970868722
+        "Excluded": true,
+        "X": 346.6864447764242,
+        "Y": -483.21792402682934
       },
       {
         "ShowGeometry": false,
@@ -1299,8 +2085,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1002.1565082256411,
-        "Y": 960.65359304202047
+        "X": 154.6864447764242,
+        "Y": -466.00459069349608
       },
       {
         "ShowGeometry": false,
@@ -1309,8 +2095,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1507.1565082256411,
-        "Y": 943.44025970868722
+        "X": 659.6864447764242,
+        "Y": -483.21792402682934
       },
       {
         "ShowGeometry": false,
@@ -1319,8 +2105,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1846.1565082256411,
-        "Y": 976.44025970868722
+        "X": 998.6864447764242,
+        "Y": -450.21792402682934
       },
       {
         "ShowGeometry": false,
@@ -1329,8 +2115,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1507.1565082256411,
-        "Y": 1052.6535930420205
+        "X": 659.6864447764242,
+        "Y": -374.00459069349608
       },
       {
         "ShowGeometry": false,
@@ -1339,8 +2125,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3459.1565082256411,
-        "Y": 749.63692637535382
+        "X": 2611.6864447764242,
+        "Y": -677.02125736016274
       },
       {
         "ShowGeometry": false,
@@ -1349,8 +2135,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3742.1463259255038,
-        "Y": 871.62674407521763
+        "X": 2894.6762624762869,
+        "Y": -555.03143966029893
       },
       {
         "ShowGeometry": false,
@@ -1359,8 +2145,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2142.1565082256411,
-        "Y": 923.24359304202051
+        "X": 1294.6864447764242,
+        "Y": -503.41459069349605
       },
       {
         "ShowGeometry": false,
@@ -1369,8 +2155,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3459.1565082256411,
-        "Y": 1029.6369263753538
+        "X": 2611.6864447764242,
+        "Y": -397.02125736016274
       },
       {
         "ShowGeometry": false,
@@ -1379,8 +2165,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3142.1565082256411,
-        "Y": 1059.8502597086872
+        "X": 2294.6864447764242,
+        "Y": -366.80792402682937
       },
       {
         "ShowGeometry": false,
@@ -1389,8 +2175,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3743.1565082256407,
-        "Y": 1018.6369263753538
+        "X": 2895.6864447764237,
+        "Y": -408.02125736016274
       },
       {
         "ShowGeometry": false,
@@ -1399,8 +2185,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3459.1565082256411,
-        "Y": 1164.8502597086872
+        "X": 2611.6864447764242,
+        "Y": -261.80792402682937
       },
       {
         "ShowGeometry": false,
@@ -1409,8 +2195,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2826.1565082256411,
-        "Y": 920.63692637535394
+        "X": 1978.6864447764242,
+        "Y": -506.02125736016262
       },
       {
         "ShowGeometry": false,
@@ -1419,8 +2205,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2427.1565082256411,
-        "Y": 956.06359304202056
+        "X": 1579.6864447764242,
+        "Y": -470.594590693496
       },
       {
         "ShowGeometry": false,
@@ -1429,8 +2215,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2427.1565082256411,
-        "Y": 1074.6369263753538
+        "X": 1579.6864447764242,
+        "Y": -352.02125736016274
       },
       {
         "ShowGeometry": false,
@@ -1439,8 +2225,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2427.1565082256411,
-        "Y": 847.8502597086873
+        "X": 1579.6864447764242,
+        "Y": -578.80792402682926
       },
       {
         "ShowGeometry": false,
@@ -1449,8 +2235,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3142.1565082256411,
-        "Y": 920.63692637535394
+        "X": 2294.6864447764242,
+        "Y": -506.02125736016262
       },
       {
         "ShowGeometry": false,
@@ -1459,8 +2245,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3459.1565082256411,
-        "Y": 894.63692637535394
+        "X": 2611.6864447764242,
+        "Y": -532.02125736016262
       },
       {
         "ShowGeometry": false,
@@ -1469,8 +2255,298 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1146.9147786711292,
-        "Y": 1136.0077498346657
+        "X": 1539.3862675619653,
+        "Y": 1214.5995822545779
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "샘플링 크기",
+        "Id": "ef0b8232eab4477ca27d10f2df2ead64",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1140.1862675619652,
+        "Y": 1401.3862489212447
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "f7dd4f0392e84546808a8625bf1c8e07",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 452.36935957332446,
+        "Y": 999.60392679806273
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Rectangle.ByWidthLength",
+        "Id": "e7188c7e06a5424f8205ed461261a0d3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 645.16935957332453,
+        "Y": 991.177260131396
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Seed",
+        "Id": "eac0a2b1b0724064913c367d1ca73afd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1140.1862675619652,
+        "Y": 1317.5995822545779
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "QgridPointsMaker & Random Polygon 생성기 Input",
+        "Id": "ae7f587370954a16882adfdeac3658c7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1539.3862675619653,
+        "Y": 1335.2395822545782
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "QgridPointsMaker & Random Polygon 생성기",
+        "Id": "c4d165bcf6cb4dcd84fa8cb1f1958814",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4282.6650266281995,
+        "Y": 1239.7803802991862
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "함수 라이브러리 (함수 임포트 용)",
+        "Id": "552c88f8dd0040b59a4c0e2bc2583e10",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3809.0650266282,
+        "Y": 1198.7803802991862
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "샘플링 크기",
+        "Id": "29babae3d84b47bab1d97b218bcdcb1f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3409.8650266281998,
+        "Y": 1385.567046965856
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Seed",
+        "Id": "2d9a2354fa01446992b4f037a06c3f5b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3409.8650266281998,
+        "Y": 1301.7803802991862
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "QgridPointsMaker & Random Polygon 생성기 Input",
+        "Id": "e493d5ed1a404cd2a8d080b457264c78",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3809.0650266282,
+        "Y": 1319.420380299186
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Geometry.Explode",
+        "Id": "e8f0fc2e6cbd4842acd01a84d0147cc6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2463.9733402420356,
+        "Y": 978.032896255962
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "404f13e0c84b405eb678930a1263ca06",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2746.3891722414633,
+        "Y": 980.98450371819672
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Surface.PerimeterCurves",
+        "Id": "b9df159e35424dc082f5a60ba4fe96e7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2893.2561798687461,
+        "Y": 981.91564913879733
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "PolyCurve.ByJoinedCurves",
+        "Id": "9a4c6e819306400b8dbc30ce5664314c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3207.6851072600361,
+        "Y": 983.91202328096415
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Geometry.DoesIntersect",
+        "Id": "c2b217af53bc48b2a4a22b8524839319",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2617.1668082683427,
+        "Y": 636.45227609809319
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "QgridPointsMaker & Random Polygon 생성기",
+        "Id": "f5ccfc22a1bc4b8e9d284a0c9aee8a32",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2012.9862675619652,
+        "Y": 1255.5995822545779
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Geometry.Explode",
+        "Id": "25fa6fc7993145ccbe2bda3c0c3a4dbf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4807.5398270383712,
+        "Y": 1032.7763926340756
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "5d3b2d52416047d79f37b1ed132c823b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5089.9556590377915,
+        "Y": 1035.7280000963106
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Surface.PerimeterCurves",
+        "Id": "5ebe46bb52f94996be2867badec94429",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5236.8226666650817,
+        "Y": 1036.6591455169107
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "PolyCurve.ByJoinedCurves",
+        "Id": "913a04b424c0442c899e2c7f7f88a478",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5551.2515940563708,
+        "Y": 1038.6555196590778
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "샘플링 크기",
+        "Id": "68e2283506974e3085b2c0dee256d3e4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5753.4315134245307,
+        "Y": 1440.3105433439734
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Seed",
+        "Id": "36b780763dd244ff9bb98c1e3c99398b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5753.4315134245307,
+        "Y": 1356.5238766773036
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "함수 라이브러리 (함수 임포트 용)",
+        "Id": "5a674487998b4fab9825b1a9f6ad2184",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6152.6315134245315,
+        "Y": 1253.5238766773036
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "QgridPointsMaker & Random Polygon 생성기 Input",
+        "Id": "e565ffc86701482a84765ab46a4b2c9e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6152.6315134245315,
+        "Y": 1374.1638766773035
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "QgridPointsMaker & Random Polygon 생성기",
+        "Id": "3e11bd46f6474ad8911eedada223d473",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6626.2315134245318,
+        "Y": 1294.5238766773036
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "List.Join",
+        "Id": "d61ad6f8164049c198b5fbf1b3e0cf10",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7613.2063719855068,
+        "Y": 1783.5565199855619
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "DirectShape.ByGeometry",
+        "Id": "cbe0e0f31fdf48b4894fa4522ce9c604",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": 7923.0990939323256,
+        "Y": 1898.753349459527
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Categories",
+        "Id": "b89d2dd969634e07b60db77206a3d0dd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7536.6518768424594,
+        "Y": 1964.4340877980853
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "2cc0cbfb4b234ff29a3ba667e4263268",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7599.0,
+        "Y": 2048.0
       }
     ],
     "Annotations": [
@@ -1497,19 +2573,79 @@
           "40c7e08243b44731bf110aeb0011db2b",
           "ee00faee415d49fc90ff7b9a6234f0e4"
         ],
-        "Left": 992.15650822564112,
-        "Top": 696.63692637535382,
+        "Left": 144.6864447764242,
+        "Top": -730.22125736016278,
         "Width": 2944.9999999999995,
-        "Height": 561.21333333333337,
+        "Height": 561.01333333333343,
         "FontSize": 36.0,
-        "InitialTop": 749.63692637535382,
+        "InitialTop": -677.02125736016274,
         "InitialHeight": 560.21333333333337,
-        "TextblockHeight": 43.0,
+        "TextblockHeight": 43.2,
         "Background": "#FFC1D676"
+      },
+      {
+        "Id": "5ee9c6211ddf46e1b65b8b2044193a49",
+        "Title": "QgridPointsMaker & Random Polygon 생성기",
+        "Nodes": [
+          "e70e673008604f609332470db2e29599",
+          "ef0b8232eab4477ca27d10f2df2ead64",
+          "eac0a2b1b0724064913c367d1ca73afd",
+          "ae7f587370954a16882adfdeac3658c7",
+          "f5ccfc22a1bc4b8e9d284a0c9aee8a32"
+        ],
+        "Left": 1130.1862675619652,
+        "Top": 1161.3995822545778,
+        "Width": 1229.6000000000001,
+        "Height": 332.58666666666682,
+        "FontSize": 36.0,
+        "InitialTop": 1214.5995822545779,
+        "InitialHeight": 309.38666666666654,
+        "TextblockHeight": 43.2,
+        "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "e8ebf92801034ebb9ec16d26b057e1c4",
+        "Title": "QgridPointsMaker & Random Polygon 생성기",
+        "Nodes": [
+          "c4d165bcf6cb4dcd84fa8cb1f1958814",
+          "552c88f8dd0040b59a4c0e2bc2583e10",
+          "29babae3d84b47bab1d97b218bcdcb1f",
+          "2d9a2354fa01446992b4f037a06c3f5b",
+          "e493d5ed1a404cd2a8d080b457264c78"
+        ],
+        "Left": 3399.8650266281998,
+        "Top": 1145.5803802991861,
+        "Width": 1229.6,
+        "Height": 332.58666666666977,
+        "FontSize": 36.0,
+        "InitialTop": 1198.7803802991862,
+        "InitialHeight": 309.38666666666973,
+        "TextblockHeight": 43.2,
+        "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "719978f46fde4db5b27d476dc4d4982e",
+        "Title": "QgridPointsMaker & Random Polygon 생성기",
+        "Nodes": [
+          "3e11bd46f6474ad8911eedada223d473",
+          "5a674487998b4fab9825b1a9f6ad2184",
+          "68e2283506974e3085b2c0dee256d3e4",
+          "36b780763dd244ff9bb98c1e3c99398b",
+          "e565ffc86701482a84765ab46a4b2c9e"
+        ],
+        "Left": 5743.4315134245307,
+        "Top": 1200.3238766773036,
+        "Width": 1229.6000000000013,
+        "Height": 332.58666666666977,
+        "FontSize": 36.0,
+        "InitialTop": 1253.5238766773036,
+        "InitialHeight": 309.38666666666973,
+        "TextblockHeight": 43.2,
+        "Background": "#FFFF7BAC"
       }
     ],
-    "X": -742.79160203442211,
-    "Y": -678.18749020876385,
-    "Zoom": 0.87000321506639466
+    "X": -413.490570192472,
+    "Y": 147.89853080010053,
+    "Zoom": 0.21714541170655971
   }
 }
