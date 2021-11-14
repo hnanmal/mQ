@@ -6,14 +6,14 @@
 
 //namespace Baekjun
 //{
-//    class dog
+//    class q10998
 //    {
 
 //        static void Main(string[] args)
 //        {
 //            string[] vs = Console.ReadLine().Split();
 
-//            Console.WriteLine(int.Parse(vs[0]) + int.Parse(vs[1]));
+//            Console.WriteLine(int.Parse(vs[0]) * int.Parse(vs[1]));
 //        }
 //    }
 //}
