@@ -1,0 +1,640 @@
+{
+  "Uuid": "de1ef780-9ab7-46fa-acef-be9b9362e1b7",
+  "IsCustomNode": false,
+  "Description": null,
+  "Name": "excelManagerPythonNode(20211117)",
+  "ElementResolver": {
+    "ResolutionMap": {
+      "Select": {
+        "Key": "archilab.Revit.Selection.Select",
+        "Value": "archilab2022.dll"
+      },
+      "Category": {
+        "Key": "Revit.Elements.Category",
+        "Value": "RevitNodes.dll"
+      }
+    }
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "e24514c2391f4506be232cb1a7c6b36d",
+      "Inputs": [
+        {
+          "Id": "bec9807b0365438ea0d870fef7e738e3",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cc89017349ac40c4aa578a1f6289510c",
+          "Name": "Elements",
+          "Description": "An element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 598,
+      "SelectedString": "OST_StructuralFoundation",
+      "NodeType": "ExtensionNode",
+      "Id": "af89d0192a824c90a1d60e9a3c2d5dd6",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ba693ed6332a4c5aaa1b9d0895ffeaca",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\상상진화\\20211029\\BIM_물량집계 자동화 산출기준표_rC(20211029).xlsx",
+      "InputValue": "D:\\mk\\mQ\\hecCalc\\상상진화\\20211029\\BIM_물량집계 자동화 산출기준표_rC(20211029).xlsx",
+      "NodeType": "ExtensionNode",
+      "Id": "988d59b383e14e958c0a95cd8e57ab27",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c9e30ca597cd429c95fd990c3e16bc77",
+          "Name": "",
+          "Description": "Filename",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system to get its filename"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.FileObject, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "2644e77c070348abae386abca8919327",
+      "Inputs": [
+        {
+          "Id": "fd3f8afe63ad4405a0ce837130839781",
+          "Name": "path",
+          "Description": "Path to the file.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e2214e7481cd4cefafb03c4dc61c99bb",
+          "Name": "file",
+          "Description": "File object",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a file object from a path."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\ndef findUnique(inputs):\r\n    result = []\r\n    for i in inputs:\r\n        if i in result:\r\n            pass\r\n        else:\r\n            result.append(i)\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputElements = IN[0]\r\ninputFilePath = IN[1]\r\ninputSheetName = IN[2]\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef getUsedFamilyTypeOfModeling(elements):\r\n    familyCode = list(map(lambda x: x.Name.split('_')[0], elements))\r\n    unq_familyCode = findUnique(familyCode)\r\n    return unq_familyCode\r\n    \r\ndef createExcelDataDictionary(values):\r\n    result = {}\r\n    for i in range(len(values)):\r\n        result[str(i)] = values[i]\r\n    return result\r\n\r\ndef findTargetIndex(targets, list):\r\n    result = []\r\n    for target in targets:\r\n        for i in range(len(list)):\r\n            if target in str(list[i]):\r\n                result.append(i)\r\n            else:\r\n                pass\r\n    result.sort()\r\n    return result\r\n    \r\ndef GetValueAtKeys(keys, dictionary):\r\n    result = [] \r\n    for i in keys:\r\n        result.append(dictionary[str(i)])\r\n    return result\r\n\r\n\r\n# Place your code below this line\r\nusedFamilyTypeOfModeling = getUsedFamilyTypeOfModeling(inputElements)\r\nexcelWholeDataSet = importExcel(inputFilePath, inputSheetName)\r\ntrExcelWholeDataSet = list(zip(*excelWholeDataSet))\r\nexcelColumnDataSet = createExcelDataDictionary(trExcelWholeDataSet)\r\nexcelRowDataSet = createExcelDataDictionary(excelWholeDataSet)\r\nColumnIndexOfUsedFamilyType = findTargetIndex(usedFamilyTypeOfModeling, trExcelWholeDataSet)\r\nColDataSetOfUsedFamilyType = GetValueAtKeys(ColumnIndexOfUsedFamilyType, excelColumnDataSet)\r\nmaterialPerElementFromModeling = []\r\nfor i in inputElements:\r\n    materialPerElementFromModeling.append(i.GetMaterials())\r\n#list(map(lambda x: x.GetMaterials, inputElements)) \"맵함수로 처리하면 리스트화 할 때 타입 변환 오류 남\"\r\n\r\ntargetWMRowIndex = []\r\nfor i in ColDataSetOfUsedFamilyType:\r\n    targetWMRowIndex.append(findTargetIndex(['000'], i))\r\n\r\nrowDataSetOfUsedWM = []\r\nfor i in targetWMRowIndex:\r\n    rowDataSetOfUsedWM.append(GetValueAtKeys(i, excelRowDataSet))\r\n\r\nworkGroup = []\r\nfor i in rowDataSetOfUsedWM:\r\n    tmp = []\r\n    for j in i:\r\n        tmp.append(j[0])\r\n    workGroup.append(tmp)\r\n    \r\nworkMaster = []\r\nfor i in range(len(ColDataSetOfUsedFamilyType)):\r\n    tmp=[]\r\n    for k in targetWMRowIndex[i]:\r\n        tmp.append(ColDataSetOfUsedFamilyType[i][k])\r\n    workMaster.append(tmp)\r\n\r\nmatchedWM = []\r\nfor i in range(len(workGroup)):\r\n    tmp = []\r\n    for j in range(len(workGroup[i])):\r\n        fullWM = workGroup[i][j] +\"-\"+ workMaster[i][j]\r\n        tmp.append(fullWM)\r\n    matchedWM.append(tmp)\r\n\r\nmatchedWorkGruopAndMasterCode = []\r\nfor i in matchedWM:\r\n    if len(i) > 0:\r\n        matchedWorkGruopAndMasterCode.append(i)\r\n    else:\r\n        pass\r\n\r\nmatchedWMDescription = []\r\nfor i in rowDataSetOfUsedWM:\r\n    tmp=[]\r\n    for j in i:\r\n        tmp.append(j[1] +\" \"+ j[2] +\" \"+ j[3] +\" \"+ \"(\"+ j[4] +\")\")\r\n    if len(tmp) > 0:\r\n        matchedWMDescription.append(tmp)\r\n    else:\r\n        pass\r\n\r\nmatchedWMUnit = []\r\nfor i in rowDataSetOfUsedWM:\r\n    tmp=[]\r\n    for j in i:\r\n        tmp.append(j[4])\r\n    if len(tmp) > 0:\r\n        matchedWMUnit.append(tmp)\r\n    else:\r\n        pass\r\n\r\nmatchedWorkGruopAndMasterCode_flat = list(itertools.chain(*matchedWorkGruopAndMasterCode))\r\nmatchedWMDescription_flat = list(itertools.chain(*matchedWMDescription))\r\n\r\ndic_WMandDescription_Excel = {}\r\nfor i in range(len(matchedWorkGruopAndMasterCode_flat)):\r\n    dic_WMandDescription_Excel[matchedWorkGruopAndMasterCode_flat[i]] = matchedWMDescription_flat[i]\r\n\r\nusedFamilyTypeInExcelOrder = list(map(lambda x: x[3], ColDataSetOfUsedFamilyType))\r\nusedFamilyCodeInExcelOrder = findUnique(list(map(lambda x: x.split('_')[0], usedFamilyTypeInExcelOrder)))\r\n\r\ndic_FamilyCodeandWM = {}\r\nfor i in range(len(usedFamilyCodeInExcelOrder)):\r\n    dic_FamilyCodeandWM[usedFamilyCodeInExcelOrder[i]] = matchedWorkGruopAndMasterCode[i]\r\n\r\nworkMasterCodePerElement = []\r\nfamilyCodePerElem = list(map(lambda x: x.Name.split('_')[0], inputElements))\r\nfor i in familyCodePerElem:\r\n    workMasterCodePerElement.append(dic_FamilyCodeandWM[i])\r\n\r\nmaterialNamePerElem = []\r\nfor i in materialPerElementFromModeling:\r\n    tmp = []\r\n    for j in i:\r\n        tmp.append(j.Name)\r\n    materialNamePerElem.append(tmp)\r\n\r\nWMPerElementFromModeling = []\r\nfor i in materialNamePerElem:\r\n    tmp = []\r\n    for j in i:\r\n        tmp.append(j.split('_')[0])\r\n    WMPerElementFromModeling.append(tmp)\r\n\r\nspecPerElementFromModeling = []\r\nfor i in materialNamePerElem:\r\n    tmp = []\r\n    for j in i:\r\n        a = j.split('_')\r\n        del a[0]\r\n        b = \" \".join(a)\r\n        tmp.append(b)\r\n    specPerElementFromModeling.append(tmp)\r\n\r\nWMPerElementFromModeling_flat = list(itertools.chain(*WMPerElementFromModeling))\r\nspecPerElementFromModeling_flat = list(itertools.chain(*specPerElementFromModeling))\r\n\r\ndic_WMandDescription_Model = {}\r\nfor i in range(len(WMPerElementFromModeling_flat)):\r\n    dic_WMandDescription_Model[WMPerElementFromModeling_flat[i]] = specPerElementFromModeling_flat[i]\r\n\r\ndef findAllKeys(dict):\r\n    result = []\r\n    for key in dict.keys():\r\n        result.append(key)\r\n    return result\r\n\r\ndef findAllValues(dict):\r\n    result = []\r\n    for key in dict.keys():\r\n        result.append(dict[key])\r\n    return result\r\n\r\nkeys_WMandDescription_Model = findAllKeys(dic_WMandDescription_Model)\r\nkeys_WMandDescription_Excel = findAllKeys(dic_WMandDescription_Excel)\r\n\r\nkeys_WMandDescription_Both = list(set(keys_WMandDescription_Model + keys_WMandDescription_Excel))\r\nvalues_WMandDescription_Both = []\r\nfor i in keys_WMandDescription_Both:\r\n    if i in keys_WMandDescription_Model:\r\n        values_WMandDescription_Both.append(dic_WMandDescription_Model[i])\r\n    else:\r\n        values_WMandDescription_Both.append(dic_WMandDescription_Excel[i])\r\n\r\ndic_WMandDescription_Both = {}\r\nfor i in range(len(keys_WMandDescription_Both)):\r\n    dic_WMandDescription_Both[keys_WMandDescription_Both[i]] = values_WMandDescription_Both[i]\r\n\r\nworkMasterCodePerElementFromBoth = []\r\nfor i in range(len(workMasterCodePerElement)):\r\n    #tmp = []\r\n    a = WMPerElementFromModeling[i] + workMasterCodePerElement[i]\r\n    b = findUnique(a)\r\n    workMasterCodePerElementFromBoth.append(b)\r\n\r\nspecPerElement = []\r\nfor i in workMasterCodePerElementFromBoth:\r\n    tmp = []\r\n    for j in i:\r\n        tmp.append(dic_WMandDescription_Both[j])\r\n    specPerElement.append(tmp)\r\n\r\nfullWMCodeDescriptionPerElement = []\r\nfor i in range(len(workMasterCodePerElementFromBoth)):\r\n    tmp = []\r\n    for j in range(len(workMasterCodePerElementFromBoth[i])):\r\n        a = workMasterCodePerElementFromBoth[i][j] +\": \"+ specPerElement[i][j]\r\n        tmp.append(a)\r\n    fullWMCodeDescriptionPerElement.append(tmp)\r\n\r\nfullWMinfo = {\r\n\"AllElement\": inputElements,\r\n\"WorkMasterCodePerFamilyType\": dic_FamilyCodeandWM,\r\n\"WorkMasterCodePerElementBoth\": workMasterCodePerElementFromBoth,\r\n\"FullWMCodeDescriptionPerElement\": fullWMCodeDescriptionPerElement\r\n}\r\n\r\n\r\n\r\nresult = fullWMinfo\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a2a581fd821c483ebe959673751ef08b",
+      "Inputs": [
+        {
+          "Id": "5f12318e3f224207bfb4ae4523b0a60a",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2727a805f0954612b176cacbb9fd71e3",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c65c10ee36324d429ca5607e56b56b14",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "aa2dcde020de4c759173ceb15a8891ef",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "_InputElement;\n_InputFilePath;\n_InputSheetName;",
+      "Id": "7e534466f39a4db5bd3e27830b0ebdaf",
+      "Inputs": [
+        {
+          "Id": "821d29c362964c59901eaf9a4693217c",
+          "Name": "_InputElement",
+          "Description": "_InputElement",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "36d8c3c63ba847bbbde57b53d64c71e6",
+          "Name": "_InputFilePath",
+          "Description": "_InputFilePath",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d53c714f7abd41cca4522ed08e1dbbe8",
+          "Name": "_InputSheetName",
+          "Description": "_InputSheetName",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4137648ddbbb41db8d6e5e657aab424e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e7b3441eb0424840be3ac71573680092",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "edb9772c002149e3980a0326a3866983",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\ndef findUnique(inputs):\r\n    result = []\r\n    for i in inputs:\r\n        if i in result:\r\n            pass\r\n        else:\r\n            result.append(i)\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputDict = IN[0]\r\n\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef getUsedFamilyTypeOfModeling(elements):\r\n    familyCode = list(map(lambda x: x.Name.split('_')[0], elements))\r\n    unq_familyCode = findUnique(familyCode)\r\n    return unq_familyCode\r\n    \r\ndef createExcelDataDictionary(values):\r\n    result = {}\r\n    for i in range(len(values)):\r\n        result[str(i)] = values[i]\r\n    return result\r\n\r\ndef findTargetIndex(targets, list):\r\n    result = []\r\n    for target in targets:\r\n        for i in range(len(list)):\r\n            if target in str(list[i]):\r\n                result.append(i)\r\n            else:\r\n                pass\r\n    result.sort()\r\n    return result\r\n    \r\ndef GetValueAtKeys(keys, dictionary):\r\n    result = [] \r\n    for i in keys:\r\n        result.append(dictionary[str(i)])\r\n    return result\r\n\r\n\r\n# Place your code below this line\r\nelement = inputDict[\"AllElement\"]\r\nelementType = []\r\nfor i in element:\r\n    elementType.append(i.Name)\r\nfamilyCode = []\r\nfor i in elementType:\r\n    familyCode.append(i.split(\"_\")[0])\r\nfullWMCodeDescriptionPerElement = inputDict[\"FullWMCodeDescriptionPerElement\"]\r\n\r\nresultDict = {\r\n\"Element\": element,\r\n\"ElementType\": elementType,\r\n\"FamilyCode\": familyCode,\r\n\"FullWMCodeDescriptionPerElement\": fullWMCodeDescriptionPerElement\r\n}\r\n\r\n\r\n\r\nresult = resultDict\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "6f89628785fa4aa08922d57ebd08cd50",
+      "Inputs": [
+        {
+          "Id": "37b6193ad9294651961206a8df6e3769",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "27e6f5ee0c84456781e4d9293bc8a774",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Str Foundations\";",
+      "Id": "2afdb6272ccd482f81c823f0d59f443b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a894800c2a1c49fdbcaaf2b4ec0b71cc",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "1;",
+      "Id": "fdf6a9b275cc457599c7f9225e6c7bd9",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "5c2c9f2e5ce94da5a462262a0802c4ad",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nimport Autodesk\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.GeometryReferences)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\ndef findUnique(inputs):\r\n    result = []\r\n    for i in inputs:\r\n        if i in result:\r\n            pass\r\n        else:\r\n            result.append(i)\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputDict = IN[0]\r\ninputIndex = IN[1]\r\n\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef getUsedFamilyTypeOfModeling(elements):\r\n    familyCode = list(map(lambda x: x.Name.split('_')[0], elements))\r\n    unq_familyCode = findUnique(familyCode)\r\n    return unq_familyCode\r\n    \r\ndef createExcelDataDictionary(values):\r\n    result = {}\r\n    for i in range(len(values)):\r\n        result[str(i)] = values[i]\r\n    return result\r\n\r\ndef findTargetIndex(targets, list):\r\n    result = []\r\n    for target in targets:\r\n        for i in range(len(list)):\r\n            if target in str(list[i]):\r\n                result.append(i)\r\n            else:\r\n                pass\r\n    result.sort()\r\n    return result\r\n    \r\ndef GetValueAtKeys(keys, dictionary):\r\n    result = [] \r\n    for i in keys:\r\n        result.append(dictionary[str(i)])\r\n    return result\r\n\r\n\r\n# Place your code below this line\r\nfullWMCodeDescriptionPerElement = inputDict[\"FullWMCodeDescriptionPerElement\"]\r\nelement = inputDict[\"Element\"]\r\nfamilyCode = inputDict[\"FamilyCode\"]\r\nfamilyCode_unique = findUnique(familyCode)\r\ntargetFamilyCode = familyCode_unique[inputIndex]\r\ntargetIndex = []\r\nfor i in range(len(familyCode)):\r\n    if targetFamilyCode in familyCode[i]:\r\n        targetIndex.append(i)\r\n    else:\r\n        pass\r\n\r\ntargetElements = []\r\nfor i in targetIndex:\r\n    targetElements.append(element[i])\r\n\r\ntargetFamilyCode = []\r\nfor i in targetIndex:\r\n    targetFamilyCode.append(element[i].Name)\r\n\r\nWMforTargetElements = []\r\nfor i in targetIndex:\r\n    WMforTargetElements.append(fullWMCodeDescriptionPerElement[i])\r\n\r\nWMforTargetElements_flat = list(itertools.chain(*WMforTargetElements))\r\ntargetWMunique = findUnique(WMforTargetElements_flat)\r\n\r\nresultDict = {\r\n\"TargetElements\": targetElements,\r\n\"TargetFamilyCode\": targetFamilyCode,\r\n\"WMforTargetElements\": WMforTargetElements,\r\n\"TargetWMunique\": targetWMunique\r\n}\r\n\r\n\r\n\r\nresult = resultDict\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "93fb7f4c0c904e2bb181b24886e09dcd",
+      "Inputs": [
+        {
+          "Id": "01cc5b5bd03f4051b4a74630344d710b",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6c0b700a938945a98157de69cf1bacee",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6d8ce5ac6f6044a88b852617ce316b6a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "AllColumns = Select.ByCategory(Category.ByName(\"Structural Foundations\"));",
+      "Id": "365b77549c654d2691aa12a696c75838",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ddc6cdc5f0824e55b06b879558fcb1b1",
+          "Name": "",
+          "Description": "AllColumns",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "cc89017349ac40c4aa578a1f6289510c",
+      "End": "821d29c362964c59901eaf9a4693217c",
+      "Id": "3d2273d03da9412e8c1aa68c5a16d856"
+    },
+    {
+      "Start": "ba693ed6332a4c5aaa1b9d0895ffeaca",
+      "End": "bec9807b0365438ea0d870fef7e738e3",
+      "Id": "d20c2da61e9140d6a2f9278b7b8b6065"
+    },
+    {
+      "Start": "c9e30ca597cd429c95fd990c3e16bc77",
+      "End": "fd3f8afe63ad4405a0ce837130839781",
+      "Id": "75ef82fc6c4a4f339084d330ffc7c5b3"
+    },
+    {
+      "Start": "e2214e7481cd4cefafb03c4dc61c99bb",
+      "End": "36d8c3c63ba847bbbde57b53d64c71e6",
+      "Id": "e79c9b4584ed4c6a91b4517a27eca911"
+    },
+    {
+      "Start": "aa2dcde020de4c759173ceb15a8891ef",
+      "End": "37b6193ad9294651961206a8df6e3769",
+      "Id": "50ab20c5e2dd46c79a936f3d04184f21"
+    },
+    {
+      "Start": "4137648ddbbb41db8d6e5e657aab424e",
+      "End": "5f12318e3f224207bfb4ae4523b0a60a",
+      "Id": "01068bd55b8247f4b818fa27b5270ea8"
+    },
+    {
+      "Start": "e7b3441eb0424840be3ac71573680092",
+      "End": "2727a805f0954612b176cacbb9fd71e3",
+      "Id": "f33307613b534a2ca7c52e16a437d364"
+    },
+    {
+      "Start": "edb9772c002149e3980a0326a3866983",
+      "End": "c65c10ee36324d429ca5607e56b56b14",
+      "Id": "ff326de099aa4cbaac4e54667ba9f802"
+    },
+    {
+      "Start": "27e6f5ee0c84456781e4d9293bc8a774",
+      "End": "01cc5b5bd03f4051b4a74630344d710b",
+      "Id": "ef799f5c701448e3bf6c39e197b5ed32"
+    },
+    {
+      "Start": "a894800c2a1c49fdbcaaf2b4ec0b71cc",
+      "End": "d53c714f7abd41cca4522ed08e1dbbe8",
+      "Id": "029ad96b54f14468be2071331b63d761"
+    },
+    {
+      "Start": "5c2c9f2e5ce94da5a462262a0802c4ad",
+      "End": "6c0b700a938945a98157de69cf1bacee",
+      "Id": "65b4316bd3a84f4a90a344d2f4f3234a"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.10.1.3976",
+      "RunType": "Automatic",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": false,
+        "Name": "All Elements of Category",
+        "Id": "e24514c2391f4506be232cb1a7c6b36d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1243.3626150716827,
+        "Y": 338.09947981057076
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Categories",
+        "Id": "af89d0192a824c90a1d60e9a3c2d5dd6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 921.36261507168274,
+        "Y": 338.09947981057076
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "File Path",
+        "Id": "988d59b383e14e958c0a95cd8e57ab27",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 693.551885044903,
+        "Y": 481.59606823683089
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "File From Path",
+        "Id": "2644e77c070348abae386abca8919327",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1388.3721715777128,
+        "Y": 558.2417528587207
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "ExcelDataManagerNode",
+        "Id": "a2a581fd821c483ebe959673751ef08b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2068.26071233002,
+        "Y": 547.66379969403988
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "7e534466f39a4db5bd3e27830b0ebdaf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1664.26071233002,
+        "Y": 560.30379969404021
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Set Up All Element Inform as Dictionary",
+        "Id": "6f89628785fa4aa08922d57ebd08cd50",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2659.6843336523298,
+        "Y": 551.38226191015929
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "2afdb6272ccd482f81c823f0d59f443b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1196.6497975014131,
+        "Y": 725.11646030138081
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "fdf6a9b275cc457599c7f9225e6c7bd9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3460.2315194455668,
+        "Y": 620.55830991926246
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Select Target Family Element And Connected WorkMasters",
+        "Id": "93fb7f4c0c904e2bb181b24886e09dcd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3576.1573354095472,
+        "Y": 518.74377960746256
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "All Elements of Category",
+        "Id": "365b77549c654d2691aa12a696c75838",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 795.18125274754777,
+        "Y": -128.30149503538567
+      }
+    ],
+    "Annotations": [
+      {
+        "Id": "e108f084fec74421af32e0c98b1f1c4c",
+        "Title": "GetFull\r\nWMCodeDescription\r\nPerElement",
+        "Nodes": [
+          "a2a581fd821c483ebe959673751ef08b",
+          "7e534466f39a4db5bd3e27830b0ebdaf"
+        ],
+        "Left": 1654.26071233002,
+        "Top": 191.66379969403988,
+        "Width": 890.30666666666673,
+        "Height": 512.0,
+        "FontSize": 96.0,
+        "InitialTop": 547.66379969403988,
+        "InitialHeight": 157.64000000000033,
+        "TextblockHeight": 346.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "1f765d721468433c8cf1e8a463993c88",
+        "Title": "Primary Input",
+        "Nodes": [
+          "e24514c2391f4506be232cb1a7c6b36d",
+          "af89d0192a824c90a1d60e9a3c2d5dd6",
+          "988d59b383e14e958c0a95cd8e57ab27",
+          "2afdb6272ccd482f81c823f0d59f443b",
+          "2644e77c070348abae386abca8919327"
+        ],
+        "Left": 683.551885044903,
+        "Top": 213.09947981057076,
+        "Width": 824.82028653280986,
+        "Height": 605.01698049081,
+        "FontSize": 96.0,
+        "InitialTop": 338.09947981057076,
+        "InitialHeight": 532.01698049081,
+        "TextblockHeight": 115.0,
+        "Background": "#FFB9F9E1"
+      },
+      {
+        "Id": "7c9aeeb076a04a4695808ad5c76bd0dc",
+        "Title": "Organize\r\nAllElementInform\r\nAsDictionary",
+        "Nodes": [
+          "6f89628785fa4aa08922d57ebd08cd50"
+        ],
+        "Left": 2649.6843336523298,
+        "Top": 195.38226191015929,
+        "Width": 742.41666666666674,
+        "Height": 460.0,
+        "FontSize": 96.0,
+        "InitialTop": 551.38226191015929,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 346.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "8f04fb546a1d4d6a83cdbb93bb9b3930",
+        "Title": "Select Target Family Element And Connected WorkMasters",
+        "Nodes": [
+          "fdf6a9b275cc457599c7f9225e6c7bd9",
+          "93fb7f4c0c904e2bb181b24886e09dcd"
+        ],
+        "Left": 3450.2315194455668,
+        "Top": -67.256220392537443,
+        "Width": 565.88666666666666,
+        "Height": 780.8145303117999,
+        "FontSize": 96.0,
+        "InitialTop": 518.74377960746256,
+        "InitialHeight": 246.8145303117999,
+        "TextblockHeight": 576.0,
+        "Background": "#FFC1D676"
+      }
+    ],
+    "X": -760.25857368743209,
+    "Y": 128.84406024978637,
+    "Zoom": 1.1052714751145476
+  }
+}
