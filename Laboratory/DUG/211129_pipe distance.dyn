@@ -1,0 +1,137 @@
+{
+  "Uuid": "0e842426-4a75-45b9-bda9-86090d46100b",
+  "IsCustomNode": false,
+  "Description": null,
+  "Name": "211129_pipe distance",
+  "ElementResolver": {
+    "ResolutionMap": {
+      "Line": {
+        "Key": "Autodesk.DesignScript.Geometry.Line",
+        "Value": "ProtoGeometry.dll"
+      }
+    }
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "NodeType": "BooleanInputNode",
+      "InputValue": false,
+      "Id": "ce5cfdb94b9f446d87e7a6cfb2d8fbde",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "e9895c7e267644589c8ad13073ab35b6",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Selection between a true and false."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nfrom Autodesk.Revit.DB.Structure import *\r\n\r\nclr.AddReference('RevitAPIUI')\r\nfrom Autodesk.Revit.UI import *\r\n\r\nclr.AddReference('System')\r\nfrom System.Collections.Generic import List\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('System.Windows.Forms')\r\nfrom System.Windows.Forms import *\r\nclr.AddReference('System.Drawing')\r\nfrom System.Drawing import *\r\n\r\nclr.AddReference('DSCoreNodes')\r\nfrom DSCore import Math\r\n\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuidoc=DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\n#Preparing input from dynamo to revit\r\nif isinstance (IN[0], list):\r\n\telement = [UnwrapElement(e) for e in IN[0]]\r\nelse:\r\n\telement = [UnwrapElement(IN[0])]\r\n\r\n#Do some action in a Transaction\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nclass CustomForm():\r\n    def __init__(self):\r\n    \r\n        #class data\r\n        self.data = 'foo'\r\n        \r\n        #form\r\n        self.form = Form()\r\n        self.form.ShowIcon = False\r\n        self.form.MaximizeBox = False\r\n        self.form.FormBorderStyle = FormBorderStyle.FixedSingle\r\n        self.form.Size = Size(400,150)\r\n        \r\n        #label\r\n        self.currDist_label = Label()\r\n        self.currDist_label.Parent = self.form\r\n        self.currDist_label.Location = Point(21,18)\r\n        self.currDist_label.Size = Size(90,13)\r\n        self.currDist_label.Text = 'Current Distance'\r\n        \r\n        self.tarDist_label = Label()\r\n        self.tarDist_label.Parent = self.form\r\n        self.tarDist_label.Location = Point(21,66)\r\n        self.tarDist_label.Size = Size(90,13)\r\n        self.tarDist_label.Text = 'Distance to Set'\r\n        \r\n        \r\n        \r\n        #TextBox\r\n        self.currDist_textBox = TextBox()\r\n        self.currDist_textBox.Location = Point(131,12)\r\n        self.currDist_textBox.Size = Size(148,25)\r\n        self.currDist_textBox.Text = 'test'\r\n        self.currDist_textBox.ReadOnly = True\r\n        self.currDist_textBox.Parent = self.form\r\n\r\n        self.tarDist_textBox = TextBox()\r\n        self.tarDist_textBox.Location = Point(131,60)\r\n        self.tarDist_textBox.Size = Size(148,25)\r\n        self.tarDist_textBox.Text = ''\r\n        self.tarDist_textBox.Parent = self.form\r\n        self.form.ActiveControl = self.tarDist_textBox\r\n        #button\r\n        \r\n        self.button1 = Button()\r\n        self.button1.Text = 'Confirm'\r\n        self.button1.Name = 'Confirm'\r\n        self.button1.Parent = self.form\r\n        self.button1.Location = Point(297,12)\r\n        self.button1.Size = Size(75,25)\r\n        \r\n        self.button2 = Button()\r\n        self.button2.Text = 'Cancel'\r\n        self.button2.Name = 'Cancel'\r\n        self.button2.Parent = self.form\r\n        self.button2.Location = Point(297,60)\r\n        self.button2.Size = Size(75,25)\r\n        \r\n        #events\r\n        \r\n        self.form.Load += self.formLoadHandler\r\n        self.button1.Click += self.buttonClickHandler\r\n        self.button2.Click += self.buttonClickHandler        \r\n        self.tarDist_textBox.KeyDown += self.keyPressHandler\r\n\r\n    def Show(self):\r\n        self.form.ShowDialog()\r\n\t\t\r\n    def keyPressHandler(self, sender, args):\r\n       #MessageBox.Show(\"key pressed\"+args.KeyChar)\r\n       if (args.KeyCode == Keys.Enter):\r\n           self.buttonClickHandler(self.button1, args)\r\n\t\t\r\n    def buttonClickHandler(self, sender, args):\r\n        if(sender.Name == 'Cancel'):\r\n            self.form.Close()\r\n        if(sender.Name == 'Confirm'):\r\n            self.data = self.tarDist_textBox.Text\r\n            self.form.Close()\r\n\r\n    def formLoadHandler(self, sender, args):\r\n        sender.Text = 'Dynamo'\r\n        \r\n        \r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nview = doc.ActiveView\r\nsel1 = uidoc.Selection.PickObject(Selection.ObjectType.Element)\r\nsel2 = uidoc.Selection.PickObject(Selection.ObjectType.Element)\r\nele1 = doc.GetElement(sel1)\r\nline1 = ele1.Location.Curve\r\npt1 = line1.Evaluate(0.5, True)\r\nrot = Transform.CreateRotationAtPoint(XYZ(0,0,1), Math.PI/2, pt1)\r\nline_trans = line1.CreateTransformed(rot)\r\nvec1 = line_trans.Direction\r\nele2 = doc.GetElement(sel2)\r\n\r\nref_Array = ReferenceArray()\r\nref_Array.Append(sel1)\r\nref_Array.Append(sel2)\r\n\r\ndim = doc.Create.NewDimension(view, line_trans, ref_Array)\r\nval = dim.Value\r\nconvert_val = UnitUtils.ConvertFromInternalUnits(val, UnitTypeId.Millimeters)\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\ncf = CustomForm()\r\n\r\ncf.currDist_textBox.Text = str(Math.Round(convert_val,0))\r\n\r\ncf.Show()\r\n\r\nif cf.data == 'foo':\r\n    OUT = 0\r\n\r\nelse:\r\n    \r\n    targetVal = float(cf.data)\r\n    \r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    \r\n    ele2 = doc.GetElement(sel1)\r\n    calcVal = UnitUtils.ConvertToInternalUnits(targetVal - convert_val, UnitTypeId.Millimeters)\r\n    normal_pt = vec1.Normalize()\r\n    move_XYZ = normal_pt.Multiply(calcVal)\r\n    \r\n    ElementTransformUtils.MoveElement(doc, ele2.Id, move_XYZ)\r\n    TransactionManager.Instance.TransactionTaskDone()\r\n    \r\n    \r\n    translatedVal = dim.Value\r\n    translatedVal_unit = UnitUtils.ConvertFromInternalUnits(translatedVal, UnitTypeId.Millimeters)\r\n    \r\n    \r\n    if abs(translatedVal_unit - targetVal) > 0.005:\r\n        TransactionManager.Instance.EnsureInTransaction(doc)\r\n        reverse_XYZ = move_XYZ.Multiply(-2)\r\n        ElementTransformUtils.MoveElement(doc, ele2.Id, reverse_XYZ)\r\n        TransactionManager.Instance.TransactionTaskDone()\r\n    \r\n    #delete dimension\r\n    doc.Delete(dim.Id)\r\n    \r\n    OUT = ele2",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "b3f11e3409bd4d329c8a567e5de80f2c",
+      "Inputs": [
+        {
+          "Id": "d900ed6a72f0456f8ff6f7e22964ca6c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "48235e6031674b9281e255b8d4f86b9b",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e4c3f3b06d9b44a4a60ac776dd0fc2ab",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "e9895c7e267644589c8ad13073ab35b6",
+      "End": "d900ed6a72f0456f8ff6f7e22964ca6c",
+      "Id": "d4a040b092f140f7bfe4cc7ba562ae40"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.10.1.3976",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -14582.261924685628,
+      "EyeY": 2753.3712323916284,
+      "EyeZ": -396.99094587386384,
+      "LookX": 9.3888778106290012,
+      "LookY": -10.171281219753508,
+      "LookZ": -45.379568042151796,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Boolean",
+        "Id": "ce5cfdb94b9f446d87e7a6cfb2d8fbde",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1073.2486569638941,
+        "Y": 603.39904412929081
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Windows form + dimension",
+        "Id": "b3f11e3409bd4d329c8a567e5de80f2c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1321.9197093112275,
+        "Y": 604.17549828399251
+      }
+    ],
+    "Annotations": [],
+    "X": -1319.6351069400996,
+    "Y": -564.88187563274357,
+    "Zoom": 1.265687549098508
+  }
+}
