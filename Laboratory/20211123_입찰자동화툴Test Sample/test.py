@@ -78,7 +78,7 @@ for i in result:## null만 있는 Excel Row 제거
         
 result_tr = list(zip(*result))
 
-for i in result_tr:## null만 있는 Excel Row 제거
+for i in result_tr:## null만 있는 Excel Column 제거
     if checkAllElement(i, None):
         result_tr.remove(i)
     else:
