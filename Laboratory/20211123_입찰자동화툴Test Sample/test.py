@@ -2,7 +2,7 @@
 import os
 python_rootpath = os.getenv('LOCALAPPDATA')+'\Programs\Python'
 file_list = os.listdir(python_rootpath)
-python_version = file_list[0]
+python_version = file_list[-1]
 import sys
 sys.path.append(os.getenv('LOCALAPPDATA').replace('\\','\\\\') + f'\Programs\Python\{python_version}\Lib\site-packages')
 import clr
