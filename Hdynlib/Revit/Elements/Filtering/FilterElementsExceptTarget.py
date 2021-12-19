@@ -7,8 +7,8 @@ from Autodesk.DesignScript.Geometry import *
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-bln_exceptTarget = IN[0]
-input_elems = IN[1]
+input_elems = IN[0]
+bln_exceptTarget = IN[1]
 targetString = IN[2]
 
 # Place your code below this line
