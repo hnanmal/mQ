@@ -271,7 +271,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\Users\\pjmk0\\Downloads\\MK\\mQ\\Laboratory\\20211123_입찰자동화툴Test Sample\\test1.xslx",
+      "HintPath": "D:\\mk\\mQ\\Laboratory\\20211123_입찰자동화툴Test Sample\\test1.xslx",
       "InputValue": ".\\test1.xslx",
       "NodeType": "ExtensionNode",
       "Id": "cbc322b4037a4c8896b18e21989c9e7e",
@@ -4534,7 +4534,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\Users\\pjmk0\\Downloads\\MK\\mQ\\Laboratory\\20211123_입찰자동화툴Test Sample\\01_Building List_Pilot Project_2021_1211_mk.xlsx",
+      "HintPath": "D:\\mk\\mQ\\Laboratory\\20211123_입찰자동화툴Test Sample\\01_Building List_Pilot Project_2021_1211_mk.xlsx",
       "InputValue": ".\\01_Building List_Pilot Project_2021_1211_mk.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "925b5cef6eae43b9a8b72c7592a452c9",
@@ -11913,7 +11913,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\n\r\nfrom Revit.Elements import *\r\n\r\nclr.AddReference(\"DSCoreNodes\")\r\nfrom DSCore import *\r\n\r\nfrom itertools import *\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputLevels = IN[0]\r\ninputRooms = IN[1]\r\n\r\n# Place your code below this line\r\n\r\nclass RoomInfo:\r\n    def __init__(self, room, inputRooms):\r\n        name = room.GetParameterValueByName(\"Name\")\r\n        self.name = name\r\n        level = room.GetParameterValueByName(\"Level\")\r\n        self.level = level\r\n        department = room.GetParameterValueByName(\"Department\")\r\n        self.department = department\r\n        roomelem = room\r\n        self.roomelem = roomelem\r\n        roomsolid = room.Geometry()[0]\r\n        self.roomsolid = roomsolid\r\n        basefinish = room.GetParameterValueByName(\"Base Finish\")\r\n        self.basefinish = basefinish\r\n        ceilfinish = room.GetParameterValueByName(\"Ceiling Finish\")\r\n        self.ceilfinish = ceilfinish\r\n        wallfinish = room.GetParameterValueByName(\"Wall Finish\")\r\n        self.wallfinish = wallfinish\r\n        floorfinish = room.GetParameterValueByName(\"Floor Finish\")\r\n        self.floorfinish = floorfinish\r\n        finishtype = {\r\n            \"Interior Finish\": room.GetParameterValueByName(\"Interior Finish\"),\r\n            \"Exterior Finish\": room.GetParameterValueByName(\"Exterior Finish\")\r\n            }\r\n        self.finishtype = finishtype\r\n        roomsideface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z != -1 and x.NormalAtParameter(0.5,0.5).Z != 1,roomsolid.Explode()))\r\n        self.roomsideface = roomsideface\r\n        roomupperface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == 1,roomsolid.Explode()))\r\n        self.roomupperface = roomupperface\r\n        roombottomface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1,roomsolid.Explode()))\r\n        self.roombottomface = roombottomface\r\n        roomperimeter = room.FinishBoundary[0]\r\n        self.roomperimeter = roomperimeter\r\n        adjrooms = list(\r\n                    filter(lambda x: len(roomsolid.Intersect(x.Geometry()[0]))>1,\r\n                        filter(lambda y: y.GetParameterValueByName(\"Level\")==level,\r\n                            filter(lambda z: roomelem.GetParameterValueByName(\"Number\")!=z.GetParameterValueByName(\"Number\"), inputRooms)))\r\n                            )\r\n        self.adjrooms = adjrooms\r\n        \r\n        class AdjRoomInfo:\r\n            def __init__(self, adjroom, roomperimeter, roomsideface):\r\n                adjname = adjroom.Name\r\n                self.adjname = adjname\r\n                adjcurve = PolyCurve.ByJoinedCurves(roomperimeter).Intersect(adjroom.Geometry()[0])\r\n                self.adjcurve = adjcurve\r\n                \r\n                def findHoriCurve(curves):\r\n                    result = list(filter(lambda x: x.Direction.Z == 0, curves))\r\n                    return result\r\n#                botanduplines = list(map(findHoriCurve, roomsideface))\r\n                    \r\n                adjsurface = list(filter(lambda x: x.DoesIntersect(adjroom.Geometry()[0]), roomsideface)) #####수정 필요\r\n                self.adjsurface = adjsurface\r\n        \r\n        adjsurfacedict = {}\r\n        for adjroom in adjrooms:\r\n            adjRoomInfo = AdjRoomInfo(adjroom, roomperimeter, roomsideface)\r\n            adjsurfacedict[adjRoomInfo.adjname] = adjRoomInfo.adjsurface\r\n        self.adjsurfacedict = adjsurfacedict\r\n        \r\n\r\n\r\na = list(map(lambda x: RoomInfo(x, inputRooms).adjsurfacedict, inputRooms))\r\nresult = list(map(lambda x: RoomInfo(x, inputRooms).adjrooms, inputRooms))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = [a, result]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\n\r\nfrom Revit.Elements import *\r\n\r\nclr.AddReference(\"DSCoreNodes\")\r\nfrom DSCore import *\r\n\r\nfrom itertools import *\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputLevels = IN[0]\r\ninputRooms = IN[1]\r\n\r\n# Place your code below this line\r\n\r\nclass RoomInfo:\r\n    def __init__(self, room, inputRooms):\r\n        name = room.GetParameterValueByName(\"Name\")\r\n        self.name = name\r\n        level = room.GetParameterValueByName(\"Level\")\r\n        self.level = level\r\n        department = room.GetParameterValueByName(\"Department\")\r\n        self.department = department\r\n        roomelem = room\r\n        self.roomelem = roomelem\r\n        roomsolid = room.Geometry()[0]\r\n        self.roomsolid = roomsolid\r\n        basefinish = room.GetParameterValueByName(\"Base Finish\")\r\n        self.basefinish = basefinish\r\n        ceilfinish = room.GetParameterValueByName(\"Ceiling Finish\")\r\n        self.ceilfinish = ceilfinish\r\n        wallfinish = room.GetParameterValueByName(\"Wall Finish\")\r\n        self.wallfinish = wallfinish\r\n        floorfinish = room.GetParameterValueByName(\"Floor Finish\")\r\n        self.floorfinish = floorfinish\r\n        finishtype = {\r\n            \"Interior Finish\": room.GetParameterValueByName(\"Interior Finish\"),\r\n            \"Exterior Finish\": room.GetParameterValueByName(\"Exterior Finish\")\r\n            }\r\n        self.finishtype = finishtype\r\n        roomsideface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z != -1 and x.NormalAtParameter(0.5,0.5).Z != 1,roomsolid.Explode()))\r\n        self.roomsideface = roomsideface\r\n        roomupperface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == 1,roomsolid.Explode()))\r\n        self.roomupperface = roomupperface\r\n        roombottomface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1,roomsolid.Explode()))\r\n        self.roombottomface = roombottomface\r\n        roomperimeter = room.FinishBoundary[0]\r\n        self.roomperimeter = roomperimeter\r\n        adjrooms = list(\r\n                    filter(lambda x: len(roomsolid.Intersect(x.Geometry()[0]))>1,\r\n                        filter(lambda y: y.GetParameterValueByName(\"Level\")==level,\r\n                            filter(lambda z: roomelem.GetParameterValueByName(\"Number\")!=z.GetParameterValueByName(\"Number\"), inputRooms)))\r\n                            )\r\n        self.adjrooms = adjrooms\r\n        \r\n        class AdjRoomInfo:\r\n            def __init__(self, adjroom, roomperimeter, roomsideface):\r\n                adjname = adjroom.Name\r\n                self.adjname = adjname\r\n                adjcurve = PolyCurve.ByJoinedCurves(roomperimeter).Intersect(adjroom.Geometry()[0])\r\n                self.adjcurve = adjcurve\r\n                    \r\n                disc_line = list(map(lambda x: x.TrimByParameter(0.1,0.9), roomperimeter))\r\n                filtered_perimeter = list(filter(lambda x: x.DoesIntersect(adjroom.Geometry()[0]), disc_line))\r\n                self.filtered_perimeter = filtered_perimeter\r\n                adjsurface = list(\r\n                                chain(\r\n                                    *map(lambda y:\r\n                                        filter(lambda x: x.DoesIntersect(y), roomsideface), filtered_perimeter)\r\n                                    )\r\n                                )\r\n                self.adjsurface = adjsurface\r\n        \r\n        surfacedict = {}\r\n        allintsurfaces = []\r\n        for adjroom in adjrooms:\r\n            adjRoomInfo = AdjRoomInfo(adjroom, roomperimeter, roomsideface)\r\n            surfacedict[adjRoomInfo.adjname] = adjRoomInfo.adjsurface\r\n            allintsurfaces.append(adjRoomInfo.adjsurface)\r\n        allintsurfaces = list(chain(*allintsurfaces))\r\n        surfacedict[\"Int Surfaces\"] = allintsurfaces\r\n        extsurfaces = []\r\n        for i in roomsideface:\r\n            tmp1 = []\r\n            for j in allintsurfaces:\r\n                if i.PointAtParameter(0.5,0.5) != j.PointAtParameter(0.5,0.5):\r\n                    tmp1.append(True)\r\n                else:\r\n                    tmp1.append(False)\r\n            if all(tmp1):\r\n                extsurfaces.append(i)\r\n            else:\r\n                pass\r\n        surfacedict[\"Ext Surfaces\"] = extsurfaces\r\n        \r\n        self.surfacedict = surfacedict\r\n        \r\n\r\n\r\na = list(map(lambda x: RoomInfo(x, inputRooms).surfacedict, inputRooms))\r\nresult = list(map(lambda x: RoomInfo(x, inputRooms).adjrooms, inputRooms))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = [a, result]",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "c3c4b62f071044c096fe3296490f3ddb",
@@ -12990,45 +12990,6 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.Intersect@Autodesk.DesignScript.Geometry.Geometry",
-      "Id": "d553b21c13c243ddb831da7fdb193f43",
-      "Inputs": [
-        {
-          "Id": "b596b4fcc5e24a109f7961eae1aa0978",
-          "Name": "geometry",
-          "Description": "Autodesk.DesignScript.Geometry.Geometry",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "d44346afb1744911b68cba2e902dfa3a",
-          "Name": "other",
-          "Description": "Geometry",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "ac7bf09ca0a54bc89865f286b7962ce9",
-          "Name": "Geometry[]",
-          "Description": "Geometry[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the intersection Geometry for this object and another\n\nGeometry.Intersect (other: Geometry): Geometry[]"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ninput1 = [1, 2, 3]\r\n\r\n# Place your code below this line\r\nclass Outer:\r\n    def __init__(self, input1):\r\n        totalsum = sum(input1)\r\n        self.totalsum = totalsum\r\n        \r\n        class Inner:\r\n            def __init__(self, totalsum):\r\n                half = totalsum/2\r\n                self.half = half\r\n        \r\n        out_half = Inner(totalsum).half\r\n        self.out_half = out_half\r\n\r\nresult = Outer(input1).out_half\r\n# Assign your output to the OUT variable.\r\nOUT = result",
@@ -13093,11 +13054,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[0][\"Cable Room\"];",
+      "Code": "i[5][\"Ext Surfaces\"];",
       "Id": "5e0ffff5cb0c4ce09972141a9867aabe",
       "Inputs": [
         {
-          "Id": "9d7fed07da3c4ac0b97728a3fb3f4483",
+          "Id": "ab6cdb28419f4144b3265231605e8e01",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -13108,7 +13069,7 @@
       ],
       "Outputs": [
         {
-          "Id": "8e99a097f4ab48bbb3224fbe7bfbd096",
+          "Id": "880df33b15b1455e8b8ba8f748132a68",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -13153,66 +13114,6 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.PerimeterCurves",
-      "Id": "f0561c9bc9ca41ec8525f8c12f69a191",
-      "Inputs": [
-        {
-          "Id": "3b2bd89c44fb49348c205b7ddd1d3b2e",
-          "Name": "surface",
-          "Description": "Autodesk.DesignScript.Geometry.Surface",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "dce8a46bdbf7407ab580ec73a26ee8fc",
-          "Name": "Curve[]",
-          "Description": "Curve[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Return all the boundary Curves of the Surface.\n\nSurface.PerimeterCurves ( ): Curve[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Line.Direction",
-      "Id": "6860a5f6468443b98f5bde7c87b87fa1",
-      "Inputs": [
-        {
-          "Id": "3423a6686a0648a9a56f686bd243fa34",
-          "Name": "line",
-          "Description": "Autodesk.DesignScript.Geometry.Line",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "d482b05e19c34077bd57243f70a6a57b",
-          "Name": "Vector",
-          "Description": "Vector",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "The direction of the Curve\n\nLine.Direction: Vector"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
       "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.Area",
       "Id": "8d1015775a00411898835a195522aced",
       "Inputs": [
@@ -13239,6 +13140,143 @@
       ],
       "Replication": "Auto",
       "Description": "Returns the total surface area.\n\nSurface.Area: double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0][0];",
+      "Id": "6216a2801a3244da926c3665ec924c80",
+      "Inputs": [
+        {
+          "Id": "d8b7d3cd30bd4558a3770b2a68c9f32a",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "838ed8dec6b243fe82c821bf615ae9ba",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.TrimByParameter@double,double",
+      "Id": "d7d5a4be2dc24d9ca4b59b1536db2ca2",
+      "Inputs": [
+        {
+          "Id": "364abb8ec7b54acc8fa9c85075968925",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "21309ad48ef2415e9dc7adeef2f813ed",
+          "Name": "startParameter",
+          "Description": "The parameter at which to start the trim\n\ndouble\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d54a5789cb0449a0b1155cc20e04653b",
+          "Name": "endParameter",
+          "Description": "The parameter at which to start the trim\n\ndouble\nDefault value : 1",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a867f315f2054909b0a8e2e7989e7fd5",
+          "Name": "Curve",
+          "Description": "A new Curve with the outer segments removed",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Removes the beginning and end of the Curve at the specified parameters.\n\nCurve.TrimByParameter (startParameter: double = 0, endParameter: double = 1): Curve"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0.1;\n0.9;",
+      "Id": "07a96ab6994243e6934b38ea86c09e4f",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9061e0b8792e49548c25f8d923e3d7cf",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9097cd47e3414c209e6a7e30e45a6464",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0][\"Cable Room\"];",
+      "Id": "f697703066484fa4b73f33e4a10e1c93",
+      "Inputs": [
+        {
+          "Id": "eed15ba2032547ea89ceef81bd87faa3",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6d26ebb75aa04eb5b42f8194eb5fc648",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -15623,6 +15661,11 @@
       "Id": "0b3592a2635246ce922bac6826523047"
     },
     {
+      "Start": "d6097127cf26495b88faf423dc8c51b0",
+      "End": "d8b7d3cd30bd4558a3770b2a68c9f32a",
+      "Id": "cce8428284dc427a823e29cc4b4b6ca6"
+    },
+    {
       "Start": "a7402a8392ad450da9951d44166505a2",
       "End": "282155e6a43648a481767c1c30e58f42",
       "Id": "164cadde4c9e4eff92f58097489f423a"
@@ -15770,7 +15813,7 @@
     {
       "Start": "5732f990320648868569e3eb0947815f",
       "End": "19bd036ecc0d4a3e9e7a0b977c4e519e",
-      "Id": "80e1a09038c84546acc1a0383a0a16ca"
+      "Id": "0dadd2f819c041f9b699358cfe2bb569"
     },
     {
       "Start": "88d0d6a2cfca4db6913cac5c0e0a0a04",
@@ -15784,13 +15827,28 @@
     },
     {
       "Start": "caa4af54a8a6469b845930c43d0a4b36",
-      "End": "9d7fed07da3c4ac0b97728a3fb3f4483",
-      "Id": "f7b052af2cc749d4932ee513ace48e90"
+      "End": "eed15ba2032547ea89ceef81bd87faa3",
+      "Id": "379ffdced2614cc3a7345a2e93edc579"
     },
     {
-      "Start": "8e99a097f4ab48bbb3224fbe7bfbd096",
-      "End": "3b2bd89c44fb49348c205b7ddd1d3b2e",
-      "Id": "742a9cbc3b284b4786ca1b49a21f1980"
+      "Start": "caa4af54a8a6469b845930c43d0a4b36",
+      "End": "ab6cdb28419f4144b3265231605e8e01",
+      "Id": "2ae4237d73de4df9a84d5487e5c1a49c"
+    },
+    {
+      "Start": "838ed8dec6b243fe82c821bf615ae9ba",
+      "End": "364abb8ec7b54acc8fa9c85075968925",
+      "Id": "9b2981e81cb74042a2b4b0c3c53d4a31"
+    },
+    {
+      "Start": "9061e0b8792e49548c25f8d923e3d7cf",
+      "End": "21309ad48ef2415e9dc7adeef2f813ed",
+      "Id": "0753b6f2cf494ceab280ce7a8688bd2a"
+    },
+    {
+      "Start": "9097cd47e3414c209e6a7e30e45a6464",
+      "End": "d54a5789cb0449a0b1155cc20e04653b",
+      "Id": "4b0a29466508440d97797b523597ae1d"
     }
   ],
   "Dependencies": [],
@@ -15807,15 +15865,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 140705.41015625,
-      "EyeY": 60619.48828125,
-      "EyeZ": -98127.703125,
-      "LookX": -42475.3203125,
-      "LookY": -59747.86328125,
-      "LookZ": -48331.078125,
-      "UpX": -0.33504784107208252,
-      "UpY": 0.86162775754928589,
-      "UpZ": -0.38123586773872375
+      "EyeX": 99823.6875,
+      "EyeY": 39371.62109375,
+      "EyeZ": -127363.15625,
+      "LookX": -10675.9921875,
+      "LookY": -29925.642578125,
+      "LookZ": -25384.359375,
+      "UpX": -0.22236748039722443,
+      "UpY": 0.81915038824081421,
+      "UpZ": -0.528720498085022
     },
     "NodeViews": [
       {
@@ -19269,7 +19327,7 @@
         "Y": -11172.18270638027
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Python Script@RoomInfoClass",
         "Id": "c3c4b62f071044c096fe3296490f3ddb",
         "IsSetAsInput": false,
@@ -19529,7 +19587,7 @@
         "Y": -11416.349752374146
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Categories",
         "Id": "8245fd4777f5405f862f8d8531739d1f",
         "IsSetAsInput": false,
@@ -19539,7 +19597,7 @@
         "Y": -11751.691030453985
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "All Elements of Category",
         "Id": "5c76a77e3797497abab24a3e55804ac7",
         "IsSetAsInput": false,
@@ -19549,7 +19607,7 @@
         "Y": -11751.691030453985
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "지하층 포함여부",
         "Id": "bb6c16c899e742e389d67e8dbb9fd2f8",
         "IsSetAsInput": true,
@@ -19559,7 +19617,7 @@
         "Y": -11643.691030453985
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Level.Name",
         "Id": "ef9e24382ef84529b2928c81d56da6e9",
         "IsSetAsInput": false,
@@ -19579,7 +19637,7 @@
         "Y": -11742.477697120652
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "String From Web",
         "Id": "fde79a62b8124c9aac017a2015d843bf",
         "IsSetAsInput": false,
@@ -19589,7 +19647,7 @@
         "Y": -11870.691030453985
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "@SelectAllElementsExcept",
         "Id": "d167f38b69084d6aa2d42968c5e82e61",
         "IsSetAsInput": false,
@@ -19599,7 +19657,7 @@
         "Y": -11746.691030453985
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Code Block",
         "Id": "100db1ec04de405599af96bd0be2ef17",
         "IsSetAsInput": false,
@@ -19609,17 +19667,7 @@
         "Y": -11560.477697120652
       },
       {
-        "ShowGeometry": true,
-        "Name": "Geometry.Intersect",
-        "Id": "d553b21c13c243ddb831da7fdb193f43",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 506.44181809650377,
-        "Y": -11572.154770509507
-      },
-      {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Python Script",
         "Id": "b320a2beba9e4e72b503795491b45f24",
         "IsSetAsInput": false,
@@ -19629,7 +19677,7 @@
         "Y": -11473.947395334983
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Code Block",
         "Id": "c337eca8974e43159efc1a6606845782",
         "IsSetAsInput": false,
@@ -19645,41 +19693,21 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 129.96178458489078,
-        "Y": -12264.987259364971
+        "X": 131.12193859250533,
+        "Y": -12320.674651730467
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Element.Name",
         "Id": "53b3c54681e34a50a36148ee21dd327f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -915.37826373630924,
-        "Y": -12085.365976078589
+        "X": -446.14064282131744,
+        "Y": -12471.796958008581
       },
       {
-        "ShowGeometry": true,
-        "Name": "Surface.PerimeterCurves",
-        "Id": "f0561c9bc9ca41ec8525f8c12f69a191",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 441.10119840899881,
-        "Y": -12312.103936443264
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Line.Direction",
-        "Id": "6860a5f6468443b98f5bde7c87b87fa1",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 538.96819623318493,
-        "Y": -11853.445087950517
-      },
-      {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "Surface.Area",
         "Id": "8d1015775a00411898835a195522aced",
         "IsSetAsInput": false,
@@ -19687,6 +19715,46 @@
         "Excluded": false,
         "X": -606.68326081255282,
         "Y": -12122.194263556688
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "6216a2801a3244da926c3665ec924c80",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 619.0,
+        "Y": -10533.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Curve.TrimByParameter",
+        "Id": "d7d5a4be2dc24d9ca4b59b1536db2ca2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 960.60816835663218,
+        "Y": -10478.313926260638
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "07a96ab6994243e6934b38ea86c09e4f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 850.0,
+        "Y": -10316.0
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "f697703066484fa4b73f33e4a10e1c93",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 147.0091349706131,
+        "Y": -12054.72200211619
       }
     ],
     "Annotations": [
@@ -20843,8 +20911,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 614.76892014002112,
-    "Y": 11407.209003357415,
-    "Zoom": 0.92966729142622306
+    "X": 742.87978880985622,
+    "Y": 1284.686819591215,
+    "Zoom": 0.086249395385694511
   }
 }
