@@ -69,8 +69,8 @@ def Create_RoomDS(room, inputRooms):
     allintsurfaces = []
     for adjroom in adjrooms:
         adjRoomInfo = AdjRoomInfo(adjroom, roomperimeter, roomsideface)
-        surfacedict[adjRoomInfo.adjname] = adjRoomInfo.adjsurface
-        allintsurfaces.append(adjRoomInfo.adjsurface)
+        surfacedict[adjRoomInfo["adjname"]] = adjRoomInfo["adjsurface"]
+        allintsurfaces.append(adjRoomInfo["adjsurface"])
     allintsurfaces = list(chain(*allintsurfaces))
     surfacedict["Int Surfaces"] = allintsurfaces
     extsurfaces = []
