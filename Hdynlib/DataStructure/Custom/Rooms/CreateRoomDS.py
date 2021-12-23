@@ -40,6 +40,7 @@ def Create_RoomDS(room, inputRooms):
     roomupperface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == 1,roomsolid.Explode()))
     roombottomface = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1,roomsolid.Explode()))
     roomperimeter = room.FinishBoundary[0]
+    roomlimitoffset = room.GetParameterValueByName("Limit Offset")
     adjrooms = list(
                     filter(lambda x: len(roomsolid.Intersect(x.Geometry()[0]))>1,
                         filter(lambda y: y.GetParameterValueByName("Level")==level,
@@ -104,7 +105,8 @@ def Create_RoomDS(room, inputRooms):
         "roombottomface": roombottomface,
         "roomperimeter": roomperimeter,
         "adjrooms": adjrooms,
-        "surfacedict": surfacedict
+        "surfacedict": surfacedict,
+        "roomlimitoffset": roomlimitoffset
     }
     return result
 
