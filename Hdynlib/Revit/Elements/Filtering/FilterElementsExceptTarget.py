@@ -13,7 +13,7 @@ targetString = IN[2]
 
 # Place your code below this line
 if bln_exceptTarget:
-    result = list(map(lambda x: x, input_elems))
+    result = list(filter(lambda x: targetString in x.Name, input_elems))
 else:
     result = list(filter(lambda x: targetString not in x.Name, input_elems))
 # Assign your output to the OUT variable.
