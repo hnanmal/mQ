@@ -1187,7 +1187,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsurfaceGroup = IN[0]\r\n\r\n# Place your code below this line\r\n\r\ndef findWallCrvandHeight(surface):\r\n    alllines = surface.PerimeterCurves()\r\n    horCrv = list(filter(lambda x: x.Direction.Z==0, alllines))\r\n    verCrv = list(filter(lambda x: x.Direction.Z!=0, alllines))\r\n    height = round(verCrv[0].Length)\r\n    MaxHorCrvZ = max(list(map(lambda y: y.StartPoint.Z, horCrv)))\r\n    wallCrv = list(filter(lambda x: x.StartPoint.Z==MaxHorCrvZ, horCrv))[0]\r\n    \r\n    return (wallCrv, height)\r\n\r\nresult = []\r\nfor i in surfaceGroup:\r\n    tmp = []\r\n    for surface in i:\r\n        tmp.append(findWallCrvandHeight(surface))\r\n    result.append(tmp)#(list(chain(*tmp)))\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsurfaceGroup = IN[0]\r\n\r\n# Place your code below this line\r\n\r\ndef findWallCrvAndHeight(surface):\r\n    alllines = surface.PerimeterCurves()\r\n    horCrv = list(filter(lambda x: x.Direction.Z==0, alllines))\r\n    verCrv = list(filter(lambda x: x.Direction.Z!=0, alllines))\r\n    height = round(verCrv[0].Length)\r\n    MaxHorCrvZ = max(list(map(lambda y: y.StartPoint.Z, horCrv)))\r\n    wallCrv = list(filter(lambda x: x.StartPoint.Z==MaxHorCrvZ, horCrv))[0]\r\n    \r\n    return (wallCrv, height)\r\n\r\nresult = []\r\nfor i in surfaceGroup:\r\n    tmp = []\r\n    for surface in i:\r\n        tmp.append(findWallCrvAndHeight(surface))\r\n    result.append(tmp)\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "10b463496d104933bb8a999bd969ea9f",
@@ -1357,15 +1357,15 @@
       "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amt: int = -1): var[]..[]"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Level.Elevation",
-      "Id": "d5b85db8fa914ea0a93c56d4275e91a7",
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"level\"];",
+      "Id": "59cf8d5c459d4b62b28b9e7c216cac90",
       "Inputs": [
         {
-          "Id": "9b200d46e02f4fe3ae24e279d561874e",
-          "Name": "level",
-          "Description": "Revit.Elements.Level",
+          "Id": "5daaa0a6dba1465488c072c457cffdf7",
+          "Name": "i",
+          "Description": "i",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1374,39 +1374,119 @@
       ],
       "Outputs": [
         {
-          "Id": "1b590eea760641caba3f6c9efe1ff289",
-          "Name": "double",
-          "Description": "double",
+          "Id": "2d615776f8d04232bb71b35195ea7cf9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         }
       ],
-      "Replication": "Auto",
-      "Description": "The elevation of the level above ground level\n\nLevel.Elevation: double"
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlevels = IN[0]\r\n# Place your code below this line\r\nresult = []\r\nfor i in range(len(levels)):\r\n    if i < len(levels)-1:\r\n        gap = levels[i+1] - levels[i]\r\n        result.append(round(gap))\r\n    else:\r\n        pass\r\n        \r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\n\r\nfrom Revit.Elements import *\r\n\r\nclr.AddReference(\"DSCoreNodes\")\r\nfrom DSCore import *\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwallType = IN[0]\r\nlevels = IN[1]\r\nlinesGroupByLevel = IN[2]\r\n\r\n# Place your code below this line\r\nresult = []\r\nfor i in range(len(linesGroupByLevel)):\r\n    tmp = []\r\n    for j in linesGroupByLevel[i]:\r\n        if len(j) < 3:\r\n            crv = j[0]\r\n            height = j[1]\r\n            level = levels[i]\r\n            wall = Wall.ByCurveAndHeight(crv, height, level, wallType)\r\n            tmp.append(wall)\r\n        else:\r\n            crv = j[0]\r\n            sttLevel = j[1]\r\n            endLevel = j[2]\r\n            wall = Wall.ByCurveAndLevels(crv, sttLevel, endLevel, wallType)\r\n            tmp.append(wall)\r\n    result.append(tmp)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
-      "Id": "1db288cfb4d0487e94cc5d1a851e2c26",
+      "Id": "b5c11dbdace54cbc84fc02121fc00a97",
       "Inputs": [
         {
-          "Id": "bd725b2f651941569bc8d529dd5294a1",
+          "Id": "814e12ade5df49469546fb7008a151ab",
           "Name": "IN[0]",
           "Description": "Input #0",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
+        },
+        {
+          "Id": "55041b1832ec43209df88e271636d9b1",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "70afb3dbfb124d4782432efa9f127d26",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
         }
       ],
       "Outputs": [
         {
-          "Id": "4f4336ca23bb444c8dd4a91f715288ef",
+          "Id": "17bbfba65b904902b9a35d1c5a134893",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.WallTypes, DSRevitNodesUI",
+      "SelectedIndex": 12,
+      "SelectedString": "WA211_Exterior-Cement Brick-90mm",
+      "NodeType": "ExtensionNode",
+      "Id": "6b514740b84d4be897ed8098aa3aae7b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2e7db43bbf0f42389c1b73dfa6228d76",
+          "Name": "Wall Type",
+          "Description": "The selected Wall Type",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All wall types available in the document."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsurfaceGroup = IN[0]\r\nlevels = IN[1]\r\n\r\n# Place your code below this line\r\n\r\ndef findWallCrvAndHeight(surface):\r\n    alllines = surface.PerimeterCurves()\r\n    horCrv = list(filter(lambda x: x.Direction.Z==0, alllines))\r\n    verCrv = list(filter(lambda x: x.Direction.Z!=0, alllines))\r\n    height = round(verCrv[0].Length)\r\n    MaxHorCrvZ = max(list(map(lambda y: y.StartPoint.Z, horCrv)))\r\n    wallCrv = list(filter(lambda x: x.StartPoint.Z==MaxHorCrvZ, horCrv))[0]\r\n    \r\n    return (wallCrv, height)\r\n\r\ndef findWallCrvAndLevel(surface, fromLev, toLev):\r\n    alllines = surface.PerimeterCurves()\r\n    horCrv = list(filter(lambda x: x.Direction.Z==0, alllines))\r\n    verCrv = list(filter(lambda x: x.Direction.Z!=0, alllines))\r\n    height = round(verCrv[0].Length)\r\n    MaxHorCrvZ = max(list(map(lambda y: y.StartPoint.Z, horCrv)))\r\n    wallCrv = list(filter(lambda x: x.StartPoint.Z==MaxHorCrvZ, horCrv))[0]\r\n    \r\n    return (wallCrv, fromLev, toLev)\r\n\r\nresult = []\r\nfor i in range(len(surfaceGroup)):\r\n    tmp = []\r\n    for surface in surfaceGroup[i]:\r\n        if i < len(surfaceGroup)-1:\r\n            tmp.append(findWallCrvAndLevel(surface, levels[i], levels[i+1]))\r\n        else:\r\n            tmp.append(findWallCrvAndHeight(surface))\r\n    result.append(tmp)\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "e89c3580390e45708e737bbe6242f831",
+      "Inputs": [
+        {
+          "Id": "034c59302b2b4db98d62a84c5da106ac",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f60850f243254c3289c191ab15d1bd68",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1419170de58c4dfc96614d1a75fe6750",
           "Name": "OUT",
           "Description": "Result of the python script",
           "UsingDefaultValue": false,
@@ -1541,6 +1621,11 @@
       "Id": "5747b952ae604d62939a381e32d114c1"
     },
     {
+      "Start": "0129c9bab5d74140871f20b3153c4187",
+      "End": "5daaa0a6dba1465488c072c457cffdf7",
+      "Id": "b30eab74f8dc4570bede98c31c73cb35"
+    },
+    {
       "Start": "24c5d74fcebb49269d791ac7c23295af",
       "End": "e9ee62435b284f55b7abc2c1fdecc2b0",
       "Id": "9338e17e51d7481393ee95f9149f2e82"
@@ -1587,13 +1672,28 @@
     },
     {
       "Start": "3c8897b182844a00a7727bf3849a4060",
-      "End": "9b200d46e02f4fe3ae24e279d561874e",
-      "Id": "0dd40a8b43ea416e936a475db8d1dde5"
+      "End": "55041b1832ec43209df88e271636d9b1",
+      "Id": "fa8a681a29b242b186a4859fc71be7f7"
     },
     {
-      "Start": "1b590eea760641caba3f6c9efe1ff289",
-      "End": "bd725b2f651941569bc8d529dd5294a1",
-      "Id": "32a00dff67c6443abfd5b5db1a73c149"
+      "Start": "3c8897b182844a00a7727bf3849a4060",
+      "End": "f60850f243254c3289c191ab15d1bd68",
+      "Id": "aa4df8dd61724bb18214cc53851af6d4"
+    },
+    {
+      "Start": "87efce4d714d42468513baf790610b5e",
+      "End": "034c59302b2b4db98d62a84c5da106ac",
+      "Id": "609f3230562549a7a645ba5387db052a"
+    },
+    {
+      "Start": "2e7db43bbf0f42389c1b73dfa6228d76",
+      "End": "814e12ade5df49469546fb7008a151ab",
+      "Id": "d27b8da6bf7341a9a01977b771b007b3"
+    },
+    {
+      "Start": "1419170de58c4dfc96614d1a75fe6750",
+      "End": "70afb3dbfb124d4782432efa9f127d26",
+      "Id": "672f24ed1c58449ca3bf331fff9fd222"
     }
   ],
   "Dependencies": [],
@@ -1610,15 +1710,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 74866.0625,
-      "EyeY": 46020.7109375,
-      "EyeZ": -128172.671875,
-      "LookX": -24400.484375,
-      "LookY": -39068.078125,
-      "LookZ": -32839.625,
-      "UpX": -0.30983021855354309,
-      "UpY": 0.85445880889892578,
-      "UpZ": -0.41701984405517578
+      "EyeX": 67428.5703125,
+      "EyeY": 29671.71875,
+      "EyeZ": -112060.90625,
+      "LookX": -16962.9921875,
+      "LookY": -22719.0859375,
+      "LookZ": -48951.390625,
+      "UpX": -0.064143635332584381,
+      "UpY": 0.98061460256576538,
+      "UpZ": -0.18515005707740784
     },
     "NodeViews": [
       {
@@ -1849,7 +1949,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 741.35149231936475,
-        "Y": 4659.4807606175873
+        "Y": 4657.9626415312387
       },
       {
         "ShowGeometry": false,
@@ -1892,7 +1992,7 @@
         "Y": 4144.1680815278814
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "findWallCrvAndheight",
         "Id": "10b463496d104933bb8a999bd969ea9f",
         "IsSetAsInput": false,
@@ -1908,8 +2008,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2673.0171994544239,
-        "Y": 3780.1819406642358
+        "X": 2757.0063621455788,
+        "Y": 4013.9896097774517
       },
       {
         "ShowGeometry": true,
@@ -1917,9 +2017,9 @@
         "Id": "95ef2726d23742eeb71af222cc1db297",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": 3069.3653942170513,
-        "Y": 4020.2846456370962
+        "Excluded": false,
+        "X": 3196.4841269388,
+        "Y": 4095.19389884813
       },
       {
         "ShowGeometry": true,
@@ -1928,38 +2028,58 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2313.803015710479,
-        "Y": 4747.50409097938
+        "X": 2200.1307999483229,
+        "Y": 4823.28556815415
       },
       {
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Name": "List.Flatten",
         "Id": "235d6c6d680e476eb626c99e184eda5d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2309.1010224273205,
-        "Y": 5346.198843984891
+        "X": 2502.0490988799747,
+        "Y": 5323.4990702845789
       },
       {
-        "ShowGeometry": true,
-        "Name": "Level.Elevation",
-        "Id": "d5b85db8fa914ea0a93c56d4275e91a7",
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "59cf8d5c459d4b62b28b9e7c216cac90",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2743.5745204991881,
-        "Y": 4915.4754052283761
+        "X": 808.91275008000309,
+        "Y": 5169.8332255083715
       },
       {
         "ShowGeometry": true,
-        "Name": "level gap",
-        "Id": "1db288cfb4d0487e94cc5d1a851e2c26",
+        "Name": "Wall.ByCurveAndHeightOrLevel",
+        "Id": "b5c11dbdace54cbc84fc02121fc00a97",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3104.4649990096277,
-        "Y": 5015.3156645117206
+        "X": 3190.0805675644924,
+        "Y": 5161.7954324324855
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Wall Types",
+        "Id": "6b514740b84d4be897ed8098aa3aae7b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2807.8454252363977,
+        "Y": 5110.34105746062
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "findWallCrvAndLevelOrHeight",
+        "Id": "e89c3580390e45708e737bbe6242f831",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2823.4077845682473,
+        "Y": 5228.7111296985422
       }
     ],
     "Annotations": [
@@ -2092,8 +2212,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -1292.7125333039671,
-    "Y": -3381.038373138354,
-    "Zoom": 0.72109251472977409
+    "X": 246.99749019194286,
+    "Y": -253.81753424509782,
+    "Zoom": 0.13287580777738933
   }
 }
