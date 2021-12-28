@@ -62,7 +62,7 @@ def Create_RoomDS(room, inputRooms):
             "adjname": adjname,
             "adjcurve": adjcurve,
             "filtered_perimeter": filtered_perimeter,
-            "adjsurface": adjsurface
+            "adjsurface": adjsurface,
         }
         return result
 
@@ -106,7 +106,8 @@ def Create_RoomDS(room, inputRooms):
         "roomperimeter": roomperimeter,
         "adjrooms": adjrooms,
         "surfacedict": surfacedict,
-        "roomlimitoffset": roomlimitoffset
+        "roomlimitoffset": roomlimitoffset,
+        "disc_line": list(map(lambda x: x.TrimByParameter(0.1,0.9), roomperimeter))
     }
     return result
 
