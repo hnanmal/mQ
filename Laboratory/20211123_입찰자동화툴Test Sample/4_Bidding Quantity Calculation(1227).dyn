@@ -12768,7 +12768,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputs = IN[0]\r\n\r\ndef TargetGeoDS(SettingsDS):\r\n    def getTargetGeoByType(SettingsDS, calctype):\r\n        targetGeo = None\r\n        if calctype:\r\n            typemark = calctype.Keys\r\n            if \"base\" in typemark:\r\n                targetGeo = PolyCurve.ByJoinedCurves(SettingsDS[\"roomDS\"][\"roomperimeter\"])\r\n            elif \"ceil\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomupperface\"]\r\n            elif \"wall\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomsideface\"]\r\n            elif \"floor\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roombottomface\"]\r\n            elif \"roof\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomupperface\"]\r\n#            elif \"extwall\" in typemark:\r\n#                targetGeo = SettingsDS[\"roomDS\"][\"surfacedict\"]\r\n            else:\r\n                targetGeo = []\r\n        else:\r\n            pass\r\n        return targetGeo\r\n    \r\n    name = SettingsDS[\"roomDS\"][\"name\"]\r\n    roomDS = SettingsDS[\"roomDS\"]\r\n    baseWM = SettingsDS[\"baseWM\"]\r\n    baseTarget = getTargetGeoByType(SettingsDS, baseWM)\r\n    ceilWM = SettingsDS[\"ceilWM\"]\r\n    ceilTarget = getTargetGeoByType(SettingsDS, ceilWM)\r\n    wallWM = SettingsDS[\"wallWM\"]\r\n    wallTarget = getTargetGeoByType(SettingsDS, wallWM)\r\n    floorWM = SettingsDS[\"floorWM\"]\r\n    floorTarget = getTargetGeoByType(SettingsDS, floorWM)\r\n    roofWM = SettingsDS[\"roofWM\"]\r\n    roofTarget = getTargetGeoByType(SettingsDS, roofWM)\r\n    extwallWM = SettingsDS[\"extwallWM\"]\r\n#    extwallTarget = getTargetGeoByType(SettingsDS, extwallWM)\r\n    \r\n    result = {\r\n        \"name\": name,\r\n        \"roomDS\": roomDS,\r\n        \"baseWM\": baseWM,\r\n        \"baseTarget\": baseTarget,\r\n        \"ceilWM\": ceilWM,\r\n        \"ceilTarget\": ceilTarget,\r\n        \"wallWM\": wallWM,\r\n        \"wallTarget\": wallTarget,\r\n        \"floorWM\": floorWM,\r\n        \"floorTarget\": floorTarget,\r\n        \"roofWM\": roofWM,\r\n        \"roofTarget\": roofTarget,\r\n        \"extwallWM\": extwallWM,\r\n#        \"extwallTarget\": extwallTarget\r\n    }\r\n    return result\r\n# Place your code below this line\r\n\r\n    \r\ntargetGeoDS = TargetGeoDS(inputs)\r\n\r\nresult = targetGeoDS\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputs = IN[0]\r\nrefs = IN[1]\r\nfuncs = IN[2]\r\n\r\n\r\nwalltype = set(map(lambda x: x.Name, refs))\r\nintWall = list(filter(lambda x: \"Interior\" in x.Name, refs))\r\nextWall = list(filter(lambda x: \"Exterior\" in x.Name, refs))\r\nmasonWall = list(filter(lambda x: \"Block\" in x.Name or \"Brick\" in x.Name, refs))\r\nnonMasonWall = list(filter(lambda x: not \"Block\" in x.Name and not \"Brick\" in x.Name, refs))\r\n\r\ndef TargetGeoDS(SettingsDS, funcs):\r\n    def getTargetGeoByType(SettingsDS, calctype):\r\n        targetGeo = None\r\n        if calctype:\r\n            typemark = calctype.Keys\r\n            if \"base\" in typemark:\r\n                targetGeo = PolyCurve.ByJoinedCurves(SettingsDS[\"roomDS\"][\"roomperimeter\"])\r\n            elif \"ceil\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomupperface\"]\r\n            elif \"wall\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomsideface\"]\r\n            elif \"floor\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roombottomface\"]\r\n            elif \"roof\" in typemark:\r\n                targetGeo = SettingsDS[\"roomDS\"][\"roomupperface\"]\r\n#            elif \"extwall\" in typemark:\r\n#                targetGeo = SettingsDS[\"roomDS\"][\"surfacedict\"]\r\n            else:\r\n                targetGeo = []\r\n        else:\r\n            pass\r\n        return targetGeo\r\n    \r\n    name = SettingsDS[\"roomDS\"][\"name\"]\r\n    roomDS = SettingsDS[\"roomDS\"]\r\n    baseWM = SettingsDS[\"baseWM\"]\r\n    baseWMTarget = getTargetGeoByType(SettingsDS, baseWM)\r\n    ceilWM = SettingsDS[\"ceilWM\"]\r\n    ceilWMTarget = getTargetGeoByType(SettingsDS, ceilWM)\r\n    wallWM = SettingsDS[\"wallWM\"]\r\n#    targetSrfs = []\r\n#    for i in range(len(wallWM[\"wall\"])):\r\n#        if \"Plaster\" in wallWM[\"wall\"][i]:\r\n#            tmp2 = []\r\n#            for i in SettingsDS[\"roomDS\"][\"roomsideface\"]:\r\n#                tmp = []\r\n#                for j in masonWall:\r\n#                    if i.DoesIntersect(j.Geometry()[0]):\r\n#                        tmp.append(True)\r\n#                    else:\r\n#                        tmp.append(False)\r\n#                if any(tmp):\r\n#                    tmp2.append(i)\r\n#                else:\r\n#                    pass\r\n#        else:\r\n#            tmp2 = []\r\n#            for i in SettingsDS[\"roomDS\"][\"roomsideface\"]:\r\n#                tmp = []\r\n#                for j in masonWall:\r\n#                    if i.DoesIntersect(j.Geometry()[0]):\r\n#                        tmp.append(False)\r\n#                    else:\r\n#                        tmp.append(True)\r\n#                if all(tmp):\r\n#                    tmp2.append(i)\r\n#                else:\r\n#                    pass\r\n#            \r\n#        targetSrfs.append(tmp2)\r\n    getTargetforWall = funcs[0]\r\n    targetSrfs = getTargetforWall(SettingsDS, masonWall)\r\n    wallWMTarget = targetSrfs\r\n    floorWM = SettingsDS[\"floorWM\"]\r\n    floorWMTarget = getTargetGeoByType(SettingsDS, floorWM)\r\n    roofWM = SettingsDS[\"roofWM\"]\r\n    roofWMTarget = getTargetGeoByType(SettingsDS, roofWM)\r\n    extwallWM = SettingsDS[\"extwallWM\"]\r\n    disc_line = roomDS[\"disc_line\"]\r\n    targetExtWall = []\r\n    for i in extWall:\r\n        tmp = []\r\n        for j in disc_line:\r\n            if i.Geometry()[0].DoesIntersect(j):\r\n                tmp.append(True)\r\n            else:\r\n                tmp.append(False)\r\n        if any(tmp):\r\n            targetExtWall.append(i)\r\n        else:\r\n            pass\r\n\r\n    extwallWMTarget = targetExtWall\r\n    \r\n    result = {\r\n        \"name\": name,\r\n        \"roomDS\": roomDS,\r\n        \"baseWM\": baseWM,\r\n        \"baseWMTarget\": baseWMTarget,\r\n        \"ceilWM\": ceilWM,\r\n        \"ceilWMTarget\": ceilWMTarget,\r\n        \"wallWM\": wallWM,\r\n        \"wallWMTarget\": wallWMTarget,\r\n        \"floorWM\": floorWM,\r\n        \"floorWMTarget\": floorWMTarget,\r\n        \"roofWM\": roofWM,\r\n        \"roofWMTarget\": roofWMTarget,\r\n        \"extwallWM\": extwallWM,\r\n        \"extwallWMTarget\": extwallWMTarget,\r\n    }\r\n    return result\r\n# Place your code below this line\r\n\r\n    \r\ntargetGeoDS = TargetGeoDS(inputs, funcs)\r\n\r\nresult = targetGeoDS\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "46b0c108a3e6454abdef1b602870df8b",
@@ -12786,6 +12786,15 @@
           "Id": "85af3966a29c4721844e0328a0d48299",
           "Name": "IN[1]",
           "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e077ec2857814cb3b63e9a2bd2455492",
+          "Name": "IN[2]",
+          "Description": "Input #2",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -12955,66 +12964,6 @@
       ],
       "Replication": "Disabled",
       "Description": "All built-in categories."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"baseTarget\"];",
-      "Id": "7382263a324b4d7c8847d53b5126e5c6",
-      "Inputs": [
-        {
-          "Id": "2bc753f2ff1047209bbc464968f3c33a",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "843ac02c1133454b980bac6ebd08cf2d",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"roofWM\"];",
-      "Id": "a438b94514f74a3c9c1fdfc280ed5fd8",
-      "Inputs": [
-        {
-          "Id": "8f5a0aeffdf8453f83c1919befd2470e",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "56985f9c807e4df29a31fbb6cbcf1067",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
@@ -13274,13 +13223,197 @@
       "Description": "All built-in categories."
     },
     {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"wallWMTarget\"];",
+      "Id": "64f58d1b82934d4ebfb8dd535e406ba3",
+      "Inputs": [
+        {
+          "Id": "9ef243b7d6ff449a8ad729d8de1e8448",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c6bec7dd74f348e6875fc8cec1101400",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[1];",
+      "Id": "ab36b8464dd54dcba38c21e32ac038d1",
+      "Inputs": [
+        {
+          "Id": "1ba06c9a6e9b4ea88b50963dd3655952",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d0c5534dd48e4702b4175764486f90b9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "28dc227cc4bd4e5fbdb3a202f135968a",
+      "Inputs": [
+        {
+          "Id": "268dddc1937f495f875a8c402856750b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6eeceac055b145109bfba79c216ac53e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef getTargetforWall(SettingsDS, masonWall):\r\n    targetSrfs = []\r\n    for i in range(len(SettingsDS[\"wallWM\"][\"wall\"])):\r\n        if \"Plaster\" in SettingsDS[\"wallWM\"][\"wall\"][i]:\r\n            tmp2 = []\r\n            for i in SettingsDS[\"roomDS\"][\"roomsideface\"]:\r\n                tmp = []\r\n                for j in masonWall:\r\n                    if i.DoesIntersect(j.Geometry()[0]):\r\n                        tmp.append(True)\r\n                    else:\r\n                        tmp.append(False)\r\n                if any(tmp):\r\n                    tmp2.append(i)\r\n                else:\r\n                    pass\r\n        else:\r\n            tmp2 = []\r\n            for i in SettingsDS[\"roomDS\"][\"roomsideface\"]:\r\n                tmp = []\r\n                for j in masonWall:\r\n                    if i.DoesIntersect(j.Geometry()[0]):\r\n                        tmp.append(False)\r\n                    else:\r\n                        tmp.append(True)\r\n                if all(tmp):\r\n                    tmp2.append(i)\r\n                else:\r\n                    pass\r\n            \r\n        targetSrfs.append(tmp2)\r\n    return targetSrfs\r\n# Assign your output to the OUT variable.\r\nOUT = getTargetforWall",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "3e270e9da83644bea6d7fc834b12a8ce",
+      "Inputs": [
+        {
+          "Id": "834995d14b224c509f69cc6a34f1f367",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "197002f86e6f4e2a9f675ae054c01d30",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = IN",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a243bee1540845c9b4e138c1e25a5bff",
+      "Inputs": [
+        {
+          "Id": "6f273ec10f1247c09e16af6c4d82cecd",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "dcd4c0662a57441a8dcd3c79c6ea6538",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"extwallWMTarget\"];",
+      "Id": "2f916a8a4dd0433c80140664dff627ad",
+      "Inputs": [
+        {
+          "Id": "44a8ddaead5e44f3b915c96aa34b2e23",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ba562ef4e29c49bfadfddcb1f7b4aab9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
       "FunctionSignature": "Revit.Elements.Element.Geometry",
-      "Id": "412f1eddc840435d894777874a028e09",
+      "Id": "da6880fe91b54b9b8e644306cfb41a61",
       "Inputs": [
         {
-          "Id": "fcbd635e8773443eb48e7452d609e362",
+          "Id": "c2a51b85a4da470694fe36e79a633a69",
           "Name": "element",
           "Description": "Revit.Elements.Element",
           "UsingDefaultValue": false,
@@ -13291,7 +13424,7 @@
       ],
       "Outputs": [
         {
-          "Id": "e5187987861c4858b986b9dbb3ec6710",
+          "Id": "e8dbc1919e6843f991413b9855a56c95",
           "Name": "var[]",
           "Description": "var[]",
           "UsingDefaultValue": false,
@@ -13302,36 +13435,6 @@
       ],
       "Replication": "Auto",
       "Description": "Get all of the Geometry associated with this object\n\nElement.Geometry ( ): var[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.Name",
-      "Id": "5798268c53a64ac98e4082beb0cd38d9",
-      "Inputs": [
-        {
-          "Id": "d2b245b62ff14849b0fd4e497c9f099a",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "55344c74c741411ca0dc5cc93fc69407",
-          "Name": "string",
-          "Description": "string",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the Name of the Element\n\nElement.Name: string"
     }
   ],
   "Connectors": [
@@ -15813,7 +15916,7 @@
     {
       "Start": "bba468e092ea4cde963ecd7c4a4ce65f",
       "End": "76bfb7e205a04c8886c6a2fa0c790f68",
-      "Id": "dd64cfdeb700435dbceae3e4ceb81c88"
+      "Id": "20a2606af9724ddf871177bad2e99238"
     },
     {
       "Start": "63abb1ac5be047ed8832f336a17f8154",
@@ -15842,13 +15945,13 @@
     },
     {
       "Start": "6e07b6c32966423faa7061ff4594f283",
-      "End": "2bc753f2ff1047209bbc464968f3c33a",
-      "Id": "9ec15318213d4b9b9306fc67046706d6"
+      "End": "9ef243b7d6ff449a8ad729d8de1e8448",
+      "Id": "f3e53a4d1ba241e487d687f2ea3de8e6"
     },
     {
       "Start": "6e07b6c32966423faa7061ff4594f283",
-      "End": "8f5a0aeffdf8453f83c1919befd2470e",
-      "Id": "c870419d254c4b13a3d0eeda9166b341"
+      "End": "44a8ddaead5e44f3b915c96aa34b2e23",
+      "Id": "88eb47b6053f4c0da086defeed88647b"
     },
     {
       "Start": "618d034a65d34523b45f5b0ec2e48c92",
@@ -15901,14 +16004,34 @@
       "Id": "34ebd288d8d2461f88dbbb15eddb2008"
     },
     {
-      "Start": "ef5cb222b1484ca39769c4b9ccb5bf4c",
-      "End": "d2b245b62ff14849b0fd4e497c9f099a",
-      "Id": "c4abcf12631c480da995844c4e2f46fa"
-    },
-    {
       "Start": "0e2657b869864ccf82e848f6970720c7",
       "End": "14e4844fbc9b40d59e17bffe52c0167c",
       "Id": "f8455e7609464a25a6d075c109ef5f5e"
+    },
+    {
+      "Start": "c6bec7dd74f348e6875fc8cec1101400",
+      "End": "1ba06c9a6e9b4ea88b50963dd3655952",
+      "Id": "1d9c3e0910d6415abbc501134a2540cc"
+    },
+    {
+      "Start": "c6bec7dd74f348e6875fc8cec1101400",
+      "End": "268dddc1937f495f875a8c402856750b",
+      "Id": "19ded149c03145ccbe957db1b367f52f"
+    },
+    {
+      "Start": "197002f86e6f4e2a9f675ae054c01d30",
+      "End": "6f273ec10f1247c09e16af6c4d82cecd",
+      "Id": "4e50ad4320da4533baa37ca157c784b5"
+    },
+    {
+      "Start": "dcd4c0662a57441a8dcd3c79c6ea6538",
+      "End": "e077ec2857814cb3b63e9a2bd2455492",
+      "Id": "a3f2384d37a54a34b4eea2b1edc17653"
+    },
+    {
+      "Start": "ba562ef4e29c49bfadfddcb1f7b4aab9",
+      "End": "c2a51b85a4da470694fe36e79a633a69",
+      "Id": "8bbe53a3c9854b079fa53b6c1643c085"
     }
   ],
   "Dependencies": [],
@@ -15925,15 +16048,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 31887.375,
-      "EyeY": 65183.37890625,
-      "EyeZ": -105485.4296875,
-      "LookX": 2510.65625,
-      "LookY": -77498.5859375,
-      "LookZ": -53445.0703125,
-      "UpX": 0.03200259804725647,
-      "UpY": 0.73135119676589966,
-      "UpZ": -0.68124985694885254
+      "EyeX": 83492.515625,
+      "EyeY": 54353.34765625,
+      "EyeZ": -124373.328125,
+      "LookX": -31354.515625,
+      "LookY": -63660.6796875,
+      "LookZ": -26021.234375,
+      "UpX": -0.544132649898529,
+      "UpY": 0.70710355043411255,
+      "UpZ": -0.45157992839813232
     },
     "NodeViews": [
       {
@@ -19578,7 +19701,7 @@
       },
       {
         "ShowGeometry": false,
-        "Name": "@RoomInfoClass",
+        "Name": "@RoomDS",
         "Id": "637dd2976f2744d1ae2ad68ed7f22025",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -19598,7 +19721,7 @@
       },
       {
         "ShowGeometry": false,
-        "Name": "@CreateRoomInfoInstance",
+        "Name": "@CreateRoomDS",
         "Id": "23fa630e955046b29534dd92d4693781",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -19613,8 +19736,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4101.1651722354118,
-        "Y": -10214.380210599897
+        "X": 4515.8333806583914,
+        "Y": -9998.5488070354786
       },
       {
         "ShowGeometry": true,
@@ -19633,8 +19756,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3643.55828155094,
-        "Y": -10196.366286927871
+        "X": 3369.3545819959768,
+        "Y": -10204.74805940335
       },
       {
         "ShowGeometry": true,
@@ -19643,8 +19766,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4266.5285029240022,
-        "Y": -10175.268105306628
+        "X": 5364.3236473657616,
+        "Y": -9753.01839695289
       },
       {
         "ShowGeometry": true,
@@ -19653,8 +19776,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5052.035254488972,
-        "Y": -10119.522193273802
+        "X": 6557.7245671710834,
+        "Y": -10674.135810607069
       },
       {
         "ShowGeometry": true,
@@ -19663,8 +19786,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4747.1717987123393,
-        "Y": -9990.6449671558566
+        "X": 6252.8611113944507,
+        "Y": -10545.258584489124
       },
       {
         "ShowGeometry": true,
@@ -19673,8 +19796,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4712.4685989490545,
-        "Y": -9839.37031765262
+        "X": 6218.1579116311659,
+        "Y": -10393.983934985887
       },
       {
         "ShowGeometry": true,
@@ -19683,8 +19806,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4558.2223999484731,
-        "Y": -9993.0968355362147
+        "X": 6063.9117126305846,
+        "Y": -10547.710452869482
       },
       {
         "ShowGeometry": true,
@@ -19693,28 +19816,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4528.5389500958572,
-        "Y": -9837.9085179931917
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Code Block",
-        "Id": "7382263a324b4d7c8847d53b5126e5c6",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 4780.338987389985,
-        "Y": -10371.27256820796
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Code Block",
-        "Id": "a438b94514f74a3c9c1fdfc280ed5fd8",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 4454.5201441066583,
-        "Y": -10396.942017560885
+        "X": 6034.2282627779687,
+        "Y": -10392.522135326459
       },
       {
         "ShowGeometry": true,
@@ -19723,8 +19826,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5522.948765967396,
-        "Y": -10532.092809566298
+        "X": 167.53517172041916,
+        "Y": -11126.725824888656
       },
       {
         "ShowGeometry": true,
@@ -19733,8 +19836,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5192.5952187436505,
-        "Y": -10606.18888919032
+        "X": -162.81837550332625,
+        "Y": -11200.821904512677
       },
       {
         "ShowGeometry": true,
@@ -19743,8 +19846,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5200.3836125901653,
-        "Y": -10486.956806023118
+        "X": -155.02998165681151,
+        "Y": -11081.589821345475
       },
       {
         "ShowGeometry": true,
@@ -19753,8 +19856,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5193.1822471603436,
-        "Y": -10382.3492961591
+        "X": -162.23134708663315,
+        "Y": -10976.982311481457
       },
       {
         "ShowGeometry": true,
@@ -19763,8 +19866,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5887.1003479727042,
-        "Y": -10493.304928557116
+        "X": 531.68675372572739,
+        "Y": -11087.937943879473
       },
       {
         "ShowGeometry": true,
@@ -19773,8 +19876,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5737.9690135828514,
-        "Y": -10322.186645224758
+        "X": 382.5554193358746,
+        "Y": -10916.819660547115
       },
       {
         "ShowGeometry": true,
@@ -19783,8 +19886,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3974.5062911865316,
-        "Y": -10018.705050969407
+        "X": 5082.3236473657616,
+        "Y": -9768.01839695289
       },
       {
         "ShowGeometry": true,
@@ -19793,28 +19896,78 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3785.5568924226618,
-        "Y": -10021.156919349756
+        "X": 4816.3236473657616,
+        "Y": -9768.01839695289
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "64f58d1b82934d4ebfb8dd535e406ba3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6562.6893126821114,
+        "Y": -10409.613617333267
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "ab36b8464dd54dcba38c21e32ac038d1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7099.0385917123513,
+        "Y": -10360.153018918461
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "28dc227cc4bd4e5fbdb3a202f135968a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6967.5335457208312,
+        "Y": -10744.449111649927
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "getTargetforWall()",
+        "Id": "3e270e9da83644bea6d7fc834b12a8ce",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4451.6308871870806,
+        "Y": -9532.33424207612
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "python func list join",
+        "Id": "a243bee1540845c9b4e138c1e25a5bff",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5082.3236473657616,
+        "Y": -9660.01839695289
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "2f916a8a4dd0433c80140664dff627ad",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6371.9445177757525,
+        "Y": -10062.861277595992
       },
       {
         "ShowGeometry": true,
         "Name": "Element.Geometry",
-        "Id": "412f1eddc840435d894777874a028e09",
+        "Id": "da6880fe91b54b9b8e644306cfb41a61",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3666.1327548389518,
-        "Y": -9743.28807971346
-      },
-      {
-        "ShowGeometry": true,
-        "Name": "Element.Name",
-        "Id": "5798268c53a64ac98e4082beb0cd38d9",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 4274.844226056829,
-        "Y": -9695.7520773814558
+        "X": 6800.4417466981922,
+        "Y": -9988.8276268917743
       }
     ],
     "Annotations": [
@@ -20867,7 +21020,7 @@
       },
       {
         "Id": "164ee039b18b48609b2e973d97d08b3e",
-        "Title": "<Click here to edit the group title>",
+        "Title": "Sample Test for Function Import from Other Node",
         "Nodes": [
           "0f52b8bd3ee04abf9cf2c8a3559620e4",
           "2b3f7ff649484a6e8a279b0f414f5341",
@@ -20876,14 +21029,49 @@
           "49d6f16fb89243a7a90768fa80fe708e",
           "2bf67e0b773d4ee9b63e74521671cf9b"
         ],
-        "Left": 5182.5952187436505,
-        "Top": -10659.18888919032,
+        "Left": -172.81837550332625,
+        "Top": -11253.821904512677,
         "Width": 838.50512922905364,
         "Height": 430.00224396556223,
         "FontSize": 36.0,
-        "InitialTop": -10606.18888919032,
+        "InitialTop": -11200.821904512677,
         "InitialHeight": 429.00224396556223,
         "TextblockHeight": 43.0,
+        "Background": "#FFBB87C6"
+      },
+      {
+        "Id": "d9f3d1df935548f28d633348e1f92ac9",
+        "Title": "<Click here to edit the group title>",
+        "Nodes": [
+          "46b0c108a3e6454abdef1b602870df8b",
+          "9a650a3118144d4091f6d0d29dae6546",
+          "48f94922f77f471ba4d725dc1b8f15a7",
+          "a243bee1540845c9b4e138c1e25a5bff"
+        ],
+        "Left": 4806.3236473657616,
+        "Top": -9821.01839695289,
+        "Width": 758.0,
+        "Height": 265.0,
+        "FontSize": 36.0,
+        "InitialTop": -9768.01839695289,
+        "InitialHeight": 409.916821325769,
+        "TextblockHeight": 43.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "0bee310bd2204c93933c97779b875ff9",
+        "Title": "Create SettingsDS",
+        "Nodes": [
+          "c99d2d38fd244481998b8dbaa1925478"
+        ],
+        "Left": 4505.8333806583914,
+        "Top": -10094.548807035479,
+        "Width": 182.29333333333335,
+        "Height": 226.0,
+        "FontSize": 36.0,
+        "InitialTop": -9998.5488070354786,
+        "InitialHeight": 160.0,
+        "TextblockHeight": 86.0,
         "Background": "#FFC1D676"
       },
       {
@@ -21027,8 +21215,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -2864.844376545424,
-    "Y": 8451.9360825863732,
-    "Zoom": 0.81168907989567907
+    "X": -2700.2677331756536,
+    "Y": 9296.458336006317,
+    "Zoom": 0.86041722224467188
   }
 }
