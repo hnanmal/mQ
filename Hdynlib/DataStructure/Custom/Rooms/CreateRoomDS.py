@@ -114,6 +114,7 @@ def main():
 
 
     result = list(map(lambda x: Create_RoomDS(x, inputRooms), inputRooms))
+    return result
     # Assign your output to the OUT variable.
-    OUT = result
-main()
+
+OUT = main()
