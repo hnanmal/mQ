@@ -12135,7 +12135,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDSs = IN[0]\r\nfuncSets = IN[1]\r\n#func = IN[1][0]\r\n#funcfamilyTag = IN[1][1]\r\n#funcWmTag = IN[1][2]\r\n#funcUnitTag = IN[1][3]\r\n# Place your code below this line\r\n\r\n#elemDS = elemDSs[0]\r\ndef getTarget(elemDS, funcSets):\r\n    elem = elemDS[\"elem\"]\r\n    etype = elemDS[\"elemType\"]\r\n    familyCode = elemDS[\"familyCode\"]\r\n    wms = elemDS[\"WMperElem\"]\r\n    result = []\r\n    \r\n    def matchWM_func(wms, funcSet):\r\n        result = []\r\n        func = funcSet[0]\r\n        for wm in wms:\r\n            tmp1 = []\r\n            tmp2 = []\r\n            for i in funcSet[1]:\r\n                if i in etype:#element type 비교\r\n                    tmp1.append(True)\r\n                else:\r\n                    tmp1.append(False)\r\n            for i in funcSet[2]:#work type 비교\r\n                if i in wm:\r\n                    tmp2.append(True)\r\n                else:\r\n                    tmp2.append(False)\r\n            if any(tmp1) and any(tmp2):\r\n                result.append([etype, wm, func, func(elem)])\r\n            else:\r\n                result.append([etype, wm,\"no matched function\"])\r\n\r\n        return result\r\n\r\n    result = [matchWM_func(wms, funcSet) for funcSet in funcSets]\r\n\r\n    return result\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = list(chain(*[getTarget(elemDS, funcSets) for elemDS in elemDSs]))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDSs = IN[0]\r\nfuncSets = IN[1]\r\n#func = IN[1][0]\r\n#funcfamilyTag = IN[1][1]\r\n#funcWmTag = IN[1][2]\r\n#funcUnitTag = IN[1][3]\r\n# Place your code below this line\r\n\r\n\r\ndef getTarget(elemDS, funcSets):\r\n    elem = elemDS[\"elem\"]\r\n    etype = elemDS[\"elemType\"]\r\n    familyCode = elemDS[\"familyCode\"]\r\n    wms = elemDS[\"WMperElem\"]\r\n    result = []\r\n    \r\n    def matchWM_func(wms, funcSet):\r\n        result = []\r\n        func = funcSet[0]\r\n        for wm in wms:\r\n            tmp1 = []\r\n            tmp2 = []\r\n            wmbln = []\r\n            for i in funcSet[1]:\r\n                if i in etype:#element type 비교\r\n                    tmp1.append(True)\r\n                else:\r\n                    tmp1.append(False)\r\n            for i in funcSet[2]:#work type 비교\r\n                if i in wm:\r\n                    tmp2.append(True)\r\n                else:\r\n                    tmp2.append(False)\r\n            if any(tmp1) and any(tmp2):\r\n                result.append([etype, wm, func, func(elem)])\r\n\r\n            \r\n        return result\r\n\r\n    result = [matchWM_func(wms, funcSet) for funcSet in funcSets]\r\n\r\n    return list(chain(*result))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = [getTarget(elemDS, funcSets) for elemDS in elemDSs]",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "66979d5642e3486f9b28e6440bf1bb52",
@@ -12548,6 +12548,36 @@
       ],
       "Replication": "Auto",
       "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.Count@var[]..[]",
+      "Id": "7a0773e1965841a687d97462e335ce8b",
+      "Inputs": [
+        {
+          "Id": "b5f510c226454b80a176287accfa4bc7",
+          "Name": "list",
+          "Description": "List to get the item count of.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "062b3a72cd9b4e09a78994de4040186d",
+          "Name": "int",
+          "Description": "List length.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns the number of items stored in the given list.\n\nList.Count (list: var[]..[]): int"
     }
   ],
   "Connectors": [
@@ -14540,6 +14570,11 @@
       "Start": "0f56d685ccbb4d3a9e0c72f01ac521e5",
       "End": "f2aa2735415546789c8edd83fccabe66",
       "Id": "fb3c25545e0442678f1da2e90c752c39"
+    },
+    {
+      "Start": "dbf5d3fd3e2c479092dc272fdb15c3f5",
+      "End": "b5f510c226454b80a176287accfa4bc7",
+      "Id": "52827df21b7b4e38baed585def634c4b"
     },
     {
       "Start": "d41f595b83764eb8b0d816d357af5062",
@@ -18134,8 +18169,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12682.185280314374,
-        "Y": 9491.1743804367234
+        "X": 12680.611929019324,
+        "Y": 9494.3210830268254
       },
       {
         "ShowGeometry": true,
@@ -18144,8 +18179,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12908.383247965492,
-        "Y": 9131.2651535337536
+        "X": 12942.072379214545,
+        "Y": 9026.9293135477674
       },
       {
         "ShowGeometry": false,
@@ -18256,6 +18291,16 @@
         "Excluded": false,
         "X": 10919.947932247482,
         "Y": 9189.7119081817855
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "List.Count",
+        "Id": "7a0773e1965841a687d97462e335ce8b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14064.015631552797,
+        "Y": 9371.0087363321618
       }
     ],
     "Annotations": [
@@ -19362,7 +19407,7 @@
         "Height": 364.7133333333004,
         "FontSize": 96.0,
         "InitialTop": 10363.416575657502,
-        "InitialHeight": 269.7133333333004,
+        "InitialHeight": 291.7133333333004,
         "TextblockHeight": 115.0,
         "Background": "#FFFFAA45"
       },
@@ -20039,8 +20084,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -7619.8299318403169,
-    "Y": -5705.4556778688066,
-    "Zoom": 0.63558596426988123
+    "X": -4935.295999562135,
+    "Y": -3499.8721325031611,
+    "Zoom": 0.40561518977008321
   }
 }
