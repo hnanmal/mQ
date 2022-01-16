@@ -1,0 +1,593 @@
+{
+  "Uuid": "dc7b859b-273e-42f0-935d-d2a27ccdf83f",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "벽 구분",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "d7ddf677331a4a9c8cf371cbf4f2528c",
+      "Inputs": [
+        {
+          "Id": "e42c8a03fde8484b807be75cdf000cdd",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "954b70d9be114a9b8f25ae0839fbb54f",
+          "Name": "Elements",
+          "Description": "An element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 686,
+      "SelectedString": "OST_Walls",
+      "NodeType": "ExtensionNode",
+      "Id": "c72e5c5d52034caa8ae9a87fc9f4f54c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2c7d1bb3f67d498880deadd2680bc7be",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetLocation",
+      "Id": "4b1c0e0891db4363b46e0c555e3e7130",
+      "Inputs": [
+        {
+          "Id": "d12a04233d12485bb17a9e60d9c21c4c",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "77a1a25b0c494ace9fd75859d75b7019",
+          "Name": "Geometry",
+          "Description": "Location Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get an existing element's location\n\nElement.GetLocation ( ): Geometry"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlines = IN[0]\r\n\r\n# Place your code below this line\r\n\r\ndef findGroups(lines):\r\n\tresult = []\r\n\tidxlog = []\r\n\t\r\n\tfor i in range(len(lines)):\r\n\t\ttmp1 = []\r\n\t\tif i in idxlog:\r\n\t\t\tpass\r\n\t\telse:\r\n\t\t\tidxlog.append(i)\r\n\t\t\ttmp1.append(lines[i])\r\n\t\t\tfor j in range(len(lines)):\r\n\t\t\t\tif j in idxlog:\r\n\t\t\t\t\tpass\r\n\t\t\t\telse:\r\n\t\t\t\t\ttarget = PolyCurve.ByJoinedCurves(tmp1)\r\n\t\t\t\t\tif target.DoesIntersect(lines[j]):\r\n\t\t\t\t\t\tidxlog.append(j)\r\n\t\t\t\t\t\ttmp1.append(lines[j])\r\n\t\t\tresult.append(tmp1)\r\n\treturn result\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = findGroups(lines)",
+      "Engine": "IronPython2",
+      "VariableInputPorts": true,
+      "Id": "118acc61eddd484eb7a8e792394003fe",
+      "Inputs": [
+        {
+          "Id": "cbcc3ec276314e8495fa129ba3875a83",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ac2e75435be54b4ea4c3ca1d5faeb60a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.PolyCurve.ByJoinedCurves@Autodesk.DesignScript.Geometry.Curve[],double",
+      "Id": "0c16d3bf6a3a4d0691d1412e8f8557ab",
+      "Inputs": [
+        {
+          "Id": "89d9ceab76f6428084078abf93f77aba",
+          "Name": "curves",
+          "Description": "Curves to join into polycurve\n\nCurve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "913b600892274751b8422cf137a7ce2e",
+          "Name": "joinTolerance",
+          "Description": "Tolerance to determine size of gap allowed between curves to be joined\n\ndouble\nDefault value : 0.001",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "398f26e051274d42b70a0b47d73de1f8",
+          "Name": "PolyCurve",
+          "Description": "Polycurve created by joined curves",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Make PolyCurve by joining curves. Flips curve as needed for connectivity. Choose a preferred join tolerance between 1e-6 and 1e-3 units.\n\nPolyCurve.ByJoinedCurves (curves: Curve[], joinTolerance: double = 0.001): PolyCurve"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncrvGroups = IN[0]\r\n\r\n# Place your code below this line\r\ndef ccw(crvs):\r\n\tcrv1 = crvs[0]\r\n\tcrv2 = crvs[1]\r\n\tA = crv1.StartPoint\r\n\tB = crv1.EndPoint\r\n\tC = crv2.EndPoint\r\n\t외적 = (B.X - A.X)*(C.Y - A.Y) - (C.X - A.X)*(B.Y - A.Y)\r\n\t\r\n\tif 외적>0:\r\n\t\treturn \"CCW\"\r\n\telif 외적<0:\r\n\t\treturn \"CW\"\r\n\t\t\r\nresult = [ccw(crvs) for crvs in crvGroups]\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "IronPython2",
+      "VariableInputPorts": true,
+      "Id": "a2e33a7f477e466ea940e332ee252d4f",
+      "Inputs": [
+        {
+          "Id": "4fda32378707484e8737903cca43f371",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "45128e7c4beb4760a8ec32cb25de9af0",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.FilterByBoolMask@var[]..[],var[]..[]",
+      "Id": "ee1f78881fa94656beffc401e5e1491e",
+      "Inputs": [
+        {
+          "Id": "33eef7d05b94472f9edc0cab9716f553",
+          "Name": "list",
+          "Description": "List to filter.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "eaded335048c49c587cb65fd3c144f0e",
+          "Name": "mask",
+          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "35b560f812ba4a76a92434b1b422d144",
+          "Name": "in",
+          "Description": "Items whose mask index is true.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "62107cc62916421080981cc271ac68c3",
+          "Name": "out",
+          "Description": "Items whose mask index is false.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i==\"CCW\";",
+      "Id": "143772b627d149219c7a2c17aed3d37c",
+      "Inputs": [
+        {
+          "Id": "0d8fd5672e5c4b0ca04074bd1fea509b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8b05df7a00474bbb86f5b1362ebfa215",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "07779a0ae3654106b66d975413844a2c",
+      "Inputs": [
+        {
+          "Id": "a0ca471553c24fea863e3c08fd337ebe",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c18e149ecf7848dd9d2fc0b8e1ee691f",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.Reverse",
+      "Id": "2935d1cc5433466591a702058d63667c",
+      "Inputs": [
+        {
+          "Id": "f18a0cececc14f868c816768f14f9562",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "615cffd335414549b407b91df4f75505",
+          "Name": "Curve",
+          "Description": "A new Curve with the opposite direction",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Reverse the direction of the curve\n\nCurve.Reverse ( ): Curve"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "954b70d9be114a9b8f25ae0839fbb54f",
+      "End": "d12a04233d12485bb17a9e60d9c21c4c",
+      "Id": "45439be8448343e0bf4067167d6b9c61"
+    },
+    {
+      "Start": "2c7d1bb3f67d498880deadd2680bc7be",
+      "End": "e42c8a03fde8484b807be75cdf000cdd",
+      "Id": "0c653741624b41bcaeea2d084ecb8b41"
+    },
+    {
+      "Start": "77a1a25b0c494ace9fd75859d75b7019",
+      "End": "cbcc3ec276314e8495fa129ba3875a83",
+      "Id": "48ecc035cb224a76b240275118faa5bf"
+    },
+    {
+      "Start": "ac2e75435be54b4ea4c3ca1d5faeb60a",
+      "End": "89d9ceab76f6428084078abf93f77aba",
+      "Id": "d684ea55ec43495599d5030f953bfa06"
+    },
+    {
+      "Start": "ac2e75435be54b4ea4c3ca1d5faeb60a",
+      "End": "4fda32378707484e8737903cca43f371",
+      "Id": "904782ef9b2c4a7aa2c1eecdd5523e6f"
+    },
+    {
+      "Start": "ac2e75435be54b4ea4c3ca1d5faeb60a",
+      "End": "33eef7d05b94472f9edc0cab9716f553",
+      "Id": "69b75d59646a47548eced92ea100943b"
+    },
+    {
+      "Start": "45128e7c4beb4760a8ec32cb25de9af0",
+      "End": "0d8fd5672e5c4b0ca04074bd1fea509b",
+      "Id": "f3403a0bc9e54a229a64810a98be1076"
+    },
+    {
+      "Start": "35b560f812ba4a76a92434b1b422d144",
+      "End": "a0ca471553c24fea863e3c08fd337ebe",
+      "Id": "fe18094e2e5d4239adbfdd46e6a45d0e"
+    },
+    {
+      "Start": "8b05df7a00474bbb86f5b1362ebfa215",
+      "End": "eaded335048c49c587cb65fd3c144f0e",
+      "Id": "7c0f2d46f03d411ea2795e5cd9d99762"
+    },
+    {
+      "Start": "c18e149ecf7848dd9d2fc0b8e1ee691f",
+      "End": "f18a0cececc14f868c816768f14f9562",
+      "Id": "26e507ad45314e58b6dbe7370d5bbc55"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.12",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "1.10",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.12.0.5650",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": 5837.1484375,
+      "EyeY": 36227.328125,
+      "EyeZ": 15263.0390625,
+      "LookX": -7611.2109375,
+      "LookY": -28943.046875,
+      "LookZ": -13838.669921875,
+      "UpX": -0.36370691657066345,
+      "UpY": 0.65605837106704712,
+      "UpZ": -0.66129028797149658
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "All Elements of Category",
+        "Id": "d7ddf677331a4a9c8cf371cbf4f2528c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 390.915156410324,
+        "Y": 629.035449492765
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Categories",
+        "Id": "c72e5c5d52034caa8ae9a87fc9f4f54c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 124.91515641032402,
+        "Y": 629.035449492765
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Element.GetLocation",
+        "Id": "4b1c0e0891db4363b46e0c555e3e7130",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 674.915156410324,
+        "Y": 629.035449492765
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "findGroups",
+        "Id": "118acc61eddd484eb7a8e792394003fe",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1023.915156410324,
+        "Y": 629.035449492765
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "PolyCurve.ByJoinedCurves",
+        "Id": "0c16d3bf6a3a4d0691d1412e8f8557ab",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1259.0324469569168,
+        "Y": 500.31841368250684
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "시계방향여부 판별",
+        "Id": "a2e33a7f477e466ea940e332ee252d4f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1636.0324469569168,
+        "Y": 675.33321256851559
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "List.FilterByBoolMask",
+        "Id": "ee1f78881fa94656beffc401e5e1491e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2234.7311387632162,
+        "Y": 582.7376864170144
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "143772b627d149219c7a2c17aed3d37c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1895.2246009474115,
+        "Y": 758.46375529078864
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "07779a0ae3654106b66d975413844a2c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2539.58682965876,
+        "Y": 517.59709199632857
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Curve.Reverse",
+        "Id": "2935d1cc5433466591a702058d63667c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2760.58682965876,
+        "Y": 513.38375866299521
+      }
+    ],
+    "Annotations": [
+      {
+        "Id": "e6dcc4c24cab4223b2b3f67a31520c8b",
+        "Title": "서로 접하는 벽체 라인 찾아내기",
+        "Nodes": [
+          "118acc61eddd484eb7a8e792394003fe",
+          "0c16d3bf6a3a4d0691d1412e8f8557ab"
+        ],
+        "Left": 1013.915156410324,
+        "Top": 447.31841368250684,
+        "Width": 512.11729054659281,
+        "Height": 285.71703581025815,
+        "FontSize": 36.0,
+        "InitialTop": 500.31841368250684,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 43.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "4225bbd4494042c0a8d6e2e46187b7ef",
+        "Title": "벽체 위치선 얻어오기",
+        "Nodes": [
+          "4b1c0e0891db4363b46e0c555e3e7130"
+        ],
+        "Left": 664.915156410324,
+        "Top": 533.035449492765,
+        "Width": 249.0,
+        "Height": 189.0,
+        "FontSize": 36.0,
+        "InitialTop": 629.035449492765,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 86.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "98a29022a2874b0fbfc1fcf5b4a5be97",
+        "Title": "벽 선분들 시계방향 여부 판별 하여 반시계방향인 그룹 찾아내기",
+        "Nodes": [
+          "a2e33a7f477e466ea940e332ee252d4f",
+          "ee1f78881fa94656beffc401e5e1491e",
+          "143772b627d149219c7a2c17aed3d37c",
+          "07779a0ae3654106b66d975413844a2c"
+        ],
+        "Left": 1626.0324469569168,
+        "Top": 464.59709199632857,
+        "Width": 1034.5543827018432,
+        "Height": 386.86666329446007,
+        "FontSize": 36.0,
+        "InitialTop": 517.59709199632857,
+        "InitialHeight": 363.86666329446007,
+        "TextblockHeight": 43.0,
+        "Background": "#FFC1D676"
+      }
+    ],
+    "X": 10.180022131107307,
+    "Y": -0.3842251002760122,
+    "Zoom": 0.4841632760558392
+  }
+}
