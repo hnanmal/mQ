@@ -39,11 +39,8 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 refFunc = IN[0][0]
-wholeExcavationBln = IN[1]
-ratio = IN[2]
-#bttmOffset = IN[3]
-#leanThk = IN[4]
-#slopeExcav = IN[5]
+wholeExcavationBln = IN[2]
+ratio = IN[3]
 
 
 # Place your code below this line
