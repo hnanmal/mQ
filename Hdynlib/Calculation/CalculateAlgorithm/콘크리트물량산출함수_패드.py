@@ -62,4 +62,4 @@ def 콘크리트물량산출함수_패드(input):
         return (target, target.Volume/1000000000, "M3")
 
 # Assign your output to the OUT variable.
-OUT = (콘크리트물량산출함수_패드,["PAD"],[": Structural Concrete"],["M3"])
+OUT = (콘크리트물량산출함수_패드,["PAD"],["Equipment Foundation Work Structural Concrete"],["M3"])
