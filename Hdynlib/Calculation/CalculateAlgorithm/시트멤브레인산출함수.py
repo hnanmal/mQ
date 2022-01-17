@@ -47,11 +47,7 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 dataEnteringNode = IN
 refFunc = IN[0][0]
 input = IN[1]
-기층offset = IN[2]
-bttmOffset = IN[3]
-버림thk = IN[4]
-버림offset = IN[5]
-#slopeExcav = IN[5]
+
 
 def getIdxOfMaximum(list):
     result = []

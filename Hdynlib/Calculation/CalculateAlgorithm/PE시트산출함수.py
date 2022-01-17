@@ -69,7 +69,8 @@ def PE시트산출함수(input):
 
 
     #return target
-    return (target, sum([i.Volume/버림thk for i in [target]])/calcTargetNum/1000000, "M2")
+    return (target, target.Volume/버림thk/calcTargetNum/1000000, "M2")
+    #return (target, sum([i.Volume/버림thk for i in [target]])/calcTargetNum/1000000, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = PE시트산출함수(input)

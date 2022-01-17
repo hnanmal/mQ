@@ -41,9 +41,7 @@ dataEnteringNode = IN
 refFunc = IN[0][0]
 input = IN[1]
 잡석thk = IN[2]
-bttmOffset = IN[3]
-버림thk = IN[4]
-#slopeExcav = IN[5]
+
 
 
 # Place your code below this line
