@@ -25,8 +25,8 @@ allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 refFunc = IN[0]
-wholeExcavationBln = IN[1]
-inputDS = IN[2]
+wholeExcavationBln = IN[2]
+#inputDS = IN[2]
 bttmOffset = IN[3]
 버림thk = IN[4]
 slopeExcav = IN[5]

@@ -25,7 +25,7 @@ dataEnteringNode = IN
 _inputs = IN[0]
 # Place your code below this line
 def 거푸집산출함수(input):
-    geo = input.Geometry()[0]
+    geo = list(chain(*input.Geometry()))
     allSrf = geo.Explode()
     sideSrf = [i for i in allSrf if round(i.NormalAtParameter(0.5,0.5).Z)==0]
     
