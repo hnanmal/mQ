@@ -50,8 +50,8 @@ def 콘크리트물량산출함수(input):
         target = input
         
         return (target.Geometry()[0], target.GetParameterValueByName("Volume"), "M3")
-    
-    elif "SOG" in input.Name:
+
+    else:
         inputGeo = input.Geometry()[0]
         간섭판별선 = PolyCurve.ByJoinedCurves([i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0].PerimeterCurves()).Offset(-1)
         간섭판별면 = 간섭판별선.Patch()
@@ -60,6 +60,16 @@ def 콘크리트물량산출함수(input):
         target = unionSolid
         
         return (target, target.Volume/1000000000, "M3")
+
+    # elif "SOG" in input.Name:
+    #     inputGeo = input.Geometry()[0]
+    #     간섭판별선 = PolyCurve.ByJoinedCurves([i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0].PerimeterCurves()).Offset(-1)
+    #     간섭판별면 = 간섭판별선.Patch()
+    #     overlaps = [i for i in allEdgesGeo if 간섭판별면.DoesIntersect(i)]+[inputGeo]
+    #     unionSolid = Solid.ByUnion(overlaps)
+    #     target = unionSolid
+        
+    #     return (target, target.Volume/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 OUT = (콘크리트물량산출함수,["Footing-Rectangular","SOG","RAMP","STOOP"],[": Structural Concrete","Substructure Work Structural Concrete", "Superstructure Work Structural Concrete"],["M3"])
