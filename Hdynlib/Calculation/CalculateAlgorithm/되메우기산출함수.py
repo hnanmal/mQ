@@ -30,7 +30,7 @@ allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
 allPeds = [i.ToDSType(False) for i in allCols if "UG" in i.Name]
 allPedsGeo = [i.Geometry()[0] for i in allPeds]
 allTGs = [i.ToDSType(False) for i in allBeams if "UG" in i.Name] #[i.ToDSType(False) for i in allBeams if "TG" in i.Name]
-allTGsGeo = [i.Geometry()[0] for i in allTGs]
+allTGsGeo = list(chain(*[i.Geometry() for i in allTGs]))
 allSOGs = [i.ToDSType(False) for i in allFdns if "SOG" in i.Name and "GS" in i.Name]
 allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 
@@ -52,7 +52,7 @@ def 되메우기산출함수(input):
     if wholeExcavationBln:
         calcTargetNum = len(allIsoFdns)
         exca_solid = refFunc(input)[0]
-        fdn_solid = Solid.ByUnion([i.Geometry()[0] for i in allIsoFdns])
+        fdn_solid = Solid.ByUnion(list(chain(*[i.Geometry() for i in allIsoFdns])))
         peds_solid = Solid.ByUnion(allPedsGeo)
         TGs_solid = Solid.ByUnion(allTGsGeo)
         SOGs_solid = Solid.ByUnion(allSOGsGeo)
