@@ -22,6 +22,8 @@ collector4 = FilteredElementCollector(doc)
 clr.AddReference('ProtoGeometry')
 from Autodesk.DesignScript.Geometry import *
 
+from itertools import chain
+
 allFdns = collector1.OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements()
 allCols = collector2.OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()
 allBeams = collector3.OfCategory(BuiltInCategory.OST_StructuralFraming).WhereElementIsNotElementType().ToElements()
