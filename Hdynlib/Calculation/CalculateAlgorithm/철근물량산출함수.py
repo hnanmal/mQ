@@ -71,5 +71,11 @@ def 철근물량산출함수(input):
         
         return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
 
+    else:
+        target = 콘크리트물량산출함수(input)[0]
+        ratio = 패드철근비
+        
+        return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
+
 # Assign your output to the OUT variable.
-OUT = (철근물량산출함수,["Footing-Rectangular","SOG"],["Rebar Work"],["TON"])
+OUT = (철근물량산출함수,["Footing-Rectangular","SOG","RAMP","STOOP"],["Rebar Work"],["TON"])
