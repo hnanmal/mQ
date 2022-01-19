@@ -54,15 +54,11 @@ def 되메우기산출함수(input):
     if wholeExcavationBln:
         calcTargetNum = len(allIsoFdns)
         exca_solid = refFunc(input)[0]
-        fdn_solid = Solid.ByUnion(list(chain(*[i.Geometry() for i in allIsoFdns])))
-        peds_solid = Solid.ByUnion(allPedsGeo)
-        # TGs_solid = Solid.ByUnion(allTGsGeo)
-        SOGs_solid = Solid.ByUnion(allSOGsGeo)
-        #target = exca_solid.Difference(fdn_solid)
-        _target1 = exca_solid.Difference(fdn_solid)
-        _target2 = _target1.Difference(peds_solid)
-        # _target3 = _target2.Difference(TGs_solid)
-        target = _target2.Difference(SOGs_solid)
+        fdn_solid = list(chain(*[i.Geometry() for i in allIsoFdns]))
+        _diff_target = fdn_solid + allPedsGeo + allTGsGeo + allSOGsGeo
+        diff_target = Solid.ByUnion(_diff_target)
+
+        target = exca_solid.Difference(diff_target)
         
 
     else:
@@ -70,30 +66,14 @@ def 되메우기산출함수(input):
         exca_solid = refFunc(input)[0]
         fdn_solid = input.Geometry()[0]
         _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(exca_solid)]
-        joinedPeds = Solid.ByUnion(_joinedPeds)
         _joinedTGs = [i for i in allTGsGeo if i.DoesIntersect(exca_solid)]
         _joinedSOGs = [i for i in allSOGsGeo if i.DoesIntersect(exca_solid)]
-        if len(_joinedTGs)>0:
-            joinedTGs = Solid.ByUnion(_joinedTGs)
-            _target1 = exca_solid.Difference(fdn_solid)#Backfill_Solid ##린 콘크리트 형상 미포함
-            _target2 = _target1.Difference(joinedPeds)
-            _target3 = _target2.Difference(joinedTGs)
-            if len(_joinedSOGs):
-                joinedSOGs = Solid.ByUnion(_joinedTGs)
-                target = _target3.Difference(joinedSOGs)
-            else:
-                target = _target3
-        else:
-            _target1 = exca_solid.Difference(fdn_solid)
-            _target2 = _target1.Difference(joinedPeds)
-            if len(_joinedSOGs):
-                joinedSOGs = Solid.ByUnion(_joinedTGs)
-                target = _target2.Difference(joinedSOGs)
-            else:
-                target = _target2
+        _diff_target = [fdn_solid] + _joinedPeds + _joinedTGs + _joinedSOGs
+        diff_target = Solid.ByUnion(_diff_target)
+        
+        target = exca_solid.Difference(diff_target)
 
-    #return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
-    return (target, 777, "M3")
+    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)

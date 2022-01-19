@@ -24,6 +24,7 @@ clr.AddReference('ProtoGeometry')
 from Autodesk.DesignScript.Geometry import *
 
 from itertools import chain
+from itertools import combinations
 
 allFdns = collector1.OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements()
 allCols = collector2.OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()
@@ -65,10 +66,10 @@ def getIdxOfMaximum(list):
 
 def 버림콘크리트산출함수(input):
     calcTargetNum = 1
-    inputGeo = input.Geometry()[0]
+    inputGeo = input.Geometry()
     
     if "Footing-Rectangular" in input.Name:
-        srf_fdn_lean = [i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
+        srf_fdn_lean = [i for i in inputGeo[0].Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
         crvs_fdn_lean = srf_fdn_lean.PerimeterCurves()
         crv_fdn_lean = PolyCurve.ByJoinedCurves(crvs_fdn_lean)
         crv_offset = crv_fdn_lean.Offset(버림offset)
@@ -79,25 +80,25 @@ def 버림콘크리트산출함수(input):
         elif vectorZ<0:
             target = leanSrf.Thicken(버림thk, False)
         
-    elif "TG" in input.Name:
-        srf_TG_lean = [i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
-        crvs_TG_lean = srf_TG_lean.PerimeterCurves()
-        len_crvs_TG = [i.Length for i in crvs_TG_lean]
-        idx = getIdxOfMaximum(len_crvs_TG)
-        crvs_long = []
-        for i in idx:
-            crvs_long.append(crvs_TG_lean[i])
-        extdSrfs = []
-        for i in crvs_long:
-            vec = i.NormalAtParameter(0.5)
-            i_tr = i.Translate(버림offset,vec)
-            extdSrfs.append(Surface.ByLoft([i,i_tr]))
-        leanSrf = PolyCurve.ByJoinedCurves([srf_TG_lean]+extdSrfs)
-        vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            target = leanSrf.Thicken(-버림thk, False)
-        elif vectorZ<0:
-            target = leanSrf.Thicken(버림thk, False)
+#    elif "TG" in input.Name:
+#        srf_TG_lean = [i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
+#        crvs_TG_lean = srf_TG_lean.PerimeterCurves()
+#        len_crvs_TG = [i.Length for i in crvs_TG_lean]
+#        idx = getIdxOfMaximum(len_crvs_TG)
+#        crvs_long = []
+#        for i in idx:
+#            crvs_long.append(crvs_TG_lean[i])
+#        extdSrfs = []
+#        for i in crvs_long:
+#            vec = i.NormalAtParameter(0.5)
+#            i_tr = i.Translate(버림offset,vec)
+#            extdSrfs.append(Surface.ByLoft([i,i_tr]))
+#        leanSrf = PolyCurve.ByJoinedCurves([srf_TG_lean]+extdSrfs)
+#        vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
+#        if vectorZ>0:
+#            target = leanSrf.Thicken(-버림thk, False)
+#        elif vectorZ<0:
+#            target = leanSrf.Thicken(버림thk, False)
         
     elif "SOG" in input.Name:
         inputGeo = input.Geometry()[0]
@@ -134,10 +135,45 @@ def 버림콘크리트산출함수(input):
                 target = Solid.ByUnion([i.Thicken(버림thk, False) for i in leanSrf.Surfaces()])
             else:
                 target = leanSrf.Thicken(버림thk, False)
+    elif "STOOP" in input.Name or "RAMP" in input.Name:
+        def findClosedSrfs(lines):
+            result = []
+            combilist = list(combinations(lines,4)) + list(combinations(lines,5))
+            for i in combilist:
+                try:
+                    a = PolyCurve.ByJoinedCurves(i)
+                    b = Surface.ByPatch(a)
+                    result.append(b)
+                except:
+                    pass
+            return result
 
-    #return target
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+        inputGeo = input.Geometry()[0]
+        bd_input = BoundingBox.ByGeometry(inputGeo).ToCuboid()
+        mold = bd_input.Translate(0,0,-10)
+        diff_mold = mold.DifferenceAll([inputGeo]).Separate()
+        centroids_Z = [i.Centroid().Z for i in diff_mold]
+        min_Z = min(centroids_Z)
+        blw_solid = [i for i in diff_mold if i.Centroid().Z == min_Z][0]
+        lines = blw_solid.Intersect(inputGeo)
+        leanSrfs = findClosedSrfs(lines)
+        _target = []
+        for leanSrf in leanSrfs:
+            vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
+            if vectorZ>0:
+                _target.append(leanSrf.Thicken(-버림thk, False))
+            elif vectorZ<0:
+                _target.append(leanSrf.Thicken(버림thk, False))
+        
+        target = Solid.ByUnion(_target)
+
+
+    else:
+        target = None
+    return target
+#    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = 버림콘크리트산출함수(input)
-OUT = (버림콘크리트산출함수,["Footing-Rectangular","TG","SOG"],["Lean Concrete"],["M3"])
+OUT = [버림콘크리트산출함수(i) for i in input]
+#OUT = (버림콘크리트산출함수,["Footing-Rectangular","TG","SOG","STOOP","RAMP"],["Lean Concrete"],["M3"])
