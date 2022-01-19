@@ -55,9 +55,9 @@ def 되메우기산출함수(input):
         calcTargetNum = len(allIsoFdns)
         exca_solid = refFunc(input)[0]
         fdn_solid = Solid.ByUnion(list(chain(*[i.Geometry() for i in allIsoFdns])))
-        # peds_solid = Solid.ByUnion(allPedsGeo)
-        # TGs_solid = Solid.ByUnion(allTGsGeo)
-        # SOGs_solid = Solid.ByUnion(allSOGsGeo)
+        peds_solid = Solid.ByUnion(allPedsGeo)
+        TGs_solid = Solid.ByUnion(allTGsGeo)
+        SOGs_solid = Solid.ByUnion(allSOGsGeo)
         #target = exca_solid.Difference(fdn_solid)
         _target1 = exca_solid.Difference(fdn_solid)
         _target2 = _target1.Difference(peds_solid)
