@@ -92,7 +92,8 @@ def 되메우기산출함수(input):
             else:
                 target = _target2
 
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    #return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    return (target, 777, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)
