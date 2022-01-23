@@ -43,36 +43,20 @@ refFunc = IN[0][0]
 tag = IN[1]
 input = IN[2]
 
-잡석thk = IN[3]
+wholeExcavationBln = IN[3]
+ratio = IN[4]
+
 
 # Place your code below this line
 
-def 잡석다짐산출함수(input):
-    버림콘크리트산출함수 = refFunc
-    if "Footing-Rectangular" in input.Name:
-        calcTargetNum = 1
-        solid_lean = 버림콘크리트산출함수(input)[0]
-        srf_lean_blw = PolySurface.ByJoinedSurfaces([i for i in solid_lean.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1])
-    
-        vectorZ = srf_lean_blw.NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            target = srf_lean_blw.Thicken(-잡석thk, False)
-        elif vectorZ<0:
-            target = srf_lean_blw.Thicken(잡석thk, False)
-    elif "SOG" in input.Name:
-        calcTargetNum = 1
-        solid_lean = 버림콘크리트산출함수(input)[0]
-        srf_lean_blw = [i for i in solid_lean.Explode() if i.NormalAtParameter(0.5,0.5).Z==-1]
-    
-        vectorZ = PolySurface.ByJoinedSurfaces(srf_lean_blw).NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            target = Solid.ByUnion([i.Thicken(-잡석thk, False) for i in srf_lean_blw])
-        elif vectorZ<0:
-            target = Solid.ByUnion([i.Thicken(잡석thk, False) for i in srf_lean_blw])
-        
-#    return target
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+def 잔토처리산출함수_STOOP(input):
+    터파기산출함수_STOOP = refFunc
+    calcTargetNum = 1
+
+    targetValue = 터파기산출함수_STOOP(input)[1]*ratio
+
+    return ("형상정보 미제공", targetValue/calcTargetNum, "M3")
 
 # Assign your output to the OUT variable.
-#OUT = 잡석다짐산출함수(input)
-OUT = (잡석다짐산출함수,tag[0],tag[1],["M3"])
+#OUT = getBackfillTarget(input)
+OUT = (잔토처리산출함수_STOOP,tag[0],tag[1],["M3"])

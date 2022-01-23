@@ -1,7 +1,6 @@
 # Load the Python Standard and DesignScript Libraries
 import sys
 import clr
-
 clr.AddReference('RevitAPI')
 from Autodesk.Revit.DB import *
 import Autodesk
@@ -18,6 +17,7 @@ collector1 = FilteredElementCollector(doc)
 collector2 = FilteredElementCollector(doc)
 collector3 = FilteredElementCollector(doc)
 collector4 = FilteredElementCollector(doc)
+collector5 = FilteredElementCollector(doc)
 
 clr.AddReference('ProtoGeometry')
 from Autodesk.DesignScript.Geometry import *
@@ -28,51 +28,33 @@ allFdns = collector1.OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereE
 allCols = collector2.OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()
 allBeams = collector3.OfCategory(BuiltInCategory.OST_StructuralFraming).WhereElementIsNotElementType().ToElements()
 allFloors = collector4.OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType().ToElements()
+_allEdges = collector5.OfCategory(BuiltInCategory.OST_EdgeSlab).WhereElementIsNotElementType().ToElements()
 allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
 allPeds = [i.ToDSType(False) for i in allCols if "UG" in i.Name]
 allPedsGeo = [i.Geometry()[0] for i in allPeds]
-allTGs = [i.ToDSType(False) for i in allBeams if "TG" in i.Name]
+allTGs = [i.ToDSType(False) for i in allBeams if "UG" in i.Name]
 allTGsGeo = [i.Geometry()[0] for i in allTGs]
 allSOGs = [i.ToDSType(False) for i in allFdns if "SOG" in i.Name and "GS" in i.Name]
 allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
-
+allEdges = [i.ToDSType(False) for i in _allEdges] + [i.ToDSType(False) for i in allFdns if "HAUNCH" in i.Name and "GS" in i.Name]
+allEdgesGeo = [i.Geometry()[0] for i in allEdges]
+allFdnAndHaunch = [i.ToDSType(False) for i in allFdns+_allEdges]
+allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
+#allFdnAndHaunchGeo = [i.Geometry()[0] for i in allFdnAndHaunch]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
-잡석thk = IN[3]
-
 # Place your code below this line
+def 바닥마감물량산출함수(input):
+    target = input.Geometry()[0]
+    targetValue = input.GetParameterValueByName("Area")
+    
+    return (target,targetValue, "M2")
 
-def 잡석다짐산출함수(input):
-    버림콘크리트산출함수 = refFunc
-    if "Footing-Rectangular" in input.Name:
-        calcTargetNum = 1
-        solid_lean = 버림콘크리트산출함수(input)[0]
-        srf_lean_blw = PolySurface.ByJoinedSurfaces([i for i in solid_lean.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1])
-    
-        vectorZ = srf_lean_blw.NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            target = srf_lean_blw.Thicken(-잡석thk, False)
-        elif vectorZ<0:
-            target = srf_lean_blw.Thicken(잡석thk, False)
-    elif "SOG" in input.Name:
-        calcTargetNum = 1
-        solid_lean = 버림콘크리트산출함수(input)[0]
-        srf_lean_blw = [i for i in solid_lean.Explode() if i.NormalAtParameter(0.5,0.5).Z==-1]
-    
-        vectorZ = PolySurface.ByJoinedSurfaces(srf_lean_blw).NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            target = Solid.ByUnion([i.Thicken(-잡석thk, False) for i in srf_lean_blw])
-        elif vectorZ<0:
-            target = Solid.ByUnion([i.Thicken(잡석thk, False) for i in srf_lean_blw])
-        
-#    return target
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
-#OUT = 잡석다짐산출함수(input)
-OUT = (잡석다짐산출함수,tag[0],tag[1],["M3"])
+OUT = (바닥마감물량산출함수,tag[0],tag[1],["M2"])

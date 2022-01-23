@@ -45,10 +45,12 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
+
 refFunc = IN[0][0]
-input = IN[1]
+tag = IN[1]
+input = IN[2]
 
-
+# Place your code below this line
 def getIdxOfMaximum(list):
     result = []
     maxValue = max(list)
@@ -57,14 +59,12 @@ def getIdxOfMaximum(list):
             result.append(i)
     return result
 
-# Place your code below this line
-
 def 시트멤브레인산출함수(input):
-    PE시트산출함수 = refFunc
+    프로텍션보드산출함수 = refFunc
     calcTargetNum = 1
-    타겟형상 = PE시트산출함수(input)[0]
-    타겟값 = PE시트산출함수(input)[1]
-    #버림상부면 = [i for i in 버림형상.Explode() if round(i.NormalAtParameter(0.5,0.5).Z) == 1][0]
+    #타겟형상 = 프로텍션보드산출함수(input)[0]
+    타겟값 = 프로텍션보드산출함수(input)[1]
+
     target = 타겟값
 
 
@@ -73,4 +73,4 @@ def 시트멤브레인산출함수(input):
 
 # Assign your output to the OUT variable.
 #OUT = PE시트산출함수(input)
-OUT = (시트멤브레인산출함수,["Footing-Rectangular","SOG"],["Sheet Membrane"],["M2"])
+OUT = (시트멤브레인산출함수,tag[0],tag[1],["M2"])

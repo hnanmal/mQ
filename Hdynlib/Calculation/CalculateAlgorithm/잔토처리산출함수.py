@@ -39,8 +39,11 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 refFunc = IN[0][0]
-wholeExcavationBln = IN[2]
-ratio = IN[3]
+tag = IN[1]
+input = IN[2]
+
+wholeExcavationBln = IN[3]
+ratio = IN[4]
 
 
 # Place your code below this line
@@ -77,11 +80,11 @@ def 잔토처리산출함수(input):
     exca_solid = refFunc(input)[0]
     fdn_solid = input.Geometry()[0]
 
-    target = fdn_solid
+    target = fdn_solid.Intersect(exca_solid)[0]
 
 
     return (target, sum([i.Volume for i in [target]])*ratio/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)
-OUT = (잔토처리산출함수,["Footing-Rectangular"],["Disposal"],["M3"])
+OUT = (잔토처리산출함수,tag[0],tag[1],["M3"])

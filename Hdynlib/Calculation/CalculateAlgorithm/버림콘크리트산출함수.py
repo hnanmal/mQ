@@ -38,7 +38,7 @@ allTGs = [i.ToDSType(False) for i in allBeams if "TG" in i.Name]
 allTGsGeo = [i.Geometry()[0] for i in allTGs]
 allSOGs = [i.ToDSType(False) for i in allFdns if "SOG" in i.Name and "GS" in i.Name]
 allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
-allEdges = [i.ToDSType(False) for i in _allEdges]
+allEdges = [i.ToDSType(False) for i in _allEdges] + [i.ToDSType(False) for i in allFdns if "HAUNCH" in i.Name and "GS" in i.Name]
 allEdgesGeo = [i.Geometry()[0] for i in allEdges]
 allFdnAndHaunch = [i.ToDSType(False) for i in allFdns+_allEdges]
 allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
@@ -46,13 +46,14 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
+
 refFunc = IN[0]
-input = IN[1]
-기층offset = IN[2]
-bttmOffset = IN[3]
-버림thk = IN[4]
-버림offset = IN[5]
-#slopeExcav = IN[5]
+tag = IN[1]
+input = IN[2]
+
+버림thk = IN[3]
+버림offset = IN[4]
+
 
 def getIdxOfMaximum(list):
     result = []
@@ -68,7 +69,7 @@ def 버림콘크리트산출함수(input):
     calcTargetNum = 1
     inputGeo = input.Geometry()
     
-    if "Footing-Rectangular" in input.Name:
+    if "Footing-Rectangular" in input.Name or "MAT" in input.Name:
         srf_fdn_lean = [i for i in inputGeo[0].Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
         crvs_fdn_lean = srf_fdn_lean.PerimeterCurves()
         crv_fdn_lean = PolyCurve.ByJoinedCurves(crvs_fdn_lean)
@@ -100,80 +101,61 @@ def 버림콘크리트산출함수(input):
 #        elif vectorZ<0:
 #            target = leanSrf.Thicken(버림thk, False)
         
-    elif "SOG" in input.Name:
-        inputGeo = input.Geometry()[0]
-        간섭판별선 = PolyCurve.ByJoinedCurves([i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0].PerimeterCurves()).Offset(-1)
-        간섭판별면 = 간섭판별선.Patch()
-        overlaps = [i for i in allEdgesGeo if 간섭판별면.DoesIntersect(i)]+[inputGeo]
-        unionSolid = Solid.ByUnion(overlaps)
-        def findBeneathSrf(srfGroup):
-            result = []
-            upperSrfs = [i for i in srfGroup if round(i.NormalAtParameter(0.5,0.5).Z) == 1]
-            headCrvs = []
-            for i in upperSrfs:
-                headCrv = PolyCurve.ByJoinedCurves(i.PerimeterCurves())
-                headCrvs.append(headCrv)
-            for i in srfGroup:
-                tmp=[]
-                for j in headCrvs:
-                    if i.DoesIntersect(j):
-                        tmp.append(False)
-                    else:
-                        tmp.append(True)
-                if all(tmp):
-                    result.append(i)
-            return result
-        leanSrf = PolySurface.ByJoinedSurfaces(findBeneathSrf(unionSolid.Explode()))
-        vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
-        if vectorZ>0:
-            if len(leanSrf.Surfaces())>1:
-                target = Solid.ByUnion([i.Thicken(-버림thk, False) for i in leanSrf.Surfaces()])
-            else:
-                target = leanSrf.Thicken(-버림thk, False)
-        elif vectorZ<0:
-            if len(leanSrf.Surfaces())>1:
-                target = Solid.ByUnion([i.Thicken(버림thk, False) for i in leanSrf.Surfaces()])
-            else:
-                target = leanSrf.Thicken(버림thk, False)
-    elif "STOOP" in input.Name or "RAMP" in input.Name:
-        def findClosedSrfs(lines):
-            result = []
-            combilist = list(combinations(lines,4)) + list(combinations(lines,5))
-            for i in combilist:
-                try:
-                    a = PolyCurve.ByJoinedCurves(i)
-                    b = Surface.ByPatch(a)
-                    result.append(b)
-                except:
-                    pass
-            return result
+#    elif "SOG" in input.Name:
+#        inputGeo = input.Geometry()[0]
+#        분해요소들 = inputGeo.Explode()
+#        접촉판별면 = [i for i in 분해요소들 if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
+#        접촉대상 = [i for i in allEdgesGeo if 접촉판별면.DoesIntersect(i)]
+#        산출대상 = [inputGeo] + 접촉대상
+#        병합산출대상 = Solid.ByUnion(산출대상)
+#        def findBeneathSrf(srfGroup):
+#            result = []
+#            upperSrfs = [i for i in srfGroup if round(i.NormalAtParameter(0.5,0.5).Z) == 1]
+#            headCrvs = []
+#            for i in upperSrfs:
+#                headCrv = PolyCurve.ByJoinedCurves(i.PerimeterCurves())
+#                headCrvs.append(headCrv)
+#            for i in srfGroup:
+#                tmp=[]
+#                for j in headCrvs:
+#                    if i.DoesIntersect(j):
+#                        tmp.append(False)
+#                    else:
+#                        tmp.append(True)
+#                if all(tmp):
+#                    result.append(i)
+#            return result
+#        leanSrf = findBeneathSrf(병합산출대상.Explode())
+#        vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
+#        if vectorZ>0:
+#            if len(leanSrf.Surfaces())>1:
+#                target = Solid.ByUnion([i.Thicken(-버림thk, False) for i in leanSrf.Surfaces()])
+#            else:
+#                target = leanSrf.Thicken(-버림thk, False)
+#        elif vectorZ<0:
+#            if len(leanSrf.Surfaces())>1:
+#                target = Solid.ByUnion([i.Thicken(버림thk, False) for i in leanSrf.Surfaces()])
+#            else:
+#                target = leanSrf.Thicken(버림thk, False)
+#        target = leanSrf
 
-        inputGeo = input.Geometry()[0]
-        bd_input = BoundingBox.ByGeometry(inputGeo).ToCuboid()
-        mold = bd_input.Translate(0,0,-10)
-        diff_mold = mold.DifferenceAll([inputGeo]).Separate()
-        centroids_Z = [i.Centroid().Z for i in diff_mold]
-        min_Z = min(centroids_Z)
-        blw_solid = [i for i in diff_mold if i.Centroid().Z == min_Z][0]
-        lines = blw_solid.Intersect(inputGeo)
-        leanSrfs = findClosedSrfs(lines)
-        _target = []
-        for leanSrf in leanSrfs:
-            vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
-            if vectorZ>0:
-                _target.append(leanSrf.Thicken(-버림thk, False))
-            elif vectorZ<0:
-                _target.append(leanSrf.Thicken(버림thk, False))
-        
-        target = Solid.ByUnion(_target)
-
-
+#    elif "STOOP" in input.Name or "RAMP" in input.Name or "THICKENED" in input.Name:
     else:
-        target = None
-    return target
-#    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+        inputGeo = input.Geometry()[0]
+        분해요소들 = inputGeo.Explode()
+        접촉판별면 = [i for i in 분해요소들 if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
+        접촉대상 = [i for i in allEdgesGeo if 접촉판별면.DoesIntersect(i)]
+        산출대상 = [inputGeo] + 접촉대상
+        병합산출대상 = Solid.ByUnion(산출대상)
+        하강병합산출대상 = 병합산출대상.Translate(0,0,-버림thk)
+        버림형상 = 하강병합산출대상.DifferenceAll([병합산출대상])
+        
+        target = 버림형상
+
+#    return target
+    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = 버림콘크리트산출함수(input)
-OUT = [버림콘크리트산출함수(i) for i in input]
-#OUT = (버림콘크리트산출함수,["Footing-Rectangular","TG","SOG","STOOP","RAMP"],["Lean Concrete"],["M3"])
+#OUT = [버림콘크리트산출함수(i) for i in input]
+OUT = (버림콘크리트산출함수,tag[0],tag[1],["M3"])

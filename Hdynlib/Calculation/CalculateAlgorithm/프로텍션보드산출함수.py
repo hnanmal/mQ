@@ -38,13 +38,10 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
-refFunc = IN[0]
-input = IN[1]
-ratio = IN[2]
-#bttmOffset = IN[3]
-#leanThk = IN[4]
-#slopeExcav = IN[5]
 
+refFunc = IN[0]
+tag = IN[1]
+input = IN[2]
 
 # Place your code below this line
 
@@ -65,4 +62,4 @@ def 프로텍션보드산출함수(input):
 
 # Assign your output to the OUT variable.
 #OUT = 프로텍션보드산출함수(input)
-OUT = (프로텍션보드산출함수,["Footing-Rectangular"],["Protection Board"],["M2"])
+OUT = (프로텍션보드산출함수,tag[0],tag[1],["M2"])

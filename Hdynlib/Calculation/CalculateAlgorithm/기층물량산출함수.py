@@ -38,13 +38,15 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
+
 refFunc = IN[0][0]
-wholeExcavationBln = IN[2]
-기층thk = IN[3]
-bttmOffset = IN[4]
-버림thk = IN[5]
+tag = IN[1]
+input = IN[2]
 
-
+wholeExcavationBln = IN[3]
+기층thk = IN[4]
+bttmOffset = IN[5]
+버림thk = IN[6]
 
 # Place your code below this line
 
@@ -72,4 +74,4 @@ def 기층물량산출함수(input):
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)
-OUT = (기층물량산출함수,["Footing-Rectangular"],["Base Course"],["M2"])
+OUT = (기층물량산출함수,tag[0],tag[1],["M2"])

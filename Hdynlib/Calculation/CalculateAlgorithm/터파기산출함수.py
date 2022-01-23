@@ -24,14 +24,15 @@ allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
+
 refFunc = IN[0]
-wholeExcavationBln = IN[2]
-#inputDS = IN[2]
-bttmOffset = IN[3]
-버림thk = IN[4]
-slopeExcav = IN[5]
+tag = IN[1]
+input = IN[2]
 
-
+wholeExcavationBln = IN[3]
+bttmOffset = IN[4]
+버림thk = IN[5]
+slopeExcav = IN[6]
 
 # Place your code below this line
 
@@ -104,4 +105,4 @@ def 터파기산출함수(input):
 
 # Assign your output to the OUT variable.
 #OUT = fdnsGeo
-OUT = (터파기산출함수,["Footing-Rectangular"],["Excavation"],["M3"])
+OUT = (터파기산출함수,tag[0],tag[1],["M3"])

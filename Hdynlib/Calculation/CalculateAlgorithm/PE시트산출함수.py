@@ -46,8 +46,10 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 refFunc = IN[0][0]
-#input = IN[1]
-버림thk = IN[2]
+tag = IN[1]
+input = IN[2]
+
+버림thk = IN[3]
 
 def getIdxOfMaximum(list):
     result = []
@@ -74,4 +76,4 @@ def PE시트산출함수(input):
 
 # Assign your output to the OUT variable.
 #OUT = PE시트산출함수(input)
-OUT = (PE시트산출함수,["Footing-Rectangular","TG","SOG"],["PE Sheet (Vapor"],["M2"])
+OUT = (PE시트산출함수,tag[0],tag[1],["M2"])

@@ -45,10 +45,12 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 dataEnteringNode = IN
 
 refFunc = IN[0][0]
-inputs = IN[1]
-독립기초철근비 = IN[2]
-슬라브철근비 = IN[3]
-패드철근비 = IN[4]
+tag = IN[1]
+input = IN[2]
+
+독립기초철근비 = IN[3]
+슬라브철근비 = IN[4]
+패드철근비 = IN[5]
 
 # Place your code below this line
 def 철근물량산출함수(input):
@@ -59,7 +61,7 @@ def 철근물량산출함수(input):
         
         return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
     
-    elif "SOG" in input.Name:
+    elif "SOG" in input.Name or "SL" in input.Name:
         target = 콘크리트물량산출함수(input)[0]
         ratio = 슬라브철근비
         
@@ -78,4 +80,4 @@ def 철근물량산출함수(input):
         return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
 
 # Assign your output to the OUT variable.
-OUT = (철근물량산출함수,["Footing-Rectangular","SOG","RAMP","STOOP"],["Rebar Work"],["TON"])
+OUT = (철근물량산출함수,tag[0],tag[1],["TON"])

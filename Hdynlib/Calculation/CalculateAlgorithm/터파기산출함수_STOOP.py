@@ -24,6 +24,7 @@ allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
+
 refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
@@ -35,10 +36,9 @@ slopeExcav = IN[6]
 
 # Place your code below this line
 
-def 터파기산출함수_SOG(input):
+def 터파기산출함수_STOOP(input):
     
     calcTargetNum = 1
-#    target = input.Geometry()[0]
 #    srfs = input.Geometry()[0].Explode()
 #    belowSrf = [i for i in srfs if i.NormalAtParameter(0.5,0.5).Z == -1][0]
 #    
@@ -67,11 +67,12 @@ def 터파기산출함수_SOG(input):
 #    exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)
 #    target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])
     inputGeo = input.Geometry()[0]
-    땅묻힘비율 = 0.3
+    땅묻힘비율 = 0.5
     targetValue = inputGeo.Volume*땅묻힘비율
     
+
     return ("형상정보 미제공", targetValue/calcTargetNum/1000000000, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = fdnsGeo
-OUT = (터파기산출함수_SOG,tag[0],tag[1],["M3"])
+OUT = (터파기산출함수_STOOP,tag[0],tag[1],["M3"])
