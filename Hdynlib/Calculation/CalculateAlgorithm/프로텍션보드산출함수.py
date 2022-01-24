@@ -29,6 +29,7 @@ allCols = collector2.OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElem
 allBeams = collector3.OfCategory(BuiltInCategory.OST_StructuralFraming).WhereElementIsNotElementType().ToElements()
 allFloors = collector4.OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType().ToElements()
 allIsoFdns = [i.ToDSType(False) for i in allFdns if "Footing-" in i.Name]
+allIsoFdnsGeo = [i.Geometry()[0] for i in allIsoFdns]
 allPeds = [i.ToDSType(False) for i in allCols if "UG" in i.Name]
 allPedsGeo = [i.Geometry()[0] for i in allPeds]
 allTGs = [i.ToDSType(False) for i in allBeams if "TG" in i.Name]
@@ -46,19 +47,31 @@ input = IN[2]
 # Place your code below this line
 
 def 프로텍션보드산출함수(input):
-
-    calcTargetNum = 1
-    #exca_solid = refFunc(input)[0]
-    fdn_solid = input.Geometry()[0]
-    _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(fdn_solid)]
-    srf_fdn_upper = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z) == 1][0]
-    srf_fdn_side = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==0]
-    joinedPeds = Solid.ByUnion(_joinedPeds)
-    _target1 = srf_fdn_upper.SubtractFrom(joinedPeds)[0]
-    target = srf_fdn_side + [_target1]
-
-    #return target
-    return (target, sum([i.Area for i in target])/calcTargetNum/1000000, "M2")
+    
+    if "CL" in input.Name:
+        calcTargetNum = 1
+        inputGeo = input.Geometry()[0]
+        대상표면들 = inputGeo.Explode()
+        측면 = [i for i in 대상표면들 if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
+        target = 측면
+        targetValue = sum([i.Area for i in target])/calcTargetNum/1000000
+        
+        return (target, targetValue, "M2")
+        
+    else:
+        calcTargetNum = 1
+        #exca_solid = refFunc(input)[0]
+        fdn_solid = input.Geometry()[0]
+        _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(fdn_solid)]
+        srf_fdn_upper = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2) == 1][0]
+        srf_fdn_side = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
+        joinedPeds = Solid.ByUnion(_joinedPeds)
+        _target1 = srf_fdn_upper.SubtractFrom(joinedPeds)[0]
+        target = srf_fdn_side + [_target1]
+        targetValue = sum([i.Area for i in target])/calcTargetNum/1000000
+    
+        #return target
+        return (target, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = 프로텍션보드산출함수(input)
