@@ -144,7 +144,7 @@ def 버림콘크리트산출함수(input):
         inputGeo = input.Geometry()[0]
         분해요소들 = inputGeo.Explode()
         접촉판별면 = [i for i in 분해요소들 if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
-        접촉대상 = [i for i in allEdgesGeo if 접촉판별면.DoesIntersect(i)]
+        접촉대상 = [i for i in allEdgesGeo + allFdnAndHaunchGeo if 접촉판별면.DoesIntersect(i)]
         산출대상 = [inputGeo] + 접촉대상
         병합산출대상 = Solid.ByUnion(산출대상)
         하강병합산출대상 = 병합산출대상.Translate(0,0,-버림thk)
