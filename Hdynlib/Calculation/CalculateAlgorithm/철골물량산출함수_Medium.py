@@ -54,9 +54,12 @@ def 철골물량산출함수_Medium(input):
         단위길이당중량 = input.ElementType.GetParameterValueByName("Mass per Unit Length")
         상단높이 = input.GetParameterValueByName("Top Level").Elevation + input.GetParameterValueByName("Top Offset")
         하단높이 = input.GetParameterValueByName("Base Level").Elevation + input.GetParameterValueByName("Base Offset")
-        철골길이 = 상단높이 - 하단높이
+#        철골길이 = (상단높이 - 하단높이)/1000
+        철골체적 = input.GetParameterValueByName("Volume") #m3
+        철골단면적 = input.ElementType.GetParameterValueByName("Section Area")/10000 #cm2 => m2
+        철골길이 = 철골체적/철골단면적
         target = input.Geometry()[0]
-        targetValue = 단위길이당중량 * 철골길이
+        targetValue = 단위길이당중량 * 철골길이/1000
         
         return (target, targetValue, "TON")
 
