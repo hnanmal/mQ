@@ -51,27 +51,27 @@ def 프로텍션보드산출함수(input):
     if "CL" in input.Name:
         calcTargetNum = 1
         inputGeo = input.Geometry()[0]
-        대상표면들 = inputGeo.Explode()
-        측면 = [i for i in 대상표면들 if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
-        target = 측면
+        표면들 = inputGeo.Explode()
+        측면들 = [i for i in 표면들 if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
+        target = 측면들
+        targetGeo = target
         targetValue = sum([i.Area for i in target])/calcTargetNum/1000000
-        
-        return (target, targetValue, "M2")
         
     else:
         calcTargetNum = 1
-        #exca_solid = refFunc(input)[0]
-        fdn_solid = input.Geometry()[0]
-        _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(fdn_solid)]
-        srf_fdn_upper = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2) == 1][0]
-        srf_fdn_side = [i for i in fdn_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
-        joinedPeds = Solid.ByUnion(_joinedPeds)
-        _target1 = srf_fdn_upper.SubtractFrom(joinedPeds)[0]
-        target = srf_fdn_side + [_target1]
+        inputGeo = input.Geometry()[0]
+        표면들 = inputGeo.Explode()
+        기초상부면 = [i for i in 표면들 if round(i.NormalAtParameter(0.5,0.5).Z,2) == 1][0]
+        기초측면들 = [i for i in 표면들 if round(i.NormalAtParameter(0.5,0.5).Z,2)==0]
+        _접촉페데스탈 = [i for i in allPedsGeo if i.DoesIntersect(inputGeo)]
+        접촉페데스탈 = Solid.ByUnion(_접촉페데스탈)
+        상부면_공제 = 기초상부면.SubtractFrom(접촉페데스탈)[0]
+        target = 기초측면들 + [상부면_공제]
+        targetGeo = target
         targetValue = sum([i.Area for i in target])/calcTargetNum/1000000
     
         #return target
-        return (target, targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = 프로텍션보드산출함수(input)

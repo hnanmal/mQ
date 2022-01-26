@@ -38,7 +38,8 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
-refFunc = IN[0][0]
+
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
@@ -49,41 +50,17 @@ ratio = IN[4]
 # Place your code below this line
 
 def 잔토처리산출함수(input):
-#     targets = []
-    
-#     if wholeExcavationBln:
-#         calcTargetNum = len(allIsoFdns)
-#         exca_solid = refFunc(input)[0]
-#         fdn_solid = Solid.ByUnion([i.Geometry()[0] for i in allIsoFdns])
-#         #peds_solid = Solid.ByUnion(allPedsGeo)
-#         #TGs_solid = Solid.ByUnion(allTGsGeo)
-#         #SOGs_solid = Solid.ByUnion(allSOGsGeo)
-#         _target1 = Solid.ByUnion([fdn_solid,peds_solid,TGs_solid,SOGs_solid])
-# #        _target1 = exca_solid.Difference(fdn_solid)
-# #        _target2 = _target1.Difference(peds_solid)
-# #        _target3 = _target2.Difference(TGs_solid)
-#         target = _target1.Intersect(exca_solid)[0]
-#         pass
-
-#     else:
-#         calcTargetNum = 1
-#         exca_solid = refFunc(input)[0]
-#         fdn_solid = input.Geometry()[0]
-#         _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(exca_solid)]
-#         #joinedPeds = Solid.ByUnion(_joinedPeds)
-#         _joinedTGs = [i for i in allTGsGeo if i.DoesIntersect(exca_solid)]
-#         _joinedSOGs = [i for i in allSOGsGeo if i.DoesIntersect(exca_solid)]
-#         _target1 = Solid.ByUnion(list(chain(*[[fdn_solid] + _joinedPeds + _joinedTGs + _joinedSOGs])))
-#         target = _target1.Intersect(exca_solid)[0]
         
     calcTargetNum = 1
-    exca_solid = refFunc(input)[0]
+    터파기산출함수 = refFunc[0]
+    exca_solid = 터파기산출함수(input)[0]
     fdn_solid = input.Geometry()[0]
 
     target = fdn_solid.Intersect(exca_solid)[0]
+    targetGeo = target
+    targetValue = sum([i.Volume for i in [target]])*ratio/calcTargetNum/1000000000
 
-
-    return (target, sum([i.Volume for i in [target]])*ratio/calcTargetNum/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)

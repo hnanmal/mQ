@@ -52,12 +52,14 @@ input = IN[2]
 def 콘크리트물량산출함수(input):
     if "Footing-Rectangular" in input.Name:
         target = input
+        targetGeo = target.Geometry()[0]
+        targetValue = target.GetParameterValueByName("Volume")
         
-        return (target.Geometry()[0], target.GetParameterValueByName("Volume"), "M3")
-#    elif "FTPS" in input.Name:
-#        target = input
-#        
-#        return (target, 0, "M3")
+    elif "CL" in input.Name:
+        target = input
+        targetGeo = target.Geometry()[0]
+        targetValue = target.GetParameterValueByName("Volume")
+
     else:
         inputGeo = input.Geometry()[0]
         분해요소들 = inputGeo.Explode()
@@ -66,18 +68,10 @@ def 콘크리트물량산출함수(input):
         산출대상 = [inputGeo] + 접촉대상
         
         target = Solid.ByUnion(산출대상)
+        targetGeo = target
+        targetValue = target.Volume/1000000000
         
-        return (target, target.Volume/1000000000, "M3")
-
-    # elif "SOG" in input.Name:
-    #     inputGeo = input.Geometry()[0]
-    #     간섭판별선 = PolyCurve.ByJoinedCurves([i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0].PerimeterCurves()).Offset(-1)
-    #     간섭판별면 = 간섭판별선.Patch()
-    #     overlaps = [i for i in allEdgesGeo if 간섭판별면.DoesIntersect(i)]+[inputGeo]
-    #     unionSolid = Solid.ByUnion(overlaps)
-    #     target = unionSolid
-        
-    #     return (target, target.Volume/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 OUT = (콘크리트물량산출함수,tag[0],tag[1],["M3"])

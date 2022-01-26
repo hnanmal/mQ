@@ -47,6 +47,7 @@ def 거푸집산출함수_슬라브(input):
     슬라브면적 = input.GetParameterValueByName("Area")
     슬라브두께 = input.ElementType.GetParameterValueByName("Default Thickness")
     접촉보 = [i for i in 접촉대상 if "BMS" in i.Name]
+    
     def 보측면너비산출(슬라브두께, 보):
         보높이 = 보.ElementType.GetParameterValueByName("h")
         보유효높이 = 보높이 - 슬라브두께
@@ -54,12 +55,14 @@ def 거푸집산출함수_슬라브(input):
         보측면면적 = (보유효높이 * 보길이)*2/1000000
         
         return 보측면면적
+        
     접촉보측면면적 = sum([보측면너비산출(슬라브두께, i) for i in 접촉보])
 
-    target = "형상정보 미제공"
-    targetValue = 슬라브면적 + 접촉보측면면적
+    target = 슬라브면적 + 접촉보측면면적
+    targetGeo = "형상정보 미제공"
+    targetValue = target
     
-    return (target, targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 OUT = (거푸집산출함수_슬라브,tag[0],tag[1],["M2"])

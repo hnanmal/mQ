@@ -44,40 +44,54 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
 독립기초철근비 = IN[3]
 슬라브철근비 = IN[4]
 패드철근비 = IN[5]
+매스콘크리트철근비 = IN[6]
 
 # Place your code below this line
 def 철근물량산출함수(input):
-    콘크리트물량산출함수 = refFunc
+    콘크리트물량산출함수 = refFunc[0]
     if "Footing-Rectangular" in input.Name:
-        target = 콘크리트물량산출함수(input)[0]
         ratio = 독립기초철근비
         
-        return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
+        target = 콘크리트물량산출함수(input)[0]
+        targetGeo = "형상정보 미제공"
+        targetValue = target.Volume*ratio/1000000000
     
     elif "SOG" in input.Name or "SL" in input.Name:
-        target = 콘크리트물량산출함수(input)[0]
         ratio = 슬라브철근비
         
-        return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
-        
-    elif "PAD" in input.Name:
         target = 콘크리트물량산출함수(input)[0]
+        targetGeo = "형상정보 미제공"
+        targetValue = target.Volume*ratio/1000000000
+        
+    elif "PAD" in input.Name or "EF" in input.Name:
         ratio = 패드철근비
         
-        return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
+        target = 콘크리트물량산출함수(input)[0]
+        targetGeo = "형상정보 미제공"
+        targetValue = target.Volume*ratio/1000000000
+        
+    elif "MASS" in input.Name or "MAT" in input.Name:
+        ratio = 매스콘크리트철근비
+        
+        target = 콘크리트물량산출함수(input)[0]
+        targetGeo = "형상정보 미제공"
+        targetValue = target.Volume*ratio/1000000000
 
     else:
-        target = 콘크리트물량산출함수(input)[0]
         ratio = 패드철근비
         
-        return ("형상정보 미제공", target.Volume*ratio/1000000000, "TON")
+        target = 콘크리트물량산출함수(input)[0]
+        targetGeo = "형상정보 미제공"
+        targetValue = target.Volume*ratio/1000000000
+    
+    return (targetGeo, targetValue, "TON")
 
 # Assign your output to the OUT variable.
 OUT = (철근물량산출함수,tag[0],tag[1],["TON"])

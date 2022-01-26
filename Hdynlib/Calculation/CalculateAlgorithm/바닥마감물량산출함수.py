@@ -50,10 +50,11 @@ input = IN[2]
 
 # Place your code below this line
 def 바닥마감물량산출함수(input):
-    target = input.Geometry()[0]
-    targetValue = input.GetParameterValueByName("Area")
+    target = input
+    targetGeo = target.Geometry()[0]
+    targetValue = target.GetParameterValueByName("Area")
     
-    return (target,targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 
 # Assign your output to the OUT variable.

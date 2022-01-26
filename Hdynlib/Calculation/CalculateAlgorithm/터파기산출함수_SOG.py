@@ -36,41 +36,15 @@ slopeExcav = IN[6]
 # Place your code below this line
 
 def 터파기산출함수_SOG(input):
-    
     calcTargetNum = 1
-#    target = input.Geometry()[0]
-#    srfs = input.Geometry()[0].Explode()
-#    belowSrf = [i for i in srfs if i.NormalAtParameter(0.5,0.5).Z == -1][0]
-#    
-#    def getSrfHeight(srf):
-#        _crvs = srf.PerimeterCurves()
-#        heights = [i.StartPoint.Z for i in _crvs]
-#        height = min(heights)
-#        return height
-#    belowSrf_height = getSrfHeight(belowSrf)
-#    
-#    def findLeanThk(leanobj):
-#        if leanobj:
-#            return leanobj.GetParameterValueByName("thk")
-#        else:
-#            return 버림thk
-#    leanobj = None
-#    leanthk = findLeanThk(leanobj)
-#    
-#    def offsetCrv(crv, offset=300):
-#        return crv.Offset(offset)
-#    def correctElev(crv, thk):
-#        return crv.Translate(0,0,thk)
-#    _exca_belowbdry = offsetCrv(PolyCurve.ByJoinedCurves(belowSrf.PerimeterCurves()), bttmOffset)
-#    exca_belowbdry = correctElev(_exca_belowbdry, -버림thk)
-#    _exca_upperbdry = correctElev(_exca_belowbdry, -belowSrf_height)
-#    exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)
-#    target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])
-    inputGeo = input.Geometry()[0]
-    땅묻힘비율 = 0.3
-    targetValue = inputGeo.Volume*땅묻힘비율
     
-    return ("형상정보 미제공", targetValue/calcTargetNum/1000000000, "M3")
+    땅묻힘비율 = 0.3
+    inputGeo = input.Geometry()[0]
+    target = input
+    targetGeo = "형상정보 미제공"
+    targetValue = inputGeo.Volume*땅묻힘비율/calcTargetNum/1000000000
+    
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = fdnsGeo

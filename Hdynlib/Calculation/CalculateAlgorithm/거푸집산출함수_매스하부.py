@@ -53,9 +53,10 @@ def 거푸집산출함수_매스하부(input):
     하부거푸집적용면 = 하부면.SubtractFrom(유효접촉형상)
 
     target = 하부거푸집적용면
-    targetValue = sum([i.Area/1000000 for i in 하부거푸집적용면])
+    targetGeo = target
+    targetValue = sum([i.Area/1000000 for i in target])
     
-    return (target, targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 OUT = (거푸집산출함수_매스하부,tag[0],tag[1],["M2"])

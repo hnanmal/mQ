@@ -44,12 +44,12 @@ def 거푸집산출함수_매스시스템폼(input):
     inputGeo = input.Geometry()[0]
     슬라브표면들 = inputGeo.Explode()
     슬라브측면들 = [i for i in 슬라브표면들 if round(i.NormalAtParameter(0.5,0.5).Z, 2) == 0]
-    슬라브측면들면적합 = sum([i.Area for i in 슬라브측면들])
 
     target = 슬라브측면들
-    targetValue = 슬라브측면들면적합/1000000
+    targetGeo = target
+    targetValue = sum([i.Area for i in target])/1000000
     
-    return (target, targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 OUT = (거푸집산출함수_매스시스템폼,tag[0],tag[1],["M2"])

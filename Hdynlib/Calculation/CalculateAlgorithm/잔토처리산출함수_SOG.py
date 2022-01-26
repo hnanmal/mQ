@@ -39,23 +39,25 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
 wholeExcavationBln = IN[3]
-ratio = IN[4]
+토량_환산계수 = IN[4]
 
 
 # Place your code below this line
 
 def 잔토처리산출함수_SOG(input):
-    터파기산출함수_SOG = refFunc
+    터파기산출함수_SOG = refFunc[0]
     calcTargetNum = 1
 
-    targetValue = 터파기산출함수_SOG(input)[1]*ratio
+    target = 터파기산출함수_SOG(input)[1]
+    targetGeo = "형상정보 미제공"
+    targetValue = target*토량_환산계수/calcTargetNum
 
-    return ("형상정보 미제공", targetValue/calcTargetNum, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)

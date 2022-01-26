@@ -58,13 +58,16 @@ def 철골물량산출함수_Medium(input):
         철골체적 = input.GetParameterValueByName("Volume") #m3
         철골단면적 = input.ElementType.GetParameterValueByName("Section Area")/10000 #cm2 => m2
         철골길이 = 철골체적/철골단면적
-        target = input.Geometry()[0]
+        target = input
+        targetGeo = target.Geometry()[0]
         targetValue = 단위길이당중량 * 철골길이/1000
-        
-        return (target, targetValue, "TON")
 
     else:
-        return ("-!!적용대상이 아님!!-", "-!!적용대상이 아님!!-", "-!!적용대상이 아님!!-")
+        target = "-!!적용대상이 아님!!-"
+        targetGeo = "-!!적용대상이 아님!!-"
+        targetValue = "-!!적용대상이 아님!!-"
+        
+    return (targetGeo, targetValue, "TON")
 
 # Assign your output to the OUT variable.
 OUT = (철골물량산출함수_Medium,tag[0],tag[1],["TON"])

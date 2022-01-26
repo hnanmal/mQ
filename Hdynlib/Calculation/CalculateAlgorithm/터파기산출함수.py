@@ -68,7 +68,9 @@ def 터파기산출함수(input):
         exca_belowbdry = correctElev(_exca_belowbdry, -버림thk)
         _exca_upperbdry = correctElev(_exca_belowbdry, -belowSrf_height)
         exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)
-        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])#excavation_solid
+        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])
+        targetGeo = target
+        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         
         
     else:
@@ -99,9 +101,11 @@ def 터파기산출함수(input):
         exca_belowbdry = correctElev(_exca_belowbdry, -버림thk)
         _exca_upperbdry = correctElev(_exca_belowbdry, -belowSrf_height)
         exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)
-        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])#excavation_solid
+        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])
+        targetGeo = target
+        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
 
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = fdnsGeo

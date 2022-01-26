@@ -39,7 +39,7 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
@@ -48,7 +48,7 @@ input = IN[2]
 # Place your code below this line
 
 def 잡석다짐산출함수(input):
-    버림콘크리트산출함수 = refFunc
+    버림콘크리트산출함수 = refFunc[0]
     if "Footing-Rectangular" in input.Name:
         calcTargetNum = 1
         solid_lean = 버림콘크리트산출함수(input)[0]
@@ -57,8 +57,13 @@ def 잡석다짐산출함수(input):
         vectorZ = srf_lean_blw.NormalAtParameter(0.5,0.5).Z
         if vectorZ>0:
             target = srf_lean_blw.Thicken(-잡석thk, False)
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         elif vectorZ<0:
             target = srf_lean_blw.Thicken(잡석thk, False)
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
+            
     elif "SOG" in input.Name:
         calcTargetNum = 1
         solid_lean = 버림콘크리트산출함수(input)[0]
@@ -67,11 +72,15 @@ def 잡석다짐산출함수(input):
         vectorZ = PolySurface.ByJoinedSurfaces(srf_lean_blw).NormalAtParameter(0.5,0.5).Z
         if vectorZ>0:
             target = Solid.ByUnion([i.Thicken(-잡석thk, False) for i in srf_lean_blw])
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         elif vectorZ<0:
             target = Solid.ByUnion([i.Thicken(잡석thk, False) for i in srf_lean_blw])
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         
 #    return target
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = 잡석다짐산출함수(input)

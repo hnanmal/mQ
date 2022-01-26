@@ -39,7 +39,7 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 wholeExcavationBln = IN[3]
@@ -51,17 +51,20 @@ def 되메우기산출함수(input):
     
     if wholeExcavationBln:
         calcTargetNum = len(allIsoFdns)
-        exca_solid = refFunc(input)[0]
+        터파기산출함수 = refFunc[0]
+        exca_solid = 터파기산출함수(input)[0]
         fdn_solid = list(chain(*[i.Geometry() for i in allIsoFdns]))
         _diff_target = fdn_solid + allPedsGeo + allTGsGeo + allSOGsGeo
         diff_target = Solid.ByUnion(_diff_target)
 
         target = exca_solid.Difference(diff_target)
-        
+        targetGeo = target
+        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
 
     else:
         calcTargetNum = 1
-        exca_solid = refFunc(input)[0]
+        터파기산출함수 = refFunc[0]
+        exca_solid = 터파기산출함수(input)[0]
         fdn_solid = input.Geometry()[0]
         _joinedPeds = [i for i in allPedsGeo if i.DoesIntersect(exca_solid)]
         _joinedTGs = [i for i in allTGsGeo if i.DoesIntersect(exca_solid)]
@@ -70,9 +73,11 @@ def 되메우기산출함수(input):
         diff_target = Solid.ByUnion(_diff_target)
         
         target = exca_solid.Difference(diff_target)
+        targetGeo = target
+        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
 
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)
-OUT = (되메우기산출함수,["Footing-Rectangular"],["Backfill"],["M3"])
+OUT = (되메우기산출함수,tag[0],tag[1],["M3"])

@@ -59,9 +59,10 @@ def 시스템동바리산출함수(input):
     동바리높이 = 동바리적용면.PointAtParameter(0.5,0.5).Z - 기준레벨
 
     target = 동바리적용면
+    targetGeo = target
     targetValue = 동바리적용면적*동바리높이/1000000000
     
-    return (target, targetValue, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 OUT = (시스템동바리산출함수,tag[0],tag[1],["M2"])

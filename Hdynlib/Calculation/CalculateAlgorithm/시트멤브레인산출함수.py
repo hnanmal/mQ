@@ -46,7 +46,7 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
@@ -60,16 +60,17 @@ def getIdxOfMaximum(list):
     return result
 
 def 시트멤브레인산출함수(input):
-    프로텍션보드산출함수 = refFunc
+    프로텍션보드산출함수 = refFunc[0]
     calcTargetNum = 1
-    #타겟형상 = 프로텍션보드산출함수(input)[0]
-    타겟값 = 프로텍션보드산출함수(input)[1]
+    
+    프로텍션보드적용면들 = 프로텍션보드산출함수(input)[0]
 
-    target = 타겟값
-
+    target = 프로텍션보드적용면들
+    targetGeo = target
+    targetValue = sum([i.Area for i in target])/calcTargetNum/1000000
 
     #return target
-    return ("형상정보 미제공", target, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = PE시트산출함수(input)

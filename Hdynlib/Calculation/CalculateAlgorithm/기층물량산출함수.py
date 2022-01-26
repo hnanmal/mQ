@@ -39,7 +39,7 @@ allSOGsGeo = [i.Geometry()[0] for i in allSOGs]
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
 
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
@@ -55,22 +55,26 @@ def 기층물량산출함수(input):
     
     if wholeExcavationBln:
         calcTargetNum = len(allIsoFdns)
-        exca_solid = refFunc(input)[0]
-        srfs_exca_blw = [i for i in exca_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1]
+        터파기산출함수 = refFunc[0]
+        exca_solid = 터파기산출함수(input)[0]
+        srfs_exca_blw = [i for i in exca_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2)==-1]
         
 
         target = srfs_exca_blw[0].Translate(0,0,-기층thk)
-        pass
+        targetGeo = target
+        targetValue = sum([i.Area for i in [target]])/calcTargetNum/1000000
 
     else:
         calcTargetNum = 1
-        exca_solid = refFunc(input)[0]
-        srfs_exca_blw = [i for i in exca_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1]
+        터파기산출함수 = refFunc[0]
+        exca_solid = 터파기산출함수(input)[0]
+        srfs_exca_blw = [i for i in exca_solid.Explode() if round(i.NormalAtParameter(0.5,0.5).Z,2)==-1]
 
         target = srfs_exca_blw[0].Translate(0,0,-기층thk)
+        targetGeo = target
+        targetValue = sum([i.Area for i in [target]])/calcTargetNum/1000000
 
-
-    return (target, sum([i.Area for i in [target]])/calcTargetNum/1000000, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = getBackfillTarget(input)

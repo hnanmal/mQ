@@ -45,7 +45,7 @@ allFdnAndHaunchGeo = list(chain(*[i.Geometry() for i in allFdnAndHaunch]))
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
-refFunc = IN[0][0]
+refFunc = IN[0]
 tag = IN[1]
 input = IN[2]
 
@@ -64,15 +64,16 @@ def getIdxOfMaximum(list):
 def PE시트산출함수(input):
     calcTargetNum = 1
     inputGeo = input.Geometry()[0]
-    버림콘크리트산출함수 = refFunc
+    버림콘크리트산출함수 = refFunc[0]
     버림형상 = 버림콘크리트산출함수(input)[0]
-    #버림상부면 = [i for i in 버림형상.Explode() if round(i.NormalAtParameter(0.5,0.5).Z) == 1][0]
+    
     target = 버림형상
+    targetGeo = target
+    targetValue = target.Volume/버림thk/calcTargetNum/1000000
 
 
     #return target
-    return (target, target.Volume/버림thk/calcTargetNum/1000000, "M2")
-    #return (target, sum([i.Volume/버림thk for i in [target]])/calcTargetNum/1000000, "M2")
+    return (targetGeo, targetValue, "M2")
 
 # Assign your output to the OUT variable.
 #OUT = PE시트산출함수(input)

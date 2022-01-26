@@ -35,13 +35,15 @@ def 파일산출함수(input):
     
     calcTargetNum = 1
     
-#    target = input.Geometry()
     value1 = input.ElementType.GetParameterValueByName("Depth")
     value2 = input.ElementType.GetParameterValueByName("최소 내포")
-    targetValue = value1 + value2
+    
+    target = value1 + value2
+    targetGeo = "형상정보 미제공"
+    targetValue = target/calcTargetNum/1000
 
 
-    return ("형상정보 미제공", targetValue/calcTargetNum/1000, "M")
+    return (targetGeo, targetValue, "M")
 
 # Assign your output to the OUT variable.
 #OUT = fdnsGeo

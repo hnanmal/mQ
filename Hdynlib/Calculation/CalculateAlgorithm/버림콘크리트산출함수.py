@@ -78,8 +78,12 @@ def 버림콘크리트산출함수(input):
         vectorZ = leanSrf.NormalAtParameter(0.5,0.5).Z
         if vectorZ>0:
             target = leanSrf.Thicken(-버림thk, False)
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         elif vectorZ<0:
             target = leanSrf.Thicken(버림thk, False)
+            targetGeo = target
+            targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
         
 #    elif "TG" in input.Name:
 #        srf_TG_lean = [i for i in inputGeo.Explode() if round(i.NormalAtParameter(0.5,0.5).Z)==-1][0]
@@ -151,9 +155,11 @@ def 버림콘크리트산출함수(input):
         버림형상 = 하강병합산출대상.DifferenceAll([병합산출대상])
         
         target = 버림형상
+        targetGeo = target
+        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000
 
 #    return target
-    return (target, sum([i.Volume for i in [target]])/calcTargetNum/1000000000, "M3")
+    return (targetGeo, targetValue, "M3")
 
 # Assign your output to the OUT variable.
 #OUT = 버림콘크리트산출함수(input)
