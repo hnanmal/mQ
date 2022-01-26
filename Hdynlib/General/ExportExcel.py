@@ -25,8 +25,10 @@ ListIn = IN[2]
 
 # Place your code below this line
 import datetime
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 Today = date.today()
+now = datetime.now()
+
 import openpyxl
 from openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, Color, numbers
 
@@ -52,24 +54,12 @@ def write_to_file(filepath):
 
     ws['A2'] = 'Item Number'
     ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['B2'] = 'Member Name'
-    #ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['C2'] = 'Category'
-    #ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
     ws['B2'] = 'Family Type'
     ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
     ws['C2'] = 'WorkMaster Code'
     ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
     ws['D2'] = 'Description'
     ws['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['F2'] = 'WorkMaster Description'
-    #ws['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['G2'] = 'Unit'
-    #ws['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['H2'] = '계수'
-    #ws['H2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
-    #ws['I2'] = '계산 참조값'
-    #ws['I2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
     ws['E2'] = 'Quantities'
     ws['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
     ws['F2'] = 'Unit'
@@ -91,16 +81,9 @@ def write_to_file(filepath):
     ws.column_dimensions['F'].width = 20
     ws.column_dimensions['G'].width = 20
     ws.column_dimensions['H'].width = 20
-    #ws.column_dimensions['G'].width = 9
-    #ws.column_dimensions['H'].width = 9
-    #ws.column_dimensions['H'].hidden = True
-    #ws.column_dimensions['I'].width = 12
-    #ws.column_dimensions['I'].hidden = True
-    #ws.column_dimensions['J'].width = 12
-    #ws.column_dimensions['K'].width = 12
-    #ws.column_dimensions['L'].width = 12
 
-###
+
+
     start_row = 3
     for (row, item) in enumerate(sample_items, start_row):
         cell = ws.cell(row=row, column=1, value=row - 2)
@@ -120,21 +103,9 @@ def write_to_file(filepath):
         
         ws.cell(row=row, column=6, value=item[4]) ## Unit 칼럼
         
-        #cell = ws.cell(row=row, column=8, value=item[6]) ## 계수 칼럼
-        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'
-        
-        #cell = ws.cell(row=row, column=9, value=item[7]) ## 계산 참조값 칼럼
-        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'
-        
-        #cell = ws.cell(row=row, column=10, value=item[8]) ## Quantities 칼럼
-        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'
-        #cell.font = openpyxl.styles.Font(b=True, color='000000', size=11)
 
         cell = ws.cell(row=row, column=8, value='= E{current_row}*G{current_row}'.format(current_row=cell.row))
         cell.number_format = '#,##0.00'
-
-#        cell = ws.cell(row=row, column=6, value='= D{current_row} * E{current_row}'.format(current_row=cell.row))
-#        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)
 
     total_row = ws.max_row + 1
     if total_row > start_row:
@@ -154,7 +125,7 @@ def write_to_file(filepath):
 ##if __name__ == '__main__':
 #write_to_file('C:\\Users\\pjmk0\\AppData\\Roaming\\test.xlsx')
 if exportBln:
-    save_name = f'{SheetName} CalcSheet({PjtName}_{BldgName})_' + Today.strftime("%Y-%m-%d")+'.xlsx'
+    save_name = f'{SheetName} CalcSheet ({PjtName}_{BldgName})_' + now.strftime("%Y-%m-%d_%H%M%S") + '.xlsx'
     path = os.getenv('APPDATA').replace('\\','\\\\')
     filePath = path + '\\' + save_name
     
