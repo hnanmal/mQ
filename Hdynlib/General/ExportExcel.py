@@ -9,6 +9,7 @@ clr.AddReference('ProtoGeometry')
 from Autodesk.DesignScript.Geometry import *
 from collections import Iterable
 
+from itertools import chain
 def iterable(obj):
     return isinstance(obj, Iterable)
 
@@ -17,11 +18,12 @@ def iterable(obj):
 dataEnteringNode = IN
 
 exportBln = IN[0]
-pjtinfo = IN[1][0]
+oldfilepath = IN[1]
+pjtinfo = IN[2][0]
 PjtName = pjtinfo[0]
 BldgName = pjtinfo[1]
-SheetName = IN[1][1]
-ListIn = IN[2]
+SheetName = IN[2][1]
+InData = IN[3]
 
 # Place your code below this line
 import datetime
@@ -32,10 +34,24 @@ now = datetime.now()
 import openpyxl
 from openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, Color, numbers
 
-sample_items = ListIn
+sample_items = InData
 
+### 기존 워크북 불러오기
+#wb = openpyxl.load_workbook(oldfilepath)
 
-def write_to_file(filepath):
+def write_to_Newfile(filepath, SheetName):
+    def findWMset(InData):
+        result = []
+        tmp = []
+        for i in InData:
+            tmp.append(i[1])
+        tmp = set(tmp)
+        for i in tmp:
+            result.append([i])
+        return result
+    
+    WMset = findWMset(sample_items)
+    
     wb = openpyxl.Workbook()
     for sheet in wb.sheetnames:
         wb.remove(wb[sheet])
@@ -43,14 +59,86 @@ def write_to_file(filepath):
     thin = Side(border_style="thin", color="000000")
     double = Side(border_style="double", color="000000")
 
-    ws = wb.create_sheet(title= f'{SheetName}', index=0)
+    ws_sum = wb.create_sheet(title= "Summary", index=0)
+    
+    ws = wb.create_sheet(title= f'{SheetName}')
+    
+##################ws_sum#########
+    ws_sum.merge_cells('A1:L1')
+    ws_sum['A1'] = f'Summary Sheet ({PjtName}_{BldgName})'
+    cell = ws_sum['A1']
+    cell.font = openpyxl.styles.Font(color='000000', size=20)
+    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))
 
+    ws_sum['A2'] = 'Item Number'
+    ws_sum['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['B2'] = 'WorkMaster Code'
+    ws_sum['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['C2'] = 'Description'
+    ws_sum['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['D2'] = 'Quantities'
+    ws_sum['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['E2'] = 'Unit'
+    ws_sum['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['F2'] = 'Unit Price'
+    ws_sum['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+    ws_sum['G2'] = 'Total Price'
+    ws_sum['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
+
+
+## 칼럼별 너비 조정 구간
+#    for col in range(ws.max_column):
+#        ws.column_dimensions[chr(ord('A') + col)].width = 15
+    ws_sum.column_dimensions['A'].width = 5
+    ws_sum.column_dimensions['B'].width = 20
+    ws_sum.column_dimensions['C'].width = 75
+    ws_sum.column_dimensions['D'].width = 11
+    ws_sum.column_dimensions['E'].width = 9.5
+    ws_sum.column_dimensions['F'].width = 11
+    ws_sum.column_dimensions['G'].width = 11
+
+
+    start_row = 4
+    ws_sum.merge_cells(f'A{start_row-1}:G{start_row-1}')
+    ws_sum[f'A{start_row-1}'] = f'Summary for_{SheetName}'
+    cell = ws_sum[f'A{start_row-1}']
+    cell.font = openpyxl.styles.Font(color='000000', size=12.5)
+    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='aaf2d1'))
+    for (row, item) in enumerate(WMset, start_row):
+        cell = ws_sum.cell(row=row, column=1, value=row - 3)
+        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(0)
+        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')
+
+        ws_sum.cell(row=row, column=2, value=item[0]) ## WorkMaster Code 칼럼
+        
+        cell = ws_sum.cell(row=row, column=3, value= f"= VLOOKUP(B{cell.row},'{SheetName}'!$C${start_row}:$F${start_row+len(sample_items)},2,FALSE)".format(current_row=cell.row))
+        
+        cell = ws_sum.cell(row=row, column=4, value= f"= SUMIF('{SheetName}'!$C${start_row}:$C${start_row+len(sample_items)},B{cell.row},'{SheetName}'!$E${start_row}:$E${start_row+len(sample_items)})".format(current_row=cell.row))
+        
+        cell = ws_sum.cell(row=row, column=5, value= f"= VLOOKUP(B{cell.row},'{SheetName}'!$C${start_row}:$F${start_row+len(sample_items)},4,FALSE)".format(current_row=cell.row))
+        
+        
+        cell = ws_sum.cell(row=row, column=7, value='= D{current_row}*F{current_row}'.format(current_row=cell.row))
+        cell.number_format = '#,##0.00'
+
+    total_row = ws_sum.max_row + 1
+    if total_row > start_row:
+        cell1 = ws_sum.cell(row=total_row, column=6, value='Total')
+        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)
+        
+        cell2 = ws_sum.cell(row=total_row, column=7, value='= SUM(G{}:G{})'.format(start_row, total_row - 1))
+        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)
+        cell2.border = Border(top=double, left=double, right=double, bottom=double)
+        cell2.font = openpyxl.styles.Font(b=True, color='ff03ce', size=15)
+    
+    
+    
+##################ws#########
     ws.merge_cells('A1:L1')
     ws['A1'] = f'{SheetName} Category Calculation Sheet ({PjtName}_{BldgName})'
     cell = ws['A1']
     cell.font = openpyxl.styles.Font(color='000000', size=20)
-    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid',
-                                                  fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))
+    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))
 
     ws['A2'] = 'Item Number'
     ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)
@@ -116,7 +204,7 @@ def write_to_file(filepath):
         cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)
         cell2.border = Border(top=double, left=double, right=double, bottom=double)
         cell2.font = openpyxl.styles.Font(b=True, color='ff03ce', size=15)
-    
+
 
     wb.save(filepath)
     wb.close()
@@ -125,11 +213,21 @@ def write_to_file(filepath):
 ##if __name__ == '__main__':
 #write_to_file('C:\\Users\\pjmk0\\AppData\\Roaming\\test.xlsx')
 if exportBln:
-    save_name = f'{SheetName} CalcSheet ({PjtName}_{BldgName})_' + now.strftime("%Y-%m-%d_%H%M%S") + '.xlsx'
-    path = os.getenv('APPDATA').replace('\\','\\\\')
-    filePath = path + '\\' + save_name
-    
-    write_to_file(filePath)
+    if not oldfilepath:
+        save_name = f'{SheetName} CalcSheet ({PjtName}_{BldgName})_' + now.strftime("%Y-%m-%d_%H%M%S") + '.xlsx'
+        path = os.getenv('APPDATA').replace('\\','\\\\')
+        filePath = path + '\\' + save_name
+        
+        write_to_Newfile(filePath, SheetName)
+    else:
+#        #write_to_Oldfile(filePath)
+#        wb = openpyxl.load_workbook(oldfilepath)
+#        ws_sum = wb['Summary']
+#        
+#        ws_sum.append(range(10))
+#        wb.save(oldfilepath)
+#        wb.close()
+        pass
 else:
     pass
 

@@ -60,20 +60,20 @@
       "SelectedIndex": 0
     },
     {
-      "Id": "9ecbcfba49cd471ca820c3e5abb7f21d",
-      "Name": "Excel로 Export 하시겠습니까?",
-      "Type": "boolean",
-      "Value": "false",
-      "Description": "Selection between a true and false.",
-      "SelectedIndex": 0
-    },
-    {
       "Id": "aeb66b23601e4a748d0c1fdaed99ee16",
       "Name": "매스콘크리트철근비",
       "Type": "number",
       "Value": "0.2",
       "NumberType": "Double",
       "Description": "Creates a number.",
+      "SelectedIndex": 0
+    },
+    {
+      "Id": "c248dfda5d2f4165b4d2d7c735c283c2",
+      "Name": "Excel로 Export 하시겠습니까?",
+      "Type": "boolean",
+      "Value": "false",
+      "Description": "Selection between a true and false.",
       "SelectedIndex": 0
     }
   ],
@@ -2508,287 +2508,6 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport os\r\n#sys.path.append(r'C:\\Users\\HEC\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\n#sys.path.append(r'C:\\Users\\pjmk0\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom collections import Iterable\r\n\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nexportBln = IN[0]\r\npjtinfo = IN[1][0]\r\nPjtName = pjtinfo[0]\r\nBldgName = pjtinfo[1]\r\nSheetName = IN[1][1]\r\nListIn = IN[2]\r\n\r\n# Place your code below this line\r\nimport datetime\r\nfrom datetime import date, timedelta\r\nToday = date.today()\r\nimport openpyxl\r\nfrom openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, Color, numbers\r\n\r\nsample_items = ListIn\r\n\r\n\r\ndef write_to_file(filepath):\r\n    wb = openpyxl.Workbook()\r\n    for sheet in wb.sheetnames:\r\n        wb.remove(wb[sheet])\r\n\r\n    thin = Side(border_style=\"thin\", color=\"000000\")\r\n    double = Side(border_style=\"double\", color=\"000000\")\r\n\r\n    ws = wb.create_sheet(title= f'{SheetName}', index=0)\r\n\r\n    ws.merge_cells('A1:L1')\r\n    ws['A1'] = f'{SheetName} Category Calculation Sheet ({PjtName}_{BldgName})'\r\n    cell = ws['A1']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=20)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid',\r\n                                                  fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))\r\n\r\n    ws['A2'] = 'Item Number'\r\n    ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['B2'] = 'Member Name'\r\n    #ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['C2'] = 'Category'\r\n    #ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['B2'] = 'Family Type'\r\n    ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['C2'] = 'WorkMaster Code'\r\n    ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['D2'] = 'Description'\r\n    ws['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['F2'] = 'WorkMaster Description'\r\n    #ws['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['G2'] = 'Unit'\r\n    #ws['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['H2'] = '계수'\r\n    #ws['H2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    #ws['I2'] = '계산 참조값'\r\n    #ws['I2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['E2'] = 'Quantities'\r\n    ws['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['F2'] = 'Unit'\r\n    ws['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['G2'] = 'Unit Price'\r\n    ws['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['H2'] = 'Total Price'\r\n    ws['H2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n\r\n\r\n## 칼럼별 너비 조정 구간\r\n#    for col in range(ws.max_column):\r\n#        ws.column_dimensions[chr(ord('A') + col)].width = 15\r\n    ws.column_dimensions['A'].width = 15\r\n    ws.column_dimensions['B'].width = 45\r\n    ws.column_dimensions['C'].width = 25\r\n    ws.column_dimensions['D'].width = 60\r\n    ws.column_dimensions['E'].width = 15\r\n    ws.column_dimensions['F'].width = 20\r\n    ws.column_dimensions['G'].width = 20\r\n    ws.column_dimensions['H'].width = 20\r\n    #ws.column_dimensions['G'].width = 9\r\n    #ws.column_dimensions['H'].width = 9\r\n    #ws.column_dimensions['H'].hidden = True\r\n    #ws.column_dimensions['I'].width = 12\r\n    #ws.column_dimensions['I'].hidden = True\r\n    #ws.column_dimensions['J'].width = 12\r\n    #ws.column_dimensions['K'].width = 12\r\n    #ws.column_dimensions['L'].width = 12\r\n\r\n###\r\n    start_row = 3\r\n    for (row, item) in enumerate(sample_items, start_row):\r\n        cell = ws.cell(row=row, column=1, value=row - 2)\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(0)\r\n        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')\r\n\r\n#        cell = ws.cell(row=row, column=2, value=item[0])\r\n#        cell.number_format = openpyxl.styles.numbers.FORMAT_DATE_YYYYMMDD2  # 'yyyy-mm-dd'\r\n        ws.cell(row=row, column=2, value=item[0]) ## Family Type 칼럼\r\n\r\n        ws.cell(row=row, column=3, value=item[1]) ## WorkMaster Code 칼럼\r\n        \r\n        ws.cell(row=row, column=4, value=item[2]) ## WorkMaster Code 칼럼\r\n        \r\n        ws.cell(row=row, column=5, value=item[3]) ## Quantities 칼럼\r\n        cell.number_format = '#,##0.00'\r\n        \r\n        ws.cell(row=row, column=6, value=item[4]) ## Unit 칼럼\r\n        \r\n        #cell = ws.cell(row=row, column=8, value=item[6]) ## 계수 칼럼\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'\r\n        \r\n        #cell = ws.cell(row=row, column=9, value=item[7]) ## 계산 참조값 칼럼\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'\r\n        \r\n        #cell = ws.cell(row=row, column=10, value=item[8]) ## Quantities 칼럼\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)  # '#,##0'\r\n        #cell.font = openpyxl.styles.Font(b=True, color='000000', size=11)\r\n\r\n        cell = ws.cell(row=row, column=8, value='= E{current_row}*G{current_row}'.format(current_row=cell.row))\r\n        cell.number_format = '#,##0.00'\r\n\r\n#        cell = ws.cell(row=row, column=6, value='= D{current_row} * E{current_row}'.format(current_row=cell.row))\r\n#        cell.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n\r\n    total_row = ws.max_row + 1\r\n    if total_row > start_row:\r\n        cell1 = ws.cell(row=total_row, column=7, value='Total')\r\n        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n        \r\n        cell2 = ws.cell(row=total_row, column=8, value='= SUM(H{}:H{})'.format(start_row, total_row - 1))\r\n        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n        cell2.border = Border(top=double, left=double, right=double, bottom=double)\r\n        cell2.font = openpyxl.styles.Font(b=True, color='ff03ce', size=15)\r\n    \r\n\r\n    wb.save(filepath)\r\n    wb.close()\r\n\r\n\r\n##if __name__ == '__main__':\r\n#write_to_file('C:\\\\Users\\\\pjmk0\\\\AppData\\\\Roaming\\\\test.xlsx')\r\nif exportBln:\r\n    save_name = f'{SheetName} CalcSheet({PjtName}_{BldgName})_' + Today.strftime(\"%Y-%m-%d\")+'.xlsx'\r\n    path = os.getenv('APPDATA').replace('\\\\','\\\\\\\\')\r\n    filePath = path + '\\\\' + save_name\r\n    \r\n    write_to_file(filePath)\r\nelse:\r\n    pass\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = os.getenv('APPDATA')",
-      "Engine": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "34b7057217be4ff3b14855f3b64dcd96",
-      "Inputs": [
-        {
-          "Id": "de33f2de3b0248b0a5ebdcc90b5494eb",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "be0f2e54e5f74e7c85cd006902675001",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "f77d195ccd594e458532d3105bf4d533",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "31a1a1f06bcb460c9d2f787b9f215e2f",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlists = IN[0]\r\n# Place your code below this line\r\n\r\ndef arrangeDataForExcel(lists):\r\n    result = []\r\n    for elem in lists:\r\n        for wm in elem:\r\n            tmp1 = []\r\n            if \"-!!\" in str(wm[2]) or \"!\" in str(wm[3][0]):\r\n                pass\r\n            else:\r\n                tmp1 = []\r\n                tmp1.append(wm[0])\r\n                tmp1.append(wm[1].split(': ')[0])\r\n                tmp1.append(wm[1].split(': ')[1])\r\n                tmp1.append(round(wm[3][1],2))\r\n                tmp1.append(wm[3][2])\r\n            if tmp1:\r\n                result.append(tmp1)\r\n            else:\r\n                pass\r\n    return result\r\n\r\nresult = arrangeDataForExcel(lists)\r\n# Assign your output to the OUT variable.\r\nOUT = result",
-      "Engine": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "216fea2f2f9a40e9adaa40f2d1a8154b",
-      "Inputs": [
-        {
-          "Id": "d78f654f47704a428253996101e2bc4f",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "1b007666b5034742809f1c56146e8c6b",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[pjtinfo,\nsheetname];",
-      "Id": "c2b8362daa004a37810fde2bb627c80f",
-      "Inputs": [
-        {
-          "Id": "8c0ad7312974492089ec1b91a5c485f5",
-          "Name": "pjtinfo",
-          "Description": "pjtinfo",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "caf2480129db4915b679fd7a5434c775",
-          "Name": "sheetname",
-          "Description": "sheetname",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "916c7b7d83954ac9b1e08e28d685de61",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
-      "NodeType": "BooleanInputNode",
-      "InputValue": false,
-      "Id": "9ecbcfba49cd471ca820c3e5abb7f21d",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "ab4816da905d454ca6086c853a3a2fdf",
-          "Name": "",
-          "Description": "Boolean",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Selection between a true and false."
-    },
-    {
-      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
-      "SelectedIndex": 428,
-      "SelectedString": "OST_ProjectInformation",
-      "NodeType": "ExtensionNode",
-      "Id": "1d2693e6923940cf8b15e50b0a35b114",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "0d1e382652f24b2d874bcbe694662a74",
-          "Name": "Category",
-          "Description": "The selected Category.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "All built-in categories."
-    },
-    {
-      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
-      "NodeType": "ExtensionNode",
-      "Id": "a8b8d907b88e40308dd890410a8f0de7",
-      "Inputs": [
-        {
-          "Id": "f9ffbb9be1154b92b09f23d338f2fb1d",
-          "Name": "Category",
-          "Description": "The Category",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "e24ff1490d3845f58de9c5070de2f81f",
-          "Name": "Elements",
-          "Description": "An element type.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Get all elements of the specified category from the model."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\ni.GetParameterValueByName(\"Project Name\")[0],\ni.GetParameterValueByName(\"Building Name\")[0]\n];",
-      "Id": "85177a0847a24da69a83038c6fa1f69d",
-      "Inputs": [
-        {
-          "Id": "8a4c48864f7c4a3b965477334921c9a0",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "d4c4844672c648a2a2bc46ed4c2341ca",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.String.ToLower@string",
-      "Id": "0cae2ddf4e1a42c9ade6fdb841ea81cb",
-      "Inputs": [
-        {
-          "Id": "ada014d5b62e49d983bc33dd3ad0f370",
-          "Name": "string",
-          "Description": "String to be made lowercase\n\nstring",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "69a806e801f54cabb0ff12ed32c63237",
-          "Name": "string",
-          "Description": "Lowercase string",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Converts the given string to all lowercase characters.\n\nString.ToLower (string: string): string"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.String.ToTitle@string",
-      "Id": "ed6fce2c988a47c28b2ed3c32b8d5399",
-      "Inputs": [
-        {
-          "Id": "bc827529d3594457948f59918c391f97",
-          "Name": "str",
-          "Description": "String to be made title case\n\nstring",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "209acd5d79614310afebcf643dc4f8dd",
-          "Name": "str",
-          "Description": "Title case string",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Converts the given string to title case.\n\nString.ToTitle (str: string): string"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
       "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nfrom DSCore import Color\r\nclr.AddReference('GeometryColor')\r\nfrom Modifiers import GeometryColor\r\n\r\nimport random\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n산출결과세트리스트 = IN[0]\r\n\r\ndef 공종종류(산출결과세트리스트):\r\n    result = []\r\n    for 산출결과세트 in 산출결과세트리스트:\r\n        for i in 산출결과세트:\r\n            공종 = i[1]\r\n            if not 공종 in result:\r\n                result.append(공종)\r\n    return result\r\n    \r\n공종목록 = 공종종류(산출결과세트리스트)\r\n\r\nresult = 공종목록\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
@@ -4082,6 +3801,296 @@
       ],
       "Replication": "Disabled",
       "Description": "Creates a number."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlists = IN[0]\r\n# Place your code below this line\r\n\r\ndef arrangeDataForExcel(lists):\r\n    result = []\r\n    for elem in lists:\r\n        for wm in elem:\r\n            tmp1 = []\r\n            if \"-!!\" in str(wm[2]) or \"!\" in str(wm[3][0]):\r\n                pass\r\n            else:\r\n                tmp1 = []\r\n                tmp1.append(wm[0])\r\n                tmp1.append(wm[1].split(': ')[0])\r\n                tmp1.append(wm[1].split(': ')[1])\r\n                tmp1.append(round(wm[3][1],2))\r\n                tmp1.append(wm[3][2])\r\n            if tmp1:\r\n                result.append(tmp1)\r\n            else:\r\n                pass\r\n    return result\r\n\r\nresult = arrangeDataForExcel(lists)\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "6221e715521d4be088d9d0c7f1bdc747",
+      "Inputs": [
+        {
+          "Id": "84b89aaf78c64b5b8e39bcc08d0138fb",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a7586dc888e344fcb2e121e6869bd0ef",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[pjtinfo,\nsheetname];",
+      "Id": "2dcc1f4fea4146cd8b9aae7b3100bbd3",
+      "Inputs": [
+        {
+          "Id": "a910b6e8429c45d1a2b5e510f239a456",
+          "Name": "pjtinfo",
+          "Description": "pjtinfo",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9c5fbc83c4f94244883316c0a630f3be",
+          "Name": "sheetname",
+          "Description": "sheetname",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f2de4f76967e4e8e9cafc3fcfb386fee",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "NodeType": "BooleanInputNode",
+      "InputValue": false,
+      "Id": "c248dfda5d2f4165b4d2d7c735c283c2",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b5fd9c02b4594250a882b6d949e7c685",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Selection between a true and false."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 428,
+      "SelectedString": "OST_ProjectInformation",
+      "NodeType": "ExtensionNode",
+      "Id": "3b5cd9bbabe0423e92f9fddfb8e9195d",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "3a052dd62d7c474d9ca380618fb3b401",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "72d84c7f909f4b95bd49b73ff80ed68f",
+      "Inputs": [
+        {
+          "Id": "a6498729ced24aceaf4233e2a92d7beb",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "392d5f470f8e4bb2ad4928869afe4826",
+          "Name": "Elements",
+          "Description": "An element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\ni.GetParameterValueByName(\"Project Name\")[0],\ni.GetParameterValueByName(\"Building Name\")[0]\n];",
+      "Id": "74efb6aee5524894bb5395758c2b521d",
+      "Inputs": [
+        {
+          "Id": "5342ae647e95463596721955efcb583e",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8f9fe117a20e4b899d9b593163507d3b",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.String.ToLower@string",
+      "Id": "df1f1539d35742f1be3b22840bda39e2",
+      "Inputs": [
+        {
+          "Id": "40ccda628de641d99ee6d17f60932b2e",
+          "Name": "string",
+          "Description": "String to be made lowercase\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2d16fceaf020466db4a8f8b665dca42b",
+          "Name": "string",
+          "Description": "Lowercase string",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Converts the given string to all lowercase characters.\n\nString.ToLower (string: string): string"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.String.ToTitle@string",
+      "Id": "9917008a92b44625ba19c684671ee7fe",
+      "Inputs": [
+        {
+          "Id": "5ee3386dbd434bf9973e80dd5e9f985a",
+          "Name": "str",
+          "Description": "String to be made title case\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6e360071ff6d4df9b01aae7eb0bae37e",
+          "Name": "str",
+          "Description": "Title case string",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Converts the given string to title case.\n\nString.ToTitle (str: string): string"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport os\r\n#sys.path.append(r'C:\\Users\\HEC\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\n#sys.path.append(r'C:\\Users\\pjmk0\\AppData\\Local\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + r'\\Programs\\Python\\Python39\\Lib\\site-packages')\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom collections import Iterable\r\n\r\nfrom itertools import chain\r\ndef iterable(obj):\r\n    return isinstance(obj, Iterable)\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nexportBln = IN[0]\r\noldfilepath = IN[1]\r\npjtinfo = IN[2][0]\r\nPjtName = pjtinfo[0]\r\nBldgName = pjtinfo[1]\r\nSheetName = IN[2][1]\r\nInData = IN[3]\r\n\r\n# Place your code below this line\r\nimport datetime\r\nfrom datetime import date, timedelta, datetime\r\nToday = date.today()\r\nnow = datetime.now()\r\n\r\nimport openpyxl\r\nfrom openpyxl.styles import Border, Side, PatternFill, Font, GradientFill, Alignment, Color, numbers\r\n\r\nsample_items = InData\r\n\r\n### 기존 워크북 불러오기\r\n#wb = openpyxl.load_workbook(oldfilepath)\r\n\r\ndef write_to_Newfile(filepath, SheetName):\r\n    def findWMset(InData):\r\n        result = []\r\n        tmp = []\r\n        for i in InData:\r\n            tmp.append(i[1])\r\n        tmp = set(tmp)\r\n        for i in tmp:\r\n            result.append([i])\r\n        return result\r\n    \r\n    WMset = findWMset(sample_items)\r\n    \r\n    wb = openpyxl.Workbook()\r\n    for sheet in wb.sheetnames:\r\n        wb.remove(wb[sheet])\r\n\r\n    thin = Side(border_style=\"thin\", color=\"000000\")\r\n    double = Side(border_style=\"double\", color=\"000000\")\r\n\r\n    ws_sum = wb.create_sheet(title= \"Summary\", index=0)\r\n    \r\n    ws = wb.create_sheet(title= f'{SheetName}')\r\n    \r\n##################ws_sum#########\r\n    ws_sum.merge_cells('A1:L1')\r\n    ws_sum['A1'] = f'Summary Sheet ({PjtName}_{BldgName})'\r\n    cell = ws_sum['A1']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=20)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))\r\n\r\n    ws_sum['A2'] = 'Item Number'\r\n    ws_sum['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['B2'] = 'WorkMaster Code'\r\n    ws_sum['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['C2'] = 'Description'\r\n    ws_sum['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['D2'] = 'Quantities'\r\n    ws_sum['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['E2'] = 'Unit'\r\n    ws_sum['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['F2'] = 'Unit Price'\r\n    ws_sum['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws_sum['G2'] = 'Total Price'\r\n    ws_sum['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n\r\n\r\n## 칼럼별 너비 조정 구간\r\n#    for col in range(ws.max_column):\r\n#        ws.column_dimensions[chr(ord('A') + col)].width = 15\r\n    ws_sum.column_dimensions['A'].width = 5\r\n    ws_sum.column_dimensions['B'].width = 20\r\n    ws_sum.column_dimensions['C'].width = 75\r\n    ws_sum.column_dimensions['D'].width = 11\r\n    ws_sum.column_dimensions['E'].width = 9.5\r\n    ws_sum.column_dimensions['F'].width = 11\r\n    ws_sum.column_dimensions['G'].width = 11\r\n\r\n\r\n    start_row = 4\r\n    ws_sum.merge_cells(f'A{start_row-1}:G{start_row-1}')\r\n    ws_sum[f'A{start_row-1}'] = f'Summary for_{SheetName}'\r\n    cell = ws_sum[f'A{start_row-1}']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=12.5)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='aaf2d1'))\r\n    for (row, item) in enumerate(WMset, start_row):\r\n        cell = ws_sum.cell(row=row, column=1, value=row - 3)\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(0)\r\n        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')\r\n\r\n        ws_sum.cell(row=row, column=2, value=item[0]) ## WorkMaster Code 칼럼\r\n        \r\n        cell = ws_sum.cell(row=row, column=3, value= f\"= VLOOKUP(B{cell.row},'{SheetName}'!$C${start_row}:$F${start_row+len(sample_items)},2,FALSE)\".format(current_row=cell.row))\r\n        \r\n        cell = ws_sum.cell(row=row, column=4, value= f\"= SUMIF('{SheetName}'!$C${start_row}:$C${start_row+len(sample_items)},B{cell.row},'{SheetName}'!$E${start_row}:$E${start_row+len(sample_items)})\".format(current_row=cell.row))\r\n        \r\n        cell = ws_sum.cell(row=row, column=5, value= f\"= VLOOKUP(B{cell.row},'{SheetName}'!$C${start_row}:$F${start_row+len(sample_items)},4,FALSE)\".format(current_row=cell.row))\r\n        \r\n        \r\n        cell = ws_sum.cell(row=row, column=7, value='= D{current_row}*F{current_row}'.format(current_row=cell.row))\r\n        cell.number_format = '#,##0.00'\r\n\r\n    total_row = ws_sum.max_row + 1\r\n    if total_row > start_row:\r\n        cell1 = ws_sum.cell(row=total_row, column=6, value='Total')\r\n        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n        \r\n        cell2 = ws_sum.cell(row=total_row, column=7, value='= SUM(G{}:G{})'.format(start_row, total_row - 1))\r\n        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n        cell2.border = Border(top=double, left=double, right=double, bottom=double)\r\n        cell2.font = openpyxl.styles.Font(b=True, color='ff03ce', size=15)\r\n    \r\n    \r\n    \r\n##################ws#########\r\n    ws.merge_cells('A1:L1')\r\n    ws['A1'] = f'{SheetName} Category Calculation Sheet ({PjtName}_{BldgName})'\r\n    cell = ws['A1']\r\n    cell.font = openpyxl.styles.Font(color='000000', size=20)\r\n    cell.fill = openpyxl.styles.fills.PatternFill(patternType='solid', fgColor=openpyxl.styles.colors.Color(rgb='fff3b0'))\r\n\r\n    ws['A2'] = 'Item Number'\r\n    ws['A2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['B2'] = 'Family Type'\r\n    ws['B2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['C2'] = 'WorkMaster Code'\r\n    ws['C2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['D2'] = 'Description'\r\n    ws['D2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['E2'] = 'Quantities'\r\n    ws['E2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['F2'] = 'Unit'\r\n    ws['F2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['G2'] = 'Unit Price'\r\n    ws['G2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n    ws['H2'] = 'Total Price'\r\n    ws['H2'].font = openpyxl.styles.Font(b=True, color='000000', size=12)\r\n\r\n\r\n## 칼럼별 너비 조정 구간\r\n#    for col in range(ws.max_column):\r\n#        ws.column_dimensions[chr(ord('A') + col)].width = 15\r\n    ws.column_dimensions['A'].width = 15\r\n    ws.column_dimensions['B'].width = 45\r\n    ws.column_dimensions['C'].width = 25\r\n    ws.column_dimensions['D'].width = 60\r\n    ws.column_dimensions['E'].width = 15\r\n    ws.column_dimensions['F'].width = 20\r\n    ws.column_dimensions['G'].width = 20\r\n    ws.column_dimensions['H'].width = 20\r\n\r\n\r\n\r\n    start_row = 3\r\n    for (row, item) in enumerate(sample_items, start_row):\r\n        cell = ws.cell(row=row, column=1, value=row - 2)\r\n        #cell.number_format = openpyxl.styles.numbers.builtin_format_code(0)\r\n        cell.alignment = openpyxl.styles.Alignment(horizontal='center', vertical='center')\r\n\r\n#        cell = ws.cell(row=row, column=2, value=item[0])\r\n#        cell.number_format = openpyxl.styles.numbers.FORMAT_DATE_YYYYMMDD2  # 'yyyy-mm-dd'\r\n        ws.cell(row=row, column=2, value=item[0]) ## Family Type 칼럼\r\n\r\n        ws.cell(row=row, column=3, value=item[1]) ## WorkMaster Code 칼럼\r\n        \r\n        ws.cell(row=row, column=4, value=item[2]) ## WorkMaster Code 칼럼\r\n        \r\n        ws.cell(row=row, column=5, value=item[3]) ## Quantities 칼럼\r\n        cell.number_format = '#,##0.00'\r\n        \r\n        ws.cell(row=row, column=6, value=item[4]) ## Unit 칼럼\r\n        \r\n\r\n        cell = ws.cell(row=row, column=8, value='= E{current_row}*G{current_row}'.format(current_row=cell.row))\r\n        cell.number_format = '#,##0.00'\r\n\r\n    total_row = ws.max_row + 1\r\n    if total_row > start_row:\r\n        cell1 = ws.cell(row=total_row, column=7, value='Total')\r\n        cell1.font = openpyxl.styles.Font(b=True, color='000000', size=15)\r\n        \r\n        cell2 = ws.cell(row=total_row, column=8, value='= SUM(H{}:H{})'.format(start_row, total_row - 1))\r\n        cell2.number_format = openpyxl.styles.numbers.builtin_format_code(3)\r\n        cell2.border = Border(top=double, left=double, right=double, bottom=double)\r\n        cell2.font = openpyxl.styles.Font(b=True, color='ff03ce', size=15)\r\n\r\n\r\n    wb.save(filepath)\r\n    wb.close()\r\n\r\n\r\n##if __name__ == '__main__':\r\n#write_to_file('C:\\\\Users\\\\pjmk0\\\\AppData\\\\Roaming\\\\test.xlsx')\r\nif exportBln:\r\n    if not oldfilepath:\r\n        save_name = f'{SheetName} CalcSheet ({PjtName}_{BldgName})_' + now.strftime(\"%Y-%m-%d_%H%M%S\") + '.xlsx'\r\n        path = os.getenv('APPDATA').replace('\\\\','\\\\\\\\')\r\n        filePath = path + '\\\\' + save_name\r\n        \r\n        write_to_Newfile(filePath, SheetName)\r\n    else:\r\n#        #write_to_Oldfile(filePath)\r\n#        wb = openpyxl.load_workbook(oldfilepath)\r\n#        ws_sum = wb['Summary']\r\n#        \r\n#        ws_sum.append(range(10))\r\n#        wb.save(oldfilepath)\r\n#        wb.close()\r\n        pass\r\nelse:\r\n    pass\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = os.getenv('APPDATA')",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "032d3ac3175d4b00a49afa5612d2b461",
+      "Inputs": [
+        {
+          "Id": "288086b1b4dd4a3787b469d4df511c36",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "612cd1fdc76f43a0951d251c4e20b4a8",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e4aebc7a4cfc42fcb88979103e2ff364",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ae03dbe796a249bfb9ae57b2d3dd89eb",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e4c74c4045d14ac1b08e87cbc4b53231",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -4137,8 +4146,8 @@
     },
     {
       "Start": "dd939473ade044e19a2fdd4fa5ceaa65",
-      "End": "caf2480129db4915b679fd7a5434c775",
-      "Id": "e825ce9ce6ec4a9694aefc9f92c3f31a"
+      "End": "9c5fbc83c4f94244883316c0a630f3be",
+      "Id": "919566243b004d7189f89114c202dab5"
     },
     {
       "Start": "ea97a5cc1b1e447197dfd8a82b3b2712",
@@ -4197,8 +4206,8 @@
     },
     {
       "Start": "dbf5d3fd3e2c479092dc272fdb15c3f5",
-      "End": "d78f654f47704a428253996101e2bc4f",
-      "Id": "b01da0b8ef1241bfa36ba12ba500b9c5"
+      "End": "84b89aaf78c64b5b8e39bcc08d0138fb",
+      "Id": "cddb3e8e12324eddb621234fefd36239"
     },
     {
       "Start": "ae3d473204f34b959d8e5fb87e6ef81d",
@@ -4496,46 +4505,6 @@
       "Id": "94dc2f5d0d474e83b830f786457c1d63"
     },
     {
-      "Start": "1b007666b5034742809f1c56146e8c6b",
-      "End": "f77d195ccd594e458532d3105bf4d533",
-      "Id": "28755a83de124dceab8fcd4bf2226c22"
-    },
-    {
-      "Start": "916c7b7d83954ac9b1e08e28d685de61",
-      "End": "be0f2e54e5f74e7c85cd006902675001",
-      "Id": "17c0062285e94dea9e9038ca9b2d7e2d"
-    },
-    {
-      "Start": "ab4816da905d454ca6086c853a3a2fdf",
-      "End": "de33f2de3b0248b0a5ebdcc90b5494eb",
-      "Id": "4a3cd59628a54addbf536bc992fdac16"
-    },
-    {
-      "Start": "0d1e382652f24b2d874bcbe694662a74",
-      "End": "f9ffbb9be1154b92b09f23d338f2fb1d",
-      "Id": "e2adbf9cc4c147a5ae26295ab64975b8"
-    },
-    {
-      "Start": "e24ff1490d3845f58de9c5070de2f81f",
-      "End": "8a4c48864f7c4a3b965477334921c9a0",
-      "Id": "220031b41bcc437b8799dcddef8257f5"
-    },
-    {
-      "Start": "d4c4844672c648a2a2bc46ed4c2341ca",
-      "End": "ada014d5b62e49d983bc33dd3ad0f370",
-      "Id": "2c9602118a064ae1bd4be5007d535118"
-    },
-    {
-      "Start": "69a806e801f54cabb0ff12ed32c63237",
-      "End": "bc827529d3594457948f59918c391f97",
-      "Id": "2c54725c82da4c4bbe3c27df78dd9f25"
-    },
-    {
-      "Start": "209acd5d79614310afebcf643dc4f8dd",
-      "End": "8c0ad7312974492089ec1b91a5c485f5",
-      "Id": "f608c044beec4d87815dd8ba9d4baa39"
-    },
-    {
       "Start": "86980da43ce1478e8b83f7e2b6951175",
       "End": "827ac87152314f9b92411dc1975032de",
       "Id": "44486431fabb45faa7d558338589838c"
@@ -4749,6 +4718,46 @@
       "Start": "95257d7f94da4799a65120e2c16b7427",
       "End": "f7d85dd9d5764fab9c601d835ed0f68c",
       "Id": "7c0adf4c4895429388f7743ca761239b"
+    },
+    {
+      "Start": "a7586dc888e344fcb2e121e6869bd0ef",
+      "End": "ae03dbe796a249bfb9ae57b2d3dd89eb",
+      "Id": "c2dadb4392ad4e0584b982e3021d0a4d"
+    },
+    {
+      "Start": "f2de4f76967e4e8e9cafc3fcfb386fee",
+      "End": "e4aebc7a4cfc42fcb88979103e2ff364",
+      "Id": "68c4ca237fa146998b14f099ea401176"
+    },
+    {
+      "Start": "b5fd9c02b4594250a882b6d949e7c685",
+      "End": "288086b1b4dd4a3787b469d4df511c36",
+      "Id": "621e48d2dd20422983ac96316291c6ab"
+    },
+    {
+      "Start": "3a052dd62d7c474d9ca380618fb3b401",
+      "End": "a6498729ced24aceaf4233e2a92d7beb",
+      "Id": "aec8d59adc704c3391cb8f17fddf8bb1"
+    },
+    {
+      "Start": "392d5f470f8e4bb2ad4928869afe4826",
+      "End": "5342ae647e95463596721955efcb583e",
+      "Id": "96d4a30105054c2baec4114b46061533"
+    },
+    {
+      "Start": "8f9fe117a20e4b899d9b593163507d3b",
+      "End": "40ccda628de641d99ee6d17f60932b2e",
+      "Id": "b464fc1ac944484caa5492374578f42e"
+    },
+    {
+      "Start": "2d16fceaf020466db4a8f8b665dca42b",
+      "End": "5ee3386dbd434bf9973e80dd5e9f985a",
+      "Id": "bd21ae7980dd49b39196110cec5bc79b"
+    },
+    {
+      "Start": "6e360071ff6d4df9b01aae7eb0bae37e",
+      "End": "a910b6e8429c45d1a2b5e510f239a456",
+      "Id": "5478c6935291435f9e71d2695b4cd95a"
     }
   ],
   "Dependencies": [],
@@ -5391,96 +5400,6 @@
       },
       {
         "ShowGeometry": false,
-        "Name": "Python Script@Export Excel(By OpenpyXl)",
-        "Id": "34b7057217be4ff3b14855f3b64dcd96",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 18446.138470592956,
-        "Y": 6557.2979913504851
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "Data Arrange for Excel",
-        "Id": "216fea2f2f9a40e9adaa40f2d1a8154b",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 17909.746889652477,
-        "Y": 6652.0113869630513
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "input",
-        "Id": "c2b8362daa004a37810fde2bb627c80f",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 10363.351692477898,
-        "Y": 6583.7979913504851
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "Excel로 Export 하시겠습니까?",
-        "Id": "9ecbcfba49cd471ca820c3e5abb7f21d",
-        "IsSetAsInput": true,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 18133.722692759482,
-        "Y": 6451.6405747275085
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "Categories",
-        "Id": "1d2693e6923940cf8b15e50b0a35b114",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 8580.1345838957532,
-        "Y": 6428.3406104182441
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "All Elements of Category",
-        "Id": "a8b8d907b88e40308dd890410a8f0de7",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 8883.1345838957532,
-        "Y": 6428.3406104182441
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "Code Block",
-        "Id": "85177a0847a24da69a83038c6fa1f69d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 9203.1874209295565,
-        "Y": 6419.7656989844863
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "String.ToLower",
-        "Id": "0cae2ddf4e1a42c9ade6fdb841ea81cb",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 9744.1874209295565,
-        "Y": 6415.5523656511532
-      },
-      {
-        "ShowGeometry": false,
-        "Name": "String.ToTitle",
-        "Id": "ed6fce2c988a47c28b2ed3c32b8d5399",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 10031.187420929557,
-        "Y": 6415.5523656511532
-      },
-      {
-        "ShowGeometry": false,
         "Name": "공종목록",
         "Id": "bda053f1a8e6465187c69061f92a2770",
         "IsSetAsInput": false,
@@ -5888,6 +5807,96 @@
         "Excluded": false,
         "X": 8132.0169926972449,
         "Y": 10346.595960186698
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Data Arrange for Excel",
+        "Id": "6221e715521d4be088d9d0c7f1bdc747",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 18625.73906166794,
+        "Y": 6700.3252708777018
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "input",
+        "Id": "2dcc1f4fea4146cd8b9aae7b3100bbd3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 11079.343864493339,
+        "Y": 6632.1118752651419
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Excel로 Export 하시겠습니까?",
+        "Id": "c248dfda5d2f4165b4d2d7c735c283c2",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 18849.714864774942,
+        "Y": 6499.9544586421616
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Categories",
+        "Id": "3b5cd9bbabe0423e92f9fddfb8e9195d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 9296.12675591119,
+        "Y": 6476.6544943328918
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "All Elements of Category",
+        "Id": "72d84c7f909f4b95bd49b73ff80ed68f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 9599.12675591119,
+        "Y": 6476.6544943328918
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Code Block",
+        "Id": "74efb6aee5524894bb5395758c2b521d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 9919.1795929450382,
+        "Y": 6468.0795828991413
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "String.ToLower",
+        "Id": "df1f1539d35742f1be3b22840bda39e2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 10460.179592945038,
+        "Y": 6463.8662495658018
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "String.ToTitle",
+        "Id": "9917008a92b44625ba19c684671ee7fe",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 10747.179592945038,
+        "Y": 6463.8662495658018
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Python Script@Export Excel(By OpenpyXl)_test",
+        "Id": "032d3ac3175d4b00a49afa5612d2b461",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 19161.931113478939,
+        "Y": 6520.1881435941814
       }
     ],
     "Annotations": [
@@ -6227,30 +6236,6 @@
         "Background": "#FFFFAA45"
       },
       {
-        "Id": "654a78a8ba7d4436a5785d754c40e0aa",
-        "Title": "Excel Export",
-        "Nodes": [
-          "34b7057217be4ff3b14855f3b64dcd96",
-          "216fea2f2f9a40e9adaa40f2d1a8154b",
-          "c2b8362daa004a37810fde2bb627c80f",
-          "9ecbcfba49cd471ca820c3e5abb7f21d",
-          "1d2693e6923940cf8b15e50b0a35b114",
-          "a8b8d907b88e40308dd890410a8f0de7",
-          "85177a0847a24da69a83038c6fa1f69d",
-          "0cae2ddf4e1a42c9ade6fdb841ea81cb",
-          "ed6fce2c988a47c28b2ed3c32b8d5399"
-        ],
-        "Left": 8570.1345838957532,
-        "Top": 6290.5523656511532,
-        "Width": 10203.003886697203,
-        "Height": 465.45902131189814,
-        "FontSize": 96.0,
-        "InitialTop": 6415.5523656511532,
-        "InitialHeight": 381.45902131189814,
-        "TextblockHeight": 115.0,
-        "Background": "#FF48B9FF"
-      },
-      {
         "Id": "767acda896944011b72dda8fdbf8109f",
         "Title": "산출타겟 검증(시각화)",
         "Nodes": [
@@ -6349,6 +6334,30 @@
         "InitialHeight": 471.50000000009823,
         "TextblockHeight": 115.0,
         "Background": "#FFA4E1FF"
+      },
+      {
+        "Id": "be1d0d5a1bdd44fdaf59d1961d812aa9",
+        "Title": "Excel Export",
+        "Nodes": [
+          "6221e715521d4be088d9d0c7f1bdc747",
+          "2dcc1f4fea4146cd8b9aae7b3100bbd3",
+          "c248dfda5d2f4165b4d2d7c735c283c2",
+          "3b5cd9bbabe0423e92f9fddfb8e9195d",
+          "72d84c7f909f4b95bd49b73ff80ed68f",
+          "74efb6aee5524894bb5395758c2b521d",
+          "df1f1539d35742f1be3b22840bda39e2",
+          "9917008a92b44625ba19c684671ee7fe",
+          "032d3ac3175d4b00a49afa5612d2b461"
+        ],
+        "Left": 9286.12675591119,
+        "Top": 6338.8662495658018,
+        "Width": 10232.804357567749,
+        "Height": 465.45902131189996,
+        "FontSize": 96.0,
+        "InitialTop": 6463.8662495658018,
+        "InitialHeight": 370.45902131189996,
+        "TextblockHeight": 115.0,
+        "Background": "#FF48B9FF"
       },
       {
         "Id": "2e06ca448c5c4f7d8365de34828527ec",
@@ -6491,8 +6500,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -4391.6870948906108,
-    "Y": -4194.7080018743654,
-    "Zoom": 0.47805852543323363
+    "X": -1157.728318714479,
+    "Y": -476.12623892680131,
+    "Zoom": 0.11582602594199892
   }
 }
