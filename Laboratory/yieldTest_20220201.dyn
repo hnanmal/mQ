@@ -1,0 +1,472 @@
+{
+  "Uuid": "4ef64548-4ea5-471d-aa3a-c94e352e35a5",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "yieldTest_20220201",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector1 = FilteredElementCollector(doc)#Autodesk.Revit.DB.FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\ndef gen_AllStructuralFoundation():\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements()\r\n    for i in collector:\r\n        yield i.ToDSType(False)\r\n\r\ndef gen_AllStructuralColumns():\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()\r\n    for i in collector:\r\n        yield i.ToDSType(False)\r\n\r\ndef len_gen(gen):\r\n    length = 0\r\n    for x in gen:\r\n        length += 1\r\n    return length\r\n\r\ndef gen_AllCondiThings(gen_mother, condition):\r\n    for i in gen_mother:\r\n        if  condition in i.Name:\r\n            yield i\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n#input0 = next(gen_AllStructuralFoundation())\r\n#input = next(gen_AllStructuralFoundation())\r\n\r\nrefFunc = IN[0]\r\ntag = IN[1]\r\ninput = IN[2]\r\n\r\nwholeExcavationBln = IN[3]\r\nbttmOffset = IN[4]\r\n버림thk = IN[5]\r\nslopeExcav = IN[6]\r\n# Place your code below this line\r\ndef 터파기산출함수(input):\r\n    if wholeExcavationBln:\r\n    \r\n        calcTargetNum = len_gen(gen_AllStructuralFoundation())\r\n        allIsoFdns = (i for i in gen_AllStructuralFoundation() if \"Footing-\" in i.Name)\r\n        fdnsGeo = (i.Geometry()[0] for i in allIsoFdns)\r\n        bdBox_fdn = BoundingBox.ByGeometry(fdnsGeo).ToCuboid()\r\n        srfs = bdBox_fdn.Explode()\r\n        belowSrf = [i for i in srfs if i.NormalAtParameter(0.5,0.5).Z == -1][0]\r\n        \r\n        def getSrfHeight(srf):\r\n            _crvs = srf.PerimeterCurves()\r\n            heights = (i.StartPoint.Z for i in _crvs)\r\n            height = min(heights)\r\n            return height\r\n        belowSrf_height = getSrfHeight(belowSrf)\r\n        \r\n        def offsetCrv(crv, offset=300):\r\n            return crv.Offset(offset)\r\n        def correctElev(crv, thk):\r\n            return crv.Translate(0,0,thk)\r\n    \r\n        _exca_belowbdry = offsetCrv(PolyCurve.ByJoinedCurves(belowSrf.PerimeterCurves()), bttmOffset)\r\n        exca_belowbdry = correctElev(_exca_belowbdry, -버림thk)\r\n        _exca_upperbdry = correctElev(_exca_belowbdry, -belowSrf_height)\r\n        exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)\r\n        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])\r\n        targetGeo = target\r\n        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000\r\n\r\n    else:\r\n        calcTargetNum = 1\r\n        srfs = input.Geometry()[0].Explode()\r\n        belowSrf = [i for i in srfs if i.NormalAtParameter(0.5,0.5).Z == -1][0]\r\n        \r\n        def getSrfHeight(srf):\r\n            _crvs = srf.PerimeterCurves()\r\n            heights = (i.StartPoint.Z for i in _crvs)\r\n            height = min(heights)\r\n            return height\r\n        belowSrf_height = getSrfHeight(belowSrf)\r\n        \r\n        def findLeanThk(leanobj):\r\n            if leanobj:\r\n                return leanobj.GetParameterValueByName(\"thk\")\r\n            else:\r\n                return 버림thk\r\n        leanobj = None\r\n        leanthk = findLeanThk(leanobj)\r\n        \r\n        def offsetCrv(crv, offset=300):\r\n            return crv.Offset(offset)\r\n        def correctElev(crv, thk):\r\n            return crv.Translate(0,0,thk)\r\n        _exca_belowbdry = offsetCrv(PolyCurve.ByJoinedCurves(belowSrf.PerimeterCurves()), bttmOffset)\r\n        exca_belowbdry = correctElev(_exca_belowbdry, -버림thk)\r\n        _exca_upperbdry = correctElev(_exca_belowbdry, -belowSrf_height)\r\n        exca_upperbdry = offsetCrv(_exca_upperbdry, -belowSrf_height/slopeExcav)\r\n        target = Solid.ByLoft([exca_belowbdry,exca_upperbdry])\r\n        targetGeo = target\r\n        targetValue = sum([i.Volume for i in [target]])/calcTargetNum/1000000000\r\n\r\n    yield (targetGeo, targetValue, \"M3\")\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nalls = gen_AllCondiThings(gen_AllStructuralFoundation(), \"Footing-\")\r\nOUT = (터파기산출함수(i) for i in alls)\r\n#OUT = (터파기산출함수,tag[0],tag[1],[\"M3\"])\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "0f1a96d5d5694c69b18b765a686d3486",
+      "Inputs": [
+        {
+          "Id": "753201fb8b774287aba9ac286835f9bc",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5b215ed7bf97440e95fa4f71d8302d12",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "324cc1b52a8143a685605a535b8fe224",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b37f83e2e3d847ce8a2072fab172d518",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1b38dcdd28ef4d1290747ce04372d3af",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d9e9e50620d74fd18a14210818d0de46",
+          "Name": "IN[5]",
+          "Description": "Input #5",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ed8762beafa343fcbef392c78e7e9348",
+          "Name": "IN[6]",
+          "Description": "Input #6",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "607a49ad5d8749f4910b4c7ccc0e13f4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "300;",
+      "Id": "e38c474128ba4c8a9684404193f02cd8",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "f28dd5f040a6474888b920be1a328f9c",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "50;",
+      "Id": "cc63499c2be04609b8a110c0c910d0af",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "599096e8532146d3a088c19909927cc0",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "2;",
+      "Id": "450fb4a7b0774988916c257323b0dfc3",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a15444c8abb94442ae6637a56e403c54",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "NodeType": "BooleanInputNode",
+      "InputValue": false,
+      "Id": "0bfe0b6a28914e4aa3b84fd61da50ea4",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "3f1a155597824feabb4ada358ebae6ad",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Selection between a true and false."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "26c38b56a3f04739ac77800b72516c1b",
+      "Inputs": [
+        {
+          "Id": "08181e5f48cf4b8eaafd97a57f72b30c",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "534ce24ab64e41b6820d2f3d2faa2905",
+          "Name": "Elements",
+          "Description": "An element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 598,
+      "SelectedString": "OST_StructuralFoundation",
+      "NodeType": "ExtensionNode",
+      "Id": "eef8c734650b4771b4c91d2351c3d145",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8d8ef796376740b1902ef980829b9960",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[169];",
+      "Id": "4252b9e4abc24493b97db752ff727780",
+      "Inputs": [
+        {
+          "Id": "6e9d83b7da6d44538e527ec7c292d2fb",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d9751f49b6684d599260bb53310bba8a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector1 = FilteredElementCollector(doc)#Autodesk.Revit.DB.FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\ndef gen_AllStructuralFoundation():\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements()\r\n    for i in collector:\r\n        yield i.ToDSType(False)\r\n\r\ndef gen_AllStructuralColumns():\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()\r\n    for i in collector:\r\n        yield i.ToDSType(False)\r\n\r\ndef len_gen(gen):\r\n    length = 0\r\n    for x in gen:\r\n        length += 1\r\n    return length\r\n\r\ndef gen_AllCondiThings(gen_mother, condition):\r\n    for i in gen_mother:\r\n        if  condition in i.Name:\r\n            yield i\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\n#result = gen_AllStructuralColumns()\r\nresult = gen_AllCondiThings(gen_AllStructuralFoundation(), \"Footing-\")\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "9c20716ddd1049588d96a71dad1036ef",
+      "Inputs": [
+        {
+          "Id": "892e0bf0c15f4a388457a5017f3fbebf",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3cdc0aa2734b4ff0a7a3bf4025e1d15c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "f28dd5f040a6474888b920be1a328f9c",
+      "End": "1b38dcdd28ef4d1290747ce04372d3af",
+      "Id": "f0af237cfd4449969233613309ea7a5b"
+    },
+    {
+      "Start": "599096e8532146d3a088c19909927cc0",
+      "End": "d9e9e50620d74fd18a14210818d0de46",
+      "Id": "722b93d770274511aa909d43c38eb0ac"
+    },
+    {
+      "Start": "a15444c8abb94442ae6637a56e403c54",
+      "End": "ed8762beafa343fcbef392c78e7e9348",
+      "Id": "81a82d47e08e455fb24ede828c08d663"
+    },
+    {
+      "Start": "3f1a155597824feabb4ada358ebae6ad",
+      "End": "b37f83e2e3d847ce8a2072fab172d518",
+      "Id": "4ee03575e2094218a77a47f7b0092559"
+    },
+    {
+      "Start": "534ce24ab64e41b6820d2f3d2faa2905",
+      "End": "6e9d83b7da6d44538e527ec7c292d2fb",
+      "Id": "c29ed4d50a21466eb6c9be0205c3f493"
+    },
+    {
+      "Start": "8d8ef796376740b1902ef980829b9960",
+      "End": "08181e5f48cf4b8eaafd97a57f72b30c",
+      "Id": "5825c80998d6460fb7f1e8b75e7dd5c3"
+    },
+    {
+      "Start": "d9751f49b6684d599260bb53310bba8a",
+      "End": "324cc1b52a8143a685605a535b8fe224",
+      "Id": "ace663cfbf1a4ac386cabfb9261eef2c"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.12",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "1.10",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.12.0.5650",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": -13147.177734375,
+      "EyeY": 22084.626953125,
+      "EyeZ": 26581.30078125,
+      "LookX": 22012.021484375,
+      "LookY": -16122.0234375,
+      "LookZ": -29010.9609375,
+      "UpX": 0.12050824612379074,
+      "UpY": 0.97992479801177979,
+      "UpZ": -0.15882493555545807
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "0f1a96d5d5694c69b18b765a686d3486",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 204.0,
+        "Y": 200.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "e38c474128ba4c8a9684404193f02cd8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 17.50344565275492,
+        "Y": 293.31569365561643
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "cc63499c2be04609b8a110c0c910d0af",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 8.257703860243538,
+        "Y": 388.4735404834247
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "450fb4a7b0774988916c257323b0dfc3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14.976986136179562,
+        "Y": 481.4385645518721
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Boolean",
+        "Id": "0bfe0b6a28914e4aa3b84fd61da50ea4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -47.669259567985705,
+        "Y": 190.71945236149077
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "All Elements of Category",
+        "Id": "26c38b56a3f04739ac77800b72516c1b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -349.58487137027151,
+        "Y": 51.438232112741673
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Categories",
+        "Id": "eef8c734650b4771b4c91d2351c3d145",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -621.48362322378375,
+        "Y": 64.255788648606909
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "4252b9e4abc24493b97db752ff727780",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -145.06134435378715,
+        "Y": 40.308943722024367
+      },
+      {
+        "ShowGeometry": false,
+        "Name": "Python Script",
+        "Id": "9c20716ddd1049588d96a71dad1036ef",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 459.762956105283,
+        "Y": -172.63554054849692
+      }
+    ],
+    "Annotations": [],
+    "X": -155.44721517549345,
+    "Y": -55.819687196236714,
+    "Zoom": 1.0867017236074505
+  }
+}
