@@ -1,0 +1,407 @@
+{
+  "Uuid": "ec29b253-86ea-476a-8aa7-1a534118a463",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "실전테스트",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\n\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###################################################################################################\r\n\r\n\r\n\r\nf = lambda list, length: reduce(add,\r\n            take(length,\r\n                map(lambda a: a * a,\r\n                    filter(lambda a: a%2, list))))\r\n\r\nf2 = lambda list, length: go( list,\r\n    lambda list: filter(lambda a: a % 2, list),\r\n    lambda list: map(lambda a: a * a, list),\r\n    lambda list: take(length, list),\r\n    lambda list: reduce(add, list)\r\n    )\r\n\r\nf3 = lambda list, length: go( list,\r\n        filter(lambda a: a % 2),\r\n        map(lambda a: a * a),\r\n        take(length),\r\n        reduce(add))\r\n    \r\nf4 = lambda list: go( list,\r\n        filter(lambda a: a % 2),\r\n        map(lambda a: a * a),\r\n        reduce(add))\r\n    \r\nf5 = lambda list: go( list,\r\n        filter(lambda a: not a % 2),\r\n        filter(lambda a: not a % 4),\r\n        map(lambda a: a * a),\r\n        reduce(add))\r\n\r\nresult = f5([1,2,3,4,5,6,7,8])\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d09ee5422488430bbbc82d372ddc9ec1",
+      "Inputs": [
+        {
+          "Id": "fda9cce7e9c7490c99467d7082456c2d",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0cc08eb8d3b942f1ab60a66d38cee05c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "d51c64172132422cb39cbb630ef4a055",
+      "Inputs": [
+        {
+          "Id": "5348da70a2294b7d8c950888aaa212f2",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a484714c974a4508829b6ff36294c120",
+          "Name": "Elements",
+          "Description": "An element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 598,
+      "SelectedString": "OST_StructuralFoundation",
+      "NodeType": "ExtensionNode",
+      "Id": "88352d5f4ac547eab7f9ba0a6cc95553",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2b3dd91bed01402189db05bb02090604",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nallElems = IN[0]\r\n# Place your code below this line\r\n\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n\r\n    \r\nQfunc_len = lambda list, length: go( list,\r\n        filter(lambda a: a % 2),\r\n        map(lambda a: a * a),\r\n        take(length),\r\n        reduce(add))\r\n    \r\nQfunc = lambda list: go( list,\r\n        filter(lambda a: not a % 2),\r\n        filter(lambda a: not a % 4),\r\n        map(lambda a: a * a),\r\n        reduce(add))\r\n\r\n###################################################################################################\r\n\r\n\r\ndef 측면추출기(geo):\r\n    list = geo.Explode()\r\n    res = lambda list: go( list,\r\n        filter(lambda a: round(a.NormalAtParameter(0.5,0.5).Z, 3) == 0),\r\n        map(lambda a: a)\r\n        )\r\n    return res(list)\r\n\r\ndef 터파기형상생성기(geo, 경사율=2, 하부간격=300, 버림두께=50):\r\n    def 터파기깊이계산기(list):\r\n        res = lambda list: go( list,\r\n        map(lambda a: a.StartPoint.Z)\r\n        )\r\n        return min(res(list))\r\n        \r\n    def 터파기밑테두리들생성기(geo, 하부간격):\r\n        list = geo.Explode() ## surface들\r\n        res = lambda list: go( list,\r\n        filter(lambda a: round(a.NormalAtParameter(0.5,0.5).Z, 3) == -1),\r\n        map(lambda a: a.PerimeterCurves())\r\n        )\r\n        return res(list)\r\n        \r\n    def 터파기윗테두리생성기(밑테두리, 깊이, 경사율):\r\n        윗테두리들 = 밑테두리.Translate(0,0,-깊이)\r\n        윗테두리 = 윗테두리들.Offset(-깊이/경사율)\r\n        return  윗테두리\r\n        \r\n    def 형상생성기(밑테두리, 윗테두리):\r\n        pass\r\n    \r\n    밑테두리들 = list(chain(*터파기밑테두리들생성기(geo, 하부간격)))\r\n    깊이 = 터파기깊이계산기(밑테두리들)\r\n    밑테두리 = PolyCurve.ByJoinedCurves(밑테두리들)\r\n    윗테두리 = 터파기윗테두리생성기(밑테두리, 깊이, 경사율)\r\n    터파기형상 = Solid.ByLoft([밑테두리.Offset(하부간격), 윗테두리])\r\n    \r\n    return 터파기형상\r\n\r\n필터객체형상추출기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: a.Geometry()[0])\r\n        )\r\n\r\n필터객체측면추출기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: [a,측면추출기(a.Geometry()[0])])\r\n        )\r\n\r\n\r\n필터객체터파기생성기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: 터파기형상생성기(a.Geometry()[0]))\r\n        )\r\n\r\n#result = Qfunc([1,2,3,4,5,6,7,8])\r\nresult = 필터객체터파기생성기(allElems)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "2974934f515f49a0805c5404d4978a74",
+      "Inputs": [
+        {
+          "Id": "a67fc240a4c248ccadf54716deaae087",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "91702fdb03a44fadb4be78c10f607d61",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nels = IN[0]\r\n# Place your code below this line\r\nresult = type(IN[0])\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d9a3ed33453348c194c67f40a2a078df",
+      "Inputs": [
+        {
+          "Id": "1a6d41621c304fee86823719f925bff8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4c028c05979847b083ae547f1ec97626",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Solid.ByLoft@Autodesk.DesignScript.Geometry.Curve[]",
+      "Id": "e9463b8b234d470c9d4fa55675afa3f8",
+      "Inputs": [
+        {
+          "Id": "d07014676c5343cf95d972837579ee64",
+          "Name": "crossSections",
+          "Description": "Curve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "de9e88f2beb940af93b2abe7e56e8fdf",
+          "Name": "Solid",
+          "Description": "Solid",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Create a Solid by lofting between input cross section closed Curves.\n\nSolid.ByLoft (crossSections: Curve[]): Solid"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.PolyCurve.Curves",
+      "Id": "c3759fb0f76544a78133349d0bb28ec8",
+      "Inputs": [
+        {
+          "Id": "edd57041805b4bf1b5bd2f96e4057949",
+          "Name": "polyCurve",
+          "Description": "Autodesk.DesignScript.Geometry.PolyCurve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b68eb4131c38458cbb515867db71ac77",
+          "Name": "Curve[]",
+          "Description": "Curve[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns curves of the polycurve\n\nPolyCurve.Curves ( ): Curve[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom itertools import chain\r\n\r\nallFdns = collector1.OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements()\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nallElems = IN[0]\r\n# Place your code below this line\r\n\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n\r\n    \r\nQfunc_len = lambda list, length: go( list,\r\n        filter(lambda a: a % 2),\r\n        map(lambda a: a * a),\r\n        take(length),\r\n        reduce(add))\r\n    \r\nQfunc = lambda list: go( list,\r\n        filter(lambda a: not a % 2),\r\n        filter(lambda a: not a % 4),\r\n        map(lambda a: a * a),\r\n        reduce(add))\r\n\r\n###################################################################################################\r\n\r\n\r\ndef 측면추출기(geo):\r\n    list = geo.Explode()\r\n    res = lambda list: go( list,\r\n        filter(lambda a: round(a.NormalAtParameter(0.5,0.5).Z, 3) == 0),\r\n        map(lambda a: a)\r\n        )\r\n    return res(list)\r\n\r\ndef 터파기형상생성기(geo, 경사율=2, 하부간격=300, 버림두께=50):\r\n    def 터파기깊이계산기(list):\r\n        res = lambda list: go( list,\r\n        map(lambda a: a.StartPoint.Z)\r\n        )\r\n        return min(res(list))\r\n        \r\n    def 터파기테두리들생성기(geo, 하부간격):\r\n        list = geo.Explode() ## surface들\r\n        res = lambda list: go( list,\r\n        filter(lambda a: round(a.NormalAtParameter(0.5,0.5).Z, 3) == -1),\r\n        map(lambda a: a.PerimeterCurves())\r\n        )\r\n        return res(list)\r\n        \r\n    def 터파기윗테두리생성기(밑테두리, 깊이, 경사율):\r\n        윗테두리들 = 밑테두리.Translate(0,0,-깊이)\r\n        윗테두리 = 윗테두리들.Offset(-깊이/경사율)\r\n        return  윗테두리\r\n        \r\n    def 형상생성기(밑테두리, 윗테두리):\r\n        pass\r\n    \r\n    밑테두리들 = list(chain(*터파기밑테두리들생성기(geo, 하부간격)))\r\n    깊이 = 터파기깊이계산기(밑테두리들)\r\n    밑테두리 = PolyCurve.ByJoinedCurves(밑테두리들)\r\n    윗테두리 = 터파기윗테두리생성기(밑테두리, 깊이, 경사율)\r\n    터파기형상 = Solid.ByLoft([밑테두리.Offset(하부간격), 윗테두리])\r\n    \r\n    return 터파기형상\r\n\r\n필터객체형상추출기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: a.Geometry()[0])\r\n        )\r\n\r\n필터객체측면추출기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: [a,측면추출기(a.Geometry()[0])])\r\n        )\r\n\r\n\r\n필터객체터파기생성기 = lambda list: go( list,\r\n        filter(lambda a: \"Footing-\" in a.Name),\r\n        map(lambda a: 터파기형상생성기(a.Geometry()[0]))\r\n        )\r\n\r\n#result = Qfunc([1,2,3,4,5,6,7,8])\r\nresult = 필터객체터파기생성기(allElems)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "80aa3038a55f44fdb0873dfe01406898",
+      "Inputs": [
+        {
+          "Id": "0c040c23a8f44afeabaddfac2779f070",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "01fe45257bc94755a01ade63ba42fd8d",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "a484714c974a4508829b6ff36294c120",
+      "End": "1a6d41621c304fee86823719f925bff8",
+      "Id": "152cd0e0b0ec4f7eb226ac52825d6bce"
+    },
+    {
+      "Start": "a484714c974a4508829b6ff36294c120",
+      "End": "a67fc240a4c248ccadf54716deaae087",
+      "Id": "033e749c027c42c989a498022da4c5d8"
+    },
+    {
+      "Start": "a484714c974a4508829b6ff36294c120",
+      "End": "0c040c23a8f44afeabaddfac2779f070",
+      "Id": "95de621aa4fc416c92b9e0c55ab178c3"
+    },
+    {
+      "Start": "2b3dd91bed01402189db05bb02090604",
+      "End": "5348da70a2294b7d8c950888aaa212f2",
+      "Id": "f287bb53b84844f7adba956146631bde"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.12",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "1.10",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.12.0.5650",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": 7695.7060546875,
+      "EyeY": 21286.671875,
+      "EyeZ": 5640.48828125,
+      "LookX": 15292.3701171875,
+      "LookY": -27604.900390625,
+      "LookZ": -24293.8515625,
+      "UpX": 0.27834543585777283,
+      "UpY": 0.85264021158218384,
+      "UpZ": -0.44218605756759644
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "d09ee5422488430bbbc82d372ddc9ec1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -474.34816884070352,
+        "Y": -180.48927044761197
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "All Elements of Category",
+        "Id": "d51c64172132422cb39cbb630ef4a055",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 39.090890358587558,
+        "Y": 253.33160231490362
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Categories",
+        "Id": "88352d5f4ac547eab7f9ba0a6cc95553",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -223.36966108707088,
+        "Y": 233.76363098976452
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "func",
+        "Id": "2974934f515f49a0805c5404d4978a74",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 462.97772971355613,
+        "Y": 343.54519803395175
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "d9a3ed33453348c194c67f40a2a078df",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -147.96482251587088,
+        "Y": -190.42304918872347
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Solid.ByLoft",
+        "Id": "e9463b8b234d470c9d4fa55675afa3f8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 513.868541554336,
+        "Y": -43.61358437566787
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "PolyCurve.Curves",
+        "Id": "c3759fb0f76544a78133349d0bb28ec8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 209.42483000671214,
+        "Y": 86.383041767256771
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "func_2",
+        "Id": "80aa3038a55f44fdb0873dfe01406898",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 524.54403856690578,
+        "Y": 540.39012519471453
+      }
+    ],
+    "Annotations": [],
+    "X": -142.3723558657174,
+    "Y": -232.84965415723013,
+    "Zoom": 1.4193225897388952
+  }
+}
