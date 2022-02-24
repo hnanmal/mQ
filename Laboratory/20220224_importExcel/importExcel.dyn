@@ -1,0 +1,371 @@
+{
+  "Uuid": "f178ddc8-2572-4e27-ab77-2c7aa313123f",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "importExcel",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\npython_rootpath = os.getenv('LOCALAPPDATA')+'\\Programs\\Python'\r\nfile_list = os.listdir(python_rootpath)\r\npython_version = file_list[-1]\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + f'\\Programs\\Python\\{python_version}\\Lib\\site-packages')\r\nimport clr\r\n\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputFilePath = IN[0]\r\ninputSheetName = IN[1]\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef checkAllElement(list, target):\r\n    tmp=[]\r\n    for i in list:\r\n        if i == target:\r\n            tmp.append(True)\r\n        else:\r\n            tmp.append(False)\r\n    return all(tmp)\r\n\r\n\r\n# Place your code below this line\r\n\r\nresult = importExcel(inputFilePath, inputSheetName)\r\n\r\nfor i in result:## null만 있는 Excel Row 제거\r\n    if checkAllElement(i, None):\r\n        result.remove(i)\r\n    else:\r\n        pass\r\n        \r\nresult_tr = list(zip(*result))\r\n\r\nfor i in result_tr:## null만 있는 Excel Column 제거\r\n    if checkAllElement(i, None):\r\n        result_tr.remove(i)\r\n    else:\r\n        pass\r\n\r\nresult = list(zip(*result_tr))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "0761a53f8d9c4e71b2e657663e424bcd",
+      "Inputs": [
+        {
+          "Id": "4fe9b9d6b0d043f4b7d9eaba6cfcc350",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d8560dacc71c44098e123f0368855615",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "91aa2f04d91e46ff92a05aba8e6335f1",
+          "Name": "OUT",
+          "Description": "Python 스크립트의 결과",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "포함된 Python 스크립트를 실행합니다."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\Final\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
+      "InputValue": "D:\\mk\\mQ\\hecCalc\\Final\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
+      "NodeType": "ExtensionNode",
+      "Id": "5532f28551a34cb2a6f9056f1f9c8145",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "43c2f4f6bb884d89af858968aea7ee67",
+          "Name": "",
+          "Description": "파일 경로",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "시스템에서 파일을 선택하여 파일 경로를 가져올 수 있습니다."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"1.Floor\";",
+      "Id": "2ce22d37c8024f40a3e37c34a5612d48",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "991cc4c5fde347e4ada5146048452b29",
+          "Name": "",
+          "Description": "선 1의 표현식 값",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "9515e48e448b4504b08208843e2c5cf6",
+      "Inputs": [
+        {
+          "Id": "b47e5caa1e6a437ebe1c17e3b1c23d00",
+          "Name": "",
+          "Description": "출력을 표시할 노드",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f451255a42a94547ab274c776834a5d2",
+          "Name": "",
+          "Description": "노드 출력",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "노드의 출력 시각화"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.Transpose@var[]..[]",
+      "Id": "44ce25b8780a4d90b285bf83b86d1c8f",
+      "Inputs": [
+        {
+          "Id": "4f895d800b1b49379854dfecf63e43a7",
+          "Name": "lists",
+          "Description": "행과 열을 바꿀 리스트의 리스트\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ff79d987709140648b0068e861b0a2b0",
+          "Name": "lists",
+          "Description": "행과 열을 바꾼 리스트의 리스트",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "리스트의 리스트에서 행 및 열을 교체합니다. 다른 행보다 짧은 행이 몇 개 있을 경우 null 값이 결과 배열에 자리 표시자로 삽입되어 항상 직사각형이 되도록 합니다.\n\nList.Transpose (lists: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "5c21dd3d507449478ddb9636f725db12",
+      "Inputs": [
+        {
+          "Id": "69678436f3de468fb193769a117c56fd",
+          "Name": "",
+          "Description": "출력을 표시할 노드",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "133beb3025af47f7b5e5b93c9169c15c",
+          "Name": "",
+          "Description": "노드 출력",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "노드의 출력 시각화"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef chck_heads(row):\r\n    def chck(a):\r\n        try: \r\n            if \"NO\" in a: return True\r\n            else: return False\r\n        except: return False\r\n\r\n    blns = lambda list: go(list,\r\n        map(lambda a: chck(a)))\r\n    return any(blns(row))\r\n    \r\n\r\nhead = lambda list: go(list,\r\n    filter(lambda a: chck_heads(a)),\r\n    )\r\n    \r\nres = list(head(datas))[0]\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = res",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "4d17e2b57573481fa1ccd7fffd17a143",
+      "Inputs": [
+        {
+          "Id": "22d417344e114f43a5c4b3e663c10498",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c1d8be6120b142f0ab7f6216943997e1",
+          "Name": "OUT",
+          "Description": "Python 스크립트의 결과",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "포함된 Python 스크립트를 실행합니다."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "91aa2f04d91e46ff92a05aba8e6335f1",
+      "End": "b47e5caa1e6a437ebe1c17e3b1c23d00",
+      "Id": "39e03b134f8c4f5b870f466c119abe7d"
+    },
+    {
+      "Start": "91aa2f04d91e46ff92a05aba8e6335f1",
+      "End": "4f895d800b1b49379854dfecf63e43a7",
+      "Id": "f96def37bce14d8ba68ebc877f30010a"
+    },
+    {
+      "Start": "91aa2f04d91e46ff92a05aba8e6335f1",
+      "End": "22d417344e114f43a5c4b3e663c10498",
+      "Id": "e8055abff3d241b4a7d6466660977119"
+    },
+    {
+      "Start": "43c2f4f6bb884d89af858968aea7ee67",
+      "End": "4fe9b9d6b0d043f4b7d9eaba6cfcc350",
+      "Id": "4aef28313d2a4bd9ac8c91e3f19f554d"
+    },
+    {
+      "Start": "991cc4c5fde347e4ada5146048452b29",
+      "End": "d8560dacc71c44098e123f0368855615",
+      "Id": "83e4526b9c8a41be883396821f9a759b"
+    },
+    {
+      "Start": "ff79d987709140648b0068e861b0a2b0",
+      "End": "69678436f3de468fb193769a117c56fd",
+      "Id": "6debeaf31337402d84d3c5ac42f98d69"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.12",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "1.10",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "없음",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.12.0.5650",
+      "RunType": "Automatic",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "배경 미리보기",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "NodeViews": [
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "0761a53f8d9c4e71b2e657663e424bcd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 664.0,
+        "Y": 215.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "File Path",
+        "Id": "5532f28551a34cb2a6f9056f1f9c8145",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 170.5,
+        "Y": 222.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "2ce22d37c8024f40a3e37c34a5612d48",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 241.0,
+        "Y": 335.0
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Watch",
+        "Id": "9515e48e448b4504b08208843e2c5cf6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1287.5156195885609,
+        "Y": -63.99630494877556
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "List.Transpose",
+        "Id": "44ce25b8780a4d90b285bf83b86d1c8f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 947.53744243123879,
+        "Y": 683.47032492027563
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Watch",
+        "Id": "5c21dd3d507449478ddb9636f725db12",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1231.3485761957943,
+        "Y": 806.48436117622668
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Python Script",
+        "Id": "4d17e2b57573481fa1ccd7fffd17a143",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1644.3473913456305,
+        "Y": -63.275661988473217
+      }
+    ],
+    "Annotations": [],
+    "X": -1231.3050841054862,
+    "Y": 139.57340153049765,
+    "Zoom": 0.98854889960476888
+  }
+}
