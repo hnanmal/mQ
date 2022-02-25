@@ -12,7 +12,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\npython_rootpath = os.getenv('LOCALAPPDATA')+'\\Programs\\Python'\r\nfile_list = os.listdir(python_rootpath)\r\npython_version = file_list[-1]\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + f'\\Programs\\Python\\{python_version}\\Lib\\site-packages')\r\nimport clr\r\n\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport random\r\nimport itertools\r\nfrom functools import reduce\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputFilePath = IN[0]\r\ninputSheetName = IN[1]\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef checkAllElement(list, target):\r\n    tmp=[]\r\n    for i in list:\r\n        if i == target:\r\n            tmp.append(True)\r\n        else:\r\n            tmp.append(False)\r\n    return all(tmp)\r\n\r\n\r\n# Place your code below this line\r\n\r\nresult = importExcel(inputFilePath, inputSheetName)\r\n\r\nfor i in result:## null만 있는 Excel Row 제거\r\n    if checkAllElement(i, None):\r\n        result.remove(i)\r\n    else:\r\n        pass\r\n        \r\nresult_tr = list(zip(*result))\r\n\r\nfor i in result_tr:## null만 있는 Excel Column 제거\r\n    if checkAllElement(i, None):\r\n        result_tr.remove(i)\r\n    else:\r\n        pass\r\n\r\nresult = list(zip(*result_tr))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\npython_rootpath = os.getenv('LOCALAPPDATA')+'\\Programs\\Python'\r\nfile_list = os.listdir(python_rootpath)\r\npython_version = file_list[-1]\r\nimport sys\r\nsys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + f'\\Programs\\Python\\{python_version}\\Lib\\site-packages')\r\nimport clr\r\n\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport random\r\n\r\nfrom collections import Iterable\r\nimport datetime\r\nimport openpyxl\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputFilePath = IN[0]\r\ninputSheetName = IN[1]\r\n\r\ndef importExcel(path, SheetNameIn):\r\n    wb_obj = openpyxl.load_workbook(str(path), data_only=True)\r\n    sheet_obj = wb_obj.get_sheet_by_name(str(SheetNameIn))\r\n\r\n    m_row = sheet_obj.max_row\r\n    m_col = sheet_obj.max_column\r\n\r\n    listOut = []\r\n\r\n    for i in range(1, m_row +1):\r\n        listTemp = []\r\n        for j in range(1, m_col + 1):\r\n            cell_obj = sheet_obj.cell(row=i, column=j)\r\n            listTemp.append(cell_obj.value)\r\n            if len(listTemp) == m_col:\r\n                listOut.append(listTemp)\r\n    return listOut\r\n\r\ndef checkAllElement(list, target):\r\n    tmp=[]\r\n    for i in list:\r\n        if i == target:\r\n            tmp.append(True)\r\n        else:\r\n            tmp.append(False)\r\n    return all(tmp)\r\n\r\n# Place your code below this line\r\nrm_Null = lambda list: go(list,\r\n    filter(lambda a: not checkAllElement(a, None)),\r\n    )\r\n    \r\ns1 = importExcel(inputFilePath, inputSheetName)\r\n\r\ns2 = rm_Null(s1)  ## null만 있는 Excel Row 제거\r\n\r\ns2_tr = list(zip(*s2))\r\n\r\ns3 = rm_Null(s2_tr) ## null만 있는 Excel Column 제거\r\n\r\nresult = list(zip(*s3))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result\r\n",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "0761a53f8d9c4e71b2e657663e424bcd",
@@ -52,8 +52,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\Users\\pjmk0\\Downloads\\MK\\mQ\\hecCalc\\Final\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
-      "InputValue": "..\\..\\hecCalc\\Final\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
+      "HintPath": "D:\\mk\\mQ\\Laboratory\\20220224_importExcel\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
+      "InputValue": ".\\02_팀 표준 Family List_Rev.0_2022_0215.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "5532f28551a34cb2a6f9056f1f9c8145",
       "Inputs": [],
@@ -224,7 +224,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n        \r\ndef findstartpt(datas):\r\n    res = []    \r\n    for i in enumerate(datas):\r\n        for j in enumerate(i[1]):\r\n            cell = vld(j[1])\r\n            try:\r\n                if \"[\" in cell or \"]\" in cell: ### 동작하려면 엑셀의 시트 제목이 []를 포함해야함\r\n                    res.append((i[0],j[0]))\r\n            except: pass\r\n\r\n    return res[0]\r\n\r\nstartpt = findstartpt(datas)\r\n\r\ndef outcut(datas):\r\n    s1 = datas[startpt[0]:]\r\n    s2 = list(map(lambda a: a[startpt[1]:], s1))\r\n    return s2\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n    \r\nresult = outcut(datas)\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n        \r\ndef findstartpt(datas):\r\n    res = []    \r\n    for i in enumerate(datas):\r\n        for j in enumerate(i[1]):\r\n            cell = vld(j[1])\r\n            try:\r\n                if \"[\" in cell or \"]\" in cell: ### 동작하려면 엑셀의 시트 제목이 []를 포함해야함\r\n                    res.append((i[0],j[0]))\r\n            except: pass\r\n\r\n    return res[0]\r\n\r\nstartpt = findstartpt(datas)\r\n\r\ndef outcut(datas):\r\n    s1 = datas[startpt[0]+1:]\r\n    s2 = list(map(lambda a: a[startpt[1]:], s1))\r\n    \r\n    return s2\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n    \r\nresult = outcut(datas)\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "9d81680500f648b7a9f35c1d33df19ca",
@@ -266,7 +266,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n        \r\ndef findstartpt(datas):\r\n    res = []    \r\n    for i in enumerate(datas):\r\n        for j in enumerate(i[1]):\r\n            cell = vld(j[1])\r\n            try:\r\n                if \"[\" in cell or \"]\" in cell: ### 동작하려면 엑셀의 시트 제목이 []를 포함해야함\r\n                    res.append((i[0],j[0]))\r\n            except: pass\r\n\r\n    return res[0]\r\n\r\nstartpt = findstartpt(datas)\r\n\r\ndef incut(datas):\r\n    s1 = datas[startpt[0]:]\r\n    s2 = list(map(lambda a: a[startpt[1]:], s1))\r\n    return s2\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n    \r\nresult = incut(datas)\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport re\r\n\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n\r\ndef findlv(regex, a):\r\n    p = re.match(regex, str(a))\r\n    return p\r\n        \r\ndef idxByTitle(datas, title):\r\n    header = datas[0]\r\n    chk = lambda list: go(list,\r\n        filter(lambda a: title in a),\r\n        map(lambda a: list.index(a)),\r\n        )\r\n    colidx = list(chk(header))[0]\r\n    \r\n#    s1 = list(zip(*datas))\r\n#    coldata = s1[colidx]\r\n    \r\n    return colidx\r\n\r\nchk_regex = lambda regex: lambda a: re.match(regex, str(a))\r\n\r\ndef inslice(datas, n, lv):\r\n    std = {\r\n        \"lv1\": \"\\d{0,5}$\",\r\n        \"lv2\": \"\\d{0,5}[.]\\d$\",\r\n        \"lv3\": \"\\d{0,5}[.]\\d[.]\\d$\",\r\n        \"lv4\": \"\\d{0,5}[.]\\d[.]\\d[.]\\d$\",\r\n        \"Ftype\": \"^\\w{2,3}\\d\\d[^0]\"\r\n    }\r\n    \r\n    idx = idxByTitle(datas, \"NO\")\r\n    df = datas[1:]\r\n    df_0 = list(map(lambda a: a[0], df))\r\n    df_1 = list(map(lambda a: a[1], df))\r\n    df_n = list(map(lambda a: a[n], df))\r\n    df_n_1 = list(map(lambda a: a[n+1], df))\r\n    \r\n    #chk = lambda regex: lambda a: re.match(regex, str(a))\r\n    \r\n    def sliceRowByLevel(df, n, lv):\r\n        df_n = list(map(lambda a: a[n], df))\r\n        df_n_1 = list(map(lambda a: a[n+1], df))\r\n        RowIdx = []\r\n        res = []\r\n        for a in enumerate(df_n):\r\n            if chk_regex(std[lv])(a[1]):\r\n                RowIdx.append(a[0])\r\n        if len(RowIdx) > 1:\r\n            for i,v in enumerate(RowIdx):\r\n                if i < len(RowIdx)-1:\r\n                    res.append((v, RowIdx[i+1]-1))\r\n                elif i == len(RowIdx)-1:\r\n                    res.append((RowIdx[i], len(df_n)))\r\n        elif len(RowIdx) == 1:\r\n            res.append((RowIdx[0],len(df_n)))\r\n        return res\r\n    slcIdx = sliceRowByLevel(df, n, lv)\r\n    \r\n    result = {}\r\n    \r\n    for a in slcIdx:\r\n        lv_Name = str(df_n[a[0]])\r\n        if a[0] != a[1]:\r\n            result[lv_Name] = df[a[0]:a[1]]\r\n        else:\r\n            result[lv_Name] = df[a[0]:a[1]+1]\r\n    \r\n    return result\r\n    \r\nbyLv1 = inslice(datas, 0, \"lv1\")\r\n_byFamilyType = inslice(datas, 2, \"Ftype\")\r\n\r\nbyFamilyType = {}\r\nfor a in _byFamilyType:\r\n    if len(_byFamilyType[a]) > 1:\r\n        tmp = [_byFamilyType[a][0]]\r\n        for b in range(1, len(_byFamilyType[a])):\r\n            if _byFamilyType[a][b][3] != None:\r\n                tmp.append(_byFamilyType[a][b])\r\n    else: tmp = [_byFamilyType[a][0]]\r\n    \r\n    byFamilyType[a] = tmp\r\n\r\n            \r\n\r\n\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n\r\n\r\nresult = byFamilyType\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "8ee51e39d45144008b06b59dbb63ac42",
@@ -294,14 +294,133 @@
       ],
       "Replication": "Disabled",
       "Description": "포함된 Python 스크립트를 실행합니다."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"SLT214-Vinyl Tile\"];",
+      "Id": "b0d746e73eda4f9ba8419d716332729d",
+      "Inputs": [
+        {
+          "Id": "538b3b5e10174d9f8787be9ae9991be0",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c4ee12d8e0514a2ba772cda6a8a17b64",
+          "Name": "",
+          "Description": "선 1의 표현식 값",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"SL782-Raised Floor_Anti-Static Vinyl Tile_600x600xH900\"];",
+      "Id": "0f409607bf744c8aa860ca1cb205e6fa",
+      "Inputs": [
+        {
+          "Id": "bde70a55f6ce4b51934025d26c2f330a",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7967be7adcf142879b68ebd033b60bfb",
+          "Name": "",
+          "Description": "선 1의 표현식 값",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "DesignScript 코드를 직접 작성할 수 있습니다"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport re\r\n\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n\r\ndef findlv(regex, a):\r\n    p = re.match(regex, str(a))\r\n    return p\r\n        \r\ndef idxByTitle(datas, title):\r\n    header = datas[0]\r\n    chk = lambda list: go(list,\r\n        filter(lambda a: title in a),\r\n        map(lambda a: list.index(a)),\r\n        )\r\n    colidx = list(chk(header))[0]\r\n    \r\n#    s1 = list(zip(*datas))\r\n#    coldata = s1[colidx]\r\n    \r\n    return colidx\r\n\r\nchk_regex = lambda regex: lambda a: re.match(regex, str(a))\r\n\r\ndef inslice(datas, n, lv):\r\n    std = {\r\n        \"lv1\": \"\\d{0,5}$\",\r\n        \"lv2\": \"\\d{0,5}[.]\\d$\",\r\n        \"lv3\": \"\\d{0,5}[.]\\d[.]\\d$\",\r\n        \"lv4\": \"\\d{0,5}[.]\\d[.]\\d[.]\\d$\",\r\n        \"Ftype\": \"^\\w{2,3}\\d\\d[^0]\"\r\n    }\r\n    \r\n    idx = idxByTitle(datas, \"NO\")\r\n    df = datas[1:]\r\n    df_0 = list(map(lambda a: a[0], df))\r\n    df_1 = list(map(lambda a: a[1], df))\r\n    df_n = list(map(lambda a: a[n], df))\r\n    df_n_1 = list(map(lambda a: a[n+1], df))\r\n    \r\n    #chk = lambda regex: lambda a: re.match(regex, str(a))\r\n    \r\n    def sliceRowByLevel(df, n, lv):\r\n        df_n = list(map(lambda a: a[n], df))\r\n        df_n_1 = list(map(lambda a: a[n+1], df))\r\n        RowIdx = []\r\n        res = []\r\n        for a in enumerate(df_n):\r\n            if chk_regex(std[lv])(a[1]):\r\n                RowIdx.append(a[0])\r\n        if len(RowIdx) > 1:\r\n            for i,v in enumerate(RowIdx):\r\n                if i < len(RowIdx)-1:\r\n                    res.append((v, RowIdx[i+1]-1))\r\n                elif i == len(RowIdx)-1:\r\n                    res.append((RowIdx[i], len(df_n)))\r\n        elif len(RowIdx) == 1:\r\n            res.append((RowIdx[0],len(df_n)))\r\n        return res\r\n    slcIdx = sliceRowByLevel(df, n, lv)\r\n    \r\n    result = {}\r\n    \r\n    for a in slcIdx:\r\n        lv_Name = str(df_n[a[0]])\r\n        result[lv_Name] = df[a[0]:a[1]]\r\n    \r\n    return result\r\n    \r\nbyLv1 = inslice(datas, 0, \"lv1\")\r\n_byFamilyType = inslice(datas, 2, \"Ftype\")\r\n\r\nbyFamilyType = {}\r\nfor a in _byFamilyType:\r\n    if len(_byFamilyType[a]) > 1:\r\n        tmp = [_byFamilyType[a][0]]\r\n        for b in range(1, len(_byFamilyType[a])):\r\n            if _byFamilyType[a][b][3] != None:\r\n                tmp.append(_byFamilyType[a][b])\r\n    else:\r\n        tmp = _byFamilyType[a]\r\n    \r\n#    for b in range(1, len(_byFamilyType[a])):\r\n#        if _byFamilyType[a][b][3] != None:\r\n#            tmp.append(_byFamilyType[a][b])\r\n    byFamilyType[a] = tmp\r\n\r\n            \r\n\r\n\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n    \r\nresult = _byFamilyType#inslice(datas, \"lv3\")\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a4129ee19e1a489eaf2f378fbb685cf1",
+      "Inputs": [
+        {
+          "Id": "ad57fb080bc1457f91071cd0596be721",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9a92f4e13d2748d2b44e2068fc8db345",
+          "Name": "OUT",
+          "Description": "Python 스크립트의 결과",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "포함된 Python 스크립트를 실행합니다."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Python 표준 및 DesignScript 라이브러리 로드\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport re\r\n\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n\r\n# 이 노드에 대한 입력값은 IN 변수에 리스트로 저장됩니다.\r\ndataEnteringNode = IN\r\n\r\ndatas = IN[0]\r\n\r\n# 코드를 이 선 아래에 배치\r\ndef vld(a):\r\n    try: return a\r\n    except: return \"\"\r\n\r\ndef findlv(regex, a):\r\n    p = re.match(regex, str(a))\r\n    return p\r\n        \r\ndef idxByTitle(datas, title):\r\n    header = datas[0]\r\n    chk = lambda list: go(list,\r\n        filter(lambda a: title in a),\r\n        map(lambda a: list.index(a)),\r\n        )\r\n    colidx = list(chk(header))[0]\r\n    \r\n#    s1 = list(zip(*datas))\r\n#    coldata = s1[colidx]\r\n    \r\n    return colidx\r\n\r\nchk_regex = lambda regex: lambda a: re.match(regex, str(a))\r\n\r\ndef inslice(datas, n, lv):\r\n    std = {\r\n        \"lv1\": \"\\d{0,5}$\",\r\n        \"lv2\": \"\\d{0,5}[.]\\d$\",\r\n        \"lv3\": \"\\d{0,5}[.]\\d[.]\\d$\",\r\n        \"lv4\": \"\\d{0,5}[.]\\d[.]\\d[.]\\d$\",\r\n        \"Ftype\": \"^\\w{2,3}\\d\\d[^0]\"\r\n    }\r\n    \r\n    idx = idxByTitle(datas, \"NO\")\r\n    df = datas[1:]\r\n    df_0 = list(map(lambda a: a[0], df))\r\n    df_1 = list(map(lambda a: a[1], df))\r\n    df_n = list(map(lambda a: a[n], df))\r\n    df_n_1 = list(map(lambda a: a[n+1], df))\r\n    \r\n    #chk = lambda regex: lambda a: re.match(regex, str(a))\r\n    \r\n    def sliceRowByLevel(df, n, lv):\r\n        df_n = list(map(lambda a: a[n], df))\r\n        df_n_1 = list(map(lambda a: a[n+1], df))\r\n        RowIdx = []\r\n        res = []\r\n        for a in enumerate(df_n):\r\n            if chk_regex(std[lv])(a[1]):\r\n                RowIdx.append(a[0])\r\n        if len(RowIdx) > 1:\r\n            for i,v in enumerate(RowIdx):\r\n                if i < len(RowIdx)-1:\r\n                    res.append((v, RowIdx[i+1]-1))\r\n                elif i == len(RowIdx)-1:\r\n                    res.append((RowIdx[i], len(df_n)))\r\n        elif len(RowIdx) == 1:\r\n            res.append((RowIdx[0],len(df_n)))\r\n        return res\r\n    slcIdx = sliceRowByLevel(df, n, lv)\r\n    \r\n    result = {}\r\n    \r\n    for a in slcIdx:\r\n        lv_Name = str(df_n[a[0]])\r\n        if a[0] != a[1]:\r\n            result[lv_Name] = df[a[0]:a[1]]\r\n        else:\r\n            result[lv_Name] = df[a[0]:a[1]+1]\r\n    \r\n    return result\r\n    \r\nbyLv1 = inslice(datas, 0, \"lv1\")\r\n_byFamilyType = inslice(datas, 2, \"Ftype\")\r\n\r\nbyFamilyType = {}\r\nfor a in _byFamilyType:\r\n    if len(_byFamilyType[a]) > 1:\r\n        tmp = [_byFamilyType[a][0]]\r\n        for b in range(1, len(_byFamilyType[a])):\r\n            if _byFamilyType[a][b][3] != None:\r\n                tmp.append(_byFamilyType[a][b])\r\n    else: tmp = [_byFamilyType[a][0]]\r\n    \r\n    byFamilyType[a] = tmp\r\n\r\n            \r\n\r\n\r\n\r\n#head = lambda list: go(list,\r\n#    filter(lambda a: chck_heads(a)),\r\n#    )\r\n\r\n\r\nresult = byFamilyType\r\n# 출력을 OUT 변수에 지정합니다.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "fab6daf482b6413790e54502d60bdc69",
+      "Inputs": [
+        {
+          "Id": "24375432d35b489a888296ac4de51b50",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e0ab57cfa0b24c93aa5129fb0e14bd76",
+          "Name": "OUT",
+          "Description": "Python 스크립트의 결과",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "포함된 Python 스크립트를 실행합니다."
     }
   ],
   "Connectors": [
-    {
-      "Start": "91aa2f04d91e46ff92a05aba8e6335f1",
-      "End": "b47e5caa1e6a437ebe1c17e3b1c23d00",
-      "Id": "39e03b134f8c4f5b870f466c119abe7d"
-    },
     {
       "Start": "91aa2f04d91e46ff92a05aba8e6335f1",
       "End": "4f895d800b1b49379854dfecf63e43a7",
@@ -336,6 +455,31 @@
       "Start": "1a89754a48fd41a5a54b810ae92d0b4d",
       "End": "b82ba71ea0574eb79c54beec697f9816",
       "Id": "e797222224a5431ca45ea44ce83c1335"
+    },
+    {
+      "Start": "1a89754a48fd41a5a54b810ae92d0b4d",
+      "End": "b47e5caa1e6a437ebe1c17e3b1c23d00",
+      "Id": "1d2a2096f00b434a808d78bdb67beee0"
+    },
+    {
+      "Start": "1a89754a48fd41a5a54b810ae92d0b4d",
+      "End": "ad57fb080bc1457f91071cd0596be721",
+      "Id": "4f4ac688943c47688f252b82b04d91c6"
+    },
+    {
+      "Start": "1a89754a48fd41a5a54b810ae92d0b4d",
+      "End": "24375432d35b489a888296ac4de51b50",
+      "Id": "5903c8c2c3384ac7b594577fc53b40b4"
+    },
+    {
+      "Start": "83478863ef2e452985183e64667027f3",
+      "End": "538b3b5e10174d9f8787be9ae9991be0",
+      "Id": "63933090526648339d8f04b4c5c375bb"
+    },
+    {
+      "Start": "83478863ef2e452985183e64667027f3",
+      "End": "bde70a55f6ce4b51934025d26c2f330a",
+      "Id": "160ad7d80ce841a9b97d19453e54b71e"
     }
   ],
   "Dependencies": [],
@@ -370,7 +514,7 @@
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
       "Version": "2.12.0.5650",
-      "RunType": "Automatic",
+      "RunType": "Manual",
       "RunPeriod": "1000"
     },
     "Camera": {
@@ -393,8 +537,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 664.0,
-        "Y": 215.0
+        "X": 665.13667446873023,
+        "Y": 212.7266510625393
       },
       {
         "ShowGeometry": true,
@@ -423,8 +567,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1707.4267945196309,
-        "Y": -414.54849031246579
+        "X": 1123.8961603477683,
+        "Y": -500.152006327898
       },
       {
         "ShowGeometry": true,
@@ -453,8 +597,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1824.6936868031403,
-        "Y": 97.588823116044239
+        "X": 175.38430539848673,
+        "Y": -157.78660510612684
       },
       {
         "ShowGeometry": true,
@@ -468,13 +612,13 @@
       },
       {
         "ShowGeometry": true,
-        "Name": "Out Cuttng",
+        "Name": "Outside Cuttng",
         "Id": "9d81680500f648b7a9f35c1d33df19ca",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 923.59256802181517,
-        "Y": 226.8162406746589
+        "X": 943.40788150052913,
+        "Y": 207.21495189819149
       },
       {
         "ShowGeometry": true,
@@ -483,23 +627,63 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1068.0,
-        "Y": 18.0
+        "X": 941.02145124377557,
+        "Y": -151.78030676394053
       },
       {
         "ShowGeometry": true,
-        "Name": "In Cuttng",
+        "Name": "Inside Slicing",
         "Id": "8ee51e39d45144008b06b59dbb63ac42",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1230.072659443744,
-        "Y": 210.09098084498379
+        "X": 1260.0591112257703,
+        "Y": 217.39686670385476
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "b0d746e73eda4f9ba8419d716332729d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2175.201846089697,
+        "Y": 717.68639399985943
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "0f409607bf744c8aa860ca1cb205e6fa",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1564.6555830321156,
+        "Y": 797.41868644026977
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Inside Slicing_",
+        "Id": "a4129ee19e1a489eaf2f378fbb685cf1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1730.4611455028564,
+        "Y": -338.606289809994
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "dict forming",
+        "Id": "fab6daf482b6413790e54502d60bdc69",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1837.1488400608573,
+        "Y": 155.1430564435307
       }
     ],
     "Annotations": [],
-    "X": -726.18476715685142,
-    "Y": -87.515081500001827,
-    "Zoom": 1.112888407459959
+    "X": -744.26466291327233,
+    "Y": 110.12192589684048,
+    "Zoom": 0.99724878290004626
   }
 }

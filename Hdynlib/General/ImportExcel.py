@@ -6,32 +6,36 @@ python_version = file_list[-1]
 import sys
 sys.path.append(os.getenv('LOCALAPPDATA').replace('\\','\\\\') + f'\Programs\Python\{python_version}\Lib\site-packages')
 import clr
-clr.AddReference('RevitAPI')
-import Autodesk
+
 
 clr.AddReference('ProtoGeometry')
 from Autodesk.DesignScript.Geometry import *
 
-clr.AddReference('RevitNodes')
-import Revit
-clr.ImportExtensions(Revit.Elements)
-
-clr.ImportExtensions(Revit.GeometryConversion)
-clr.ImportExtensions(Revit.GeometryReferences)
-
-clr.AddReference('RevitServices')
-import RevitServices
-from RevitServices.Persistence import DocumentManager
-from RevitServices.Transactions import TransactionManager
-
-doc = DocumentManager.Instance.CurrentDBDocument
-
 import random
-import itertools
-from functools import reduce
+
 from collections import Iterable
 import datetime
 import openpyxl
+
+from itertools import chain
+from functools import reduce
+
+curry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)
+
+add = curry(lambda a,b: a + b)
+
+filter = curry(filter)
+map = curry(map)
+
+def _take(length, iter):
+    res = []
+    for a in iter:
+        res.append(a)
+        if len(res) == length:
+            return res
+take = curry(_take)
+reduce = curry(reduce)
+go = lambda *args: reduce(lambda a,f: f(a), args)
 
 # The inputs to this node will be stored as a list in the IN variables.
 dataEnteringNode = IN
@@ -65,26 +69,20 @@ def checkAllElement(list, target):
             tmp.append(False)
     return all(tmp)
 
-
 # Place your code below this line
+rm_Null = lambda list: go(list,
+    filter(lambda a: not checkAllElement(a, None)),
+    )
+    
+s1 = importExcel(inputFilePath, inputSheetName)
 
-result = importExcel(inputFilePath, inputSheetName)
+s2 = rm_Null(s1)  ## null만 있는 Excel Row 제거
 
-for i in result:## null만 있는 Excel Row 제거
-    if checkAllElement(i, None):
-        result.remove(i)
-    else:
-        pass
-        
-result_tr = list(zip(*result))
+result_tr = list(zip(*s2))
 
-for i in result_tr:## null만 있는 Excel Column 제거
-    if checkAllElement(i, None):
-        result_tr.remove(i)
-    else:
-        pass
+s3 = rm_Null(result_tr) ## null만 있는 Excel Column 제거
 
-result = list(zip(*result_tr))
+result = list(zip(*s3))
 
 # Assign your output to the OUT variable.
 OUT = result
