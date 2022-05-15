@@ -52,7 +52,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\Laboratory\\20220512_midas-revit connect\\documentum\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.xlsx",
+      "HintPath": "C:\\MK\\mQ\\Laboratory\\20220512_midas-revit connect\\documentum\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.xlsx",
       "InputValue": ".\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "fdc75dc9a22547b69806180caf0bc719",
@@ -69,7 +69,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows you to select a file on the system to get its file path."
+      "Description": "Allows you to select a file on the system to get its filename"
     },
     {
       "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
@@ -223,7 +223,7 @@
         {
           "Id": "051f7e3737d34b12940b3247264a6190",
           "Name": "keys",
-          "Description": "Keys of the Dictionary",
+          "Description": "The keys of the Dictionary",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -513,6 +513,162 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\n\r\n# Place your code below this line\r\ndef findOrigin(pts):\r\n    origin = pts[0]\r\n    \r\n    ori_ptX = origin[1]\r\n    ori_ptY = origin[2]\r\n    ori_pyZ = origin[3]\r\n    origin = (ori_ptX, ori_ptY, ori_pyZ)\r\n    \r\n    return origin\r\n\r\ndef trnslt_pt(pts, origin):\r\n    def set_trPt(pt):\r\n        res = (pt[0], pt[1]-origin[0], pt[2]-origin[1], pt[3]-origin[2])\r\n        return res\r\n        \r\n    result = list(map(lambda x: set_trPt(x), pts))\r\n    return result\r\n\r\norigin = findOrigin(input)\r\nresult = trnslt_pt(input, origin)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d61f7406ce3844a29d9d06de6a566a1d",
+      "Inputs": [
+        {
+          "Id": "d3a912d29fcb49e8b7808e47b8482b98",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c32bdf682ee440da9f9683b2054930fa",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\n# Place your code below this line\r\ndef mkPoints(pts):\r\n    dic={}\r\n    def mkPoint(pt):\r\n        ptX = pt[1]*1000\r\n        ptY = pt[2]*1000\r\n        ptZ = pt[3]*1000\r\n        gpt = Point.ByCoordinates(ptX, ptY, ptZ)\r\n        return gpt\r\n    \r\n    for x in pts:\r\n        dic[str(x[0])] = mkPoint(x)\r\n    return dic\r\n\r\nresult = mkPoints(input)\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "eb8da54debc747ff8665bbc13b6f7a9c",
+      "Inputs": [
+        {
+          "Id": "08ef8d2d5ddd4cd69e39ea17f9f3be1d",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "39b6c385be924e14a64a57d1735d82c1",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DesignScript.Builtin.Dictionary.Values",
+      "Id": "351cef0f6aad41c59d0014806b29a0f1",
+      "Inputs": [
+        {
+          "Id": "cf73e100f60d4a4a9ab687a39bdce346",
+          "Name": "dictionary",
+          "Description": "DesignScript.Builtin.Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "955131d906f84385b387cc7f70deae13",
+          "Name": "values",
+          "Description": "The values of the Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Produces the values in a Dictionary.\n\nDictionary.Values: var[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i;",
+      "Id": "bfdeec6d3a864fd88ed624d50813bc7f",
+      "Inputs": [
+        {
+          "Id": "ff23615a30214148bd3b986756e633ef",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ddc619dfee51484d93dcf2a742d331a7",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\n\r\n# Place your code below this line\r\n\r\ndef filtering(data, str):\r\n    res = list(filter(lambda x: str in x[1], data))\r\n    return res\r\n\r\n\r\nresult = filtering(input, \"BEAM\")\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a0e80a85bc144d75bd5068d1eb59edf9",
+      "Inputs": [
+        {
+          "Id": "809fe14b9e69476196a80dcf6c7ebeb8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0e279eaa4d6049d9850298c0a09894a4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -588,13 +744,8 @@
     },
     {
       "Start": "b898d7ba8c60449caf7a4f806e347d9e",
-      "End": "2b2555f97d984d9096897924d76ab211",
-      "Id": "cb5627563e9b4747b6555f41ef6f2dd7"
-    },
-    {
-      "Start": "b898d7ba8c60449caf7a4f806e347d9e",
-      "End": "ab9ce27616404bd6af9f6dbecd7cfac8",
-      "Id": "18762b5d72664f34937c63c3976a7ef2"
+      "End": "809fe14b9e69476196a80dcf6c7ebeb8",
+      "Id": "2e732849c7fb4af8b585f2d268392383"
     },
     {
       "Start": "c993673af7544f2d9d862989b8bd1e87",
@@ -605,218 +756,309 @@
       "Start": "3cc5374492124b2f9475b153d1e50520",
       "End": "d1a9bfcb25414aa4b711ce39a87160a8",
       "Id": "af36b42d6e154a35a4ed797f49ce14c4"
+    },
+    {
+      "Start": "3824b4f294a640e7a8c935b58d6b0088",
+      "End": "d3a912d29fcb49e8b7808e47b8482b98",
+      "Id": "61c6be1cbebf407ca15720cebe99d8af"
+    },
+    {
+      "Start": "c32bdf682ee440da9f9683b2054930fa",
+      "End": "08ef8d2d5ddd4cd69e39ea17f9f3be1d",
+      "Id": "d28ad7c1a30a4edcaeb9f3117c4a6dfb"
+    },
+    {
+      "Start": "39b6c385be924e14a64a57d1735d82c1",
+      "End": "cf73e100f60d4a4a9ab687a39bdce346",
+      "Id": "fc08c55b80824634acf261fc3a2083ba"
+    },
+    {
+      "Start": "ddc619dfee51484d93dcf2a742d331a7",
+      "End": "2b2555f97d984d9096897924d76ab211",
+      "Id": "481b15b1ecf548709f2ce2d9d52eaedc"
+    },
+    {
+      "Start": "ddc619dfee51484d93dcf2a742d331a7",
+      "End": "ab9ce27616404bd6af9f6dbecd7cfac8",
+      "Id": "8ee91dad7bac44fcbafaacb66f0e397d"
+    },
+    {
+      "Start": "0e279eaa4d6049d9850298c0a09894a4",
+      "End": "ff23615a30214148bd3b986756e633ef",
+      "Id": "2a948bbc477d4ed1a884a4e4a87909a2"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [],
-  "Thumbnail": "",
-  "GraphDocumentationURL": null,
-  "ExtensionWorkspaceData": [
-    {
-      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
-      "Name": "Properties",
-      "Version": "2.12",
-      "Data": {}
-    },
-    {
-      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
-      "Name": "Generative Design",
-      "Version": "1.10",
-      "Data": {}
-    }
-  ],
-  "Author": "",
-  "Linting": {
-    "activeLinter": "None",
-    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
-    "warningCount": 0,
-    "errorCount": 0
-  },
   "Bindings": [],
   "View": {
     "Dynamo": {
-      "ScaleFactor": 1.0,
+      "ScaleFactor": 100.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
-      "Version": "2.12.0.5650",
+      "Version": "2.10.1.3976",
       "RunType": "Manual",
       "RunPeriod": "1000"
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": -17.0,
-      "EyeY": 24.0,
-      "EyeZ": 50.0,
-      "LookX": 12.0,
-      "LookY": -13.0,
-      "LookZ": -58.0,
-      "UpX": 0.0,
-      "UpY": 1.0,
-      "UpZ": 0.0
+      "EyeX": 5515.279296875,
+      "EyeY": 32423.5390625,
+      "EyeZ": 29901.494140625,
+      "LookX": 12518.015625,
+      "LookY": -22203.599609375,
+      "LookZ": -29940.8515625,
+      "UpX": 0.1444990485906601,
+      "UpY": 0.92718374729156494,
+      "UpZ": -0.34561598300933838
     },
     "NodeViews": [
       {
+        "ShowGeometry": true,
+        "Name": "initial data import",
         "Id": "3a0fc8c0d0b642f6b5c8d53a5b77a40a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "initial data import",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 339.34231352278169,
         "Y": -61.311603231444508
       },
       {
+        "ShowGeometry": true,
+        "Name": "File Path",
         "Id": "fdc75dc9a22547b69806180caf0bc719",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "File Path",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -76.6576864772183,
         "Y": -103.31160323144451
       },
       {
+        "ShowGeometry": true,
+        "Name": "String",
         "Id": "7b81963427cc4168b875633114370661",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "String",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -76.6576864772183,
         "Y": 6.6883967685554921
       },
       {
+        "ShowGeometry": true,
+        "Name": "find identifier row idx",
         "Id": "9d60e90d202a4d7da8cd89b91f64ebad",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "find identifier row idx",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 637.50932666375081,
         "Y": -8.9912724124019974
       },
       {
+        "ShowGeometry": true,
+        "Name": "splitDataAsDict(불필요Null 제거)",
         "Id": "adef3d65e1c04441a11d9a19fc7aaf32",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "splitDataAsDict(불필요Null 제거)",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 923.64795774486572,
         "Y": -64.019549853116871
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "fa2cfe22d01e48c39cc48259140e5943",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1951.0541056058109,
-        "Y": -61.626008587493175
+        "X": 2082.2916657214751,
+        "Y": -69.602915160291928
       },
       {
+        "ShowGeometry": true,
+        "Name": "Dictionary.Keys",
         "Id": "d5576058ed604c238257ec1dae443b03",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Dictionary.Keys",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 1345.843352945689,
         "Y": 18.307576839269473
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "44bf01c4fa46427080409796453d969a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1679.8437196663656,
-        "Y": 36.94030221051861
+        "X": 1871.2916657214751,
+        "Y": -52.0295818269586
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "9620d529d29d45e7a3f090ec046a8eb8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1950.8593452096482,
-        "Y": -493.56828898059251
+        "X": 1873.5653469220231,
+        "Y": -405.37125831419741
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "063e967c1a5142089dd972a3a89f9976",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2143.1823485379737,
-        "Y": -650.73812152616551
+        "X": 2072.9655855564361,
+        "Y": -486.74327915825944
       },
       {
+        "ShowGeometry": true,
+        "Name": "removeHeadFromDict",
         "Id": "85c32552b64047c8a2b6a58370f8f11c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "removeHeadFromDict",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2237.7003607727547,
-        "Y": -69.64658711744562
+        "X": 2438.276958753906,
+        "Y": -73.951891531661147
       },
       {
+        "ShowGeometry": true,
+        "Name": "List.GetItemAtIndex",
         "Id": "ef26b5f4b425464289f10474208cd6dc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.GetItemAtIndex",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2640.5742352238317,
-        "Y": -231.05358296579408
+        "X": 3541.7596137945534,
+        "Y": -94.746800688310373
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "39c9b1f0defc4696b3b866f2c7c67df0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2498.1389733211004,
-        "Y": -167.08699675935929
+        "X": 3399.3243518918221,
+        "Y": -30.780214481875589
       },
       {
+        "ShowGeometry": true,
+        "Name": "List.GetItemAtIndex",
         "Id": "c79eec04ecab4f76afb9761298adb506",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.GetItemAtIndex",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2640.3223744135685,
-        "Y": 179.73432869306384
+        "X": 3541.50775298429,
+        "Y": 316.04111097054755
       },
       {
+        "ShowGeometry": true,
+        "Name": "Code Block",
         "Id": "f7acef35b6584505922e63b4d93b125a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2497.8871125108385,
-        "Y": 243.70091489949883
+        "X": 3399.07249108156,
+        "Y": 380.0076971769825
       },
       {
+        "ShowGeometry": true,
+        "Name": "removeHeadFromDict",
         "Id": "411b09f5631447c28440594595ecea90",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "removeHeadFromDict",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 2454.9280210850898,
         "Y": -684.7507811936681
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "원점정하고 좌표계변환(단위 m->mm)",
+        "Id": "d61f7406ce3844a29d9d06de6a566a1d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2731.230240201091,
+        "Y": -761.0715104877479
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "다이나모 포인트로 변환 및 딕셔너리화",
+        "Id": "eb8da54debc747ff8665bbc13b6f7a9c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3090.1413698555493,
+        "Y": -762.83893856413488
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Dictionary.Values",
+        "Id": "351cef0f6aad41c59d0014806b29a0f1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3526.8026092748391,
+        "Y": -924.81593796639982
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Code Block",
+        "Id": "bfdeec6d3a864fd88ed624d50813bc7f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3170.499592848993,
+        "Y": -82.848463069540514
+      },
+      {
+        "ShowGeometry": true,
+        "Name": "Beam 부재 필터링",
+        "Id": "a0e80a85bc144d75bd5068d1eb59edf9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2811.2381909136716,
+        "Y": -73.947283489671918
       }
     ],
     "Annotations": [
+      {
+        "Id": "a81739cfe1e140eabd2b8d2004647808",
+        "Title": "<Click here to edit the group title>",
+        "Nodes": [
+          "9620d529d29d45e7a3f090ec046a8eb8",
+          "063e967c1a5142089dd972a3a89f9976"
+        ],
+        "Left": 1863.5653469220231,
+        "Top": -582.74327915825938,
+        "Width": 330.400238634413,
+        "Height": 270.372020844062,
+        "FontSize": 36.0,
+        "InitialTop": -486.74327915825944,
+        "InitialHeight": 200.139116156711,
+        "TextblockHeight": 86.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "433ab7d3c123474db54b856c06006017",
+        "Title": "<Click here to edit the group title>",
+        "Nodes": [
+          "fa2cfe22d01e48c39cc48259140e5943",
+          "44bf01c4fa46427080409796453d969a"
+        ],
+        "Left": 1861.2916657214751,
+        "Top": -165.60291516029193,
+        "Width": 342.0,
+        "Height": 206.57333333333332,
+        "FontSize": 36.0,
+        "InitialTop": -69.602915160291928,
+        "InitialHeight": 206.68719697856181,
+        "TextblockHeight": 86.0,
+        "Background": "#FFC1D676"
+      },
       {
         "Id": "c747f6f687284de59046fb0778434aba",
         "Title": "iPRO: 부재단면속성\r\niN1: 시작점\r\niN2: 끝점",
@@ -832,8 +1074,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -902.85690258085629,
-    "Y": 576.87127755659549,
-    "Zoom": 0.771968318564611
+    "X": -690.80960148898293,
+    "Y": 547.22930094897072,
+    "Zoom": 0.35537956040445429
   }
 }
