@@ -2,7 +2,7 @@
   "Uuid": "8b47dd06-70cc-4840-8e1b-5059a86ef541",
   "IsCustomNode": false,
   "Description": "",
-  "Name": "midasSample_mxt_parsing",
+  "Name": "midasSample_mxt_parsing_0522",
   "ElementResolver": {
     "ResolutionMap": {
       "Category": {
@@ -24,20 +24,6 @@
     }
   },
   "Inputs": [
-    {
-      "Id": "fdc75dc9a22547b69806180caf0bc719",
-      "Name": "MidasGen Excel(mxt) File Path",
-      "Type": "string",
-      "Value": ".\\Midas_Sample.xlsx",
-      "Description": "Allows you to select a file on the system to get its filename"
-    },
-    {
-      "Id": "7b81963427cc4168b875633114370661",
-      "Name": "Sheet Name:",
-      "Type": "string",
-      "Value": "Ulsan_CEB & Admin. Building_New",
-      "Description": "Creates a string."
-    },
     {
       "Id": "6ef60a0c12c74f8b9326bd1e480c5499",
       "Name": "Column type Prefix",
@@ -73,6 +59,13 @@
       "Value": "300",
       "NumberType": "Double",
       "Description": "Creates a number."
+    },
+    {
+      "Id": "75ed5455d6a64ac7b1602dacb164d6d3",
+      "Name": "MidasGen mxt File Path",
+      "Type": "string",
+      "Value": "..\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.mxt",
+      "Description": "Allows you to select a file on the system to get its filename"
     }
   ],
   "Outputs": [
@@ -150,7 +143,7 @@
     {
       "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
       "NodeType": "StringInputNode",
-      "InputValue": "Ulsan_CEB & Admin. Building_New",
+      "InputValue": "Sample_Structure_Report",
       "Id": "7b81963427cc4168b875633114370661",
       "Inputs": [],
       "Outputs": [
@@ -1171,7 +1164,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector = FilteredElementCollector(doc)\r\n\r\nfrom DSCore import *\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\nlevels = IN[1]\r\nfl = IN[2]\r\n\r\n# Place your code below this line\r\n\r\ndef mkCrvAndLevelDatas(memberDatas, levels):\r\n    def mkElevAndLevelObjDic(levels):\r\n        dic = {}\r\n        for i in levels:\r\n            dic[str(int(round(i.Elevation)))] = i\r\n        return dic\r\n    \r\n    def find_Elev(memberData):\r\n        res = memberData[1].StartPoint.Z + fl\r\n        return str(int(round(res)))\r\n    \r\n    LvObjDic = mkElevAndLevelObjDic(levels)\r\n    res = map(lambda x: List.AddItemToEnd(LvObjDic[find_Elev(x)], x), memberDatas)\r\n    \r\n    return list(res)\r\n    \r\nresult = mkCrvAndLevelDatas(input, levels)\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector = FilteredElementCollector(doc)\r\n\r\nfrom DSCore import *\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\nlevels = IN[1]\r\nfl = IN[2]\r\n\r\n# Place your code below this line\r\n\r\ndef mkCrvAndLevelDatas(memberDatas, levels):\r\n    def mkElevAndLevelObjDic(levels):\r\n        dic = {}\r\n        for i,x in enumerate(levels):\r\n            dic[str(int(round(x.Elevation)))] = x\r\n        return dic\r\n    \r\n    def find_Elev(memberData):\r\n        stt_res = memberData[1].StartPoint.Z + fl\r\n        end_res = memberData[1].EndPoint.Z + fl\r\n        return (str(int(round(stt_res))), str(int(round(end_res))))\r\n    \r\n    LvObjDic = mkElevAndLevelObjDic(levels)\r\n    res = map(lambda x: List.AddItemToEnd((LvObjDic[find_Elev(x)[0]], LvObjDic[find_Elev(x)[1]]), x), memberDatas)\r\n    \r\n    return list(res)\r\n    \r\nresult = mkCrvAndLevelDatas(input, levels)\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "9c6241fcb66a46fd8a4968b2fff35aba",
@@ -2699,7 +2692,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector = FilteredElementCollector(doc)\r\n\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nfrom DSCore import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\n\r\n# Place your code below this line\r\ndef crtRvtElems(CrvLvTypes):\r\n    def crtElem(CrvLvType):\r\n        _crv = CrvLvType[1]\r\n        _lv = CrvLvType[2]\r\n        _type = CrvLvType[3]\r\n        _cat = CrvLvType[3].GetParameterValueByName(\"Category\")\r\n        \r\n        if str(_cat) == \"Structural Columns\":\r\n            res = Revit.Elements.StructuralFraming.ColumnByCurve(_crv, _lv, _type)\r\n        elif str(_cat) == \"Structural Framing\":\r\n            res = Revit.Elements.StructuralFraming.BeamByCurve(_crv, _lv, _type)\r\n        else:\r\n            pass\r\n        \r\n        return res\r\n    res = map(lambda x: crtElem(x), CrvLvTypes)\r\n    \r\n    return res\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nresult = crtRvtElems(input)\r\nTransactionManager.Instance.TransactionTaskDone()\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\ncollector = FilteredElementCollector(doc)\r\n\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nfrom DSCore import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninput = IN[0]\r\n\r\n# Place your code below this line\r\ndef crtRvtElems(CrvLvTypes):\r\n    def crtElem(CrvLvType):\r\n        _crv = CrvLvType[1]\r\n        _lv1 = CrvLvType[2][0]\r\n        _lv2 = CrvLvType[2][1]\r\n        _type = CrvLvType[3]\r\n        _cat = CrvLvType[3].GetParameterValueByName(\"Category\")\r\n        \r\n        if str(_cat) == \"Structural Columns\":\r\n            res = Revit.Elements.StructuralFraming.ColumnByCurve(_crv, _lv1, _type)\r\n            res.SetParameterByName(\"Top Level\", _lv2)\r\n            res.SetParameterByName(\"Base Offset\", 0)\r\n            res.SetParameterByName(\"Top Offset\", 0)\r\n        elif str(_cat) == \"Structural Framing\":\r\n            res = Revit.Elements.StructuralFraming.BeamByCurve(_crv, _lv1, _type)\r\n            res.SetParameterByName(\"Reference Level\", _lv1)\r\n            res.SetParameterByName(\"Start Level Offset\", 0)\r\n            res.SetParameterByName(\"End Level Offset\", 0)\r\n        else:\r\n            pass\r\n        \r\n        return res\r\n    res = map(lambda x: crtElem(x), CrvLvTypes)\r\n    \r\n    return res\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\nresult = crtRvtElems(input)\r\nTransactionManager.Instance.TransactionTaskDone()\r\n# Assign your output to the OUT variable.\r\nOUT = result",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "51998c1acb18458785cc3d904bab1df8",
@@ -2748,19 +2741,121 @@
       ],
       "Replication": "Disabled",
       "Description": "Creates a number."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "C:\\MK\\mQ\\Laboratory\\20220512_midas-revit connect\\documentum\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.mxt",
+      "InputValue": "..\\Ulsan_CEB & Admin. Building_New2(Size)_BOQ.mxt",
+      "NodeType": "ExtensionNode",
+      "Id": "75ed5455d6a64ac7b1602dacb164d6d3",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c20f80bc424a459cb61db48adca11e05",
+          "Name": "",
+          "Description": "Filename",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system to get its filename"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSOffice.Data.ImportCSV@string,bool",
+      "Id": "9f8b1a45d42d4cb19303ea9aae76fcb8",
+      "Inputs": [
+        {
+          "Id": "89293da5b78a4c2eb7beec8100e4f8c6",
+          "Name": "filePath",
+          "Description": "The CSV file to be converted into a list.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "69b35f36bdeb46b5b369c4cb29c0c616",
+          "Name": "transpose",
+          "Description": "Whether the resulting list should be transposed.\n\nbool\nDefault value : false",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b5aac8d4921444049a560779b171def0",
+          "Name": "list",
+          "Description": "The list containing the items in the CSV file.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Imports data from a CSV (comma separated values) file, put the items into a list and transpose it if needed.\n\nData.ImportCSV (filePath: string, transpose: bool = false): var[]..[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport re\r\nimport clr\r\n\r\n#python_rootpath = os.getenv('LOCALAPPDATA')+'\\Programs\\Python'\r\n#python_dir_list = os.listdir(python_rootpath)\r\n#\r\n#p = re.compile('Python\\d{2,5}')\r\n#version_list = list(filter(lambda x: p.match(x), python_dir_list))\r\n#version_num = list(map(lambda x: int(x[7:]), version_list))\r\n#latest_idx= version_num.index(max(version_num))\r\n#\r\n#python_version = version_list[latest_idx]\r\n#\r\n#sys.path.append(os.getenv('LOCALAPPDATA').replace('\\\\','\\\\\\\\') + f'\\Programs\\Python\\{python_version}\\Lib\\site-packages')\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom collections import Iterable\r\nimport datetime\r\n#import openpyxl\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\ngo = lambda *args: reduce(lambda a,f: f(a), args)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ninputData = IN[0]\r\n# Place your code below this line\r\ndef checkAllElement(list, target):\r\n    tmp=[]\r\n    for i in list:\r\n        if i == target:\r\n            tmp.append(True)\r\n        else:\r\n            tmp.append(False)\r\n    return all(tmp)\r\n\r\nrm_Null = lambda list: go(list,\r\n    filter(lambda a: not checkAllElement(a, None)),\r\n    )\r\n\r\ns1 = inputData\r\n\r\ns2 = rm_Null(s1)  ## null만 있는 Excel Row 제거\r\n\r\nresult_tr = list(zip(*s2))\r\n\r\ns3 = rm_Null(result_tr) ## null만 있는 Excel Column 제거\r\n\r\nresult = list(zip(*s3))\r\n# Assign your output to the OUT variable.\r\nOUT = result",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "9b19eeccda744703b3b3733ecee00ee0",
+      "Inputs": [
+        {
+          "Id": "e00dff00c09740ee9dbced573cc05c9e",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "22f6255f407548008e209d2090529372",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "NodeType": "BooleanInputNode",
+      "InputValue": true,
+      "Id": "1b6a570f658e45d185dc4df31330cae8",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b3b0d39af2404ddcad66b123189a5a43",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Selection between a true and false."
     }
   ],
   "Connectors": [
-    {
-      "Start": "0caae7c6bf3e45d283b3822b037f167a",
-      "End": "1dda2372bfa44269a5d19fbda32f7255",
-      "Id": "6124a865e8ff4f4c84b5f406507e7a8c"
-    },
-    {
-      "Start": "0caae7c6bf3e45d283b3822b037f167a",
-      "End": "4742f1e5705843e6bb3bd13bbfbb680a",
-      "Id": "c1329ad7126c4232be9f10de966d2d5c"
-    },
     {
       "Start": "4c957954c4e848739e42f908beb30548",
       "End": "d9fa5821c74f4b7abb5096cea63a8b11",
@@ -3240,6 +3335,31 @@
       "Start": "c5ab4b299b9f4923909209fe1d9eeb83",
       "End": "5870d6746fb4464fa6b1aaf6f1bcde26",
       "Id": "9a6a84ad639a46afbd0caa4db4556a93"
+    },
+    {
+      "Start": "c20f80bc424a459cb61db48adca11e05",
+      "End": "89293da5b78a4c2eb7beec8100e4f8c6",
+      "Id": "73dce4d9f0f84ad2b6403a2bb47b90ae"
+    },
+    {
+      "Start": "b5aac8d4921444049a560779b171def0",
+      "End": "e00dff00c09740ee9dbced573cc05c9e",
+      "Id": "204293d26f1445cfac9db8f4e86e3d62"
+    },
+    {
+      "Start": "22f6255f407548008e209d2090529372",
+      "End": "1dda2372bfa44269a5d19fbda32f7255",
+      "Id": "e0f40a519548491bbf59ef412db7e4f1"
+    },
+    {
+      "Start": "22f6255f407548008e209d2090529372",
+      "End": "4742f1e5705843e6bb3bd13bbfbb680a",
+      "Id": "bb20ab3e602e48e3bf936db2ff7f6b38"
+    },
+    {
+      "Start": "b3b0d39af2404ddcad66b123189a5a43",
+      "End": "69b35f36bdeb46b5b369c4cb29c0c616",
+      "Id": "aade352ed4da45fe8b9c3116ff90998a"
     }
   ],
   "Dependencies": [],
@@ -3268,834 +3388,874 @@
     },
     "NodeViews": [
       {
-        "ShowGeometry": true,
-        "Name": "initial data import",
         "Id": "3a0fc8c0d0b642f6b5c8d53a5b77a40a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "initial data import",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": -119.35187991153271,
-        "Y": -984.25666954511507
+        "X": -1129.8185852172239,
+        "Y": -222.78103784536063
       },
       {
-        "ShowGeometry": true,
-        "Name": "MidasGen Excel(mxt) File Path",
         "Id": "fdc75dc9a22547b69806180caf0bc719",
-        "IsSetAsInput": true,
+        "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "MidasGen Excel(mxt) File Path",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": -535.35187991153271,
-        "Y": -1026.2566695451151
+        "X": -1474.8185852172239,
+        "Y": -264.78103784536063
       },
       {
-        "ShowGeometry": true,
-        "Name": "Sheet Name:",
         "Id": "7b81963427cc4168b875633114370661",
-        "IsSetAsInput": true,
+        "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Sheet Name:",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": -535.35187991153271,
-        "Y": -916.25666954511507
+        "X": -1474.8185852172239,
+        "Y": -154.78103784536063
       },
       {
-        "ShowGeometry": true,
-        "Name": "find identifier row idx",
         "Id": "9d60e90d202a4d7da8cd89b91f64ebad",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "find identifier row idx",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 120.10060814401527,
         "Y": -935.18235172525
       },
       {
-        "ShowGeometry": true,
-        "Name": "splitDataAsDict(불필요Null 제거)",
         "Id": "adef3d65e1c04441a11d9a19fc7aaf32",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "splitDataAsDict(불필요Null 제거)",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 810.90254811603472,
         "Y": -965.768296638647
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "fa2cfe22d01e48c39cc48259140e5943",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2082.2916657214751,
         "Y": -69.602915160291928
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Keys",
         "Id": "d5576058ed604c238257ec1dae443b03",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1443.6669501271801,
         "Y": -175.45839450099186
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "44bf01c4fa46427080409796453d969a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1871.2916657214751,
         "Y": -52.0295818269586
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "9620d529d29d45e7a3f090ec046a8eb8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1873.5653469220231,
         "Y": -405.37125831419741
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "063e967c1a5142089dd972a3a89f9976",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2072.9655855564361,
         "Y": -486.74327915825944
       },
       {
-        "ShowGeometry": true,
-        "Name": "removeHeadFromDict",
         "Id": "85c32552b64047c8a2b6a58370f8f11c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "removeHeadFromDict",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2345.9424081414404,
         "Y": -73.951891531661147
       },
       {
-        "ShowGeometry": true,
-        "Name": "removeHeadFromDict",
         "Id": "411b09f5631447c28440594595ecea90",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "removeHeadFromDict",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2330.3121675710754,
         "Y": -518.19222945076194
       },
       {
-        "ShowGeometry": true,
-        "Name": "원점정하고 좌표계변환(단위 m->mm)",
         "Id": "d61f7406ce3844a29d9d06de6a566a1d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "원점정하고 좌표계변환(단위 m->mm)",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2625.3121675710754,
         "Y": -518.19222945076194
       },
       {
-        "ShowGeometry": true,
-        "Name": "다이나모 포인트로 변환 및 딕셔너리화",
         "Id": "eb8da54debc747ff8665bbc13b6f7a9c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "다이나모 포인트로 변환 및 딕셔너리화",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3038.6587495857152,
         "Y": -545.42784640993113
       },
       {
-        "ShowGeometry": true,
-        "Name": "elementTypeFiltering",
         "Id": "a0e80a85bc144d75bd5068d1eb59edf9",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "elementTypeFiltering",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2708.217970001489,
         "Y": -74.068524775324533
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "9c467caca546498d82bcfaa3576f42f0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2510.3557240103041,
         "Y": 75.914204159489373
       },
       {
-        "ShowGeometry": true,
-        "Name": "mkCrvForMember",
         "Id": "27a70cb86ec3440c8372a062d2447896",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "mkCrvForMember",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3599.5250445805727,
         "Y": -100.88317517350822
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "914e2fb4d7c64001908d1ebc9e5d2113",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1851.3112465074837,
-        "Y": -1503.145227791566
+        "Y": -1571.145227791566
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "dadcba36daff49df8d50f4c447ffabf3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2050.7114851419037,
-        "Y": -1584.5172486356278
+        "Y": -1652.5172486356278
       },
       {
-        "ShowGeometry": true,
-        "Name": "removeHeadFromDict",
         "Id": "445ef6c3fe6f42a5a092ca486e0b2d31",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "removeHeadFromDict",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2316.7597848306627,
         "Y": -1704.6112636344005
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "feaf649671464294aaef24ac7fcf5fb3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": -119.35187991153271,
-        "Y": -838.04333621178182
+        "X": -28.076296382983628,
+        "Y": -852.66461267193279
       },
       {
-        "ShowGeometry": true,
-        "Name": "splitDataAsDict(불필요Null 제거)",
         "Id": "316d019e47b1490daa8924482c555883",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "splitDataAsDict(불필요Null 제거)",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3070.3509016171965,
         "Y": -1703.4086692417306
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "3af304ac50884a26b003d4c6ead127f8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2511.195976475175,
         "Y": -1570.1666512462198
       },
       {
-        "ShowGeometry": true,
-        "Name": "find identifier row idx",
         "Id": "9865cf313c0943d988f6ae379b0b6f2d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "find identifier row idx",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2643.6148954920191,
         "Y": -1636.8321663670149
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "aa303862a8e341219b8c075ce5589c28",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2877.7495564990659,
         "Y": -1551.7177121129855
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "d102e3bde877476aaef9e3778bc85341",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 649.21043682873153,
         "Y": -850.02812739004992
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Keys",
         "Id": "14814d1db3a740d09404c5cc8146f2d7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3866.0725265849273,
-        "Y": -2499.8996422151185
+        "Y": -2277.1319834975538
       },
       {
-        "ShowGeometry": true,
-        "Name": "List.DropItems",
         "Id": "7481a251a516496eb00d974c60c9485c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.DropItems",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 450.5515909537379,
         "Y": -931.39601407471844
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "8dcba0b941c14bea8bc2eee99bf7bd85",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 340.27932656218854,
         "Y": -857.67822321717824
       },
       {
-        "ShowGeometry": true,
-        "Name": "엘리베이션 unique 추출",
         "Id": "c9cbe5f1fba94993b51d186fc7452f88",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "엘리베이션 unique 추출",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4223.222836167567,
-        "Y": 517.01402956278548
+        "X": 4236.5596212428254,
+        "Y": 443.6617116488685
       },
       {
-        "ShowGeometry": true,
-        "Name": "배치기준레벨 자동생성",
         "Id": "1a870609fd6d4c72a88380e84cb70656",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "배치기준레벨 자동생성",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4523.222836167567,
-        "Y": 502.01402956278548
+        "X": 4536.5596212428254,
+        "Y": 428.6617116488685
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "f506b7add86c48dc8c9a13117d2358d4",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4383.0725265849269,
-        "Y": -2513.2596422151182
+        "Y": -2290.4919834975535
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "20c4d57501bb4ec9a6d9362ccf1e4e91",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4172.0725265849278,
-        "Y": -2495.6863088817854
+        "Y": -2272.9186501642207
       },
       {
-        "ShowGeometry": true,
-        "Name": "mkCrvAndLevelDatas",
         "Id": "9c6241fcb66a46fd8a4968b2fff35aba",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "mkCrvAndLevelDatas",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5708.513414692693,
         "Y": -203.41833341046527
       },
       {
-        "ShowGeometry": true,
-        "Name": "level 생성 코드 실행여부",
         "Id": "06effca41fef412eaf4142e2d6e1c41b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "level 생성 코드 실행여부",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4223.222836167567,
-        "Y": 434.01402956278548
+        "X": 4236.5596212428254,
+        "Y": 360.6617116488685
       },
       {
-        "ShowGeometry": true,
-        "Name": "사용단면에 따른 패밀리 타입 생성",
         "Id": "5e1897be29a14eb1a1bc529446daf047",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "사용단면에 따른 패밀리 타입 생성",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5588.2193230215844,
-        "Y": -2376.0343435650984
+        "Y": -2344.0661546804909
       },
       {
-        "ShowGeometry": true,
-        "Name": "String",
         "Id": "27db0a4787834a02b4d2926efae93037",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5377.3529403870225,
-        "Y": -2313.1896798174212
+        "Y": -2281.2214909328136
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "54da54dea3bc4173a93633a19c94e641",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3680.0725265849273,
-        "Y": -2504.4729755484518
+        "Y": -2281.7053168308871
       },
       {
-        "ShowGeometry": true,
-        "Name": "defineFamilytypeName",
         "Id": "ee444322f2f84466aaa04679e85791ba",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "defineFamilytypeName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4841.82309501641,
         "Y": -2351.4028978511046
       },
       {
-        "ShowGeometry": true,
-        "Name": "All Elements of Category",
         "Id": "f5fdba28f8c34314922547a62372200e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4328.1961308333775,
         "Y": 175.7666228539714
       },
       {
-        "ShowGeometry": true,
-        "Name": "Categories",
         "Id": "d86b8c3615bc4767bc86887562e6a221",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Categories",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4062.1961308333775,
         "Y": 175.7666228539714
       },
       {
-        "ShowGeometry": true,
-        "Name": "Python Script",
         "Id": "bcf34dee4a0c49299b301bbfa4306296",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Python Script",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4602.1961308333775,
         "Y": 175.7666228539714
       },
       {
-        "ShowGeometry": true,
-        "Name": "unitFactor",
         "Id": "b8d14528a70948f9a81e077f82c5b12d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "unitFactor",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4619.3045887305716,
         "Y": -2293.9665187340961
       },
       {
-        "ShowGeometry": true,
-        "Name": "Column type Prefix",
         "Id": "6ef60a0c12c74f8b9326bd1e480c5499",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "Column type Prefix",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4620.1106206656277,
         "Y": -2204.3649069436738
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Keys",
         "Id": "c2223fcdbb614cf6bfa1ff043758cb70",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3864.5971445324576,
         "Y": -1851.1390048647368
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "79780cfcbaae477b96d34fa21569cb30",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3678.5971445324576,
         "Y": -1855.7123381980666
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "31ecb92054bb4e3b8b3e19a1ac5e5c01",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4170.5971445324576,
         "Y": -1846.9256715314068
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "c480a38e956c47d8bc7599a174315ee2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4381.5971445324576,
         "Y": -1864.4990048647367
       },
       {
-        "ShowGeometry": true,
-        "Name": "unitFactor",
         "Id": "136141f6c3e14f85a3f893efc0c577f9",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "unitFactor",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4581.5788388025576,
         "Y": -1809.7879997228467
       },
       {
-        "ShowGeometry": true,
-        "Name": "Beam typePrefix",
         "Id": "7c175efe56cd4680964b5d016aea5696",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "Beam typePrefix",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4582.3848707376183,
         "Y": -1720.1863879324267
       },
       {
-        "ShowGeometry": true,
-        "Name": "defineFamilytypeName",
         "Id": "222e394be4fa46938d3989cc01b1a0dc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "defineFamilytypeName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4804.0973450883976,
         "Y": -1867.2243788398566
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Keys",
         "Id": "304b8f76efc04d5087a05f152cd57e3e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3856.5742328357137,
         "Y": -1385.1772279854433
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "91c3f7020c7041cbad3b23cf47cd9feb",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3670.5742328357137,
         "Y": -1389.7505613187723
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "38af8cdfcafd48b893cc744c6b35cef0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4162.5742328357137,
         "Y": -1380.9638946521134
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "e5cf510092ad412bacc56ccb703c9bfb",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4373.5742328357137,
         "Y": -1398.5372279854432
       },
       {
-        "ShowGeometry": true,
-        "Name": "unitFactor",
         "Id": "2090b446ba8f45bca94956221bf4aeab",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "unitFactor",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4573.5559271058146,
         "Y": -1343.8262228435528
       },
       {
-        "ShowGeometry": true,
-        "Name": "Girder typePrefix",
         "Id": "4ce8529e8baf4b07b598cf35d2752091",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "Girder typePrefix",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4574.3619590408753,
         "Y": -1254.2246110531328
       },
       {
-        "ShowGeometry": true,
-        "Name": "defineFamilytypeName",
         "Id": "5cd8fc248120422ba0a0a868cbf0b261",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "defineFamilytypeName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4796.0744333916573,
         "Y": -1401.2626019605618
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Keys",
         "Id": "e6ea7a095a0d4c70baa7485ced85f107",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3859.6750797353197,
         "Y": -908.93211801875475
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "7244678cad9a4cbf9e8e75675a509a71",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4376.67507973532,
         "Y": -922.29211801875488
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "74cc058fb68545a6a9cce4dd54dccfe7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4165.67507973532,
         "Y": -904.71878468542479
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "7633d4e7a0a84f328bd75eff9f1728ba",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3673.6750797353197,
         "Y": -913.50545135208483
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "0703abeec8d046de825a140254178cb3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4357.3550112790053,
         "Y": -726.82685408063742
       },
       {
-        "ShowGeometry": true,
-        "Name": "elementTypeFiltering",
         "Id": "59ddde110294474b954b72f51dcf3107",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "elementTypeFiltering",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4555.2172572701948,
         "Y": -876.80958301545127
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary.Values",
         "Id": "351cef0f6aad41c59d0014806b29a0f1",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Values",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3492.7675834947845,
         "Y": -501.42204356981017
       },
       {
-        "ShowGeometry": true,
-        "Name": "paramNames",
         "Id": "4db7be5acb304ddd8b2ced581a2a4209",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "paramNames",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5379.5249876070766,
-        "Y": -2212.9041585280629
+        "Y": -2180.9359696434553
       },
       {
-        "ShowGeometry": true,
-        "Name": "사용단면에 따른 패밀리 타입 생성",
         "Id": "1bff014179f64979970ce119cd4f5122",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "사용단면에 따른 패밀리 타입 생성",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5608.4935769213062,
         "Y": -1886.5919877964523
       },
       {
-        "ShowGeometry": true,
-        "Name": "String",
         "Id": "7000f94ab50d424f9a66eb252d3a7c75",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5346.7907863865839,
         "Y": -1825.2425125164236
       },
       {
-        "ShowGeometry": true,
-        "Name": "paramNames",
         "Id": "a58319ec5a824c3ca38a22715c8af27a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "paramNames",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5399.7992415067965,
         "Y": -1723.4618027594122
       },
       {
-        "ShowGeometry": true,
-        "Name": "사용단면에 따른 패밀리 타입 생성",
         "Id": "897887d4af434fa486759ed30ceb5949",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "사용단면에 따른 패밀리 타입 생성",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5613.8055125249184,
         "Y": -1422.1566782393297
       },
       {
-        "ShowGeometry": true,
-        "Name": "String",
         "Id": "96407e964fc8454ba3004c32d0e676c2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5352.1027219902,
         "Y": -1360.8072029592959
       },
       {
-        "ShowGeometry": true,
-        "Name": "paramNames",
         "Id": "4461d93bbc3a433daaab1702b75813d9",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "paramNames",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5405.11117711041,
         "Y": -1259.0264932022858
       },
       {
-        "ShowGeometry": true,
-        "Name": "사용단면에 따른 패밀리 타입 생성",
         "Id": "7f2b13d75a824f88b87c5913c65755aa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "사용단면에 따른 패밀리 타입 생성",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5630.7462928490932,
         "Y": -857.19618238112616
       },
       {
-        "ShowGeometry": true,
-        "Name": "String",
         "Id": "ea24e36205a24b3aa2c6bc4c9ec07882",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5369.0435023143727,
         "Y": -795.84670710109617
       },
       {
-        "ShowGeometry": true,
-        "Name": "paramNames",
         "Id": "f5d70e7c1e724ac0ba7e7f7e7fbd2f31",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "paramNames",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5422.0519574345826,
         "Y": -694.0659973440861
       },
       {
-        "ShowGeometry": true,
-        "Name": "defineFamilytypeName",
         "Id": "8981acdbbc4043d39e4c209baec66463",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "defineFamilytypeName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5018.1743719817987,
         "Y": -864.72800528386131
       },
       {
-        "ShowGeometry": true,
-        "Name": "unitFactor",
         "Id": "9cc27e0e4f034312afa4c15acb1dac7f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "unitFactor",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4795.6558656959487,
         "Y": -807.29162616685142
       },
       {
-        "ShowGeometry": true,
-        "Name": "other typePrefix",
         "Id": "f95b84183ea74903ac16cd41d122e659",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "other typePrefix",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4796.4618976310185,
         "Y": -717.69001437643135
       },
       {
-        "ShowGeometry": true,
-        "Name": "Code Block",
         "Id": "8edc68c7b03845468195d2772150ebe3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5070.6987985899286,
         "Y": -83.710326931860436
       },
       {
-        "ShowGeometry": true,
-        "Name": "mkSet_CrvLvType",
         "Id": "b5997c56ec0144998091562336fb29da",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "mkSet_CrvLvType",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 6927.9408970794593,
         "Y": -912.62809857072193
       },
       {
-        "ShowGeometry": true,
-        "Name": "Dictionary 병합",
         "Id": "aa13041761fb408289ca690456ed2eb0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary 병합",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 6302.0613687389632,
         "Y": -1697.2350997443402
       },
       {
-        "ShowGeometry": true,
-        "Name": "createRvtElem",
         "Id": "51998c1acb18458785cc3d904bab1df8",
         "IsSetAsInput": false,
         "IsSetAsOutput": true,
+        "Name": "createRvtElem",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 7292.0424365092513,
         "Y": -953.22685123318013
       },
       {
-        "ShowGeometry": true,
-        "Name": "FL. Offset",
         "Id": "01ef8e0f5fb64c37bc1902f1be8bd1da",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "FL. Offset",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4218.7044952538972,
-        "Y": 678.67479644747414
+        "X": 4232.0412803291556,
+        "Y": 605.32247853355716
+      },
+      {
+        "Id": "75ed5455d6a64ac7b1602dacb164d6d3",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Name": "MidasGen mxt File Path",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -1072.2317958695257,
+        "Y": -1018.5005690762118
+      },
+      {
+        "Id": "9f8b1a45d42d4cb19303ea9aae76fcb8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Data.ImportCSV",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -653.23179586952574,
+        "Y": -976.50056907621183
+      },
+      {
+        "Id": "9b19eeccda744703b3b3733ecee00ee0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Remove Null Row, Column",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -360.23179586952574,
+        "Y": -976.50056907621183
+      },
+      {
+        "Id": "1b6a570f658e45d185dc4df31330cae8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Boolean",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -1072.2317958695257,
+        "Y": -908.50056907621183
       }
     ],
     "Annotations": [
@@ -4141,11 +4301,11 @@
           "dadcba36daff49df8d50f4c447ffabf3"
         ],
         "Left": 1841.3112465074837,
-        "Top": -1680.5172486356278,
+        "Top": -1748.5172486356278,
         "Width": 330.40023863442,
         "Height": 270.37202084406181,
         "FontSize": 36.0,
-        "InitialTop": -1584.5172486356278,
+        "InitialTop": -1652.5172486356278,
         "InitialHeight": 226.37202084406181,
         "TextblockHeight": 86.0,
         "Background": "#FFC1D676"
@@ -4159,12 +4319,12 @@
           "06effca41fef412eaf4142e2d6e1c41b",
           "01ef8e0f5fb64c37bc1902f1be8bd1da"
         ],
-        "Left": 4208.7044952538972,
-        "Top": 381.01402956278548,
+        "Left": 4222.0412803291556,
+        "Top": 307.6617116488685,
         "Width": 514.51834091366982,
         "Height": 365.66076688468866,
         "FontSize": 36.0,
-        "InitialTop": 434.01402956278548,
+        "InitialTop": 360.6617116488685,
         "InitialHeight": 389.66076688468866,
         "TextblockHeight": 43.0,
         "Background": "#FFFF7BAC"
@@ -4179,11 +4339,11 @@
           "54da54dea3bc4173a93633a19c94e641"
         ],
         "Left": 3670.0725265849273,
-        "Top": -2566.2596422151182,
+        "Top": -2343.4919834975535,
         "Width": 833.99999999999955,
         "Height": 163.57333333333281,
         "FontSize": 36.0,
-        "InitialTop": -2513.2596422151182,
+        "InitialTop": -2290.4919834975535,
         "InitialHeight": 162.57333333333281,
         "TextblockHeight": 43.0,
         "Background": "#FFC1D676"
@@ -4307,11 +4467,11 @@
           "4db7be5acb304ddd8b2ced581a2a4209"
         ],
         "Left": 5367.3529403870225,
-        "Top": -2472.0343435650984,
+        "Top": -2440.0661546804909,
         "Width": 483.86638263456189,
         "Height": 361.13018503703552,
         "FontSize": 36.0,
-        "InitialTop": -2376.0343435650984,
+        "InitialTop": -2344.0661546804909,
         "InitialHeight": 308.13018503703552,
         "TextblockHeight": 86.0,
         "Background": "#FFC1D676"
@@ -4408,11 +4568,48 @@
         "Background": "#FFC1D676"
       },
       {
+        "Id": "2ea8d6c9bd3949b0ada0748e1a8af154",
+        "Title": "case2: csv format import",
+        "Nodes": [
+          "3a0fc8c0d0b642f6b5c8d53a5b77a40a",
+          "fdc75dc9a22547b69806180caf0bc719",
+          "7b81963427cc4168b875633114370661"
+        ],
+        "Left": -1484.8185852172239,
+        "Top": -447.78103784536063,
+        "Width": 535.0,
+        "Height": 361.0,
+        "FontSize": 72.0,
+        "InitialTop": -264.78103784536063,
+        "InitialHeight": 255.0,
+        "TextblockHeight": 173.0,
+        "Background": "#FFB5B5B5"
+      },
+      {
+        "Id": "09e9d5336b314f99a89f4f3981b95da2",
+        "Title": "case1: mxt format import",
+        "Nodes": [
+          "75ed5455d6a64ac7b1602dacb164d6d3",
+          "9f8b1a45d42d4cb19303ea9aae76fcb8",
+          "9b19eeccda744703b3b3733ecee00ee0",
+          "1b6a570f658e45d185dc4df31330cae8"
+        ],
+        "Left": -1082.2317958695257,
+        "Top": -1114.5005690762118,
+        "Width": 955.0,
+        "Height": 274.0,
+        "FontSize": 72.0,
+        "InitialTop": -1018.5005690762118,
+        "InitialHeight": 255.0,
+        "TextblockHeight": 86.0,
+        "Background": "#FFC1D676"
+      },
+      {
         "Id": "c747f6f687284de59046fb0778434aba",
         "Title": "iPRO: 부재단면속성\r\niN1: 시작점\r\niN2: 끝점",
         "Nodes": [],
-        "Left": 1847.6747154360946,
-        "Top": -1755.485182536936,
+        "Left": 1849.226394209034,
+        "Top": -1823.759048546267,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -4436,8 +4633,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 583.486949858333,
-    "Y": 1413.4202140642265,
-    "Zoom": 1.0972902266985964
+    "X": 65.342745770907072,
+    "Y": 1180.5034296484646,
+    "Zoom": 0.96299982489320668
   }
 }
