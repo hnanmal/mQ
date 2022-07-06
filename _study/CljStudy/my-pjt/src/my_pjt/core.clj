@@ -12,8 +12,22 @@
   ;; (println
   ;;   (str (LocalDate/now)))
 
-  (print 
-    (->> (load-workbook-from-file "11.xlsx")
-       (select-sheet "Sheet1")
-       (select-columns {:A :name, :B :price})))
+
+  ;;  (def sheet-mine 
+  ;;    (->> (load-workbook-from-file "11.xlsx")
+  ;;         (select-sheet "Sheet1"))) 
+
+  ;; (->> (load-workbook "11.xlsx")
+  ;;      (select-sheet "Sheet1")
+  ;;      row-seq)
+
+(println
+ (->> (load-workbook "11.xlsx")
+      (select-sheet "Sheet1")
+      row-seq
+      (remove nil?)
+      (map cell-seq)
+      (map #(map read-cell %))))
+
+      ;;  (select-columns {:B :name, :C :price})
   )
