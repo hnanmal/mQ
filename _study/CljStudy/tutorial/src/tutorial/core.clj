@@ -4,34 +4,26 @@
 
 (use 'clojure.java.io)
 
-(defn write-to-file
-  [file text]
-  (with-open [wrtr (writer file)]
-    (.write wrtr text)))
+(defmacro discount
+  ([cond dis1 dis2]
+   (list `if cond dis1 dis2)))
 
-(defn read-from-file
-  [file]
-  (try
-    (println (slurp file))
+(defmacro reg-math
+  [calc]
+  (list (second calc) (first calc) (nth calc 2)))
+
+(defmacro do-more
+  [cond & body]
+  (list `if cond (cons 'do body)))
+
+(defmacro do-more-2
+  [cond & body]
   
-  (catch Exception e (println "Error : " (.getMessage e)))))
-
-(defn append-to-file
-  [file text]
-  (with-open [wrtr (writer file :append true)]
-    (.write wrtr text)))
-
-(defn read-line-from-file
-  [file]
-  (with-open [rdr (reader file)]
-    (doseq [line (line-seq rdr)]
-      (println line))))
+  `(if ~cond (do ~@body)))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (write-to-file "test.txt" "This is a sentence\n")
-  (read-from-file "test.txt")
-  (append-to-file "test.txt" "This is another sentence\n")
-  (read-line-from-file "test.txt")
+
+
   ) 
