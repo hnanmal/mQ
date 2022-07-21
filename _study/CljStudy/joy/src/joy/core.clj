@@ -22,19 +22,35 @@
   (->> (int *rank-key*)
        (- (int rank))
        (- 8)
-       (* 8))
-  )
+       (* 8)))
 
 (defn- index [file rank]
-  (+ (file-component file) (rank-component rank))
-  )
+  (+ (file-component file) (rank-component rank)))
 
 (defn lookup [board pos]
   (let [[file rank] pos]
-    (board (index file rank)))
-  )
+    (board (index file rank))))
+
 
 (lookup (initial-board) "c3")
+
+;;;;
+
+`(+ 10 (* 3 2))
+`(+ 10 ~(* 3 2))
+
+(let [x 2]
+  `(1 ~x 3))
+(let [x 2]
+  `(1 x 3))
+
+
+(let [x '(2 3)] `(1 ~x))
+(let [x '(2 3)] `(1 ~@x))
+
+`portion#
+`portion#
+;;;;
 
 (defn print-down-from [x]
   (when (pos? x)
@@ -50,3 +66,14 @@
   "I don't do a whole lot ... yet."
   [& args]
   (sum-down-from 0 10))
+
+java.util.Locale/KOREA
+(Math/sqrt 9)
+
+(new java.awt.Point 0 1)
+(java.awt.Point. 1 2)
+
+(def tmp (java.util.HashMap. {"foo" 42 "bar" 3 "baz" "quux"}))
+
+(.-x (java.awt.Point. 10 20))
+(.divide (java.math.BigDecimal. "42") 2M)
