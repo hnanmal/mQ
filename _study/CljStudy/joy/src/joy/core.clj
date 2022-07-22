@@ -77,3 +77,58 @@ java.util.Locale/KOREA
 
 (.-x (java.awt.Point. 10 20))
 (.divide (java.math.BigDecimal. "42") 2M)
+
+(let [origin (java.awt.Point. 0 0)]
+  (set! (.-x origin) 15)
+  (str origin))
+
+(.endsWith (.toString (java.util.Date.)) "2022")
+
+(.. (java.util.Date.) toString (endsWith "2022"))
+
+(doto (java.util.HashMap.)
+  (.put "Home" "/home/me")
+  (.put "SRC" "src")
+  (.put "BIN" "classes"))
+
+(->
+ 2
+ (+ 3)
+ (- 7))
+
+(-> 
+ (java.util.Date.)
+ (.toString)
+ (.endsWith "2022")
+ )
+
+(throw (Exception. "I done throwed"))
+
+(defn throw-catch [f]
+  [(try
+     (f)
+     (catch ArithmeticException e "No dividing by zero!")
+     (catch Exception e (str "You are so bad " (.getMessage e)))
+     (finally (println "returning...")))])
+
+(throw-catch #(/ 10 5))
+
+(throw-catch #(throw (Exception. "Crybaby")))
+
+;;;;;;
+
+(seq [1 2 3])
+(seq [])
+(seq '(1 3 5))
+
+(defn print-seq [s]
+  (when (seq s)
+    (prn (first s))
+    (recur (rest s))))
+
+(print-seq [1 1 1])
+
+(def guys-whole-name ["Guy" "Lewis" "Steele"])
+
+(let [[f-name m-name l-name] guys-whole-name]
+  (str l-name ", " f-name ", " m-name))
