@@ -71,6 +71,7 @@ java.util.Locale/KOREA
 (Math/sqrt 9)
 
 (new java.awt.Point 0 1)
+
 (java.awt.Point. 1 2)
 
 (def tmp (java.util.HashMap. {"foo" 42 "bar" 3 "baz" "quux"}))
@@ -144,3 +145,30 @@ java.util.Locale/KOREA
   (println "a b c are:" a b c)
   (println "more is:" more)
   (println "all is:" all))
+
+
+(def guys-name-map
+  {:f-name "Guy" :m-name "Lewis" :l-name "Steele"})
+
+(let [{f-name :f-name, m-name :m-name, l-name :l-name} guys-name-map]
+  (str l-name ", " f-name " " m-name))
+
+
+
+(let [{:keys [f-name m-name l-name]} guys-name-map]
+  (str l-name ", " f-name " " m-name))
+
+(let [{f-name :f-name, :as whole-name} guys-name-map]
+  (println "First name is" f-name)
+  (println "Whole name is below:")
+  whole-name)
+
+(let [{:keys [title f-name m-name l-name],
+       :or {title "Mr."}} guys-name-map]
+  (println title f-name m-name l-name))
+
+(defn whole-name [& args]
+  (let [{:keys [f-name m-name l-name]} args]
+    (str l-name ", " f-name " " m-name)))
+
+(whole-name :f-name "Guy" :m-name "Lewis" :l-name "Steele")
