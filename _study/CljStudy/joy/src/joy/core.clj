@@ -90,6 +90,8 @@ java.util.Locale/KOREA
   (.put "Home" "/home/me")
   (.put "SRC" "src")
   (.put "BIN" "classes"))
+;; => {"SRC" "src", "BIN" "classes", "Home" "/home/me"}
+
 
 (->
  2
@@ -132,3 +134,13 @@ java.util.Locale/KOREA
 
 (let [[f-name m-name l-name] guys-whole-name]
   (str l-name ", " f-name ", " m-name))
+
+(let [[a b c & more] (range 10)]
+  (println "a b c are:" a b c)
+  (println "more is:" more))
+
+(let [range-vec (vec (range 10))
+      [a b c & more :as all] range-vec]
+  (println "a b c are:" a b c)
+  (println "more is:" more)
+  (println "all is:" all))
