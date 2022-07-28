@@ -1,38 +1,6 @@
 (ns joy.core
   (:gen-class))
 
-(defn xors [max-x max-y]
-  (for [x (range max-x) y (range max-y)]
-    [x y (rem (bit-xor x y) 256)]))
-
-(def frame (java.awt.Frame.))
-frame
-
-(for [meth (.getMethods java.awt.Frame)
-      :let [name (.getName meth)]
-      :when (re-find #"Vis" name)]
-  name)
-
-(.isVisible frame)
-(.setVisible frame true)
-(.setSize frame (java.awt.Dimension. 200 200))
-
-(def gfx (.getGraphics frame))
-
-(.setColor gfx (java.awt.Color. 255 128 0))
-(.fillRect gfx 100 150 75 50)
-
-;; (doseq [[x y xor] (xors 200 200)]
-;;   (.setColor gfx (java.awt.Color. xor xor xor))
-;;   (.fillRect gfx x y 1 1))
-
-(defn clear [g] (.clearRect g 0 0 200 200))
-
-(clear gfx)
-
-(doseq [[x y xor] (xors 500 500)]
-  (.setColor gfx (java.awt.Color. xor xor xor))
-  (.fillRect gfx x y 1 1))
 
 :a-keyword
 ::also-a-keyword
@@ -45,6 +13,39 @@ frame
 (pour 1 10)
 
 (pour 1 :toujours)
+
+::not-in-ns
+:not-in-ns
+
+(identical? 'goat 'goat)
+(= 'goat 'goat)
+(name 'goat)
+
+(let [x 'goat, y x]
+  (identical? x y))
+
+(let [x (with-meta 'goat {:ornery true})
+      y (with-meta 'goat {:ornery false})]
+  [(= x y)
+   (identical? x y)
+   (meta x)
+   (meta y)])
+
+(defn best [f xs]
+  (reduce #(if (f % %2) % %2) xs))
+
+(best > [1 3 4 2 7 5 3])
+(best < [1 3 4 2 7 5 3])
+
+#"an example pattern"
+
+(class #"example")
+(java.util.regex.Pattern/compile "\\d")
+
+(re-seq #"\w+" "one-two/three")
+
+
+
 
 (defn -main
   "I don't do a whole lot ... yet."
