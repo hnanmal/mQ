@@ -57,6 +57,43 @@
 (let [[f-name m-name l-name] guys-whole-name]
   (str l-name ", " f-name " " m-name))
 
+;; ;; 위치 구조분해는 맵이나 셋에 대해서는 동작하지
+;; ;; 않는다. 맵과 셋은 논리적인 순차 정렬이 되지 않기
+;; ;; 때문이다. 재미있게도 위치 구조분해는 자바의
+;; ;; java.util.regex.Matcher에도 동작한다.
+(def date-regex #"(\d{1,2})\/(\d{1,2})\/(\d{4})")
+(let [rem (re-matcher date-regex "12/02/1975")]
+  (when (.find rem)
+    (let [[_ m d] rem]
+      {:month m :day d})))
+
+;; 이것은 순차적인 것들(이 경우엔 문자열 벡터가 이에
+;; 해당한다. 물론 다른 순차적 컬렉션에 대해서도
+;; 동작한다)을 골라내서 각 항목에 이름을 부여하고
+;; 싶을 때 사용할 수 있는 가장 간단한 형태의
+;; 구조분해 구문이다.
+;; 여기서는 필요하지 않지만, 구조분해 벡터에 입력될
+;; 인자의 나머지 값들(아마도 지연 시퀀스로 입력될)을
+;; 참조하기 위해 앰퍼샌드(&)를 사용할 수도 있다.
+
+(let [[a b c & more] (range 10)]
+  (println "a b c are:" a b c)
+  (println "more is:" more))
+;; 여기서 로컬 a, b, c가 생성되어 range의 처음
+;; 세 개 값이 바인딩된다. 다음 심벌은 앰퍼샌드 이므로
+;; 나머지 값들은 more에 바인딩되어 시퀀스로
+;; 사용할 수 있다.
+
+(let [range-vec (vec (range 10))
+      [a b c & more :as all] range-vec]
+  (println "a b c are:" a b c)
+  (println "more is:" more)
+  (println "all is:" all))
+
+;; 이 예제에서 range-vec는 벡터고 :as 명령은
+;; 입력된 컬렉션 그대로를 바인딩하여 벡터가
+;; 벡터로 유지되도록 한다. 반대로 &는 more를
+;; 벡터가 아닌 시퀀스로 바인딩한다.
 
 
 (defn -main
