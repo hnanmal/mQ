@@ -185,3 +185,8 @@ ds
 (seq (hash-map :a 1))
 
 (class (seq (hash-map :a 1)))
+
+;; 이 클래스명은 해시 맵에 있는 노드들의 시퀀스라는 것을 보여준다. 이와 유사하게 같은 맵에 대해서 키의 Seq를 얻을 수도 있다.
+(seq (keys (hash-map :a 1)))
+
+(class (keys (hash-map :a 1)))
