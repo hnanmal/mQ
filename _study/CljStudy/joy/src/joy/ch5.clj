@@ -190,3 +190,4 @@ ds
 (seq (keys (hash-map :a 1)))
 
 (class (keys (hash-map :a 1)))
+
