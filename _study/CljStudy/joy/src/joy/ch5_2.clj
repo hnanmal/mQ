@@ -117,3 +117,30 @@ a-to-j
 (map #(get-in matrix %) (neighbors 3 [0 0]))
 
 (get-in matrix [1 2])
+
+;; 5.2.3 스택으로서의 벡터
+;; 전통적인 스택은 최소한 push, pop 두 가지 동작을 포함한다. 클로저의 벡터에서는 각각 conj와 pop으로 불린다. conj 함수는 벡터에 항목을 추가하고, pop은 벡터로부터 항목을 제거하며, 이러한 동작들은 스택의 오른쪽에서 이루어진다. 벡터의 값은 변경할 수 없기 때문에 pop은 오른쪽 끝에 있는 값을 제외한 새로운 벡터를 리턴하는데, 값 변경이 가능한 다른 스택 API들이 일반적으로 대상 항목을 제거하고 리턴하는 것과 다른 점이다. 따라서 스택의 최상단으로부터 항목을 얻을 수 있는 방법으로써 peek의 역할이 더 중요해지게 된다.
+
+(def my-stack [1 2 3])
+
+(peek my-stack)
+
+(pop my-stack)
+
+(conj my-stack 4)
+
+(+ (peek my-stack) (peek (pop my-stack)))
+
+;; ### 5.2.4 reverse 대신 벡터 사용하기
+;; 벡터는 오른쪽에 항목을 추가하고, 오른쪽에서 왼쪽 방향으로 항목을 탐색하는 동작에 있어서 아주 효율적이며 훌륭한 성능을 보여준다. reverse 함수가 필요한 경우는 거의 없을 것이다. 이 점은 대부분의 리습이나 스킴 계열의 언어와 차이가 나는 부분이다. 리스트를 다룰 때는 새로 생성하는 리스트가 같은 순서로 정렬되어 있기를 원하겠지만, 만일 전통적인 리습의 리스트를 갖고 있다면 대부분의 자연스러운 알고리즘들은 그 리스트를 뒤집어 버리기 때문에 다시 뒤집어 줘야 한다. 클로저의 map과 유사한 함수의 예를 살펴보자.
+
+(defn strict-map1 [f coll]
+  (loop [coll coll, acc nil]
+    (if (empty? coll)
+      (reverse acc)
+      (recur (next coll)
+             (cons (f (first coll)) acc)))))
+
+(strict-map1 - (range 5))
+
+(import '(javax.sound.sampled AudioSystem AudioFormat$Encoding))
