@@ -1,4 +1,4 @@
-(ns joy.ch5_6
+(ns joy.ch5_6 
   (:gen-class)
   (:require [clojure.string :as str-]))
 
@@ -33,7 +33,7 @@
 
 (assoc {1 :int} 1.0 :float)
 
-(assoc (sorted-map 1 :int) 1.0 float)
+(assoc (sorted-map 1 :int) 1.0 :float)
 
 ;; 5.6.3 배열 맵으로 입력 순서 유지하기
 
