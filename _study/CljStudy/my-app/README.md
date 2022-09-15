@@ -1,6 +1,6 @@
 # my-app
 
-generated using Luminus version "4.40"
+generated using Luminus version "4.44"
 
 FIXME
 

@@ -3,7 +3,7 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[ch.qos.logback/logback-classic "1.2.10"]
+  :dependencies [[ch.qos.logback/logback-classic "1.2.11"]
                  [clojure.java-time "0.3.3"]
                  [cprop "0.1.19"]
                  [expound "0.9.0"]
@@ -12,23 +12,23 @@
                  [luminus-transit "0.1.5"]
                  [luminus-undertow "0.1.15"]
                  [luminus/ring-ttl-session "0.3.3"]
-                 [markdown-clj "1.10.8"]
+                 [markdown-clj "1.11.2"]
                  [metosin/muuntaja "0.6.8"]
-                 [metosin/reitit "0.5.15"]
+                 [metosin/reitit "0.5.18"]
                  [metosin/ring-http-response "0.9.3"]
                  [mount "0.1.16"]
                  [nrepl "0.9.0"]
                  [org.clojure/clojure "1.11.1"]
                  [org.clojure/tools.cli "1.0.206"]
                  [org.clojure/tools.logging "1.2.4"]
-                 [org.webjars.npm/bulma "0.9.3"]
+                 [org.webjars.npm/bulma "0.9.4"]
                  [org.webjars.npm/material-icons "1.0.0"]
-                 [org.webjars/webjars-locator "0.42"]
+                 [org.webjars/webjars-locator "0.45"]
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  [ring-webjars "0.2.0"]
                  [ring/ring-core "1.9.5"]
                  [ring/ring-defaults "0.3.3"]
-                 [selmer "1.12.50"]]
+                 [selmer "1.12.53"]]
 
   :min-lein-version "2.0.0"
   
@@ -51,7 +51,7 @@
    :test          [:project/dev :project/test :profiles/test]
 
    :project/dev  {:jvm-opts ["-Dconf=dev-config.edn" ]
-                  :dependencies [[org.clojure/tools.namespace "1.2.0"]
+                  :dependencies [[org.clojure/tools.namespace "1.3.0"]
                                  [pjstadig/humane-test-output "0.11.0"]
                                  [prone "2021-04-23"]
                                  [ring/ring-devel "1.9.5"]
