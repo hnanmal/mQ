@@ -4,41 +4,79 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public partial class Program
-{
-    public static int NonCurriedAdd(int a, int b) => a + b;
-}
-
-public partial class Program
+class Program
 {
     static void Main(string[] args)
     {
-        int add = NonCurriedAdd(2, 3);
-        Console.WriteLine(add);
+        byte[] buffer;
+        using (var stream = Utility.GeneratePlanetsStream())
+        {
+            buffer = new byte[stream.Length];
+            stream.Read(buffer, 0, (int)stream.Length);
+        }
+
+        var options = Encoding.UTF8
+            .GetString(buffer)
+            .Split(new[] { Environment.NewLine, },
+                StringSplitOptions.RemoveEmptyEntries)
+            .Select((s, ix) => Tuple.Create(ix, s))
+            .ToDictionary(k => k.Item1, v => v.Item2);
+        var orderedList = Utility.GenerateOrderedList(
+            options, "thePlanets", true);
+
+        Console.WriteLine(orderedList);
     }
 }
 
-public partial class Program
+public static partial class Utility
 {
-    public static Func<int, int> CurriedAdd(int a) => b => a + b;
-}
-
-public partial class Program
-{
-    public static void CurriedStyle()
+    public static Stream GeneratePlanetsStream()
     {
-        int add = CurriedAdd(2)(3);
-        Console.WriteLine(add);
+        var planets =
+            string.Join(
+                Environment.NewLine,
+                new[]
+                {
+                    "Mercury", "Venus", "Earth",
+                    "Mars", "Jupiter", "Saturn",
+                    "Uranus", "Neptune"
+                });
+
+        var buffer = Encoding.UTF8.GetBytes(planets);
+        var stream = new MemoryStream();
+        stream.Write(buffer, 0, buffer.Length);
+        stream.Position = 0L;
+
+        return stream;
     }
 }
 
-public partial class Program
+public static partial class Utility
 {
-    public static void CurriedStyle2()
+    public static string GenerateOrderedList(
+        IDictionary<int, string> options,
+        string id,
+        bool includeSun)
     {
-        var addition = CurriedAdd(2);
+        var html = new StringBuilder();
+        html.AppendFormat("<ol id=\"{0}\">", id);
+        html.AppendLine();
 
-        int x = addition(3);
-        Console.WriteLine(x);
+        if (includeSun)
+        {
+            html.AppendLine("\t<li>The Sun</li>");
+        }
+
+        foreach (var opt in options)
+        {
+            html.AppendFormat("\t<li value=\"{0}\">{1}</li>",
+                opt.Key,
+                opt.Value);
+            html.AppendLine();
+        }
+
+        html.AppendLine("</ol>");
+
+        return html.ToString();
     }
 }
