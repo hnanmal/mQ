@@ -21,6 +21,7 @@ class Program
                 StringSplitOptions.RemoveEmptyEntries)
             .Select((s, ix) => Tuple.Create(ix, s))
             .ToDictionary(k => k.Item1, v => v.Item2);
+
         var orderedList = Utility.GenerateOrderedList(
             options, "thePlanets", true);
 
@@ -51,6 +52,26 @@ public static partial class Utility
     }
 }
 
+public static partial class StringBuilderExtension
+{
+    public static StringBuilder AppendFormattedLine(
+        this StringBuilder @this,
+        string format,
+        params object[] args) =>
+            @this.AppendFormat(format, args).AppendLine();
+}
+
+public static partial class StringBuilderExtension
+{
+    public static StringBuilder AppendLineWhen(
+        this StringBuilder @this,
+        Func<bool> predicate,
+        string value) =>
+            predicate()
+            ? @this.AppendLine(value)
+            : @this;
+}
+
 public static partial class Utility
 {
     public static string GenerateOrderedList(
@@ -58,21 +79,42 @@ public static partial class Utility
         string id,
         bool includeSun)
     {
-        var html = new StringBuilder();
-        html.AppendFormat("<ol id=\"{0}\">", id);
-        html.AppendLine();
+        //var html = new StringBuilder();
+        //html.AppendFormat("<ol id=\"{0}\">", id);
+        //html.AppendLine();
 
-        if (includeSun)
-        {
-            html.AppendLine("\t<li>The Sun</li>");
-        }
+        //var html =
+        //    new StringBuilder()
+        //    .AppendFormat("<ol id=\"{0}\">", id)
+        //    .AppendLine();
+
+        //var html =
+        //    new StringBuilder()
+        //    .AppendFormattedLine("<ol id=\"{0}\">", id);
+
+        var html =
+            new StringBuilder()
+            .AppendFormattedLine("<ol id=\"{0}\">", id)
+            .AppendLineWhen(() => includeSun, "\t<li>The Sun</li>");
+
+        //if (includeSun)
+        //{
+        //    html.AppendLine("\t<li>The Sun</li>");
+        //}
+
+        //foreach (var opt in options)
+        //{
+        //    html.AppendFormat("\t<li value=\"{0}\">{1}</li>",
+        //        opt.Key,
+        //        opt.Value);
+        //    html.AppendLine();
+        //}
 
         foreach (var opt in options)
         {
-            html.AppendFormat("\t<li value=\"{0}\">{1}</li>",
+            html.AppendFormattedLine("\t<li value=\"{0}\">{1}</li>",
                 opt.Key,
                 opt.Value);
-            html.AppendLine();
         }
 
         html.AppendLine("</ol>");
