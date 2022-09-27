@@ -6,34 +6,70 @@ using System.Threading.Tasks;
 
 public partial class Program
 {
-    static int Rectangle(int a, int b)
+    private delegate void CalculatorDelegate(int a, int b);
+}
+
+public partial class Program
+{
+    private static void Add(int x, int y)
     {
-        return a * b;
+        Console.WriteLine(
+            "{0) + {1} = {2}",
+            x,
+            y,
+            x + y);
+    }
+
+    private static void Subtract(int x, int y)
+    {
+        Console.WriteLine(
+            "{0} - {1} = {2}",
+            x,
+            y,
+            x - y);
+    }
+    
+    private static void Multiply(int x, int y)
+    {
+        Console.WriteLine(
+            "{0} * {1} = {2}",
+            x,
+            y,
+            x * y);
+    }
+
+    private static void Division(int x, int y)
+    {
+        Console.WriteLine(
+            "{0} / {1} = {2}",
+            x,
+            y,
+            x / y);
     }
 }
 
 public partial class Program
 {
-    private delegate int AreaCalculatorDelegate(int x, int y);
-}
-
-public partial class Program
-{
-    static int Square(int x, int y)
+    private static void CombineDelegate()
     {
-        return x * y;
+        CalculatorDelegate calcMultiples =
+            (CalculatorDelegate)Delegate.Combine(
+                new CalculatorDelegate[]
+                {
+                    Add,
+                    Subtract,
+                    Multiply,
+                    Division
+                });
+        Delegate[] calcList = calcMultiples.GetInvocationList();
+        Console.WriteLine(
+            "Total delegates in calcMultiples: {0}",
+            calcList.Length);
+        calcMultiples(6, 3);
     }
-}
 
-public partial class Program
-{
     static void Main(string[] args)
     {
-        AreaCalculatorDelegate rect = Rectangle;
-        AreaCalculatorDelegate sqr = Square;
-        int i = rect(1, 2);
-        int j = sqr(2, 3);
-        Console.WriteLine("i = " + i);
-        Console.WriteLine("j = " + j);
+        CombineDelegate();
     }
 }
