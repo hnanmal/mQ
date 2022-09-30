@@ -32,7 +32,7 @@ namespace CombineDelegates
                 y,
                 x - y);
         }
-    
+
         private static void Multiply(int x, int y)
         {
             Console.WriteLine(
@@ -70,9 +70,9 @@ namespace CombineDelegates
                 calcList.Length);
             calcMultiples(6, 3);
         }
-    static void Main(string[] args)
+        static void Main(string[] args)
         {
-            DuplicateEntries();
+            AddSubtractDelegate();
         }
     }
 
@@ -138,6 +138,28 @@ namespace CombineDelegates
                 "Total delegates in duplicateDelegates4: {0}",
                 duplicateDelegates4.GetInvocationList().Length);
             duplicateDelegates4(6, 3);
+        }
+    }
+
+    public partial class Program
+    {
+        private static void AddSubtractDelegate()
+        {
+            CalculatorDelegate addDel = Add;
+            CalculatorDelegate subDel = Subtract;
+            CalculatorDelegate mulDel = Multiply;
+            CalculatorDelegate divDel = Division;
+            CalculatorDelegate multiDel = addDel + subDel;
+            multiDel += mulDel;
+            multiDel += divDel;
+            Console.WriteLine(
+                "Invoking multiDel delegate (four methods):");
+            multiDel(8, 2);
+            multiDel = multiDel - subDel;
+            multiDel -= mulDel;
+            Console.WriteLine(
+                "Invoking multiDel delegate (after subtraction):");
+            multiDel(8, 2);
         }
     }
 }
