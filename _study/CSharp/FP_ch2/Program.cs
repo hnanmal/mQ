@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace CombineDelegates
 {
+    public partial class Program
+    {
+        static void Main(string[] args)
+        {
+            ReturnValueDelegateInvoke();
+        }
+    }
 
     public partial class Program
     {
@@ -69,10 +76,6 @@ namespace CombineDelegates
                 "Total delegates in calcMultiples: {0}",
                 calcList.Length);
             calcMultiples(6, 3);
-        }
-        static void Main(string[] args)
-        {
-            AddSubtractDelegate();
         }
     }
 
@@ -160,6 +163,132 @@ namespace CombineDelegates
             Console.WriteLine(
                 "Invoking multiDel delegate (after subtraction):");
             multiDel(8, 2);
+        }
+    }
+
+    public partial class Program
+    {
+        private delegate T FormulaDelegate<T>(T a, T b);
+    }
+    public partial class Program
+    {
+        private static int AddInt(int x, int y)
+        {
+            return x + y;
+        }
+        private static double AddDouble(double x, double y)
+        {
+            return x + y;
+        }
+    }
+    public partial class Program
+    {
+        private static void GenericDelegateInvoke()
+        {
+            FormulaDelegate<int> intAddition = AddInt;
+            FormulaDelegate<double> doubleAddition = AddDouble;
+            Console.WriteLine("Invoking intAddition(2, 3)");
+            Console.WriteLine(
+                "Result = {0}",
+                intAddition(2, 3));
+            Console.WriteLine("Invoking doubleAddition(2.2, 3.5)");
+            Console.WriteLine(
+                "Result = {0}",
+                doubleAddition(2.2, 3.5));
+        }
+    }
+    public partial class Program
+    {
+        private delegate void AdditionDelegate<T1, T2>(
+            T1 value1, T2 value2);
+    }
+    public partial class Program
+    {
+        private static void AddIntDouble(int x, double y)
+        {
+            Console.WriteLine(
+                "int {0} + double {1} = {2}",
+                x,
+                y,
+                x + y);
+        }
+        private static void AddFloatDouble(float x, double y)
+        {
+            Console.WriteLine(
+                "float {0} + double {1} = {2}",
+                x,
+                y,
+                x + y);
+        }
+    }
+    public partial class Program
+    {
+        private static void VoidDelegateInvoke()
+        {
+            AdditionDelegate<int, double> intDoubleAdd =
+                AddIntDouble;
+            AdditionDelegate<float, double> floatDoubleAdd =
+                AddFloatDouble;
+            Console.WriteLine("Invoking intDoubleAdd delegate");
+            intDoubleAdd(1, 2.5);
+            Console.WriteLine("Invoking floatDoubleAdd delegate");
+            floatDoubleAdd((float)1.2, 4.3);
+        }
+    }
+    public partial class Program
+    {
+        private delegate TResult AddAndConvert<T1, T2, TResult>(
+            T1 digit1, T2 digit2);
+    }
+    public partial class Program
+    {
+        private static float AddIntDoubleConvert(int x, double y)
+        {
+            float result = (float)(x + y);
+            Console.WriteLine(
+                "(int) {0} + (double) {1} = (float) {2}",
+                x,
+                y,
+                result);
+            return result;
+        }
+        private static int AddFloatDoubleConvert(float x, double y)
+        {
+            int result = (int)(x + y);
+            Console.WriteLine(
+                "(float) {0} + (double) {1} = (int) {2}",
+                x,
+                y,
+                result);
+            return result;
+        }
+    }
+    public partial class Program
+    {
+        private static void ReturnValueDelegateInvoke()
+        {
+            AddAndConvert<int, double, float>
+                intDoubleAddConvertToFloat = AddIntDoubleConvert;
+            AddAndConvert<float, double, int>
+                floatDoubleAddConvertToInt = AddFloatDoubleConvert;
+            Console.WriteLine("Invoking intDoubleAddConvertToFloat delegate");
+            float f = intDoubleAddConvertToFloat(5, 3.9);
+            Console.WriteLine("Invoking floatDoubleAddConvertToInt delegate");
+            int i = floatDoubleAddConvertToInt((float)4.3, 2.1);
+        }
+    }
+    public partial class Program
+    {
+        private static void ActionDelegateInvoke()
+        {
+            Action<int, double> intDoubleAddAction =
+                AddIntDouble;
+            Action<float, double> floatDoubleAddAction =
+                AddFloatDouble;
+            Console.WriteLine("Invoking intDoubleAddAction delegate");
+            intDoubleAddAction(1, 2.5);
+            Console.WriteLine("Invoking floatDoubleAddAction delegate");
+            floatDoubleAddAction((float)1.2, 4.3);
         }
     }
 }
