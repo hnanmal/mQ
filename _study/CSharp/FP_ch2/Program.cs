@@ -10,79 +10,45 @@ namespace FP_ch2
     {
         static void Main(string[] args)
         {
-            CovarianceStringWriterInvoke();
+            ContravarianceTextWriterInvoke();
         }
     }
     public partial class Program
     {
-        private delegate TextWriter CovarianceDelegate();
+        private delegate void ContravarianceDelegate(StreamWriter sw);
     }
     public partial class Program
     {
-        private static StreamWriter StreamWriterMethod()
+        private static void TextWriterMethod(TextWriter tw)
         {
-            DirectoryInfo[] arrDirs =
-                new DirectoryInfo(@"C:\Windows")
-                    .GetDirectories(
-                        "s*",
-                        SearchOption.TopDirectoryOnly);
-
-            StreamWriter sw = new StreamWriter(
-                Console.OpenStandardOutput());
-            foreach (DirectoryInfo dir in arrDirs)
-            {
-                sw.WriteLine(dir.Name);
-            }
-
-            return sw;
-        }
-    }
-    public  partial class Program
-    {
-        private static StringWriter StringWriterMethod()
-        {
-            StringWriter strWriter = new StringWriter();
-
             string[] arrString = new string[]
             {
-                "Covariance",
+                "Contravariance",
                 "example",
                 "using",
-                "StringWriter",
+                "TextWriter",
                 "object"
             };
-
+            tw = new StreamWriter(Console.OpenStandardOutput());
             foreach (string str in arrString)
             {
-                strWriter.Write(str);
-                strWriter.Write(' ');
+                tw.Write(str);
+                tw.Write(' ');
             }
-            return strWriter;
+            tw.WriteLine();
+            Console.SetOut(tw);
+            tw.Flush();
         }
     }
     public partial class Program
     {
-        private static void CovarianceStreamWriterInvoke()
+        private static void ContravarianceTextWriterInvoke()
         {
-            CovarianceDelegate covDelegate;
+            ContravarianceDelegate contravDelgate = TextWriterMethod;
+            TextWriter tw = null;
             Console.WriteLine(
-                "Invoking CovarianceStreamWriterInvoke method:");
-            covDelegate = StreamWriterMethod;
-            StreamWriter sw = (StreamWriter)covDelegate();
-            sw.AutoFlush = true;
-            Console.SetOut(sw);
-        }
-    }
-    public partial class Program
-    {
-        private static void CovarianceStringWriterInvoke()
-        {
-            CovarianceDelegate covDelegate;
-            Console.WriteLine(
-                "Invoking CovarianceStringWriterInvoke method:");
-            covDelegate = StringWriterMethod;
-            StringWriter strW = (StringWriter)covDelegate();
-            Console.WriteLine(strW.ToString());
+                "Invoking ContravarianceTextWriterInvoke method:");
+            contravDelgate((StreamWriter)tw);
         }
     }
 }
