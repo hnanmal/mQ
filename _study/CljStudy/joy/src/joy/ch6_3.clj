@@ -116,3 +116,41 @@
 
 
 (take 2 (drop-while #(< % 10000) tri-nums))
+
+
+
+
+(defn defer-expensive [cheap expensive]
+  (if-let [good-enough (force cheap)]  ; 참이 리턴될 때만 then 부분을 실행
+    good-enough
+    (force expensive)))
+
+(defer-expensive (delay :cheap)
+                 (delay (do (Thread/sleep 5000) :expensive)))
+
+
+(defer-expensive (delay false)
+                 (delay (do (Thread/sleep 5000) :expensive)))
+
+
+(if :truthy-thing
+  (let [res :truthy-thing] (println res)))
+
+
+(if-let [res :truthy-thing] (println res))
+
+
+(defn inf-triangles [n]
+  {:head (triangle n)
+   :tail (delay (inf-triangles (inc n)))})
+
+(defn head [l] (:head l))
+(defn tail [l] (force (:tail l)))
+
+(def tri-nums (inf-triangles 1))
+
+(head tri-nums)
+
+(head (tail tri-nums))
+
+(head (tail (tail tri-nums)))
