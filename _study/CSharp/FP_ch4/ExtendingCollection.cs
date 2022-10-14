@@ -41,4 +41,63 @@ namespace FP_ch4
             return items;
         }
     }
+
+    public static partial class IDataSourceCollectionExtension
+    {
+        public static IEnumerable<DataItem>
+            GetAllItemsByGender_IEnumTemplate
+                (this IEnumerable<IDataSource> src, string gender)
+        {
+            return src.SelectMany(x => x.GetItemsByGender(gender));
+        }
+    }
+
+    public class ClubMember1 : IDataSource
+    {
+        public IEnumerable<DataItem> GetItems()
+        {
+            return new List<DataItem>
+            {
+                new DataItem {
+                    Name ="Dorian Villarreal",
+                    Gender ="Male"},
+                new DataItem {
+                    Name ="Olivia Bradley",
+                    Gender ="Female"},
+                new DataItem {
+                    Name ="Jocelyn Garrison",
+                    Gender ="Female"},
+                new DataItem {
+                    Name ="Connor Hopkins",
+                    Gender ="Male"},
+                new DataItem {
+                    Name ="Rose Moore",
+                    Gender ="Female"}
+            };
+        }
+    }
+    public class ClubMember2 : IDataSource
+    {
+        public IEnumerable<DataItem> GetItems()
+        {
+            return new List<DataItem>
+            {
+                new DataItem {
+                    Name ="Connor Avery",
+                    Gender ="Male"},
+                new DataItem {
+                    Name ="Lexie Irwin",
+                    Gender ="Female"},
+                new DataItem {
+                    Name ="Bobby Armstrong",
+                    Gender ="Male"},
+                new DataItem {
+                    Name ="Stanley Wilson",
+                    Gender ="Male"},
+                new DataItem {
+                    Name ="Chloe Steele",
+                    Gender ="Female"}
+            };
+        }
+    }
 }
