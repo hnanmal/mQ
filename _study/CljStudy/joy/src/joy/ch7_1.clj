@@ -1,4 +1,4 @@
-(ns joy.ch7-1 
+(ns joy.ch7-1
   (:require [clojure.test :as t]))
 
 (map
@@ -115,3 +115,42 @@
 (def sort-by-loved-ratio (partial sort-by #(/ (:plays %) (:loved %))))
 
 (sort-by-loved-ratio plays)
+
+;;;
+(defn columns [column-names]
+  (fn [row]
+    (vec (map row column-names))))
+
+(sort-by (columns [:plays :loved :band]) plays)
+
+(columns [:plays :loved :band])
+
+((columns [:plays :loved :band])
+ {:band "Burial", :plays 979, :loved 9})
+
+;;;
+(defn keys-apply [f ks m]
+  (let [only (select-keys m ks)]
+    (zipmap (keys only)
+            (map f (vals only)))))
+
+(keys-apply #(.toUpperCase %) #{:band} (plays 0))
+
+(defn manip-map [f ks m]
+  (merge m (keys-apply f ks m)))
+
+(manip-map #(int (/ % 2)) #{:plays :loved} (plays 0))
+
+
+(defn slope
+  [& {:keys [p1 p2] :or {p1 [0 0] p2 [1 1]}}]
+  (float (/ (- (p2 1) (p1 1))
+            (- (p2 0) (p1 0)))))
+
+(slope :p1 [4 15] :p2 [3 21])
+
+
+(slope :p2 [2 1])
+
+
+(slope)
