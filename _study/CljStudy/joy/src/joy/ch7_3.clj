@@ -22,3 +22,16 @@
     (kapow base exp 1)))
 
 (pow 2N 10000)
+
+(ns joy.units)
+(def simple-metric {:meter 1,
+                    :km 1000,
+                    :cm 1/100,
+                    :mm [1/10 :cm]})
+
+(->       (* 3  (:km simple-metric))
+       (+ (* 10 (:meter simple-metric)))
+       (+ (* 80 (:cm simple-metric)))
+       (+ (* (:cm simple-metric)
+             (* 10 (first (:mm simple-metric)))))
+       float)
