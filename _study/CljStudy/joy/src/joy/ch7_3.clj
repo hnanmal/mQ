@@ -1,4 +1,4 @@
-(ns joy.ch7-3)
+(ns joy.ch7_3)
 
 (defn pow [base exp]
   (if (zero? exp)
@@ -23,7 +23,7 @@
 
 (pow 2N 10000)
 
-(ns joy.units)
+
 (def simple-metric {:meter 1,
                     :km 1000,
                     :cm 1/100,
@@ -35,3 +35,107 @@
        (+ (* (:cm simple-metric)
              (* 10 (first (:mm simple-metric)))))
        float)
+
+;;;;
+(defn convert [context descriptor]
+  (reduce (fn [result [mag unit]]  ; (1)구조분해
+            (+ result
+               (let [val (get context unit)]  ; (2) 미터 기준 상대적 값 조회
+                       (if (vector? val)
+                         (* mag (convert context val))  ; (3) 단위 변환 처리
+                         (* mag val)))))  ; (4) 최종 변환 값 계산
+          0
+          (partition 2 descriptor)))
+
+(convert simple-metric [1 :meter])
+
+
+(convert simple-metric [50 :cm])
+
+
+(convert simple-metric [100 :mm])
+
+(float (convert simple-metric 
+                [3 :km 10 :meter 80 :cm 10 :mm]))
+
+
+(convert {:bit 1, :byte 8, :nibble [1/2 :byte]} [32 :nibble])
+
+;;;
+(defn gcd [x y]
+  (cond
+    (> x y) (gcd (- x y) y)
+    (< x y) (gcd x (- y x))
+    :else x))
+
+(gcd 175681756817568 6543265432)
+
+(defn gcd [x y]
+  (int
+   (cond
+     (> x y) (recur (- x y) y)
+     (< x y) (recur x (- y x))
+     :else x)))
+
+(defn recur-gcd [x y]
+  (cond
+    (> x y) (recur (- x y) y)
+    (< x y) (recur x (- y x))
+    :else x))
+
+(recur-gcd 175681756817568 6543265431)
+
+;;;;;;;
+
+(defn elevator [commands]
+  (letfn
+   [(ff-open [[_ & r]]
+             "엘리베이터가 1층에서 문이 열려있으면 문을 닫거나 종료할 수 있다."
+             #(case _
+                :close (ff-closed r)
+                :done true
+                false))
+    (ff-closed [[_ & r]]
+               "엘리베이터가 1층에서 문이 닫혀있으면 문을 열거나 올라갈 수 있다."
+               #(case _
+                  :open (ff-open r)
+                  :up (sf-closed r)
+                  false))
+    (sf-closed [[_ & r]]
+               "엘리베이터가 2층에서 문이 닫혀있으면 문을 열거나 내려갈 수 있다."
+               #(case _
+                  :down (ff-closed r)
+                  :open (sf-open r)
+                  false))
+    (sf-open [[_ & r]]
+             "엘리베이터가 2층에서 문이 열려있으면 문을 닫거나 종료할 수 있다."
+             #(case _
+                :close (sf-closed r)
+                :done true
+                false))]
+                
+                (trampoline ff-open commands)))
+
+(elevator [:close :open :close :up :open :open :done])
+
+
+(elevator [:close :up :open :close :down :open :done])
+
+
+;; 아래 코드는 종료되지 않으니 주의해서 실행할 것
+(elevator (cycle [:close :open]))
+
+(+ 1 2)
+
+;;;;
+
+(defn fac-cps [n k]
+  (letfn [(cont [v] (k (* v n)))]  ; 다음(Continuation)
+    (if (zero? n)  ; 연산 종료 조건(Accept)
+      (k 1)  ; 리턴(Return)
+      (recur (dec n) cont))))
+
+(defn fac [n]
+  (fac-cps n identity))
+
+(fac 10)
