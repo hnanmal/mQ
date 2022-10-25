@@ -120,27 +120,27 @@ namespace FP_ch4
     //        }
     //    }
     //}
-    public class Program
-    {
-        static void Main(string[] args)
-        {
-            var sources = new IDataSource[]
-            {
-                new ClubMember1(),
-                new ClubMember2()
-            };
-            var items = 
-                sources.GetAllItemsByGender_IEnumTemplate(
-                    "Female");
-            Console.WriteLine(
-                "Invoking GetAllItemsByGender_IEnumTemplate()");
-            foreach (var item in items)
-            {
-                Console.WriteLine(
-                    "Name: {0}\tGender: {1}",
-                    item.Name,
-                    item.Gender);
-            }
-        }
-    }
+    //public class Program
+    //{
+    //    static void Main(string[] args)
+    //    {
+    //        var sources = new IDataSource[]
+    //        {
+    //            new ClubMember1(),
+    //            new ClubMember2()
+    //        };
+    //        var items = 
+    //            sources.GetAllItemsByGender_IEnumTemplate(
+    //                "Female");
+    //        Console.WriteLine(
+    //            "Invoking GetAllItemsByGender_IEnumTemplate()");
+    //        foreach (var item in items)
+    //        {
+    //            Console.WriteLine(
+    //                "Name: {0}\tGender: {1}",
+    //                item.Name,
+    //                item.Gender);
+    //        }
+    //    }
+    //}
 }
