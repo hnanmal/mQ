@@ -139,3 +139,31 @@
   (fac-cps n identity))
 
 (fac 10)
+
+
+(defn mk-cps [accept? kend kont]
+  (fn [n]
+    ((fn [n k]
+       (let [cont (fn [v]  ; 다음(Continuation)
+                  (k ((partial kont v) n)))]
+         (if (accept? n)  ; 연산 종료 조건(Accept)
+           (k 1)  ; 리턴 값(Return)
+           (recur (dec n) cont))))
+     n kend)))
+
+(def fac  ; 팩토리얼 함수
+  (mk-cps zero?  ; 0이면 종료
+          identity  ; 종료 시 1을 리턴
+          #(* %1 %2)))  ; 스택의 숫자들을 곱함
+
+(fac 10)
+
+
+(def tri  ; 트라이앵글 함수
+  (mk-cps #(== 1 %)  ; 1이면 종료
+          identity  ; 종료 시 0을 리턴
+          #(+ %1 %2)))  ; 스택의 숫자들을 더함
+
+(tri 10)
+
+(tri 15)
