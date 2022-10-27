@@ -61,18 +61,27 @@ namespace CodeReadability
             }
             return retValue.Trim();
         }
-        static void Main(string[] args)
-        {
-            string sntc = "";
-            foreach (string str in sentences)
-            {
-                string strTemp = str;
-                strTemp = HelperMethods.TrimAllSpace(strTemp);
-                strTemp = HelperMethods.Capitalize(strTemp);
-                sntc += strTemp + " ";
-            }
-            Console.WriteLine(sntc.Trim());
-        }
+        //static void Main(string[] args)
+        //{
+        //    string sntc = "";
+        //    foreach (string str in sentences)
+        //    {
+        //        string strTemp = str;
+        //        strTemp = HelperMethods.TrimAllSpace(strTemp);
+        //        strTemp = HelperMethods.Capitalize(strTemp);
+        //        sntc += strTemp + " ";
+        //    }
+        //    Console.WriteLine(sntc.Trim());
+        //}
+        //static void Main(string[] args)
+        //{
+        //    string sntc = "";
+        //    foreach (string str in sentences)
+        //    {
+        //        sntc += str.TrimAllSpace().Capitalize() + " ";
+        //    }
+        //    Console.WriteLine(sntc.Trim());
+        //}
         static string[] sentences = new string[]
         {
             " h o w ",
