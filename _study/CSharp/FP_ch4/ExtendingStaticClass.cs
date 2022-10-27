@@ -13,12 +13,12 @@ namespace FP_ch4
             return i * i;
         }
     }
-    public class Program
-    {
-        static void Main(string[] args)
-        {
-            int i = 60;
-            Console.WriteLine(i.Square());
-        }
-    }
+    //public class Program
+    //{
+    //    static void Main(string[] args)
+    //    {
+    //        int i = 60;
+    //        Console.WriteLine(i.Square());
+    //    }
+    //}
 }
