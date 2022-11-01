@@ -146,7 +146,7 @@
     ((fn [n k]
        (let [cont (fn [v]  ; 다음(Continuation)
                   (k ((partial kont v) n)))]
-         (if (accept? n)  ; 연산 종료 조건(Accept)
+         (if (accept? n)  ; 연산 종료 조건(Accept)00
            (k 1)  ; 리턴 값(Return)
            (recur (dec n) cont))))
      n kend)))
@@ -167,3 +167,5 @@
 (tri 10)
 
 (tri 15)
+
+;;;;
