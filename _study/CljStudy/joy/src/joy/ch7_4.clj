@@ -114,3 +114,18 @@
         [1    1    1  999    1]
         [1    1    1  999    1]
         [1    1    1  666    1]])  ; 식인종이 기다리고 있음
+
+
+
+(cons 1 nil)
+
+(cons 2 (cons 1 nil))
+
+(defn nat-nums [n]
+  (cons n (nat-nums (inc n))))
+
+(defn nat-nums [n]
+  (lazy-seq (cons n (nat-nums (inc n)))))
+
+(->> (nat-nums 0)
+     (take 10))
