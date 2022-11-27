@@ -35,3 +35,11 @@
 
 
 (contextual-eval '{a 1, b 2} '(let [b 1000] (+ a b)))
+
+
+(let [x 9, y '(- x)]
+  (println `y)
+  (println ``y)
+  (println ``~y)
+  (println ``~~y)
+  (contextual-eval {'x 36} ``~~y))
