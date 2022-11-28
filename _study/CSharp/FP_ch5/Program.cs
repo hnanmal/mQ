@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Reflection;
 
 namespace SequencesAndElements
 {
@@ -9,7 +10,7 @@ namespace SequencesAndElements
     {
         static void Main(string[] args)
         {
-            UsingStaticMethod();
+            SimplyTakeAndSkipOperator();
         }
     }
 
@@ -195,6 +196,21 @@ namespace SequencesAndElements
     }
     public partial class Program
     {
+        private static void InvokingQueryExpression()
+        {
+            IEnumerable<string> query =
+                from n in names
+                where n.Length > 4
+                orderby n[0]
+                select n.ToUpper();
+            foreach (string s in query)
+            {
+                Console.WriteLine(s);
+            }
+        }
+    }
+    public partial class Program
+    {
         static List<string> names = new List<string>
         {
             "Howard", "Pat",
@@ -207,6 +223,40 @@ namespace SequencesAndElements
             "Jimmy", "Kim",
             "Kelsey", "Becky",
             "Scott", "Dick"
+        };
+    }
+
+
+    public partial class Program
+    {
+        public static void SimplyTakeAndSkipOperator()
+        {
+            IEnumerable<int> queryTake =
+                intList.Take(10);
+            Console.WriteLine("Take operator");
+            foreach (int i in queryTake)
+            {
+                Console.WriteLine(String.Format("{0}\t", i));
+            }
+            Console.WriteLine();
+            IEnumerable<int> querySkip =
+                intList.Skip(10);
+            Console.WriteLine("Skip operator");
+            foreach (int i in querySkip)
+            {
+                Console.WriteLine(String.Format("{0}\t", i));
+            }
+            Console.WriteLine();
+        }
+    }
+    public partial class Program
+    {
+        static List<int> intList = new List<int>
+        {
+             0,  1,  2,  3,  4,
+             5,  6,  7,  8,  9,
+            10, 11, 12, 13, 14,
+            15, 16, 17, 18, 19
         };
     }
 }
