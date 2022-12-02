@@ -10,7 +10,7 @@ namespace SequencesAndElements
     {
         static void Main(string[] args)
         {
-            TakeWhileAndSkipWhileOperators();
+            DistinctOperation();
         }
     }
 
@@ -315,6 +315,20 @@ namespace SequencesAndElements
                 Console.WriteLine(String.Format("{0}\t", i));
             }
             Console.WriteLine();
+        }
+    }
+    public partial class Program
+    {
+        public static void DistinctOperation()
+        {
+            string words = "TheQuickBrownFoxJumpsOverTheLazyDog";
+            IEnumerable<char> queryDistinct = words.Distinct();
+            string distincWords = "";
+            foreach (char c in queryDistinct)
+            {
+                distincWords += c.ToString();
+            }
+            Console.WriteLine(distincWords);
         }
     }
 
