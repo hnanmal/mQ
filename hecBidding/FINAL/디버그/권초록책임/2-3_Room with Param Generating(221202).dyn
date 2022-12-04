@@ -4679,7 +4679,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom itertools import groupby\r\nimport operator\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\n\r\n#roomDict = roomDicts[26]\r\n\r\ndef groupBy(keys, values):\r\n    res = {}\r\n    pair = list(zip(keys, values))\r\n    uniqueKeys = set(keys)\r\n    for uniKey in uniqueKeys:\r\n        tmp = []\r\n        for k,v in pair:\r\n            if k in uniKey:\r\n                tmp.append(v)    \r\n        res[uniKey] = tmp\r\n    return res\r\n\r\n\r\n\r\ndef countIntsctTimesEach(boxDicts, roomDict):\r\n    roomGeo = roomDict[\"room offsetGeo\"]\r\n    boxDictsSameFloor = filter(lambda x: x[\"box lv\"] == roomDict[\"room lv\"], boxDicts)\r\n    boxGeos = map(lambda x: x[\"box geo\"], boxDictsSameFloor)\r\n    chkResult = filter(lambda x: roomGeo.DoesIntersect(x), boxGeos)\r\n    \r\n    return len(list(chkResult))\r\n\r\n\r\n\r\ndef findNoCorridorLv(boxDicts):\r\n    res = []\r\n    keys = list(map(lambda x: x[\"box lv\"], boxDicts))\r\n    boxesByFloor = groupBy(keys, boxDicts)\r\n    for k,v in boxesByFloor.items():\r\n        tmp = []\r\n        for j in v:\r\n            if j[\"box_roomName\"] == \"Corridor\":\r\n                tmp.append(False)\r\n            else: tmp.append(True)\r\n        if all(tmp):\r\n            res.append(k)\r\n            \r\n    return res\r\n    \r\ndef findCorridor(boxDicts, roomDicts):\r\n    res = []\r\n    noCorridorLv = findNoCorridorLv(boxDicts)\r\n    for i in roomDicts:\r\n        if i[\"room lv\"] in noCorridorLv:\r\n            pass\r\n        else:\r\n            if countIntsctTimesEach(boxDicts, i) == 1:\r\n                res.append(i)\r\n            else: pass\r\n    return res\r\n\r\n#res = filter(lambda x: countIntsctTimesEach(boxDicts, x) == 1, roomDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = findCorridor(boxDicts, roomDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n#from itertools import groupby\r\n#import operator\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\n\r\ndef groupBy(keys, values):\r\n    res = {}\r\n    pair = list(zip(keys, values))\r\n    uniqueKeys = set(keys)\r\n    for uniKey in uniqueKeys:\r\n        tmp = []\r\n        for k,v in pair:\r\n            if k in uniKey:\r\n                tmp.append(v)    \r\n        res[uniKey] = tmp\r\n    return res\r\n\r\n\r\n\r\ndef countIntsctTimesEach(boxDicts, roomDict):\r\n    roomGeo = roomDict[\"room offsetGeo\"]\r\n    boxDictsSameFloor = filter(lambda x: x[\"box lv\"] == roomDict[\"room lv\"], boxDicts)\r\n    boxGeos = map(lambda x: x[\"box geo\"], boxDictsSameFloor)\r\n    chkResult = filter(lambda x: roomGeo.DoesIntersect(x), boxGeos)\r\n    \r\n    return len(list(chkResult))\r\n\r\n\r\n\r\ndef findNoCorridorLv(boxDicts):\r\n    res = []\r\n    keys = list(map(lambda x: x[\"box lv\"], boxDicts))\r\n    boxesByFloor = groupBy(keys, boxDicts)\r\n    for k,v in boxesByFloor.items():\r\n        tmp = []\r\n        for j in v:\r\n            if j[\"box_roomName\"] == \"Corridor\":\r\n                tmp.append(False)\r\n            else: tmp.append(True)\r\n        if all(tmp):\r\n            res.append(k)\r\n            \r\n    return res\r\n    \r\ndef separateCorridor(boxDicts, roomDicts):\r\n    (corridors, noCorridors) = [], []\r\n    noCorridorLv = findNoCorridorLv(boxDicts)\r\n    for i in roomDicts:\r\n        if i[\"room lv\"] in noCorridorLv:\r\n            noCorridors.append(i)\r\n        else:\r\n            if countIntsctTimesEach(boxDicts, i) == 1:\r\n                corridors.append(i)\r\n            else: noCorridors.append(i)\r\n    return {\"corridorRoom\": corridors, \"noCorridorRoom\": noCorridors}\r\n\r\n#res = filter(lambda x: countIntsctTimesEach(boxDicts, x) == 1, roomDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = separateCorridor(boxDicts, roomDicts)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "71084cb6aeb34dc9a6c1ab2c92e3908a",
@@ -5685,11 +5685,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[\"room geo\"];",
+      "Code": "i[\"corridorRoom\"];",
       "Id": "037c75811f6241808a7058fd02401b02",
       "Inputs": [
         {
-          "Id": "d5fa1899ccf74b49b1cd006d89b383d5",
+          "Id": "dfd7371999694507a216af0ba8bf7caf",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -5700,7 +5700,139 @@
       ],
       "Outputs": [
         {
-          "Id": "38f1241cf70f40d5a437e5c90fe8ec7a",
+          "Id": "8d685af4a3e0443db60eff84eeabba5a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"noCorridorRoom\"];",
+      "Id": "014209b265f04ce6aa710d753747dede",
+      "Inputs": [
+        {
+          "Id": "607fff35e64348a38638d1a3dd012e40",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2eb1ea313f1441b48516057ba4a033e0",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nboxDicts = IN[0]\r\n\r\n# Place your code below this line\r\n\r\ndef separateCorridorBox(boxDicts):\r\n    a = filter(lambda x: x[\"box_roomName\"] == \"Corridor\", boxDicts)\r\n    b = filter(lambda x: x[\"box_roomName\"] != \"Corridor\", boxDicts)\r\n    \r\n    return {\"corridorBox\": a, \"noCorridorBox\": b}\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = separateCorridorBox(boxDicts)",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "662676e7894343d9a8a50487f756afbc",
+      "Inputs": [
+        {
+          "Id": "9c1d146ed33b46928efba9a4b57f03a5",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "deecd2e62c4e46c0a0e0b3c8aabf8c6b",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"noCorridorBox\"];",
+      "Id": "629b484fa1df44a4bd5f633b85b6f23c",
+      "Inputs": [
+        {
+          "Id": "3f0585226b0d4b28bc9919aa08617fc1",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5775b1ab27bf41e7952b46f9625a0bf6",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "// 룸세퍼레이션 할 때, 코리더 박스는 제외하고 시작해야 할듯\n// 그래야 한층에 2개 이상의 마감 사양이 다른 코리더 배치 가능해짐\n\n// corridor 들 끼리 매칭\n\n// 층별로 corridor box - corridor room 모아두기\n// 박스하나에 룸하나, 박스하나에 룸 둘,\n// 박스 둘에 룸 하나?, 박스 둘에 룸 둘",
+      "Id": "b3601c9e50de4309b8e91975064656e4",
+      "Inputs": [],
+      "Outputs": [],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"corridorBox\"];",
+      "Id": "e9f5cca0e9b84fcb9d6044f0995d90ff",
+      "Inputs": [
+        {
+          "Id": "51dd23b75906440981516f4c7897f3ee",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "197d6e0e8a1043a6a848415a40332d43",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -6627,6 +6759,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "889dc7d85757485bacd66697f01b1310",
+      "End": "9c1d146ed33b46928efba9a4b57f03a5",
+      "Id": "43ddf18361174c98aa4100e1745e533b",
+      "IsHidden": "False"
+    },
+    {
       "Start": "fbbb3b5835b44118ae7b6a7e870730c0",
       "End": "465e1b5197c04c9687f5c722af8b8e6d",
       "Id": "06d60eff8e854e308c08c9472371b3c5",
@@ -6796,8 +6934,14 @@
     },
     {
       "Start": "1db1d312662d4a89a69f9473cab46dd1",
-      "End": "d5fa1899ccf74b49b1cd006d89b383d5",
-      "Id": "e7c3d8b199204fe6a60fc3fb73d0fada",
+      "End": "dfd7371999694507a216af0ba8bf7caf",
+      "Id": "ae408d3c8c394ea6a28fcb0aea6ac74a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1db1d312662d4a89a69f9473cab46dd1",
+      "End": "607fff35e64348a38638d1a3dd012e40",
+      "Id": "ca3f62e527f24beb8160d01d97f0bbf8",
       "IsHidden": "False"
     },
     {
@@ -6997,6 +7141,18 @@
       "End": "4a04bdb16d3845e983b036d6f7dd2371",
       "Id": "d3aaf4a063e740b0b7756bafc0cf68fc",
       "IsHidden": "False"
+    },
+    {
+      "Start": "deecd2e62c4e46c0a0e0b3c8aabf8c6b",
+      "End": "3f0585226b0d4b28bc9919aa08617fc1",
+      "Id": "bad3906699e04edeba3efe4076c1ae79",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "deecd2e62c4e46c0a0e0b3c8aabf8c6b",
+      "End": "51dd23b75906440981516f4c7897f3ee",
+      "Id": "c210cc72a6804c6ba78d0b40c87bd958",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -7036,15 +7192,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 67786.046875,
-      "EyeY": 45740.37109375,
-      "EyeZ": -134010.59375,
-      "LookX": -9634.359375,
-      "LookY": -39025.4609375,
-      "LookZ": -35843.828125,
-      "UpX": -0.26940473914146423,
-      "UpY": 0.70802885293960571,
-      "UpZ": -0.65277588367462158
+      "EyeX": 83804.46875,
+      "EyeY": 95514.0234375,
+      "EyeZ": -105827.3125,
+      "LookX": -22391.2890625,
+      "LookY": -99535.5703125,
+      "LookZ": -55792.65625,
+      "UpX": -0.4227030873298645,
+      "UpY": 0.53900635242462158,
+      "UpZ": -0.72855639457702637
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -8170,7 +8326,7 @@
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "0e4580aa65474aaeab64330d915c7394",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -8180,7 +8336,7 @@
       },
       {
         "Name": "Integer Slider",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "8064eae735a34abfa947f834413baf82",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -8269,14 +8425,14 @@
         "Y": 7971.2582075687978
       },
       {
-        "Name": "findCorridor",
+        "Name": "separate room - Corridor/Others",
         "ShowGeometry": true,
         "Id": "71084cb6aeb34dc9a6c1ab2c92e3908a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 125.74913593475048,
-        "Y": 6677.4212160800771
+        "X": 34.288401516243312,
+        "Y": 6643.492233957083
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -8570,13 +8726,63 @@
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "037c75811f6241808a7058fd02401b02",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 387.94178598083079,
-        "Y": 6942.359921518273
+        "X": 625.44743003418353,
+        "Y": 6311.5977057734372
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": false,
+        "Id": "014209b265f04ce6aa710d753747dede",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 634.34205148057413,
+        "Y": 7223.19211377567
+      },
+      {
+        "Name": "seperate box - Corridor/Others",
+        "ShowGeometry": true,
+        "Id": "662676e7894343d9a8a50487f756afbc",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 124.88224376790345,
+        "Y": 7326.0890646030412
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "629b484fa1df44a4bd5f633b85b6f23c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 641.81967565001,
+        "Y": 7654.0292885073868
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "b3601c9e50de4309b8e91975064656e4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 737.54762006037788,
+        "Y": 6067.5694029585165
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "e9f5cca0e9b84fcb9d6044f0995d90ff",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 644.424439580911,
+        "Y": 6758.8013594265549
       }
     ],
     "Annotations": [
@@ -9245,8 +9451,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -71.961570065501974,
-    "Y": -13123.172708184311,
-    "Zoom": 1.9578081849145783
+    "X": -607.04710971661825,
+    "Y": -5658.1199703387283,
+    "Zoom": 0.95453364367431615
   }
 }
