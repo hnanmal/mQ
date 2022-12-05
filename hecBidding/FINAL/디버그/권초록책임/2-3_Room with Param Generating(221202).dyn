@@ -12,7 +12,15 @@
     }
   },
   "Inputs": [],
-  "Outputs": [],
+  "Outputs": [
+    {
+      "Id": "d218a37c8be94d48a4881efab1fe471f",
+      "Name": "setParameter result",
+      "Type": "unknown",
+      "InitialValue": "",
+      "Description": "Visualize the node's output"
+    }
+  ],
   "Nodes": [
     {
       "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
@@ -6473,7 +6481,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomParamList = IN[0]\r\nboxParamList = IN[1]\r\nroomDicts = IN[2]\r\n\r\n# Place your code below this line\r\ndef setRoomParameterValues(roomParamList, boxParamList, roomDict):\r\n    roomObj = roomDict[\"room obj\"]\r\n    boxDict = roomDict[\"matchedBox\"][0]\r\n    boxObj = boxDict[\"box obj\"]\r\n    paramPair = zip(roomParamList, boxParamList)\r\n    \r\n    for bP,rP in paramPair:\r\n        paramValue = boxObj.GetParameterValueByName(bP)\r\n        \r\n        if bP == \"ceiling height\" and paramValue != 0:\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n            \r\n        elif bP == \"ceiling height\" and paramValue == 0:\r\n            height = boxObj.GetParameterValueByName(\"Height\")\r\n            roomObj.SetParameterByName(rP, height)\r\n            \r\n        elif bP == \"Interior Finish\":\r\n            paramValue = boxObj.GetParameterValueByName(rP)\r\n            paramValueSplitList = paramValue.split(\",,\")\r\n#            f_split = lambda x: x.split(\"..\")\r\n#            f_join = lambda x,y: ','.join(list(filter(lambda x: x != \"N/A\",f_split(y))))\r\n            \r\n#            wallType = f_join(\r\n    \r\n    \r\n    return paramPair\r\n    pass\r\n    \r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: setRoomParameterValues(roomParamList, boxParamList, x), roomDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomParamList = IN[0]\r\nboxParamList = IN[1]\r\nroomDicts = IN[2]\r\n\r\n# Place your code below this line\r\ndef setRoomParameterValues(roomParamList, boxParamList, roomDict):\r\n    roomObj = roomDict[\"room obj\"]\r\n    boxDict = roomDict[\"matchedBox\"][0]\r\n    boxObj = boxDict[\"box obj\"]\r\n    paramPair = zip(roomParamList, boxParamList)\r\n    \r\n\r\n    for rP,bP in paramPair:\r\n        paramValue = boxObj.GetParameterValueByName(bP)\r\n        \r\n        if bP == \"ceiling height\" and paramValue != 0:\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n            \r\n        elif bP == \"ceiling height\" and paramValue == 0:\r\n            height = boxObj.GetParameterValueByName(\"Height\")\r\n            roomObj.SetParameterByName(rP, height)\r\n            \r\n        elif bP == \"Interior Finish\":\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            paramValueSplitList = paramValue.split(\",,\")\r\n            wallType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[0].split(\"..\"))))\r\n            baseType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[1].split(\"..\"))))\r\n            floorType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[2].split(\"..\"))))\r\n            ceilType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[3].split(\"..\"))))\r\n            \r\n            roomObj.SetParameterByName(\"Wall Finish\", wallType)\r\n            roomObj.SetParameterByName(\"Base Finish\", baseType)\r\n            roomObj.SetParameterByName(\"Floor Finish\", floorType)\r\n            roomObj.SetParameterByName(\"Ceiling Finish\", ceilType)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n        \r\n        else:\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n    \r\n    return roomDict\r\n    \r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: setRoomParameterValues(roomParamList, boxParamList, x), roomDicts)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "71f67216e3c246bcb88872f42e0870b5",
@@ -6519,6 +6527,35 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "d218a37c8be94d48a4881efab1fe471f",
+      "Inputs": [
+        {
+          "Id": "2050ed9e98974314acfd10e0e99536db",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2372daecf98f44a8a9e7870159ba3ae8",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualize the node's output"
     }
   ],
   "Connectors": [
@@ -7990,6 +8027,12 @@
       "Start": "eaf0069b9f57431da625ef35d4c0a3d8",
       "End": "d2f724f9c606443e875dec4ab262aa73",
       "Id": "d965253ca05849238ef696c8a35098d8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5f178155e8eb4b018596b9324914c360",
+      "End": "2050ed9e98974314acfd10e0e99536db",
+      "Id": "8fc82fe7187c45e0b13b46ed3abf6aa7",
       "IsHidden": "False"
     }
   ],
@@ -9821,6 +9864,16 @@
         "Excluded": false,
         "X": 3545.1734621001383,
         "Y": 6920.5982945655924
+      },
+      {
+        "Name": "setParameter result",
+        "ShowGeometry": true,
+        "Id": "d218a37c8be94d48a4881efab1fe471f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": true,
+        "Excluded": false,
+        "X": 3997.547040294934,
+        "Y": 7001.0178240104251
       }
     ],
     "Annotations": [
@@ -10096,7 +10149,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 7934.8541723759517,
-        "InitialHeight": 157.29259509598251,
+        "InitialHeight": 196.29259509598251,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10118,7 +10171,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5787.3281604734266,
-        "InitialHeight": 163.33884434751144,
+        "InitialHeight": 202.33884434751144,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10140,7 +10193,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 7935.45824535003,
-        "InitialHeight": 170.34041378379516,
+        "InitialHeight": 209.34041378379516,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10162,7 +10215,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5782.6886636051722,
-        "InitialHeight": 189.94581496153114,
+        "InitialHeight": 228.94581496153114,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10184,7 +10237,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5789.6418387323265,
-        "InitialHeight": 189.94581496152659,
+        "InitialHeight": 228.94581496152659,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10206,7 +10259,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 7933.9397782206424,
-        "InitialHeight": 168.94002798538804,
+        "InitialHeight": 207.94002798538804,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10228,7 +10281,7 @@
         "Height": 282.0,
         "FontSize": 36.0,
         "InitialTop": 7932.2582075687978,
-        "InitialHeight": 168.94002798539259,
+        "InitialHeight": 207.94002798539259,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10250,7 +10303,7 @@
         "Height": 282.0,
         "FontSize": 36.0,
         "InitialTop": 5792.5076476316754,
-        "InitialHeight": 189.94581496152568,
+        "InitialHeight": 228.94581496152568,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10272,7 +10325,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5795.3067712449674,
-        "InitialHeight": 189.94581496152932,
+        "InitialHeight": 228.94581496152932,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10294,7 +10347,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5785.4335824175741,
-        "InitialHeight": 167.50133243069013,
+        "InitialHeight": 206.50133243069013,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10316,7 +10369,7 @@
         "Height": 282.0,
         "FontSize": 36.0,
         "InitialTop": 7925.4816172125693,
-        "InitialHeight": 227.0,
+        "InitialHeight": 207.94002798539077,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10338,7 +10391,7 @@
         "Height": 270.0,
         "FontSize": 36.0,
         "InitialTop": 5796.0080879913621,
-        "InitialHeight": 227.0,
+        "InitialHeight": 228.94581496153296,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10360,7 +10413,7 @@
         "Height": 282.0,
         "FontSize": 36.0,
         "InitialTop": 7927.9166703332694,
-        "InitialHeight": 239.0,
+        "InitialHeight": 207.94002798538713,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -10612,8 +10665,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -2838.7177404544627,
-    "Y": -5896.2060069479685,
-    "Zoom": 0.91648966826025746
+    "X": -1685.6115278662382,
+    "Y": -3124.7066121485818,
+    "Zoom": 0.4964573294226492
   }
 }
