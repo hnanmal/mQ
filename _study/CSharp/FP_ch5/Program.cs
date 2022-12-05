@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SequencesAndElements
@@ -341,5 +342,80 @@ namespace SequencesAndElements
             10, 11, 12, 13, 14,
             15, 16, 17, 18, 19
         };
+    }
+
+
+    public partial class Program
+    {
+        public class RecentMember
+        {
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string Gender { get; set; }
+            public DateTime MemberSince { get; set; }
+            public string Status { get; set; }
+        }
+        public static void SelectOperator()
+        {
+
+            List<Member> memberList = new List<Member>()
+            {
+                new Member
+                {
+                    ID = 1,
+                    Name = "Eddie Morgan",
+                    Gender = "Male",
+                    MemberSince = new DateTime(2016, 2, 10)
+                },
+                new Member
+                {
+                    ID = 2,
+                    Name = "Millie Duncan",
+                    Gender = "Female",
+                    MemberSince = new DateTime(2015, 4, 3)
+                },
+                new Member
+                {
+                    ID = 3,
+                    Name = "Thiago Hubbard",
+                    Gender = "Male",
+                    MemberSince = new DateTime(2014, 1, 8)
+                },
+                new Member
+                {
+                    ID = 4,
+                    Name = "Emilia Shaw",
+                    Gender = "Female",
+                    MemberSince = new DateTime(2015, 11, 15)
+                }
+            };
+            IEnumerable<RecentMember> memberQuery =
+                from m in memberList
+                where m.MemberSince.Year > 2014
+                orderby m.Name
+                select new RecentMember
+                {
+                    FirstName = m.Name.GetFirstName(),
+                    LastName = m.Name.GetLastName(),
+                    Gender = m.Gender,
+                    MemberSince = m.MemberSince,
+                    Status = "Valid"
+                };
+            foreach (RecentMember rm in memberQuery)
+            {
+                Console.WriteLine(
+                    "First Name   : " + rm.FirstName);
+                Console.WriteLine(
+                    "Last Name    : " + rm.LastName);
+                Console.WriteLine(
+                    "Gender       : " + rm.Gender);
+                Console.WriteLine
+                    ("Member Since: " +
+                    rm.MemberSince.ToString("dd//MM/yyyy"));
+                Console.WriteLine(
+                    "Status       : " + rm.Status);
+                Console.WriteLine();
+            }
+        }
     }
 }
