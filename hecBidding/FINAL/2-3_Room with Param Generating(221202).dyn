@@ -2611,7 +2611,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\n#def isCenPointEqual(roomDict, boxDict):\r\n#    roomCenPt = roomDict[\"room btmCenPoint\"]\r\n#    boxCenPt = boxDict[\"box btmCenPoint\"]\r\n#    return roomCenPt.IsAlmostEqualTo(boxCenPt)\r\n#\r\n#\r\n#def match_roomAndbox(roomDict, boxDicts):\r\n#    res = filter(lambda x: isCenPointEqual(roomDict, x), boxDicts)\r\n#    roomDict[\"matchedBox\"] = res\r\n#    return roomDict\r\n            \r\n\r\ndef isInclude(roomDict, boxDict):\r\n    roomOffsetBtmSrf = roomDict[\"room offsetBtmSrf\"]\r\n    boxBtmSrf = boxDict[\"box btmSrf\"]\r\n    try:\r\n        diff = roomOffsetBtmSrf.Difference([boxBtmSrf])\r\n    except:\r\n        return True\r\n    else:\r\n        return False\r\n\r\n\r\ndef match_roomAndbox(roomDict, boxDicts):\r\n    res = filter(lambda x: isInclude(roomDict, x), boxDicts)\r\n    roomDict[\"matchedBox\"] = res\r\n    return roomDict\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: match_roomAndbox(x, boxDicts), roomDicts)\r\nOUT = map(lambda x: match_roomAndbox(x, boxDicts), roomDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\n#def isCenPointEqual(roomDict, boxDict):\r\n#    roomCenPt = roomDict[\"room btmCenPoint\"]\r\n#    boxCenPt = boxDict[\"box btmCenPoint\"]\r\n#    return roomCenPt.IsAlmostEqualTo(boxCenPt)\r\n#\r\n#\r\n#def match_roomAndbox(roomDict, boxDicts):\r\n#    res = filter(lambda x: isCenPointEqual(roomDict, x), boxDicts)\r\n#    roomDict[\"matchedBox\"] = res\r\n#    return roomDict\r\n            \r\n\r\ndef isInclude(roomDict, boxDict):\r\n    roomBtmSrf = roomDict[\"room btmSrf\"]\r\n    boxBtmSrf = boxDict[\"box btmSrf\"]\r\n    try:\r\n        diff = roomBtmSrf.Difference([boxBtmSrf])\r\n#        diff = roomOffsetBtmSrf.Difference([boxBtmSrf])\r\n    except:\r\n        return True\r\n    else:\r\n        return False\r\n\r\n\r\ndef match_roomAndbox(roomDict, boxDicts):\r\n    res = list(filter(lambda x: isInclude(roomDict, x), boxDicts))\r\n    if len(res) > 1:\r\n        roomBtmSrf = roomDict[\"room btmSrf\"]\r\n        boxBtmSrfs = map(lambda x: x[\"box btmSrf\"], res)\r\n        def findRatio(roomBtmSrf, boxBtmSrf):\r\n            roomArea = roomBtmSrf.Area\r\n            boxArea = boxBtmSrf.Area\r\n            return roomArea/boxArea\r\n        ratios = list(map(lambda x: findRatio(roomBtmSrf, x), boxBtmSrfs))\r\n        maxRatioIdx = ratios.index(max(ratios))\r\n        \r\n        resNew =  res[maxRatioIdx]\r\n        roomDict[\"matchedBox\"] = resNew\r\n    else:\r\n        roomDict[\"matchedBox\"] = res[0]\r\n    return roomDict\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: match_roomAndbox(x, boxDicts), roomDicts)\r\nOUT = map(lambda x: match_roomAndbox(x, boxDicts), roomDicts)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "de78e2634aa649dd9778113b3c9d1d47",
@@ -3030,7 +3030,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\ndef isInclude(roomDict, boxDict):\r\n    roomOffsetBtmSrf = roomDict[\"room offsetBtmSrf\"]\r\n    boxBtmSrf = boxDict[\"box btmSrf\"]\r\n    try:\r\n        diff = roomOffsetBtmSrf.Difference([boxBtmSrf])\r\n    except:\r\n        return True\r\n    else:\r\n        return False\r\n\r\n\r\ndef match_roomAndbox_corridor(roomDict, boxDicts):\r\n    res = filter(lambda x: isInclude(roomDict, x), boxDicts)\r\n    roomDict[\"matchedBox\"] = res\r\n    return roomDict\r\n\r\n            \r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: match_roomAndbox_corridor(x, boxDicts), roomDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomDicts = IN[0]\r\nboxDicts = IN[1]\r\n\r\n# Place your code below this line\r\ndef isInclude(roomDict, boxDict):\r\n    roomOffsetBtmSrf = roomDict[\"room offsetBtmSrf\"]\r\n    boxBtmSrf = boxDict[\"box btmSrf\"]\r\n    try:\r\n        diff = roomOffsetBtmSrf.Difference([boxBtmSrf])\r\n    except:\r\n        return True\r\n    else:\r\n        return False\r\n\r\n\r\ndef match_roomAndbox_corridor(roomDict, boxDicts):\r\n    res = list(filter(lambda x: isInclude(roomDict, x), boxDicts))\r\n    roomDict[\"matchedBox\"] = res[0]\r\n    return roomDict\r\n\r\n            \r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: match_roomAndbox_corridor(x, boxDicts), roomDicts)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "f9b9624fa40d4f1897f8bfb0cd7b3e80",
@@ -3330,7 +3330,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomParamList = IN[0]\r\nboxParamList = IN[1]\r\nroomDicts = IN[2]\r\n\r\n# Place your code below this line\r\ndef setRoomParameterValues(roomParamList, boxParamList, roomDict):\r\n    roomObj = roomDict[\"room obj\"]\r\n    boxDict = roomDict[\"matchedBox\"][0]\r\n    boxObj = boxDict[\"box obj\"]\r\n    paramPair = zip(roomParamList, boxParamList)\r\n    \r\n\r\n    for rP,bP in paramPair:\r\n        paramValue = boxObj.GetParameterValueByName(bP)\r\n        \r\n        if bP == \"ceiling height\" and paramValue != 0:\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n            \r\n        elif bP == \"ceiling height\" and paramValue == 0:\r\n            height = boxObj.GetParameterValueByName(\"Height\")\r\n            roomObj.SetParameterByName(rP, height)\r\n            \r\n        elif bP == \"Interior Finish\":\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            paramValueSplitList = paramValue.split(\",,\")\r\n            wallType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[0].split(\"..\"))))\r\n            baseType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[1].split(\"..\"))))\r\n            floorType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[2].split(\"..\"))))\r\n            ceilType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[3].split(\"..\"))))\r\n            \r\n            roomObj.SetParameterByName(\"Wall Finish\", wallType)\r\n            roomObj.SetParameterByName(\"Base Finish\", baseType)\r\n            roomObj.SetParameterByName(\"Floor Finish\", floorType)\r\n            roomObj.SetParameterByName(\"Ceiling Finish\", ceilType)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n        \r\n        else:\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n    \r\n    return roomDict\r\n    \r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: setRoomParameterValues(roomParamList, boxParamList, x), roomDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nroomParamList = IN[0]\r\nboxParamList = IN[1]\r\nroomDicts = IN[2]\r\n\r\n# Place your code below this line\r\ndef setRoomParameterValues(roomParamList, boxParamList, roomDict):\r\n    roomObj = roomDict[\"room obj\"]\r\n    boxDict = roomDict[\"matchedBox\"]\r\n    boxObj = boxDict[\"box obj\"]\r\n    paramPair = zip(roomParamList, boxParamList)\r\n    \r\n\r\n    for rP,bP in paramPair:\r\n        paramValue = boxObj.GetParameterValueByName(bP)\r\n        \r\n        if bP == \"ceiling height\" and paramValue != 0:\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n            \r\n        elif bP == \"ceiling height\" and paramValue == 0:\r\n            height = boxObj.GetParameterValueByName(\"Height\")\r\n            roomObj.SetParameterByName(rP, height)\r\n            \r\n        elif bP == \"Interior Finish\":\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            paramValueSplitList = paramValue.split(\",,\")\r\n            wallType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[0].split(\"..\"))))\r\n            baseType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[1].split(\"..\"))))\r\n            floorType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[2].split(\"..\"))))\r\n            ceilType = ','.join(\r\n                list(filter(lambda x: x != \"N/A\",\r\n                    paramValueSplitList[3].split(\"..\"))))\r\n            \r\n            roomObj.SetParameterByName(\"Wall Finish\", wallType)\r\n            roomObj.SetParameterByName(\"Base Finish\", baseType)\r\n            roomObj.SetParameterByName(\"Floor Finish\", floorType)\r\n            roomObj.SetParameterByName(\"Ceiling Finish\", ceilType)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n        \r\n        else:\r\n            paramValue = boxObj.GetParameterValueByName(bP)\r\n            roomObj.SetParameterByName(rP, paramValue)\r\n    \r\n    return roomDict\r\n    \r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = map(lambda x: setRoomParameterValues(roomParamList, boxParamList, x), roomDicts)",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "71f67216e3c246bcb88872f42e0870b5",
@@ -4810,8 +4810,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -213.4988324139897,
-        "Y": 5615.407585999862
+        "X": -223.37724910303655,
+        "Y": 5533.5578477191893
       },
       {
         "Name": "Surface.OuterPerimeterCurves",
@@ -5161,7 +5161,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2463.0496247673709,
-        "Y": 6640.4904753766032
+        "Y": 6641.5861665130315
       },
       {
         "Name": "Code Block",
@@ -5170,8 +5170,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -875.510168041224,
-        "Y": 5616.1089027462622
+        "X": -880.50752527251484,
+        "Y": 5540.1490728306417
       },
       {
         "Name": "mkNewDicts",
@@ -5250,7 +5250,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3545.1734621001383,
+        "X": 3542.6928697084536,
         "Y": 6920.5982945655924
       },
       {
@@ -5365,7 +5365,7 @@
       },
       {
         "Id": "b4f271a774604188a824a7ae0dd83a77",
-        "Title": "",
+        "Title": "room btmCenPoint",
         "DescriptionText": "set Dictionary",
         "IsExpanded": true,
         "WidthAdjustment": 0.0,
@@ -5431,7 +5431,7 @@
       },
       {
         "Id": "6b7568f080c046aea04a35a9a2d86846",
-        "Title": "",
+        "Title": "room btmSrf 추출",
         "DescriptionText": "set Dictionary",
         "IsExpanded": true,
         "WidthAdjustment": 0.0,
@@ -5453,7 +5453,7 @@
       },
       {
         "Id": "8a81b2f0e1d846748dbc2e2abbd33af7",
-        "Title": "",
+        "Title": "room offsetGeo",
         "DescriptionText": "set Dictionary",
         "IsExpanded": true,
         "WidthAdjustment": 0.0,
@@ -5519,7 +5519,7 @@
       },
       {
         "Id": "843b34f931834615a534dd4066d20811",
-        "Title": "",
+        "Title": "room offsetBtmSrf",
         "DescriptionText": "set Dictionary",
         "IsExpanded": true,
         "WidthAdjustment": 0.0,
@@ -5809,8 +5809,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 277.98991021556492,
-    "Y": -1368.5720302670948,
-    "Zoom": 0.26459313484034
+    "X": -3900.848016203206,
+    "Y": -11325.463834550916,
+    "Zoom": 1.5597138253695917
   }
 }
