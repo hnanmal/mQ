@@ -40,3 +40,47 @@
 b
 
 ((ns-map b) 'String)
+
+
+(intern b 'x 9)
+
+bonobo/x
+
+
+(intern b 'reduce clojure.core/reduce)
+
+
+(intern b '+ clojure.core/+)
+
+
+(in-ns 'bonobo)
+(reduce + [1 2 3 4 5])
+
+
+(in-ns 'user)
+
+(get (ns-map 'bonobo) 'reduce)
+
+
+(ns-unmap 'bonobo 'reduce)
+
+
+(get (ns-map 'bonobo) 'reduce)
+
+
+(remove-ns 'bonobo)
+
+(all-ns)
+
+
+;;;;
+(create-ns 'hider.ns)
+(ns hider.ns)
+
+(defn ^{:private true} answer [] 42)
+
+
+(ns seeker.ns
+  (:refer hider.ns))
+
+(answer)
