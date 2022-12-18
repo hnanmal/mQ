@@ -89,3 +89,37 @@ osx
 
 
 (isa? ::unix ::osx)
+
+
+;;;계층 모순
+(derive ::osx ::bsd)
+(defmethod home ::bsd [m] "/home")
+
+(home osx)
+
+(prefer-method home ::unix ::bsd)
+(home osx)
+
+
+(remove-method home ::bsd)
+(home osx)
+
+
+(derive (make-hierarchy) ::osx ::unix)
+
+
+;;;임의적 디스패치 힘
+
+(defmulti compile-cmd (juxt :os compiler))  ; juxt는 벡터를 구성함
+
+(defmethod compile-cmd [::osx "gcc"] [m]  ; 벡터를 정확하게 매치시킴
+ (str "/user/bin/" (get m :c-compiler)))
+
+(defmethod compile-cmd :default [m]
+  (str "Unsure where to locate " (get m :c-compiler)))
+
+
+(compile-cmd osx)
+
+
+(compile-cmd unix)
