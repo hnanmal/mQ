@@ -163,7 +163,7 @@
 ;; (assoc-in matrix [1 2] ':x)
 ;; (update-in matrix [1 2] * 100)
 
-;; ;; 예제 5.1: 2차원 행렬의 특정 좌표에 대한 이웃을 찾는 함수
+;; 예제 5.1: 2차원 행렬의 특정 좌표에 대한 이웃을 찾는 함수
 ;; (defn neighbors
 ;;   ([size yx] (neighbors [[-1 0] [1 0] [0 -1] [0 1]]
 ;;                         size
