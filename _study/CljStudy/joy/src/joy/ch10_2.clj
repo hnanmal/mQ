@@ -1,22 +1,4 @@
-(ns joy.mutation
-  (:import java.util.concurrent.Executors))
-
-(def thread-pool    ; CPU 개수보다 2개 많은 스레드 풀 생성
-  (Executors/newFixedThreadPool
-   (+ 2 (.availableProcessors (Runtime/getRuntime)))))
-
-(defn dothreads!
-  [f & {thread-count :threads    ; 스레드 개수
-        exec-count :times    ; 함수 실행 횟수
-        :or {thread-count 1 exec-count 1}}]     ; 기본값 지정
-  (dotimes [t thread-count]
-    (.submit thread-pool
-             #(dotimes [_ exec-count] (f)))))    ; 함수 호출
-
-
-(dothreads! #(.print System/out "Hi ") :threads 2 :times 2)
-
-;;;;;예제 10.1 클로저의 ref를 사용한 3 x 3 체스 보드 표현
+(ns joy.ch10-2)
 
 (def initial-board    ; 초기 시드(seed)는 벡터의 벡터
   [[:- :k :-]
@@ -61,6 +43,18 @@
   [mover (some #(good-move? % enemy-pos)    ; 첫 번째 가능한 이동 선택
                (shuffle (king-moves mpos)))])  ; 가능한 이동 목록을 섞음
 
+(defn place [from to] to)
 
-(reset-board!)
-(take 5 (repeatedly #(choose-move @to-move)))
+(defn move-piece [[piece dest] [[_ src] _]]
+  (alter (get-in board dest) place piece)  ; 이동하는 말을 위치시킴
+  (alter (get-in board src) place :-)
+  (alter num-moves inc))
+
+(defn update-to-move [move]
+  (alter to-move #(vector (second %) move)))  ; 새 위치로 교체
+
+(defn make-move []
+  (let [move (choose-move @to-move)]
+    (dosync (move-piece move @to-move))  ; 한 트랜잭션에서는 보드와 num-moves를 업데이트하고
+    (dosync (update-to-move move))))  ; 다른 트랜잭션에서(주의할 것)는 to-move를 업데이트함
+
