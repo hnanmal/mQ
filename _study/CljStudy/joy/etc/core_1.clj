@@ -172,3 +172,19 @@ java.util.Locale/KOREA
     (str l-name ", " f-name " " m-name)))
 
 (whole-name :f-name "Guy" :m-name "Lewis" :l-name "Steele")
+
+
+(use '[clojure.set :only (index)])
+(def weights #{{:name 'betsy :weight 1000}
+               {:name 'jake :weight 756}
+               {:name 'shyq :weight 1000}})
+
+(def by-weight (index weights [:weight]))
+
+by-weight
+
+{
+ {:weight 1000} 
+ #{{:name shyq, :weight 1000} {:name betsy, :weight 1000}}, 
+ {:weight 756} 
+ #{{:name jake, :weight 756}}}
