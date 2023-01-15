@@ -34,3 +34,7 @@
 
 
 (user/do)
+
+(counted? (range 10))
+
+1
