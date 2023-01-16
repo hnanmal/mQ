@@ -7,10 +7,10 @@
 
 (def animal-types ["Dog" "Cat" "Mouse"])
 
-(defn animal-list []
+(defn animal-list [kind]
   (let [animals @(re-frame/subscribe [::subs/animals])]
     [:div
-     [:h1 "animal list"]
+     [:h2.subtitle (str kind "List")]
      [:ul
       (map (fn [{:keys [animal-type animal-name]}]
              [:li {:key animal-name} (str animal-name "(" animal-type ")")]) animals)]]))
@@ -36,12 +36,26 @@
         (map (fn [o] [:option {:key o :value o} o]) options)
         ]]]]))
 
+(defn form-regist-kind [kind x]
+  [
+   [:h1.title (str kind "Manager")]
+   [(animal-list kind)]
+   [text-input :animal-name "Animal Name"]
+   [select-input :animal-type "Animal Type" animal-types]
+   [:button.button.is-primary {:disabled (not x)
+                               :on-click #(re-frame/dispatch [::events/save-form])} "save"]])
+
+
 (defn main-panel []
-  (let [is-valid? @(re-frame/subscribe [::subs/form-is-valid? [:animal-name :animal-type]])]
-    [:div.section
-     [animal-list]
-     [text-input :animal-name "Animal Name"]
-     [select-input :animal-type "Animal Type" animal-types]
-     [:button.button.is-primary {:disabled (not is-valid?)
-                                 :on-click #(re-frame/dispatch [::events/save-form])} "save"]
-     ]))
+  (let [is-valid? @(re-frame/subscribe [::subs/form-is-valid? [:animal-name :animal-type]])] 
+    [:section.section
+     [:div
+      [:h1.title (str "Animal" " Manager")]
+      [animal-list "Animal "]
+      [text-input :animal-name "Animal Name"]
+      [select-input :animal-type "Animal Type" animal-types]
+      [:button.button.is-primary.is-light {:disabled (not is-valid?)
+                                           :on-click #(re-frame/dispatch [::events/save-form])} "save"]]]
+    ;; [:div
+    ;;   [@form-regist-kind "my-animals" is-valid?]]
+     ))
