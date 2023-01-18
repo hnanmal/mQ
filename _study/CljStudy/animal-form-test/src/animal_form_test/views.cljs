@@ -1,29 +1,41 @@
 (ns animal-form-test.views
   (:require
-   [re-frame.core :as re-frame]
+   [re-frame.core :as rf]
+   [animal-form-test.events :as events]
    [animal-form-test.subs :as subs]
    ))
 
-(defn text-input []
-  [:div.field
-   [:label.label "Name"]
-   [:div.control
-    [:input.input {:type "text" :placeholder "Text input"}]]])
+(def animal-types ["Dog" "Cat" "Mouse"])
 
-(defn select-input []
-  [:div.field
-   [:label.label "Subject"]
-   [:div.control
-    [:div.select
-     [:select
-      [:option "Select dropdown"]
-      [:option "With options"]]]]])
+(defn text-input [id label]
+  (let [value (rf/subscribe [::subs/form id])]
+   [:div.field
+    [:label.label label]
+    [:div.control
+     [:input.input {:value @value
+                    :on-change #(rf/dispatch [::events/update-form id (-> % .-target .-value)])
+                    :type "text" :placeholder "Text input"}]]])
+  )
+
+(defn select-input [id label options]
+  (let [value (rf/subscribe [::subs/form id])]
+    [:div.field
+     [:label.label label]
+     [:div.control
+      [:div.select
+       [:select {:value @value
+                 :on-change #(rf/dispatch [::events/update-form id (-> % .-target .-value)])}
+        [:option {:value ""} "Please select"]
+        (map (fn [o] [:option {:key o :value o} o]) options)]]]]))
 
 (defn main-panel []
-  (let [name (re-frame/subscribe [::subs/name])]
-    [:div
-     [:h1
+  (let [name (rf/subscribe [::subs/name])
+        is-valid? @(rf/subscribe [::subs/form-is-valid? [:animal-name :animal-type]])]
+    [:div.section
+     [:h1.title
       "Hello from, " @name]
-     [text-input]
-     [select-input]
+     [text-input :animal-name "Animal Name"]
+     [select-input :animal-type "Animal Type" animal-types]
+     [:button.button.is-primary {:disabled (not is-valid?)
+                                 :on-click #(rf/dispatch [::events/save-form])} "save"]
      ]))
