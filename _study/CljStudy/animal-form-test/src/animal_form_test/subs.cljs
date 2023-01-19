@@ -16,3 +16,8 @@
  ::form-is-valid?
  (fn [db [_ form-ids]]
    (every? #(get-in db [:form %]) form-ids)))
+
+(re-frame/reg-sub
+ ::animals
+ (fn [db]
+   (get db :animals [])))
