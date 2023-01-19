@@ -2,8 +2,8 @@
   (:require
    [re-frame.core :as rf]
    [animal-form-test.db :as db]
-   [day8.re-frame.tracing :refer-macros [fn-traced]]
-   ))
+   [day8.re-frame.tracing :refer-macros [fn-traced]]))
+   
 
 (rf/reg-event-db  ; (reg-event-db id handler) or (reg-event-db id interceptors handler)
  ::initialize-db
