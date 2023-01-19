@@ -24,7 +24,7 @@
 (rf/reg-event-db
  ::save-form
  (fn [db]
-   (let [form-data (get db :form)
+   (let [form-data (:form db)
          animals (get db :animals [])
          updated-animals (conj animals form-data)]
      (-> db

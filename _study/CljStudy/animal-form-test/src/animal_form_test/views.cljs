@@ -8,11 +8,11 @@
 (def animal-types ["Dog" "Cat" "Mouse"])
 
 (defn text-input [id label]
-  (let [value (rf/subscribe [::subs/form id])]
+  (let [value @(rf/subscribe [::subs/form id])]
    [:div.field
     [:label.label label]
     [:div.control
-     [:input.input {:value @value
+     [:input.input {:value value
                     :on-change #(rf/dispatch [::events/update-form id (-> % .-target .-value)])
                     :type "text" :placeholder "Text input"}]]])
   )
