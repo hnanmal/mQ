@@ -1,0 +1,281 @@
+{
+  "Uuid": "b1df9629-79cd-43a6-844d-d99c7035896f",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "AllElementsofCatfromLinkedModel",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfType, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "2fe77288558742c086711267c33432e6",
+      "Inputs": [
+        {
+          "Id": "58986f081c1e4566862a23b30c067554",
+          "Name": "element class",
+          "Description": "An element class.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cffe033606b14ff59c1f417396de8ee2",
+          "Name": "elements",
+          "Description": "All elements in the active document of a given class.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All elements in the active document of a given class."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementTypes, DSRevitNodesUI",
+      "SelectedIndex": 284,
+      "SelectedString": "RevitLinkInstance",
+      "NodeType": "ExtensionNode",
+      "Id": "d7159249950642aa94bd37a7469cfdcb",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "e0a218cc647342d881913b1a5b64e4bb",
+          "Name": "Classes",
+          "Description": "The selected Classes",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All element subclasses."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Parameters",
+      "Id": "08999abf9cf040de92307f21740a4655",
+      "Inputs": [
+        {
+          "Id": "fec5a6a2b6c24044b2929bc9f2846307",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0bf8fe9f1f5a4caab541a13ada0f9c95",
+          "Name": "Parameter[]",
+          "Description": "Parameter[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference(\"ProtoGeometry\")\r\nfrom Autodesk.DesignScript.Geometry import *\r\n## Import ToDSType(bool) extension method\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n## Import geometry conversion extension methods\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n## Import DocumentManager and TransactionManager\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nfrom System.Collections.Generic import *\r\n\r\n## Import RevitAPI\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\n#clr.AddReference(\"DSCoreNodes\")\r\n#import DSCore\r\n#from DSCore.List import *\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\nuidoc=DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\nlnks = FilteredElementCollector(doc).OfClass(RevitLinkInstance)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\n\r\n#tmp = map(lambda x: x.GetLinkDocument(), lnks)\r\n\r\nout = []\r\n\r\nfor i in lnks:\r\n    doclnk = i.GetLinkDocument()\r\n    coll = FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements()\r\n\r\n    out.append(coll)\r\n\r\n## Start Transaction\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\n## End the Transaction\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nOUT = out\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = out",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "79a252aa4301433eb2907142939b1514",
+      "Inputs": [
+        {
+          "Id": "c3a2ddd1421a4bca941a1afadbfc537f",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f3d2e618f7dd4b2faf8a6f37a7ca966a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Geometry",
+      "Id": "b9e39a33c30d49f781f1c1c12e599e66",
+      "Inputs": [
+        {
+          "Id": "afcdc37666974382a2dc09f93ef16781",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "148e206164a94a9688018bab69262aa0",
+          "Name": "var[]",
+          "Description": "var[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get all of the Geometry associated with this object\n\nElement.Geometry ( ): var[]"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "cffe033606b14ff59c1f417396de8ee2",
+      "End": "fec5a6a2b6c24044b2929bc9f2846307",
+      "Id": "7d53991dc78943fb99be624d84fae8a4",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e0a218cc647342d881913b1a5b64e4bb",
+      "End": "58986f081c1e4566862a23b30c067554",
+      "Id": "e0a06f0179834dd1aef7b588b4b40106",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f3d2e618f7dd4b2faf8a6f37a7ca966a",
+      "End": "afcdc37666974382a2dc09f93ef16781",
+      "Id": "173d2dea8c4248079b9a05524f39d116",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.16",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "3.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.16.1.2727",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": 2966.5322265625,
+      "EyeY": 7585.046875,
+      "EyeZ": 7095.6181640625,
+      "LookX": -10809.8818359375,
+      "LookY": -5547.85888671875,
+      "LookZ": -7482.16015625,
+      "UpX": -0.14984297752380371,
+      "UpY": 0.98325496912002563,
+      "UpZ": -0.10371512174606323
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Name": "All Elements of Class",
+        "ShowGeometry": true,
+        "Id": "2fe77288558742c086711267c33432e6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 704.5,
+        "Y": 448.0
+      },
+      {
+        "Name": "Element Classes",
+        "ShowGeometry": true,
+        "Id": "d7159249950642aa94bd37a7469cfdcb",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 255.5,
+        "Y": 407.0
+      },
+      {
+        "Name": "Element.Parameters",
+        "ShowGeometry": true,
+        "Id": "08999abf9cf040de92307f21740a4655",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1083.0,
+        "Y": 419.0
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "79a252aa4301433eb2907142939b1514",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 285.30853351417937,
+        "Y": 888.88565148128885
+      },
+      {
+        "Name": "Element.Geometry",
+        "ShowGeometry": true,
+        "Id": "b9e39a33c30d49f781f1c1c12e599e66",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 791.534009326771,
+        "Y": 903.80529135031645
+      }
+    ],
+    "Annotations": [],
+    "X": -36.230930913690713,
+    "Y": -194.59367541488382,
+    "Zoom": 0.83273793691306508
+  }
+}
