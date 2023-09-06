@@ -469,7 +469,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\n#col_idx = getCharValue(IN[2])-2\r\n#sep_rule = IN[3]\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\n# Place your code below this line\r\n\r\n## 1.Floors 시트 기준 엑셀 헤더 별 위치 판별 - 함수 작성을 위한 중간단계 예시 코드\r\n#headers_CatSheets = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(allCatSheets[0][1]))))\r\n\r\n#ranges_CatSheets = find_range_by_columnItem(allCatSheets[1], headers_CatSheets[\"Family Type Name\"], \"H_\")\r\n\r\n\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Family Type Name\"], \"H_\")\r\n\r\ndef get_DataOnRangesAtCatSheet(catSheet):\r\n    hdrs_withIdx = find_headersAtCatSheet(catSheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], catSheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(catSheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    #tagDatas = list(zip(rgs_k,calcTypes))\r\n    \r\n    datas_allFamType = list(map(lambda x: catSheet[x[0]-1:x[1]], rgs_v))\r\n    #datas_allFamType = list(zip(tagDatas, datas_allFamType_))\r\n    \r\n    def setDict_OnEachFamType(data_famType):\r\n        titleData = data_famType.pop(0)\r\n        famTypeName = titleData[hdrs_withIdx[\"Family Type Name\"]]\r\n        calcTypeName = titleData[hdrs_withIdx[\"Q'ty Cal Type Tag\"]]\r\n        data_famType_noneless = list(filter(lambda x: x[5] != None, data_famType))\r\n        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], hdrs_v)), data_famType_noneless))\r\n        dict_ = list(map(lambda x: dict(zip(hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        ## dict_gauge처리\r\n        targetColName = \"Guage Code\"\r\n        for d in dicts_noneless:\r\n            d[\"Family Type Name\"] = famTypeName\r\n            if calcTypeName == None:\r\n                pass            \r\n            elif targetColName in d.keys():\r\n                pass\r\n            else:\r\n                d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n                d[targetColName] = \"\"\r\n        \r\n        return dicts_noneless\r\n        \r\n    dicts_allFamType = list(map(lambda x: setDict_OnEachFamType(x), datas_allFamType))\r\n    ds_famTypesAtCatSheet = dict(zip(rgs_k, dicts_allFamType))\r\n    #ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet.items())))\r\n#    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet_noneless.items())))\r\n    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet.items())))\r\n    ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet_effCalcType.items())))\r\n    \r\n    return ds_famTypesAtCatSheet_noneless\r\n    \r\ndataOnRanges_allCat = map(get_DataOnRangesAtCatSheet, allCatSheets)\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = find_rangesAtCatSheet(allCatSheets[1])\r\n#OUT = find_headersAtCatSheet(allCatSheets[1])\r\n#OUT = get_DataOnRangesAtCatSheet(allCatSheets[0])\r\nOUT = dataOnRanges_allCat",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\n#col_idx = getCharValue(IN[2])-2\r\n#sep_rule = IN[3]\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Family Type Name\"], \"H_\")\r\n\r\ndef get_DataOnRangesAtCatSheet(catSheet): \r\n    hdrs_withIdx = find_headersAtCatSheet(catSheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], catSheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(catSheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    #tagDatas = list(zip(rgs_k,calcTypes))\r\n    \r\n    datas_allFamType = list(map(lambda x: catSheet[x[0]-1:x[1]], rgs_v))\r\n    #datas_allFamType = list(zip(tagDatas, datas_allFamType_))\r\n    \r\n    def setDict_OnEachFamType(data_famType):  ## 최종적으로 산출식 없는 것 걸러내기 추가해야 함\r\n        titleData = data_famType.pop(0)\r\n        famTypeName = titleData[hdrs_withIdx[\"Family Type Name\"]]\r\n        calcTypeName = titleData[hdrs_withIdx[\"Q'ty Cal Type Tag\"]]\r\n        data_famType_noneless = list(filter(lambda x: x[5] != None, data_famType))\r\n        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], hdrs_v)), data_famType_noneless))\r\n        dict_ = list(map(lambda x: dict(zip(hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        ## dict_gauge, 물량산출식 없는 항목 처리\r\n        dicts_final = []\r\n        needDefault_ColName = \"Guage Code\"\r\n        noneRemove_ColName = \"Dynamo 물량산출식\"\r\n        for d in dicts_noneless:\r\n            d[\"Family Type Name\"] = famTypeName\r\n            if calcTypeName == None:\r\n                pass            \r\n            elif noneRemove_ColName in d.keys():\r\n                d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n                d[needDefault_ColName] = \"\"\r\n                dicts_final.append(d)\r\n\r\n        \r\n        return dicts_final\r\n        \r\n    dicts_allFamType = list(map(lambda x: setDict_OnEachFamType(x), datas_allFamType))\r\n    ds_famTypesAtCatSheet = dict(zip(rgs_k, dicts_allFamType))\r\n    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet.items())))\r\n    ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet_effCalcType.items())))\r\n    \r\n    return ds_famTypesAtCatSheet_noneless\r\n\r\n## 시트별 딕셔너리가 아닌, 하나의 딕셔너리에 때려박는 포맷으로도 결과값 만들어 두기\r\ndataOnRanges_allCat = list(map(get_DataOnRangesAtCatSheet, allCatSheets))\r\ndicts_allCat = {}\r\nfor d in dataOnRanges_allCat:\r\n    dict_k_v = d.items()\r\n    for k,v in dict_k_v:\r\n        dicts_allCat[k] = v\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = find_rangesAtCatSheet(allCatSheets[1])\r\n#OUT = find_headersAtCatSheet(allCatSheets[1])\r\n#OUT = get_DataOnRangesAtCatSheet(allCatSheets[0])\r\nOUT = dicts_allCat",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1001,7 +1001,7 @@
           "Name": "dictionary",
           "Description": "DesignScript.Builtin.Dictionary",
           "UsingDefaultValue": false,
-          "Level": 4,
+          "Level": 1,
           "UseLevels": false,
           "KeepListStructure": false
         },
@@ -1088,8 +1088,8 @@
           "Name": "values",
           "Description": "Values of dictionary\n\nvar[]..[]",
           "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
+          "Level": 1,
+          "UseLevels": true,
           "KeepListStructure": false
         }
       ],
@@ -1157,8 +1157,8 @@
           "Name": "list",
           "Description": "List to flatten.\n\nvar[]..[]",
           "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
+          "Level": 3,
+          "UseLevels": true,
           "KeepListStructure": false
         },
         {
@@ -1186,14 +1186,24 @@
       "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
     },
     {
-      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
-      "NodeType": "ExtensionNode",
-      "Id": "f770264d86a7481592608a7bbb9a0a05",
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DesignScript.Builtin.Dictionary.ValueAtKey@string",
+      "Id": "61fb26ed169d4913a53d77a02072663e",
       "Inputs": [
         {
-          "Id": "3d5f7f0de550423190657aa90aa3ec09",
-          "Name": "",
-          "Description": "Node to show output from",
+          "Id": "cd72b1aae1de4fa681c3fbb847a6d6e0",
+          "Name": "dictionary",
+          "Description": "DesignScript.Builtin.Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7babecf60ca0444ab49ec9a698584b4e",
+          "Name": "key",
+          "Description": "The key in the Dictionary to obtain value for\n\nstring",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1202,9 +1212,29 @@
       ],
       "Outputs": [
         {
-          "Id": "baa9b43f41b74c5995336b894040c455",
+          "Id": "a4e73e3d2452429d955eb0b29a5d00c8",
+          "Name": "value",
+          "Description": "Value at the specified key or null if it is not set",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain the value at a specified key\n\nDictionary.ValueAtKey (key: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Family Type Name\";",
+      "Id": "664e9ad1580044a3921299627cb9d3c5",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "7fd762f7083c4f1197873645f5831d30",
           "Name": "",
-          "Description": "Node output",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1212,7 +1242,328 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Visualize the node's output"
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DesignScript.Builtin.Dictionary.ValueAtKey@string",
+      "Id": "10852463f7294a12a918d83b95a31248",
+      "Inputs": [
+        {
+          "Id": "b4f3484d4c244b1db5817924b419c4bb",
+          "Name": "dictionary",
+          "Description": "DesignScript.Builtin.Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "917933087bc44b27ac9ab0d88b8cdf54",
+          "Name": "key",
+          "Description": "The key in the Dictionary to obtain value for\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ebfedec63ae844d89c5c3b202409739e",
+          "Name": "value",
+          "Description": "Value at the specified key or null if it is not set",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain the value at a specified key\n\nDictionary.ValueAtKey (key: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.Clean@var[]..[],bool",
+      "Id": "f13157705e52462cb20802d955a16de2",
+      "Inputs": [
+        {
+          "Id": "6c7163f87bf145b7b1ce018b1c98fba5",
+          "Name": "list",
+          "Description": "List containing nulls and empty sublists to clean\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ecfbe68214604121a62fadc41d07050c",
+          "Name": "preserveIndices",
+          "Description": "Provide an option to preserve the indices of the data\n\nbool\nDefault value : true",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e56d0321afa748ae9f6a5c83963d1be3",
+          "Name": "list",
+          "Description": "List of transposed lists",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Cleans data of nulls and empty lists from a given list of arbitrary dimension\n\nList.Clean (list: var[]..[], preserveIndices: bool = true): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "false;",
+      "Id": "10cc7dc9a001480a97354a28b0aa4131",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "87b117c62ef34998b2737150697da40a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Work Master Code\";\n\"Family Type Name\";\n\"Description\";",
+      "Id": "59fcf4c586c44daa9f381034f99a4453",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d999adf0e7454f46b1ee0fb4957c7429",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4bd2570291b74509b862d5a60f2b2758",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d752ac7b78b6493e9feb592bcfa182ff",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DesignScript.Builtin.Dictionary.ValueAtKey@string",
+      "Id": "a774f384fa2b4b2e87d1f7243869a03b",
+      "Inputs": [
+        {
+          "Id": "faa9ed190de5471b9c2a3f57ec771589",
+          "Name": "dictionary",
+          "Description": "DesignScript.Builtin.Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8463cfe550c2447b9b510bfd6de5e84e",
+          "Name": "key",
+          "Description": "The key in the Dictionary to obtain value for\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "085e4f494f594d09b53bccd4a141b1c8",
+          "Name": "value",
+          "Description": "Value at the specified key or null if it is not set",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain the value at a specified key\n\nDictionary.ValueAtKey (key: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.String.Replace@string,string,string",
+      "Id": "618b048d9a93484083225cfc48f4050a",
+      "Inputs": [
+        {
+          "Id": "c2fbf075aa254188aec306a4980cb801",
+          "Name": "string",
+          "Description": "String to replace substrings in.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "67a68e4f91014093ae2156d1a37794a1",
+          "Name": "searchFor",
+          "Description": "Text to be replaced.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "09435106614e41939502c6d11188431e",
+          "Name": "replaceWith",
+          "Description": "Text to replace with.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "516f324bc90448adb10fb1271f1e91eb",
+          "Name": "string",
+          "Description": "String with replacements made.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Replaces all occurrences of text in a string with other text.\n\nString.Replace (string: string, searchFor: string, replaceWith: string): string"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.FromObject, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "5cc0ad578352403cbc76f6bd59b880cc",
+      "Inputs": [
+        {
+          "Id": "fd6a368bc11e429cb8ba97390791ade2",
+          "Name": "object",
+          "Description": "Object to be serialized",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "599c47ac5de948abb5bc8f2064a9788b",
+          "Name": "string",
+          "Description": "String representation of the object",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Convert an object to a string representation."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"null\";\n\"\";",
+      "Id": "e7acaec495444e72bc22b339f77805ac",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0e2e4b1c879c4e2da011c11d7963ca9a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "97fcb567029f4366accaa1f424644fae",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
+      "FunctionSignature": "DSCore.List.Join@var[]..[]",
+      "FunctionType": "VariableArgument",
+      "NodeType": "FunctionNode",
+      "Id": "918d70c7df3f472892d75609a0444638",
+      "Inputs": [
+        {
+          "Id": "08da614672ca466683aacc926fb12e80",
+          "Name": "list0",
+          "Description": "Lists to join into one.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6b7cd2cef89745f480e11fe2521b01e9",
+          "Name": "list1",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "704770ef26ac4fc6aec7b93441495265",
+          "Name": "list",
+          "Description": "Joined list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Concatenates all given lists into a single list.\n\nList.Join (lists: var[]..[]): var[]..[]"
     }
   ],
   "Connectors": [
@@ -1331,6 +1682,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "7b329bcb0cf844739a7e6e5f1a5a9e59",
+      "End": "9ba11babb5ef4e12a0e246df296ff645",
+      "Id": "8f092b928a994201a448ef174168b74c",
+      "IsHidden": "False"
+    },
+    {
       "Start": "4911953931b7426988cf7c2569f65d51",
       "End": "ddd0457b94284b9e953f67e59769ae8e",
       "Id": "e28d933fc4d0442cb785a7e76aa393aa",
@@ -1416,8 +1773,8 @@
     },
     {
       "Start": "a6db5b3198a84514b931f6728da04348",
-      "End": "3d5f7f0de550423190657aa90aa3ec09",
-      "Id": "be94318e7672485fb4424367b02944d5",
+      "End": "6c7163f87bf145b7b1ce018b1c98fba5",
+      "Id": "a74b978ba70e4ec78799f52b7bd054e8",
       "IsHidden": "False"
     },
     {
@@ -1433,9 +1790,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "e0aee50086ee4639a223aeffbefc85c3",
-      "End": "9ba11babb5ef4e12a0e246df296ff645",
-      "Id": "f3a44a9518c9447e9c68730e154402b1",
+      "Start": "23a34e78db054f36973fac8b0c4620f8",
+      "End": "cd72b1aae1de4fa681c3fbb847a6d6e0",
+      "Id": "8266d65376464e5bb93d95b3f3bd5ff8",
       "IsHidden": "False"
     },
     {
@@ -1448,6 +1805,78 @@
       "Start": "196815bbbb0d451d8b3f6e84827ca57d",
       "End": "91f4bb6b809a4b2e8361f8f6943017f1",
       "Id": "697cc68f0ffd4bcf88129941c6cdda38",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7fd762f7083c4f1197873645f5831d30",
+      "End": "7babecf60ca0444ab49ec9a698584b4e",
+      "Id": "a7b54cda86ed47bd8ecbbd3b8f58212c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ebfedec63ae844d89c5c3b202409739e",
+      "End": "08da614672ca466683aacc926fb12e80",
+      "Id": "919e56d806c047b9b6093093e5733edd",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e56d0321afa748ae9f6a5c83963d1be3",
+      "End": "b4f3484d4c244b1db5817924b419c4bb",
+      "Id": "564537e14d9f400dbab0525185756da2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e56d0321afa748ae9f6a5c83963d1be3",
+      "End": "faa9ed190de5471b9c2a3f57ec771589",
+      "Id": "ea30dd54fef64f468de71f2be10b0e66",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "87b117c62ef34998b2737150697da40a",
+      "End": "ecfbe68214604121a62fadc41d07050c",
+      "Id": "559739c1f5934c6a8d896b007620d287",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d999adf0e7454f46b1ee0fb4957c7429",
+      "End": "917933087bc44b27ac9ab0d88b8cdf54",
+      "Id": "faeb315f685e41dcb9713515d87fe908",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d752ac7b78b6493e9feb592bcfa182ff",
+      "End": "8463cfe550c2447b9b510bfd6de5e84e",
+      "Id": "b1e48b661fb5474f9ddb4a06d7039711",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "085e4f494f594d09b53bccd4a141b1c8",
+      "End": "fd6a368bc11e429cb8ba97390791ade2",
+      "Id": "250e80e3901b4c91883a001935a45762",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "516f324bc90448adb10fb1271f1e91eb",
+      "End": "6b7cd2cef89745f480e11fe2521b01e9",
+      "Id": "618f54e4f13047fa8854d8ce998331dc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "599c47ac5de948abb5bc8f2064a9788b",
+      "End": "c2fbf075aa254188aec306a4980cb801",
+      "Id": "9fd764b6a0de46d587f58cb42ba68e8c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0e2e4b1c879c4e2da011c11d7963ca9a",
+      "End": "67a68e4f91014093ae2156d1a37794a1",
+      "Id": "09b02e681bf14576b65ddb3300332fe5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "97fcb567029f4366accaa1f424644fae",
+      "End": "09435106614e41939502c6d11188431e",
+      "Id": "5795668390d9466fb6b0af18a001a521",
       "IsHidden": "False"
     }
   ],
@@ -1675,8 +2104,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2370.5712572117986,
-        "Y": 431.71299604546846
+        "X": -2414.1387100871425,
+        "Y": 463.36361237860126
       },
       {
         "Name": "Dictionary.Values",
@@ -1685,8 +2114,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -855.35141349273886,
-        "Y": 249.16956453910086
+        "X": 352.51497353993727,
+        "Y": -605.8852211941844
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -1695,8 +2124,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -395.14821824337196,
-        "Y": 384.19504064764391
+        "X": 812.71816878930417,
+        "Y": -470.85974508564118
       },
       {
         "Name": "Code Block",
@@ -1705,8 +2134,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -870.39548334089159,
-        "Y": 442.66989301781751
+        "X": 337.47090369178454,
+        "Y": -412.38489271546769
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -1715,8 +2144,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -399.28471993490712,
-        "Y": 183.34116619437356
+        "X": 808.581667097769,
+        "Y": -671.71361953891164
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -1725,8 +2154,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -386.59355339135004,
-        "Y": 598.15015746218478
+        "X": 821.27283364132609,
+        "Y": -256.90462827110036
       },
       {
         "Name": "Family List 데이터 파싱_물량Param 시트",
@@ -1735,7 +2164,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2386.4586516486988,
+        "X": -2433.3208526340709,
         "Y": -158.81236167226535
       },
       {
@@ -1745,8 +2174,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1823.9753162409709,
-        "Y": -340.60409295930538
+        "X": -1206.6734005912815,
+        "Y": -1269.882247074544
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -1755,8 +2184,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1263.6068944234873,
-        "Y": -641.67484130131493
+        "X": -646.304978773798,
+        "Y": -1447.3740948440911
       },
       {
         "Name": "Code Block",
@@ -1765,8 +2194,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1558.2545595489592,
-        "Y": -709.64236275986639
+        "X": -940.95264389926979,
+        "Y": -1515.3416163026427
       },
       {
         "Name": "Code Block",
@@ -1775,8 +2204,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -907.53730880228454,
-        "Y": -1004.0992271202613
+        "X": -290.23539315259518,
+        "Y": -1809.7984806630375
       },
       {
         "Name": "Code Block",
@@ -1785,8 +2214,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -931.36734199602574,
-        "Y": -850.707775512488
+        "X": -314.06542634633638,
+        "Y": -1656.407029055264
       },
       {
         "Name": "List.Flatten",
@@ -1795,8 +2224,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2425.5760906099058,
-        "Y": 1341.3911323455288
+        "X": -2429.8621501767411,
+        "Y": 1189.2360177228843
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -1815,8 +2244,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2368.1428883186777,
-        "Y": 1853.468439263225
+        "X": -2345.4787098358406,
+        "Y": 1707.0229782972
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -1825,8 +2254,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1549.7652973270679,
-        "Y": 1677.4534542650795
+        "X": -1444.8966993444224,
+        "Y": 1576.82197135244
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -1835,8 +2264,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -787.1854671710762,
-        "Y": 1392.5927205944263
+        "X": -900.17775455066294,
+        "Y": 1464.609675856733
       },
       {
         "Name": "Dictionary.Components",
@@ -1845,8 +2274,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1956.7043274910977,
-        "Y": 584.52666454716473
+        "X": -732.06009241991183,
+        "Y": -276.24017912392787
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -1855,8 +2284,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1337.6494090548545,
-        "Y": 682.98066390849112
+        "X": -0.86077216092598974,
+        "Y": -160.47111933728138
       },
       {
         "Name": "List.Flatten",
@@ -1865,8 +2294,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1637.5767922344651,
-        "Y": 556.75312253210052
+        "X": -332.96839358497516,
+        "Y": -280.49921695274708
       },
       {
         "Name": "List.Flatten",
@@ -1875,18 +2304,118 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1630.7699832032336,
-        "Y": 888.89475658562242
+        "X": -404.91992194134889,
+        "Y": 122.39371448936981
       },
       {
-        "Name": "Watch",
+        "Name": "Dictionary.ValueAtKey",
         "ShowGeometry": true,
-        "Id": "f770264d86a7481592608a7bbb9a0a05",
+        "Id": "61fb26ed169d4913a53d77a02072663e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -425.25258937719786,
-        "Y": 1187.4321050664594
+        "X": -83.883674880307353,
+        "Y": -633.33669411735218
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "664e9ad1580044a3921299627cb9d3c5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -638.36891920634093,
+        "Y": -658.33805143660288
+      },
+      {
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
+        "Id": "10852463f7294a12a918d83b95a31248",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -18.733650178066227,
+        "Y": 1567.7073918215858
+      },
+      {
+        "Name": "List.Clean",
+        "ShowGeometry": true,
+        "Id": "f13157705e52462cb20802d955a16de2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -464.67690141304911,
+        "Y": 1573.1923215204251
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "10cc7dc9a001480a97354a28b0aa4131",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -772.0,
+        "Y": 2061.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "59fcf4c586c44daa9f381034f99a4453",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -470.15068031573514,
+        "Y": 2067.8770071675517
+      },
+      {
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
+        "Id": "a774f384fa2b4b2e87d1f7243869a03b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -15.752736487929724,
+        "Y": 2058.4926684456177
+      },
+      {
+        "Name": "String.Replace",
+        "ShowGeometry": true,
+        "Id": "618b048d9a93484083225cfc48f4050a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 768.42140674178745,
+        "Y": 2070.3286494800873
+      },
+      {
+        "Name": "String from Object",
+        "ShowGeometry": true,
+        "Id": "5cc0ad578352403cbc76f6bd59b880cc",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 303.53448881784175,
+        "Y": 2070.5644679125853
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "e7acaec495444e72bc22b339f77805ac",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 571.69654752658482,
+        "Y": 2161.7719084685896
+      },
+      {
+        "Name": "List.Join",
+        "ShowGeometry": true,
+        "Id": "918d70c7df3f472892d75609a0444638",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1095.5607863791508,
+        "Y": 1745.7300150496969
       }
     ],
     "Annotations": [
@@ -1937,7 +2466,7 @@
         "Height": 619.40138299040018,
         "FontSize": 72.0,
         "InitialTop": -28.744957282132077,
-        "InitialHeight": 441.00000000000006,
+        "InitialHeight": 481.40138299040018,
         "TextblockHeight": 106.0,
         "Background": "#FF48B9FF"
       },
@@ -1964,10 +2493,41 @@
         "InitialHeight": 452.78172899968922,
         "TextblockHeight": 63.0,
         "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "b4448899908d4c87b251cee06537d4ec",
+        "Title": "검증용",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "ce0263fa1a3d418382fea56c8a95a867",
+          "8b402f20ca0544e3ba039e1f8e55ca5e",
+          "6256d4ecdc914c46b66006c75d8d59cf",
+          "188a809e755141b0ab4ce1168437c5b6",
+          "1343dee04584434dbc28de43a6db056b",
+          "c7418abaa52d4f3794a6b8495eeb62e3",
+          "b2e6c6a3c1cb4141942f35a1cd5ea73b",
+          "de2959c292d743eb9a7c8e2344c12590",
+          "31a81ea2e7614ca593c8bdfce069301e",
+          "61fb26ed169d4913a53d77a02072663e",
+          "664e9ad1580044a3921299627cb9d3c5"
+        ],
+        "HasNestedGroups": false,
+        "Left": -742.06009241991183,
+        "Top": -744.71361953891164,
+        "Width": 1811.3329260612379,
+        "Height": 1029.1073340282815,
+        "FontSize": 36.0,
+        "InitialTop": -671.71361953891164,
+        "InitialHeight": 986.10733402828146,
+        "TextblockHeight": 63.0,
+        "Background": "#FFC1D676"
       }
     ],
-    "X": 814.91909832320709,
-    "Y": -530.78798834708766,
-    "Zoom": 0.63106961523080618
+    "X": 1117.3640473117425,
+    "Y": -37.03243200936015,
+    "Zoom": 0.25847890072621593
   }
 }
