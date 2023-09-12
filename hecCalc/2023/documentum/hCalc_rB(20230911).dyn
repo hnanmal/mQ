@@ -469,7 +469,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\n#col_idx = getCharValue(IN[2])-2\r\n#sep_rule = IN[3]\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Family Type Name\"], \"H_\")\r\n\r\ndef get_DataOnRangesAtCatSheet(catSheet): \r\n    hdrs_withIdx = find_headersAtCatSheet(catSheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], catSheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(catSheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    #tagDatas = list(zip(rgs_k,calcTypes))\r\n    \r\n    datas_allFamType = list(map(lambda x: list(zip(catSheet[x[0]-1:x[1]], range(x[0]-1,x[1]))), rgs_v))\r\n    #datas_allFamType = list(zip(tagDatas, datas_allFamType_))\r\n    \r\n    def setDict_OnEachFamType(data_famType):  ## 최종적으로 산출식 없는 것 걸러내기 추가해야 함\r\n        titleData = list(data_famType).pop(0)[0]\r\n        \r\n        famTypeName = titleData[hdrs_withIdx[\"Family Type Name\"]]\r\n        calcTypeName = titleData[hdrs_withIdx[\"Q'ty Cal Type Tag\"]]\r\n        data_famType_noneless = list(filter(lambda x: x[0][5] != None, data_famType))\r\n        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: [list(map(lambda x: y[0][x], hdrs_v)), y[1]], data_famType_noneless))\r\n        hdrs_k.append(\"rIDX\")\r\n        dict_ = list(map(lambda x: dict(zip(hdrs_k, x[0]+[x[1]])), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        ## dict_gauge, 물량산출식 없는 항목 처리\r\n        dicts_final = []\r\n        needDefault_ColName = \"Guage Code\"\r\n        noneRemove_ColName = \"Dynamo 물량산출식\"\r\n        for d in dicts_noneless:\r\n            d[\"Family Type Name\"] = famTypeName\r\n            \r\n            if calcTypeName == None:\r\n                pass            \r\n            elif noneRemove_ColName in d.keys():\r\n                d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n                d[needDefault_ColName] = \"\"\r\n                dicts_final.append(d)\r\n\r\n        \r\n        return dicts_final\r\n        \r\n    dicts_allFamType = list(map(lambda x: setDict_OnEachFamType(list(x)), datas_allFamType))\r\n    ds_famTypesAtCatSheet = dict(zip(rgs_k, dicts_allFamType))\r\n    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet.items())))\r\n    ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet_effCalcType.items())))\r\n    \r\n    return  ds_famTypesAtCatSheet_noneless\r\n\r\n## AllInOne 딕셔너리에 정리\r\ndataOnRanges_allCat = list(map(get_DataOnRangesAtCatSheet, allCatSheets))\r\ndicts_AllInOne = {}\r\nfor d in dataOnRanges_allCat:\r\n    dict_k_v = d.items()\r\n    for k,v in dict_k_v:\r\n        dicts_AllInOne[k] = v\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = dicts_AllInOne\r\n#OUT = get_DataOnRangesAtCatSheet(allCatSheets[0])",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\n#col_idx = getCharValue(IN[2])-2\r\n#sep_rule = IN[3]\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Family Type Name\"], \"H_\")\r\n\r\ndef get_DataOnRangesAtCatSheet(catSheet): \r\n    hdrs_withIdx = find_headersAtCatSheet(catSheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], catSheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(catSheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    #tagDatas = list(zip(rgs_k,calcTypes))\r\n    \r\n    datas_allFamType = list(map(lambda x: list(zip(catSheet[x[0]-1:x[1]], range(x[0]-1,x[1]))), rgs_v))\r\n    #datas_allFamType = list(zip(tagDatas, datas_allFamType_))\r\n    \r\n    def setDict_OnEachFamType(data_famType):  ## 최종적으로 산출식 없는 것 걸러내기 추가해야 함\r\n        titleData = list(data_famType).pop(0)[0]\r\n        \r\n        famTypeName = titleData[hdrs_withIdx[\"Family Type Name\"]]\r\n        calcTypeName = titleData[hdrs_withIdx[\"Q'ty Cal Type Tag\"]]\r\n        data_famType_noneless = list(filter(lambda x: x[0][5] != None, data_famType))\r\n        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: [list(map(lambda x: y[0][x], hdrs_v)), y[1]], data_famType_noneless))\r\n        hdrs_k.append(\"rIDX\")\r\n        dict_ = list(map(lambda x: dict(zip(hdrs_k, x[0]+[x[1]])), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        ## dict_gauge, 물량산출식 없는 항목 처리\r\n        dicts_final = []\r\n        needDefault_ColName = \"Gauge Code\"\r\n        noneRemove_ColName = \"Dynamo 물량산출식\"\r\n        for d in dicts_noneless:\r\n            d[\"Family Type Name\"] = famTypeName\r\n            \r\n            if calcTypeName == None:\r\n                pass            \r\n            elif noneRemove_ColName in d.keys():\r\n                d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n                d[needDefault_ColName] = \"\"\r\n                dicts_final.append(d)\r\n\r\n        \r\n        return dicts_final\r\n        \r\n    dicts_allFamType = list(map(lambda x: setDict_OnEachFamType(list(x)), datas_allFamType))\r\n    ds_famTypesAtCatSheet = dict(zip(rgs_k, dicts_allFamType))\r\n    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet.items())))\r\n    ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet_effCalcType.items())))\r\n    \r\n    return  ds_famTypesAtCatSheet_noneless\r\n\r\n## AllInOne 딕셔너리에 정리\r\ndataOnRanges_allCat = list(map(get_DataOnRangesAtCatSheet, allCatSheets))\r\ndicts_AllInOne = {}\r\nfor d in dataOnRanges_allCat:\r\n    dict_k_v = d.items()\r\n    for k,v in dict_k_v:\r\n        dicts_AllInOne[k] = v\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = dicts_AllInOne\r\n#OUT = get_DataOnRangesAtCatSheet(allCatSheets[0])",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1395,12 +1395,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\n\"Q'ty Cal Type Tag\",\n\"Work Master Code\",\n\"Work Category-L3\",\n\"Spec. 1- L4\",\n\"Spec. 2- L5\",\n\"Spec. 3- L6\",\n\"Spec. 4- L7\",\n\"Spec. 5- L8\",\n\"Spec. 6- L9\",\n\"Spec. 7- L10\",\n\"Spec. 8- L11\",\n\"BOQ Spec1\",\n\"BOQ Spec2\",\n\"BOQ Spec3\",\n\"BOQ Spec4\",\n\"BOQ Spec5\",\n\"BOQ Spec6\",\n\"BOQ Spec7\",\n\"BOQ Spec8\",\n\"BOQ Spec9\"\n];",
+      "Code": "[\n\"Q'ty Cal Type Tag\",\n\"Work Master Code\",\n\"Gauge Code\",\n\"Work Category-L3\",\n\"Spec. 1- L4\",\n\"Spec. 2- L5\",\n\"Spec. 3- L6\",\n\"Spec. 4- L7\",\n\"Spec. 5- L8\",\n\"Spec. 6- L9\",\n\"Spec. 7- L10\",\n\"Spec. 8- L11\",\n\"BOQ Spec1\",\n\"BOQ Spec2\",\n\"BOQ Spec3\",\n\"BOQ Spec4\",\n\"BOQ Spec5\",\n\"BOQ Spec6\",\n\"BOQ Spec7\",\n\"BOQ Spec8\",\n\"BOQ Spec9\"\n];",
       "Id": "9e1934a59db94d298059a9bc8b9a66b6",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "62fa15a1c68a460abbbe7017e304f877",
+          "Id": "dcb2e8550b694b379b89a294551eab9e",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -1684,7 +1684,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nfrom Revit.Elements import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfamlist_dic = IN[0]\r\nrevitElems = IN[1]\r\n\r\n#allNames = list(map(lambda x: x.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\"), revitElems))\r\n# Place your code below this line\r\nres = []\r\nfor i in revitElems:\r\n    tmp = {}\r\n    famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n    tmp[\"Elem\"] = i\r\n    tmp[\"wms\"] = famlist_dic[famTypeName]\r\n    \r\n    res.append(tmp)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nfrom Revit.Elements import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfamlist_dic = IN[0]\r\nrevitElems = IN[1]\r\n\r\n# Place your code below this line\r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    res = []\r\n    for i in revitElems:\r\n        tmp = {}\r\n        famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        tmp[\"Elem\"] = i\r\n        tmp[\"wms\"] = famlist_dic[famTypeName]\r\n        \r\n        res.append(tmp)\r\n    return res\r\n\r\ndef update_sym_valDict(elemDicts):\r\n    for d in elemDicts:\r\n        elem = d[\"Elem\"]\r\n        wms = d[\"wms\"]\r\n        \r\n        for wm in wms:\r\n            sym_valDict = wm[\"Sym_Val Dict\"]\r\n            sv_keys = sym_valDict.Keys\r\n            sv_vals = sym_valDict.Values\r\n            sv_items = list(zip(sv_keys, sv_vals))\r\n            \r\n            for x in sv_items:\r\n                [k,v] = x\r\n                if isinstance(v, str):\r\n                    if v == \"Level\":\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n                    elif elem.GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(v)\r\n                    elif elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v)\r\n                    else:\r\n                        pass\r\n    return elemDicts\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = update_sym_valDict(matchWith_Elem_Dict(famlist_dic,revitElems))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1726,7 +1726,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nfrom Revit.Elements import *\r\n\r\nclr.AddReference(\"DSCoreNodes\")\r\nimport DSCore\r\nfrom DSCore import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\nres = []\r\nfor d in elemDicts:\r\n    elem = d[\"Elem\"]\r\n    wms = d[\"wms\"]\r\n    \r\n    for wm in wms:\r\n        sym_valDict = wm[\"Sym_Val Dict\"]\r\n        sv_keys = sym_valDict.Keys\r\n        sv_vals = sym_valDict.Values\r\n        sv_items = list(zip(sv_keys, sv_vals))\r\n        \r\n        for x in sv_items:\r\n            [k,v] = x\r\n            if isinstance(v, str):\r\n                if v == \"Level\":\r\n                    sym_valDict[k] = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n                elif elem.GetParameterValueByName(v):\r\n                    sym_valDict[k] = elem.GetParameterValueByName(v)\r\n                elif elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v):\r\n                    sym_valDict[k] = elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v)\r\n                else:\r\n                    pass\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = elemDicts[0][\"Sym_Val Dict\"]\r\nOUT = elemDicts",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nfrom Revit.Elements import *\r\n\r\nclr.AddReference(\"DSCoreNodes\")\r\nimport DSCore\r\nfrom DSCore import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef update_sym_valDict(elemDicts):\r\n    \r\n    for d in elemDicts:\r\n        elem = d[\"Elem\"]\r\n        wms = d[\"wms\"]\r\n        \r\n        for wm in wms:\r\n            sym_valDict = wm[\"Sym_Val Dict\"]\r\n            sv_keys = sym_valDict.Keys\r\n            sv_vals = sym_valDict.Values\r\n            sv_items = list(zip(sv_keys, sv_vals))\r\n            \r\n            for x in sv_items:\r\n                [k,v] = x\r\n                if isinstance(v, str):\r\n                    if v == \"Level\":\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n                    elif elem.GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(v)\r\n                    elif elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v)\r\n                    else:\r\n                        pass\r\n    return elemDicts\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = elemDicts[0][\"Sym_Val Dict\"]\r\nOUT = update_sym_valDict(elemDicts)#elemDicts",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1908,13 +1908,13 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i;",
+      "Code": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii;",
       "Id": "3ef10b272b2740d0a75e62ab2fc02425",
       "Inputs": [
         {
-          "Id": "8ac12b02ebfb40218f802d6a90f4a63e",
-          "Name": "i",
-          "Description": "i",
+          "Id": "8f2b29a33c234697a7a5404e1c821e6a",
+          "Name": "iiiiiiiiiiiiiiiiiiiii...",
+          "Description": "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1923,7 +1923,7 @@
       ],
       "Outputs": [
         {
-          "Id": "d77bbd6ef11a45b9868098868dde02a9",
+          "Id": "e5e8f6b2125848b4828085d9d32ab43a",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -1964,6 +1964,68 @@
       ],
       "Replication": "Auto",
       "Description": "Determines if any item in the given list is a boolean and has a true value.\n\nList.AnyTrue (list: var[]..[]): bool"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nfrom Revit.Elements import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nparamSheetDic = IN[0]\r\ncatSheetDic = IN[1]\r\n\r\n# Place your code below this line\r\nheaders = list(catSheetDic.values())[0][0].Keys\r\nwmspec_headers = list(filter(lambda x: \"Work C\" in x or \"Spec\" in x, headers))\r\n\r\ndef matchWith_paramDic(catSheetDic, paramSheetDic):\r\n    res = {}\r\n    for famType,diclist in catSheetDic.items():\r\n        new_diclist = []\r\n        for d in diclist:\r\n            new_d = {}\r\n            keys = d.Keys\r\n            keys_new = set(keys) - set(wmspec_headers)\r\n            calcType = d[\"Q'ty Cal Type Tag\"]\r\n            new_d[\"Sym_Val Dict\"] = paramSheetDic[calcType]\r\n            new_d[\"wmSpecs\"] = list(map(lambda x: d[x],wmspec_headers))\r\n            for spec in keys_new:\r\n                new_d[spec] = d[spec]\r\n            new_diclist.append(new_d)\r\n        \r\n        res[famType] = new_diclist\r\n        \r\n    return res\r\n    \r\n\r\n#res2 = map(lambda x: x[1], catSheetDic.items())\r\n# Assign your output to the OUT variable.\r\nOUT = matchWith_paramDic(catSheetDic, paramSheetDic)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "f99474b49e3e486e8933b2ac5d7484fa",
+      "Inputs": [
+        {
+          "Id": "413d8e4c6a5b4e0f81d2665f58b5e5b6",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4dfe3aa2a2224526a2855fca7f3bad83",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9e71cda960604590987dd25291031857",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n\"Unit\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\",\n\"\"\n];",
+      "Id": "c9606806fd5f4a8788fbedc7bf15edab",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2b258c878d524ff69f20c6440021ac39",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -2091,6 +2153,12 @@
       "Start": "7b329bcb0cf844739a7e6e5f1a5a9e59",
       "End": "0e637bbc3b7e4ff38a64c68763d4815a",
       "Id": "cb58dbc738f440e691f3ef22e673f5da",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7b329bcb0cf844739a7e6e5f1a5a9e59",
+      "End": "4dfe3aa2a2224526a2855fca7f3bad83",
+      "Id": "992467ebf9e44878ac9618f6987f3484",
       "IsHidden": "False"
     },
     {
@@ -2262,9 +2330,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "62fa15a1c68a460abbbe7017e304f877",
+      "Start": "dcb2e8550b694b379b89a294551eab9e",
       "End": "1acb0f3536104379b228c0f654ce7eff",
-      "Id": "aaf1461d87cd425b9ced3de1cab40511",
+      "Id": "1fd5d1305bb74ae9aee0c5e94a49ee71",
       "IsHidden": "False"
     },
     {
@@ -2322,6 +2390,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "5cf52c8def9d401db5e11d43ab6fe5cd",
+      "End": "413d8e4c6a5b4e0f81d2665f58b5e5b6",
+      "Id": "45abac9d707d4c78b9dbe92dece5d907",
+      "IsHidden": "False"
+    },
+    {
       "Start": "5c919d1b1818407588b8ae873dac0523",
       "End": "bba74652bf314fe390e17b56f7f38928",
       "Id": "fe72b01bc3c3470aaeddbf51ff806271",
@@ -2335,38 +2409,32 @@
     },
     {
       "Start": "bad3f087e62f4247bd337b6e8c27d1b8",
-      "End": "270dec1e9d6e466e884b694ac816e834",
-      "Id": "c4b39c35cd4647509cf1b14627247b73",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "2a53e92b2254401cafbdd5fbab70525f",
-      "End": "ce82e58746c64cbb8dcc9480509cc410",
-      "Id": "0d4afc3aef544a71b20f3c27039cb727",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "2a53e92b2254401cafbdd5fbab70525f",
-      "End": "7cea65e062a244178e66602b78cf0657",
-      "Id": "9487ff05fb104acda3da6c8d66e12dcf",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "2a53e92b2254401cafbdd5fbab70525f",
       "End": "dab6d062027b477aa2ca43fb26621b0f",
-      "Id": "06da55b6295b4130a7a30aebc21e3410",
+      "Id": "5bfbe9b617854d0b8029b8126c5e6cfe",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "bad3f087e62f4247bd337b6e8c27d1b8",
+      "End": "ce82e58746c64cbb8dcc9480509cc410",
+      "Id": "1ed02372c90244169fe0348db1fc52cd",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "bad3f087e62f4247bd337b6e8c27d1b8",
+      "End": "7cea65e062a244178e66602b78cf0657",
+      "Id": "1cd99f837b2f4b7b9ceca6f2c6173b8b",
       "IsHidden": "False"
     },
     {
       "Start": "7d16e283b8284a28a3e96e66b5b94269",
       "End": "a7404130a2b14313b30f7a7bd520db43",
-      "Id": "1debc6fb9c2549ea888d9ce42d89877d",
+      "Id": "7dbc5608c2b04b4bbfc6ba6f5be3bcc4",
       "IsHidden": "False"
     },
     {
       "Start": "972046cf740e4d1383092478b89c4dd7",
-      "End": "8ac12b02ebfb40218f802d6a90f4a63e",
-      "Id": "e69036be1c744fadb665e064c7f576ff",
+      "End": "8f2b29a33c234697a7a5404e1c821e6a",
+      "Id": "79f64b41b056439fb24b383703e8edca",
       "IsHidden": "False"
     },
     {
@@ -2934,14 +3002,14 @@
         "Y": 1288.8184713447274
       },
       {
-        "Name": "family list데이터 - Revit 부재 데이터 결합",
+        "Name": "family list데이터 - Revit 부재 데이터 결합 & Sym_Val Dict 값 업데이트(타입,인스턴스 매개변수)",
         "ShowGeometry": true,
         "Id": "133158fdcead4a29bea8da975ca27c31",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 313.51495164151765,
-        "Y": 953.178692863358
+        "X": 261.470413099619,
+        "Y": 956.56729988764687
       },
       {
         "Name": "부재Dict별 Sym_Val Dict 값 업데이트(타입,인스턴스 매개변수)",
@@ -2949,9 +3017,9 @@
         "Id": "671505ce45224e55aafcdb80f62eea87",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 756.34276206531956,
-        "Y": 952.38602731417313
+        "Excluded": true,
+        "X": 664.71742800316679,
+        "Y": 264.59399961313454
       },
       {
         "Name": "Watch",
@@ -2980,8 +3048,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1419.9795022584929,
-        "Y": 1284.8893791030482
+        "X": 1123.3672243124167,
+        "Y": 1095.1832932082079
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -2990,8 +3058,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2208.55160856987,
-        "Y": 958.20502318133117
+        "X": 2218.3183152999532,
+        "Y": 957.67533809936
       },
       {
         "Name": "Code Block",
@@ -3010,8 +3078,28 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1924.1604081250082,
-        "Y": 1337.8939568330186
+        "X": 1747.0315212950188,
+        "Y": 1090.5423752242766
+      },
+      {
+        "Name": "Family List 데이터 파싱_Category - 물량Param 시트 결합",
+        "ShowGeometry": true,
+        "Id": "f99474b49e3e486e8933b2ac5d7484fa",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -765.25730727563109,
+        "Y": -73.192143961909153
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "c9606806fd5f4a8788fbedc7bf15edab",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1213.52508719126,
+        "Y": -153.18804139024024
       }
     ],
     "Annotations": [
@@ -3140,7 +3228,7 @@
         "Height": 492.0,
         "FontSize": 36.0,
         "InitialTop": 3145.0958923684784,
-        "InitialHeight": 277.504116728629,
+        "InitialHeight": 277.81561234537548,
         "TextblockHeight": 63.0,
         "Background": "#FFBB87C6"
       },
@@ -3170,7 +3258,7 @@
         "Height": 860.198333620936,
         "FontSize": 36.0,
         "InitialTop": 2475.8988007632215,
-        "InitialHeight": 415.34499999999935,
+        "InitialHeight": 627.198333620936,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -3219,8 +3307,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -202.77451887963946,
-    "Y": -84.230687835826132,
-    "Zoom": 0.40705080689650508
+    "X": 957.64167777758121,
+    "Y": 300.20129896532779,
+    "Zoom": 1.166601243801985
   }
 }
