@@ -250,7 +250,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
+      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -1831,7 +1831,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\n#clr.AddReference('RevitNodes')\r\n#import Revit\r\n#clr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfamlist_dic = IN[0]\r\nrevitElems = IN[1]\r\n\r\n# Place your code below this line\r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    res = []\r\n    for i in revitElems:\r\n        tmp = {}\r\n        famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        tmp[\"Elem\"] = i\r\n        tmp[\"wms\"] = famlist_dic[famTypeName]\r\n        \r\n        res.append(tmp)\r\n    return res\r\n\r\ndef update_sym_valDict(elemDicts):\r\n    for d in elemDicts:\r\n        elem = d[\"Elem\"]\r\n        wms = d[\"wms\"]\r\n        \r\n        for wm in wms:\r\n            sym_valDict = wm[\"Sym_Val Dict\"]\r\n            sv_keys = sym_valDict.Keys\r\n            sv_vals = sym_valDict.Values\r\n            sv_items = list(zip(sv_keys, sv_vals))\r\n            \r\n            for x in sv_items:\r\n                [k,v] = x\r\n                if isinstance(v, str):\r\n                    if v == \"Level\":\r\n                        #sym_valDict[k] = dir(UnwrapElement(elem.GetParameterValueByName(v)))\r\n                        sym_valDict[k] = elem.GetParameterValueByName(v).GetParameterValueByName(\"Elevation\")\r\n                    elif elem.GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(v)\r\n                    elif elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v)\r\n                    else:\r\n                        pass\r\n    return elemDicts\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = update_sym_valDict(matchWith_Elem_Dict(famlist_dic,revitElems))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\n#clr.AddReference('RevitNodes')\r\n#import Revit\r\n#clr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfamlist_dic = IN[0]\r\nrevitElems = IN[1]\r\n\r\n# Place your code below this line\r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    res = []\r\n    for i in revitElems:\r\n        tmp = {}\r\n        famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        tmp[\"Elem\"] = i\r\n        tmp[\"wms\"] = famlist_dic[famTypeName]\r\n        \r\n        res.append(tmp)\r\n    return res\r\n\r\ndef update_sym_valDict(elemDicts):\r\n    for d in elemDicts:\r\n        elem = d[\"Elem\"]\r\n        wms = d[\"wms\"]\r\n        \r\n        for wm in wms:\r\n            sym_valDict = wm[\"Sym_Val Dict\"]\r\n            sv_keys = sym_valDict.Keys\r\n            sv_vals = sym_valDict.Values\r\n            sv_items = list(zip(sv_keys, sv_vals))\r\n            \r\n            for x in sv_items:\r\n                [k,v] = x\r\n                if isinstance(v, str):\r\n                    if v == \"Level\":\r\n                        #sym_valDict[k] = type(UnwrapElement(elem.GetParameterValueByName(v)))\r\n                        sym_valDict[k] = round(elem.GetParameterValueByName(\"Elevation at Bottom\"),2)\r\n                    elif elem.GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(v)\r\n                    elif elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v):\r\n                        sym_valDict[k] = elem.GetParameterValueByName(\"Type\").GetParameterValueByName(v)\r\n                    else:\r\n                        pass\r\n    return elemDicts\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = update_sym_valDict(matchWith_Elem_Dict(famlist_dic,revitElems))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1850,15 +1850,6 @@
           "Id": "7a75d2d18293473e89b54f0ee754c1e5",
           "Name": "IN[1]",
           "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b0a51c9c85664c118b3d322035e4384e",
-          "Name": "IN[2]",
-          "Description": "Input #2",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2002,7 +1993,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)\r\n        btmCrvs = list(map(lambda x: x.PerimeterCurves(), btmSrf))[0]\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(btmPolCrv, sym_valDict):\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        H = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        uprPolCrv = btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        return uprPolCrv\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ngeoResult = []\r\ntestFiltered = []\r\n\r\nfor dic in elemDicts:\r\n    elem = dic[\"Elem\"]\r\n    wms = dic[\"wms\"]\r\n    tmpExca = None\r\n    for wm in wms:\r\n        formula = wm[\"Dynamo 물량산출식\"]\r\n        sym_valDict = wm[\"Sym_Val Dict\"]\r\n        famType = wm[\"Family Type Name\"]\r\n        calcType = wm[\"Q'ty Cal Type Tag\"]\r\n        wmCode = wm[\"Work Master Code\"]\r\n        gaugeCode = wm[\"Gauge Code\"]\r\n        \r\n        if \"Exca\" in formula:\r\n            tmpExca = makeExcaShape(elem, sym_valDict)\r\n            #geoResult.append(makeExcaShape(elem, sym_valDict))\r\n        \r\n    if tmpExca != None:\r\n        geoResult.append(tmpExca) #if tmpExca!=None#else pass\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = geoResult",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\n# Place your code below this line\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)\r\n        btmCrvs = list(map(lambda x: x.PerimeterCurves(), btmSrf))[0]\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,h)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(btmPolCrv, sym_valDict):\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        H = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        CrvZ = btmPolCrv.StartPoint\r\n        uprPolCrv = btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        return CrvZ #uprPolCrv\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return uprPolCrv#Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ngeoResult = []\r\ntestFiltered = []\r\n\r\nfor dic in elemDicts:\r\n    elem = dic[\"Elem\"]\r\n    wms = dic[\"wms\"]\r\n    tmpExca = None\r\n    for wm in wms:\r\n        formula = wm[\"Dynamo 물량산출식\"]\r\n        sym_valDict = wm[\"Sym_Val Dict\"]\r\n        famType = wm[\"Family Type Name\"]\r\n        calcType = wm[\"Q'ty Cal Type Tag\"]\r\n        wmCode = wm[\"Work Master Code\"]\r\n        gaugeCode = wm[\"Gauge Code\"]\r\n        \r\n        if \"Exca\" in formula:\r\n            tmpExca = makeExcaShape(elem, sym_valDict)\r\n            #geoResult.append(makeExcaShape(elem, sym_valDict))\r\n        \r\n    if tmpExca != None:\r\n        geoResult.append([wms[0][\"Family Type Name\"],tmpExca]) #if tmpExca!=None#else pass\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = geoResult",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2144,6 +2135,206 @@
       ],
       "Replication": "Disabled",
       "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Parameters",
+      "Id": "cec4b396e4aa4c32afa9e89182843aad",
+      "Inputs": [
+        {
+          "Id": "b98d1915a27542cc84289cb7a1918f95",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d88fd62669fb405c8c663944c17c4664",
+          "Name": "Parameter[]",
+          "Description": "Parameter[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "0545983ab71246a8b6ed9f1c2cdc3345",
+      "Inputs": [
+        {
+          "Id": "0f57bea5dcbd4468b1f20607ab7de172",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "088d5cf2b5324a99b52a40aaae7369c6",
+          "Name": "parameterName",
+          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1f67127398974248b97b7694ef855e4c",
+          "Name": "var[]..[]",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Level\";\n\"Elevation at Bottom\";",
+      "Id": "61c4875d9c8f4249b99dd6cae9b33193",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c7f3c2a582424a47adb7c711c247d5e6",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e37bffec6f3642f98c323cd57d042105",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "866466e8080e47d09e7ea27c0340a679",
+      "Inputs": [
+        {
+          "Id": "d706af3819744b30aefad733af832a04",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "eefe422520064527a36a08fe3d7f21d6",
+          "Name": "parameterName",
+          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a0dc06d80dda43079024a0fabee413a9",
+          "Name": "var[]..[]",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[j];",
+      "Id": "385efa519fa64297a98d185b06fd4635",
+      "Inputs": [
+        {
+          "Id": "028cd52943e24f0f8fedf4e4e576241f",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ed16019006ab4957b9607768fdfffe8b",
+          "Name": "j",
+          "Description": "j",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ea0154b48a4f45f09a9c0d0c682023e9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Double",
+      "MaximumValue": 38.0,
+      "MinimumValue": 0.0,
+      "StepValue": 1.0,
+      "InputValue": 1.0,
+      "Id": "843401f60db24068803552330fc46ea2",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "948735ed85be4951913c06a8f654d515",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces numeric values."
     }
   ],
   "Connectors": [
@@ -2574,15 +2765,57 @@
       "IsHidden": "False"
     },
     {
+      "Start": "f91fcafbd74a4726a0feb1b7027b8a3c",
+      "End": "028cd52943e24f0f8fedf4e4e576241f",
+      "Id": "69934b15dcf84d3fbe44fc5bfb285392",
+      "IsHidden": "False"
+    },
+    {
       "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
       "End": "1c46fabd2d7446f4a0a84f4e278238a3",
       "Id": "e069cd1ecf134110b25fbb161a4d038c",
       "IsHidden": "False"
     },
     {
+      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "End": "b98d1915a27542cc84289cb7a1918f95",
+      "Id": "e1673d6d8d2a49739672c8b30e93a849",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "End": "0f57bea5dcbd4468b1f20607ab7de172",
+      "Id": "1bb00e0833ed4bfdb20f9bccd7a4dc83",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "End": "d706af3819744b30aefad733af832a04",
+      "Id": "e3c6942a510348609121f36d964ed9dc",
+      "IsHidden": "False"
+    },
+    {
       "Start": "bb527d1655334200a31922ae51e7dcac",
       "End": "049e11f1af574fa7a857c8552d5673e2",
       "Id": "5cacb01517eb4da4a3eaef768c8cfbb3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "c7f3c2a582424a47adb7c711c247d5e6",
+      "End": "088d5cf2b5324a99b52a40aaae7369c6",
+      "Id": "b2f265dfca964f1f874ccddcc7695871",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e37bffec6f3642f98c323cd57d042105",
+      "End": "eefe422520064527a36a08fe3d7f21d6",
+      "Id": "023518a02f214040bcdeaf8d341ad96d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "948735ed85be4951913c06a8f654d515",
+      "End": "ed16019006ab4957b9607768fdfffe8b",
+      "Id": "8f6a7ea7b856480ba377b197f1b1b298",
       "IsHidden": "False"
     }
   ],
@@ -2631,15 +2864,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 86.470306396484375,
-      "EyeY": 1.2024850845336914,
-      "EyeZ": -17.771053314208984,
-      "LookX": -51.623699188232422,
-      "LookY": -10.633915901184082,
-      "LookZ": -38.4640998840332,
-      "UpX": 0.041968315839767456,
-      "UpY": 0.99862951040267944,
-      "UpZ": 0.031268272548913956
+      "EyeX": 238.69235229492188,
+      "EyeY": 9.8676986694335938,
+      "EyeZ": -127.25912475585938,
+      "LookX": -96.819793701171875,
+      "LookY": -12.133224487304688,
+      "LookZ": -27.195343017578125,
+      "UpX": 0.0922752246260643,
+      "UpY": 0.99539625644683838,
+      "UpZ": 0.025917140766978264
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -3240,8 +3473,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1575.291903826597,
-        "Y": 715.77586610359572
+        "X": 1823.9837443879612,
+        "Y": 632.17307714892434
       },
       {
         "Name": "Code Block",
@@ -3270,8 +3503,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 46.049756573193463,
-        "Y": 940.721310114913
+        "X": 857.52705321061512,
+        "Y": 1317.1294537358854
       },
       {
         "Name": "All Elements of Category",
@@ -3280,8 +3513,68 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 325.60343726163285,
-        "Y": 934.173716090063
+        "X": 1190.8533258449077,
+        "Y": 1176.1503798464028
+      },
+      {
+        "Name": "Element.Parameters",
+        "ShowGeometry": true,
+        "Id": "cec4b396e4aa4c32afa9e89182843aad",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2993.4153412084897,
+        "Y": 2248.7303769705786
+      },
+      {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
+        "Id": "0545983ab71246a8b6ed9f1c2cdc3345",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2442.6955721509989,
+        "Y": 2000.0211464044205
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "61c4875d9c8f4249b99dd6cae9b33193",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2814.2302784448643,
+        "Y": 2105.9423495912683
+      },
+      {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
+        "Id": "866466e8080e47d09e7ea27c0340a679",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2441.2084877303573,
+        "Y": 2301.4130539494886
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "385efa519fa64297a98d185b06fd4635",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2114.7974179910566,
+        "Y": 468.91697262230508
+      },
+      {
+        "Name": "Number Slider",
+        "ShowGeometry": true,
+        "Id": "843401f60db24068803552330fc46ea2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1750.9177032607795,
+        "Y": 219.79611495214343
       }
     ],
     "Annotations": [
@@ -3489,8 +3782,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 29.092808328026081,
-    "Y": -798.83098012724065,
-    "Zoom": 1.0481447834440498
+    "X": -1162.2614762387209,
+    "Y": -467.90786269339105,
+    "Zoom": 0.86084953587586366
   }
 }
