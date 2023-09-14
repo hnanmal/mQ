@@ -250,7 +250,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230912.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -1911,57 +1911,6 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\nlang_mode = IN[2]\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\nallCatSheets_with_names = list(zip(allCatSheets,allCatSheetsNames))\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Q'ty Cal Type Tag\"], \"-\")\r\n\r\ndef get_DataOnRangesAtCatSheet(Sheet):\r\n    \r\n    hdrs_withIdx = find_headersAtCatSheet(Sheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(Sheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], Sheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(Sheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(Sheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    eff_hdrs_v = hdrs_v[2:]\r\n    eff_hdrs_k = hdrs_k[2:]\r\n    \r\n    datas_allCalType = list(map(lambda x: Sheet[x[0]-1:x[1]], rgs_v))\r\n    \r\n    def setDict_OnEachCalType(data_calType):\r\n        paramName_lang = \"패밀리 매개변수(from Revit) 영문판\" if lang_mode is True else \"패밀리 매개변수(from Revit) 한글판\"\r\n        calcTypeName = data_calType[0][2]\r\n        data_calType_noneless = list(filter(lambda x: x[hdrs_withIdx[\"항목\"]] != None, data_calType))\r\n#        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_calType_noneless))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n#        ## dict_Cal Type 입력처리\r\n        targetColName = \"Q'ty Cal Type Tag\"\r\n        dicts_finalNoneless = []\r\n        for d in dicts_noneless:\r\n            d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n            \r\n            if \"입력값\" in d.keys():\r\n                d[\"applyForCalc\"] = d[\"입력값\"]\r\n                dicts_finalNoneless.append(d)\r\n            elif paramName_lang in d.keys():\r\n                d[\"applyForCalc\"] = d[paramName_lang]\r\n                dicts_finalNoneless.append(d)\r\n            else:\r\n                pass\r\n        \r\n        return {calcTypeName: dicts_finalNoneless}\r\n        \r\n    return map(setDict_OnEachCalType, datas_allCalType)\r\neach_dict = get_DataOnRangesAtCatSheet(paramSheet)\r\ndicts_AllInOne = {}\r\nfor d in each_dict:\r\n    dict_k_v = d.items()\r\n    for k,v in dict_k_v:\r\n        dicts_AllInOne[k] = v\r\n# Assign your output to the OUT variable.\r\n\r\n\r\nOUT = allCatSheetsNames #dicts_AllInOne",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "14380bf5b576493f8929ebec21bd4a22",
-      "Inputs": [
-        {
-          "Id": "1f792f1024234f1a88cf32ba30239a0e",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b2f6802cf03b410a9450bc973ae5905b",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "20126e4201f84fd5bb7515477702d844",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "85e8091db44645bb975cf2988b694645",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
       "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
       "NodeType": "ExtensionNode",
       "Id": "c2bf3dea5eb24eb8bfc3b26878273df2",
@@ -1993,7 +1942,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\n# Place your code below this line\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)\r\n        btmCrvs = list(map(lambda x: x.PerimeterCurves(), btmSrf))[0]\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,h)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(btmPolCrv, sym_valDict):\r\n        H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        H = H2 + sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"]\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        CrvZ = btmPolCrv.StartPoint\r\n        uprPolCrv = btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        return CrvZ #uprPolCrv\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return uprPolCrv#Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ngeoResult = []\r\ntestFiltered = []\r\n\r\nfor dic in elemDicts:\r\n    elem = dic[\"Elem\"]\r\n    wms = dic[\"wms\"]\r\n    tmpExca = None\r\n    for wm in wms:\r\n        formula = wm[\"Dynamo 물량산출식\"]\r\n        sym_valDict = wm[\"Sym_Val Dict\"]\r\n        famType = wm[\"Family Type Name\"]\r\n        calcType = wm[\"Q'ty Cal Type Tag\"]\r\n        wmCode = wm[\"Work Master Code\"]\r\n        gaugeCode = wm[\"Gauge Code\"]\r\n        \r\n        if \"Exca\" in formula:\r\n            tmpExca = makeExcaShape(elem, sym_valDict)\r\n            #geoResult.append(makeExcaShape(elem, sym_valDict))\r\n        \r\n    if tmpExca != None:\r\n        geoResult.append([wms[0][\"Family Type Name\"],tmpExca]) #if tmpExca!=None#else pass\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = geoResult",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\n# Place your code below this line\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ngeoResult = []\r\ntestFiltered = []\r\n\r\nfor dic in elemDicts:\r\n    elem = dic[\"Elem\"]\r\n    wms = dic[\"wms\"]\r\n    tmpExca = None\r\n    for wm in wms:\r\n        formula = wm[\"Dynamo 물량산출식\"]\r\n        sym_valDict = wm[\"Sym_Val Dict\"]\r\n        famType = wm[\"Family Type Name\"]\r\n        calcType = wm[\"Q'ty Cal Type Tag\"]\r\n        wmCode = wm[\"Work Master Code\"]\r\n        gaugeCode = wm[\"Gauge Code\"]\r\n        \r\n        if \"Exca\" in formula:\r\n            tmpExca = makeExcaShape(elem, sym_valDict)\r\n            #geoResult.append(makeExcaShape(elem, sym_valDict))\r\n        \r\n    if tmpExca != None:\r\n        geoResult.append([wms[0][\"Family Type Name\"],tmpExca]) #if tmpExca!=None#else pass\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = geoResult",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2026,11 +1975,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[0][0];",
+      "Code": "i[3][180];",
       "Id": "c8992b8a59fb48d39d99dea4abd73a57",
       "Inputs": [
         {
-          "Id": "1a839a1961794e688ca529dd347b8d89",
+          "Id": "592b4060ee9b4245a446b5d5fd2398af",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -2041,7 +1990,7 @@
       ],
       "Outputs": [
         {
-          "Id": "237b65d4ce6a4dbc9dfa5d761435f087",
+          "Id": "bc920da784614be5b951a14868ad260f",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -2085,56 +2034,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
-      "SelectedIndex": 287,
-      "SelectedString": "OST_Levels",
-      "NodeType": "ExtensionNode",
-      "Id": "ad3270d7e7ce4ab5a3d612de95cb55ed",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "bb527d1655334200a31922ae51e7dcac",
-          "Name": "Category",
-          "Description": "The selected Category.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "All built-in categories."
-    },
-    {
-      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
-      "NodeType": "ExtensionNode",
-      "Id": "08b7200d2d5f411a8ba3f8a0f908f50b",
-      "Inputs": [
-        {
-          "Id": "049e11f1af574fa7a857c8552d5673e2",
-          "Name": "Category",
-          "Description": "The Category",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "423fda2de02c43e582c2e386b04fbe6c",
-          "Name": "Elements",
-          "Description": "An element class.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Get all elements of the specified category from the model."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -2335,6 +2234,246 @@
       ],
       "Replication": "Disabled",
       "Description": "A slider that produces numeric values."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[1][1];",
+      "Id": "24e20ba2965943a6833c75e8ab81f7cf",
+      "Inputs": [
+        {
+          "Id": "95e37885547340e39fdae180d1b82e6b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9d750ac37f214dfa9f6cf1e3469da063",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i;",
+      "Id": "07216a072d404c4784cc9ea19423e3c0",
+      "Inputs": [
+        {
+          "Id": "48a1c27ad5444b0ea5c64f19d885b090",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a66c3addf82148159108239080e79b6d",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[16];",
+      "Id": "1d0f46a8b9524779aaafb2744584e1a8",
+      "Inputs": [
+        {
+          "Id": "61e0c55ef823434d8d40a8391bdd44eb",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a56acf6ce0aa4dedb103141d8720a73a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Parameters",
+      "Id": "751e20fc9ecd4ae19001b42ee256c57d",
+      "Inputs": [
+        {
+          "Id": "9c5f9b76f07443aabab464ce4fbb9de4",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3b00121832e54bc69f19c3cd03fb6e2d",
+          "Name": "Parameter[]",
+          "Description": "Parameter[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.ElementType.Name",
+      "Id": "d77ddd444edb4078ab049aa42c7c587a",
+      "Inputs": [
+        {
+          "Id": "3edbcc89d3c8452e8147f7ed196fbb7d",
+          "Name": "elementType",
+          "Description": "Revit.Elements.ElementType",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0f1f1d1d08844321bf98d736f7eb4a19",
+          "Name": "string",
+          "Description": "string",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "The name of the ElementType.\n\nElementType.Name: string"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetLocation",
+      "Id": "175a7cf8cf0c4d32a6a1e8e877977d33",
+      "Inputs": [
+        {
+          "Id": "79746cdb7de04df5a881b2c9cda95e3b",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d12421b3c87e435e9bc549ebafac983b",
+          "Name": "Geometry",
+          "Description": "Location Geometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get an existing element's location\n\nElement.GetLocation ( ): Geometry"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Geometry",
+      "Id": "5dd4e3e76c474df7bceb9c62a59762e7",
+      "Inputs": [
+        {
+          "Id": "e42745bd60d84d789aa4d2f754ce413a",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b98113c0e8af47cbb476776e0effbc3b",
+          "Name": "var[]",
+          "Description": "var[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get all of the Geometry associated with this object\n\nElement.Geometry ( ): var[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Solid.Area",
+      "Id": "3dd2d6f055c245719f0810cb644547da",
+      "Inputs": [
+        {
+          "Id": "9b75f41d88324bb7b9ec5f0f64c1f247",
+          "Name": "solid",
+          "Description": "Autodesk.DesignScript.Geometry.Solid",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "aac568409c264c52942f87ee1755d899",
+          "Name": "double",
+          "Description": "double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns the surface area -- sum of all the areas of all faces\n\nSolid.Area: double"
     }
   ],
   "Connectors": [
@@ -2370,8 +2509,8 @@
     },
     {
       "Start": "266640a8b58449a48603af36addb1282",
-      "End": "1a839a1961794e688ca529dd347b8d89",
-      "Id": "6ef0405ad7924e37a7da2d93059274a0",
+      "End": "592b4060ee9b4245a446b5d5fd2398af",
+      "Id": "cc24cc99960e457b862b95f513de45a8",
       "IsHidden": "False"
     },
     {
@@ -2384,12 +2523,6 @@
       "Start": "16f6a93146ee4557a8eec29cac4eb344",
       "End": "cbcac752c4ef4adbbf500face4dae780",
       "Id": "fa5b938ede8a4671bb6ae0d22253dd0b",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "16f6a93146ee4557a8eec29cac4eb344",
-      "End": "1f792f1024234f1a88cf32ba30239a0e",
-      "Id": "af2bc75aecf04a8ab828015b6ef828b0",
       "IsHidden": "False"
     },
     {
@@ -2444,12 +2577,6 @@
       "Start": "7d4c7b51481348b68b28a4a779f5cca8",
       "End": "8fc2fd075a8f43b5aa80a7c22114b549",
       "Id": "758db14748464307bcd2f9bfee28d63e",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "7d4c7b51481348b68b28a4a779f5cca8",
-      "End": "b2f6802cf03b410a9450bc973ae5905b",
-      "Id": "97062bd97bec42b9aa4fd852285ac67e",
       "IsHidden": "False"
     },
     {
@@ -2552,12 +2679,6 @@
       "Start": "25b11d15e6834c96a298b45cb1bf32a7",
       "End": "da273f14c52b42558ec17b22c360f024",
       "Id": "b790e826848349b3999761b5dbe7aeb7",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "25b11d15e6834c96a298b45cb1bf32a7",
-      "End": "20126e4201f84fd5bb7515477702d844",
-      "Id": "1baf8a1d924546daa18abb0642e1256f",
       "IsHidden": "False"
     },
     {
@@ -2693,6 +2814,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "28f37057ec694f93a6f284da04997a53",
+      "End": "48a1c27ad5444b0ea5c64f19d885b090",
+      "Id": "65731ed88afa48788fe301812c2fa8ef",
+      "IsHidden": "False"
+    },
+    {
       "Start": "5c919d1b1818407588b8ae873dac0523",
       "End": "bba74652bf314fe390e17b56f7f38928",
       "Id": "fe72b01bc3c3470aaeddbf51ff806271",
@@ -2771,33 +2898,27 @@
       "IsHidden": "False"
     },
     {
-      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "Start": "bc920da784614be5b951a14868ad260f",
       "End": "1c46fabd2d7446f4a0a84f4e278238a3",
-      "Id": "e069cd1ecf134110b25fbb161a4d038c",
+      "Id": "a2abbc5c07b24b21ab8acaa38a528561",
       "IsHidden": "False"
     },
     {
-      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "Start": "bc920da784614be5b951a14868ad260f",
       "End": "b98d1915a27542cc84289cb7a1918f95",
-      "Id": "e1673d6d8d2a49739672c8b30e93a849",
+      "Id": "1bef3b558163400fb595e1a41bcc9708",
       "IsHidden": "False"
     },
     {
-      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "Start": "bc920da784614be5b951a14868ad260f",
       "End": "0f57bea5dcbd4468b1f20607ab7de172",
-      "Id": "1bb00e0833ed4bfdb20f9bccd7a4dc83",
+      "Id": "22d730d49a904c0381f1c5477a9f7c04",
       "IsHidden": "False"
     },
     {
-      "Start": "237b65d4ce6a4dbc9dfa5d761435f087",
+      "Start": "bc920da784614be5b951a14868ad260f",
       "End": "d706af3819744b30aefad733af832a04",
-      "Id": "e3c6942a510348609121f36d964ed9dc",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "bb527d1655334200a31922ae51e7dcac",
-      "End": "049e11f1af574fa7a857c8552d5673e2",
-      "Id": "5cacb01517eb4da4a3eaef768c8cfbb3",
+      "Id": "fdb9de9f532a49dea08e847144c05383",
       "IsHidden": "False"
     },
     {
@@ -2813,9 +2934,51 @@
       "IsHidden": "False"
     },
     {
+      "Start": "ea0154b48a4f45f09a9c0d0c682023e9",
+      "End": "95e37885547340e39fdae180d1b82e6b",
+      "Id": "7584ff05d12c4deeb6e775a8334b8ac2",
+      "IsHidden": "False"
+    },
+    {
       "Start": "948735ed85be4951913c06a8f654d515",
       "End": "ed16019006ab4957b9607768fdfffe8b",
       "Id": "8f6a7ea7b856480ba377b197f1b1b298",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a66c3addf82148159108239080e79b6d",
+      "End": "61e0c55ef823434d8d40a8391bdd44eb",
+      "Id": "26a653e4e60b408986a32e9b30e39571",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a56acf6ce0aa4dedb103141d8720a73a",
+      "End": "9c5f9b76f07443aabab464ce4fbb9de4",
+      "Id": "d8f081f074a6443b840924c296c11cbb",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a56acf6ce0aa4dedb103141d8720a73a",
+      "End": "3edbcc89d3c8452e8147f7ed196fbb7d",
+      "Id": "56f3224c23dc45dab05fa7200249a6d6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a56acf6ce0aa4dedb103141d8720a73a",
+      "End": "79746cdb7de04df5a881b2c9cda95e3b",
+      "Id": "ae40dff14542499998104e1b9e390f33",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a56acf6ce0aa4dedb103141d8720a73a",
+      "End": "e42745bd60d84d789aa4d2f754ce413a",
+      "Id": "e9fc7535feaf47edbff25502ff2c04e9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b98113c0e8af47cbb476776e0effbc3b",
+      "End": "9b75f41d88324bb7b9ec5f0f64c1f247",
+      "Id": "bfb4675264b44fd98be656688a6b7031",
       "IsHidden": "False"
     }
   ],
@@ -2864,15 +3027,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 238.69235229492188,
-      "EyeY": 9.8676986694335938,
-      "EyeZ": -127.25912475585938,
-      "LookX": -96.819793701171875,
-      "LookY": -12.133224487304688,
-      "LookZ": -27.195343017578125,
-      "UpX": 0.0922752246260643,
-      "UpY": 0.99539625644683838,
-      "UpZ": 0.025917140766978264
+      "EyeX": 72.887298583984375,
+      "EyeY": 22.580907821655273,
+      "EyeZ": 28.587745666503906,
+      "LookX": -47.68145751953125,
+      "LookY": -28.479953765869141,
+      "LookZ": -34.248603820800781,
+      "UpX": -0.18960076570510864,
+      "UpY": 0.97237032651901245,
+      "UpZ": -0.13618959486484528
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -3124,7 +3287,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 1740.4180469936318,
-        "Y": 2408.4159869242089
+        "Y": 2414.4372706165996
       },
       {
         "Name": "String.Contains",
@@ -3193,8 +3356,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": -846.77440549718381,
-        "Y": 3045.2720366816034
+        "X": -1141.5396162187837,
+        "Y": 4677.817819139691
       },
       {
         "Name": "Code Block",
@@ -3203,8 +3366,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1274.4587549315022,
-        "Y": 2912.4564243362279
+        "X": -1569.2239656531021,
+        "Y": 4545.0022067943155
       },
       {
         "Name": "Spec Types",
@@ -3213,8 +3376,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1599.8198932059909,
-        "Y": 2914.8166141772849
+        "X": -1894.5851039275908,
+        "Y": 4547.3623966353734
       },
       {
         "Name": "Group Types",
@@ -3223,8 +3386,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1600.9418236101938,
-        "Y": 3044.9605410648569
+        "X": -1895.7070343317937,
+        "Y": 4677.5063235229445
       },
       {
         "Name": "List.UniqueItems",
@@ -3254,7 +3417,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2818.4180469936318,
-        "Y": 2446.4159869242089
+        "Y": 2452.4372706165996
       },
       {
         "Name": "Code Block",
@@ -3264,7 +3427,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2798.7392428638191,
-        "Y": 2917.457668458419
+        "Y": 2923.4789521508096
       },
       {
         "Name": "setParamElementTypes",
@@ -3274,7 +3437,7 @@
         "IsSetAsOutput": false,
         "Excluded": true,
         "X": 3175.4180469936323,
-        "Y": 2484.4159869242089
+        "Y": 2490.4372706165996
       },
       {
         "Name": "Get_WMCodesAndBriefSpec",
@@ -3284,7 +3447,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2436.4180469936318,
-        "Y": 2446.4159869242089
+        "Y": 2452.4372706165996
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -3294,7 +3457,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2078.4180469936318,
-        "Y": 2374.4159869242089
+        "Y": 2380.4372706165996
       },
       {
         "Name": "Code Block",
@@ -3304,7 +3467,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 2078.4180469936318,
-        "Y": 2552.2434869242088
+        "Y": 2558.2647706165994
       },
       {
         "Name": "Code Block",
@@ -3314,7 +3477,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 891.41804699363183,
-        "Y": 2353.898486924209
+        "Y": 2359.9197706165996
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -3324,7 +3487,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 1294.4180469936318,
-        "Y": 2442.4159869242089
+        "Y": 2448.4372706165996
       },
       {
         "Name": "Code Block",
@@ -3334,7 +3497,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 891.41804699363183,
-        "Y": 2531.898486924209
+        "Y": 2537.9197706165996
       },
       {
         "Name": "물량Param시트 약자-매개변수 정리",
@@ -3373,8 +3536,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1074.6943876607681,
-        "Y": -284.45840304864447
+        "X": 2830.4802612840003,
+        "Y": -1590.0427706146374
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -3383,8 +3546,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2151.885257319972,
-        "Y": -379.64193955516367
+        "X": 3907.6711309432039,
+        "Y": -1685.2263071211567
       },
       {
         "Name": "Code Block",
@@ -3393,8 +3556,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2554.3972070447016,
-        "Y": -386.91673550412179
+        "X": 4310.1830806679336,
+        "Y": -1692.5011030701148
       },
       {
         "Name": "List.AnyTrue",
@@ -3403,8 +3566,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1813.5341191507814,
-        "Y": -265.55928858095018
+        "X": 3569.3199927740134,
+        "Y": -1571.1436561469432
       },
       {
         "Name": "Family List 데이터 파싱_Category - 물량Param 시트 결합",
@@ -3433,8 +3596,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 245.69334281340093,
-        "Y": -443.3909666561496
+        "X": 26.970557187810527,
+        "Y": -1077.1262173149109
       },
       {
         "Name": "Code Block",
@@ -3447,24 +3610,14 @@
         "Y": 942.71190253920872
       },
       {
-        "Name": "Family List 데이터 파싱_물량Param 시트",
-        "ShowGeometry": true,
-        "Id": "14380bf5b576493f8929ebec21bd4a22",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -2013.2540853872501,
-        "Y": -90.392132284092753
-      },
-      {
         "Name": "Watch",
         "ShowGeometry": true,
         "Id": "c2bf3dea5eb24eb8bfc3b26878273df2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1179.7144997809976,
-        "Y": -780.49795773826929
+        "X": 1917.0770711664788,
+        "Y": -1773.133119285184
       },
       {
         "Name": "토공 산출 구간",
@@ -3473,8 +3626,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1823.9837443879612,
-        "Y": 632.17307714892434
+        "X": 1907.1929745153932,
+        "Y": 668.38673935168208
       },
       {
         "Name": "Code Block",
@@ -3483,8 +3636,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3033.7862774214855,
-        "Y": 1982.7514101992026
+        "X": -7088.8952594279926,
+        "Y": 3350.3855107094778
       },
       {
         "Name": "Python Script",
@@ -3493,28 +3646,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2785.3753558247731,
-        "Y": 1847.3161358141238
-      },
-      {
-        "Name": "Categories",
-        "ShowGeometry": true,
-        "Id": "ad3270d7e7ce4ab5a3d612de95cb55ed",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 857.52705321061512,
-        "Y": 1317.1294537358854
-      },
-      {
-        "Name": "All Elements of Category",
-        "ShowGeometry": true,
-        "Id": "08b7200d2d5f411a8ba3f8a0f908f50b",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1190.8533258449077,
-        "Y": 1176.1503798464028
+        "X": -6840.4843378312808,
+        "Y": 3214.9502363243987
       },
       {
         "Name": "Element.Parameters",
@@ -3523,8 +3656,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2993.4153412084897,
-        "Y": 2248.7303769705786
+        "X": -7048.5243232149969,
+        "Y": 3616.3644774808536
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -3533,8 +3666,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2442.6955721509989,
-        "Y": 2000.0211464044205
+        "X": -6497.8045541575066,
+        "Y": 3367.6552469146955
       },
       {
         "Name": "Code Block",
@@ -3543,8 +3676,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2814.2302784448643,
-        "Y": 2105.9423495912683
+        "X": -6869.339260451372,
+        "Y": 3473.5764501015433
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -3553,18 +3686,18 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2441.2084877303573,
-        "Y": 2301.4130539494886
+        "X": -6496.317469736865,
+        "Y": 3669.0471544597635
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "385efa519fa64297a98d185b06fd4635",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 2114.7974179910566,
-        "Y": 468.91697262230508
+        "Excluded": true,
+        "X": 4066.668247437929,
+        "Y": -1151.0515389915086
       },
       {
         "Name": "Number Slider",
@@ -3573,8 +3706,88 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1750.9177032607795,
-        "Y": 219.79611495214343
+        "X": 3531.0116292588436,
+        "Y": -1168.4356306882767
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "24e20ba2965943a6833c75e8ab81f7cf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4318.8708294468724,
+        "Y": -1058.9685116138135
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "07216a072d404c4784cc9ea19423e3c0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 56.0,
+        "Y": 1535.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "1d0f46a8b9524779aaafb2744584e1a8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 369.4847698182017,
+        "Y": 1564.1824062641469
+      },
+      {
+        "Name": "Element.Parameters",
+        "ShowGeometry": true,
+        "Id": "751e20fc9ecd4ae19001b42ee256c57d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 883.66947412696993,
+        "Y": 1488.7743416708231
+      },
+      {
+        "Name": "ElementType.Name",
+        "ShowGeometry": true,
+        "Id": "d77ddd444edb4078ab049aa42c7c587a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 383.66256559775024,
+        "Y": 1896.1354487051901
+      },
+      {
+        "Name": "Element.GetLocation",
+        "ShowGeometry": true,
+        "Id": "175a7cf8cf0c4d32a6a1e8e877977d33",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 574.09273705317219,
+        "Y": 1753.5254878561072
+      },
+      {
+        "Name": "Element.Geometry",
+        "ShowGeometry": true,
+        "Id": "5dd4e3e76c474df7bceb9c62a59762e7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 604.07898522979758,
+        "Y": 1426.4080892869902
+      },
+      {
+        "Name": "Solid.Area",
+        "ShowGeometry": true,
+        "Id": "3dd2d6f055c245719f0810cb644547da",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 902.1869045130627,
+        "Y": 1292.3156088855239
       }
     ],
     "Annotations": [
@@ -3627,7 +3840,7 @@
         "InitialTop": 197.12517693814777,
         "InitialHeight": 481.40138299040018,
         "TextblockHeight": 106.0,
-        "Background": "#FF48B9FF"
+        "Background": "#FFFF7BAC"
       },
       {
         "Id": "cc900d62e13942f799fbe062ae858fa0",
@@ -3697,12 +3910,12 @@
           "97eecaa0667140b2b217c07528ffcc32"
         ],
         "HasNestedGroups": false,
-        "Left": -1610.9418236101938,
-        "Top": 2839.4564243362279,
+        "Left": -1905.7070343317937,
+        "Top": 4472.0022067943155,
         "Width": 1230.16741811301,
         "Height": 492.0,
         "FontSize": 36.0,
-        "InitialTop": 2912.4564243362279,
+        "InitialTop": 4545.0022067943155,
         "InitialHeight": 277.81561234537548,
         "TextblockHeight": 63.0,
         "Background": "#FFBB87C6"
@@ -3728,11 +3941,11 @@
         ],
         "HasNestedGroups": false,
         "Left": 881.41804699363183,
-        "Top": 2280.898486924209,
+        "Top": 2286.9197706165996,
         "Width": 2553.0000000000005,
         "Height": 941.55918153421,
         "FontSize": 36.0,
-        "InitialTop": 2353.898486924209,
+        "InitialTop": 2359.9197706165996,
         "InitialHeight": 708.55918153421,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -3760,7 +3973,60 @@
         "InitialTop": 600.05731001256743,
         "InitialHeight": 293.0,
         "TextblockHeight": 92.0,
-        "Background": "#FF48B9FF"
+        "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "d32a2211f0f5473f9686739996094c2a",
+        "Title": "디버깅용 데이터 확인 구간",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "eec4b4e3e3ad4252a5125b338123cd00",
+          "e1d18e101351496ba5d4b8d822b2111e",
+          "3ef10b272b2740d0a75e62ab2fc02425",
+          "47f1eb9c0ea64efb8edcc83a4eb1f517",
+          "385efa519fa64297a98d185b06fd4635",
+          "843401f60db24068803552330fc46ea2",
+          "24e20ba2965943a6833c75e8ab81f7cf"
+        ],
+        "HasNestedGroups": false,
+        "Left": 2820.4802612840003,
+        "Top": -1808.5011030701148,
+        "Width": 2330.7028193839333,
+        "Height": 881.53259145630136,
+        "FontSize": 72.0,
+        "InitialTop": -1692.5011030701148,
+        "InitialHeight": 795.53259145630125,
+        "TextblockHeight": 106.0,
+        "Background": "#FFB5B5B5"
+      },
+      {
+        "Id": "8f1d678bff834a5596596ecb0022efe6",
+        "Title": "디버깅용",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "c8992b8a59fb48d39d99dea4abd73a57",
+          "6ccd409079af40d585d92d8c9551607f",
+          "cec4b396e4aa4c32afa9e89182843aad",
+          "0545983ab71246a8b6ed9f1c2cdc3345",
+          "61c4875d9c8f4249b99dd6cae9b33193",
+          "866466e8080e47d09e7ea27c0340a679"
+        ],
+        "HasNestedGroups": false,
+        "Left": -7098.8952594279926,
+        "Top": 3098.9502363243987,
+        "Width": 958.57778969112769,
+        "Height": 732.09691813536483,
+        "FontSize": 72.0,
+        "InitialTop": 3214.9502363243987,
+        "InitialHeight": 646.09691813536483,
+        "TextblockHeight": 106.0,
+        "Background": "#FFB5B5B5"
       },
       {
         "Id": "0ff82b1632ff4d8cbcded5b0beba520c",
@@ -3782,8 +4048,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -1162.2614762387209,
-    "Y": -467.90786269339105,
-    "Zoom": 0.86084953587586366
+    "X": -194.17442325549951,
+    "Y": -1404.9261420216299,
+    "Zoom": 1.1002823272299338
   }
 }
