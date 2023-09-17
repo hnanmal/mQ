@@ -1951,7 +1951,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\n\r\n#all_UG_RC_Elems = []\r\n#for dic in elemDicts:\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ndef addExcaInElemDicts(elemDicts):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict)\r\n            allExcas.append([idx, excaGeo])\r\n            dic[\"ExcaGeo\"] = [idx, excaGeo]\r\n\r\n    return (allExcas,elemDicts)\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ :\r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n\r\n    return geoResult\r\n\r\nallGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\nallUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n\r\n\r\n\r\n#elemDicts_ExcasWithWholeExcaList = addExcaInElemDicts(elemDicts)\r\n\r\n#elemDicts_effExcas = []\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_ExcasWithWholeExcaList = addExcaInElemDicts(elemDicts)\r\n    wholeExcaList = elemDicts_ExcasWithWholeExcaList[0]\r\n    \r\n    elemDicts_excas = elemDicts_ExcasWithWholeExcaList[1]\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n            eff_excaRef = []\r\n            for excaRef in wholeExcaList:\r\n                if excaGeo[0] != excaRef[0]:\r\n                    eff_excaRef.append(excaRef[1])\r\n                \r\n            uni_eff_excaRef = Solid.ByUnion(eff_excaRef)\r\n            \r\n            eff_excaGeo = excaGeo[1].Split(uni_eff_excaRef)[0]\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)[0]\r\n            dic[\"effDisposalGeo\"] = eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)#elemDicts_ExcasWithWholeExcaList\r\n#OUT = allUniGeo_UG_RC_Elems",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\n\r\n#all_UG_RC_Elems = []\r\n#for dic in elemDicts:\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n\r\ndef addExcaInElemDicts(elemDicts):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict)\r\n            allExcas.append([idx, excaGeo])\r\n            dic[\"ExcaGeo\"] = [idx, excaGeo]\r\n\r\n    return (allExcas,elemDicts)\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ :\r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n\r\n    return geoResult\r\n\r\n#allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n#allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n\r\n\r\n\r\n#elemDicts_ExcasWithWholeExcaList = addExcaInElemDicts(elemDicts)\r\n\r\n#elemDicts_effExcas = []\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    \r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_ExcasWithWholeExcaList = addExcaInElemDicts(elemDicts)\r\n    wholeExcaList = elemDicts_ExcasWithWholeExcaList[0]\r\n    \r\n    elemDicts_excas = elemDicts_ExcasWithWholeExcaList[1]\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n            eff_excaRef = []\r\n            for excaRef in wholeExcaList:\r\n                if excaGeo[0] != excaRef[0]:\r\n                    eff_excaRef.append(excaRef[1])\r\n                \r\n            uni_eff_excaRef = Solid.ByUnion(eff_excaRef)\r\n            \r\n            eff_excaGeo = excaGeo[1].Split(uni_eff_excaRef)[0]\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)[0]\r\n            dic[\"effDisposalGeo\"] = eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n        \r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            if \"Exca\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Back\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Disp\" in wm[\"Dynamo 물량산출식\"]:\r\n                wm[\"Sym_Val Dict\"][\"Exca\"] = dic[\"effExcaGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Back\"] = dic[\"effBackfillGeo\"].Volume\r\n\r\n                try:\r\n                    wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effDisposalGeo\"][0].Volume\r\n                except:\r\n                    wm[\"Sym_Val Dict\"][\"Disp\"] = 0\r\n\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)#elemDicts_ExcasWithWholeExcaList\r\n#OUT = allUniGeo_UG_RC_Elems",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2402,6 +2402,159 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"wms\"];",
+      "Id": "89f363cc1b2f4213b4795b8937400331",
+      "Inputs": [
+        {
+          "Id": "2e7deb5789184784b9194745530fccef",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "540459ce35f24397bb778919494c3a1a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"wms\"];",
+      "Id": "988286026f774c11a051a069407c4ced",
+      "Inputs": [
+        {
+          "Id": "4effa63525434b0f9e7f6bbd2f4fb1ad",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1cb78ace155f460c8785296b97dab129",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Dynamo 물량산출식\"];",
+      "Id": "afb7508bf7244548b91e70820277478d",
+      "Inputs": [
+        {
+          "Id": "36220c871ab94fcf83d4e9af068f27e0",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "506ef542c9594bdaa395296dcd3e8798",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\ndef clean_SymValDict(elemDicts):\r\n    for dic in elemDicts:\r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            formula = wm[\"Dynamo 물량산출식\"]\r\n            SymValDicts = wm[\"Sym_Val Dict\"]\r\n            SymValItems = list(zip(SymValDicts.Keys, SymValDicts.Values))\r\n            sym_val_keySets = []\r\n            sym_val_valSets = []\r\n            for k,v in SymValItems:\r\n                if k in formula:\r\n                    sym_val_keySets.append(k)\r\n                    sym_val_valSets.append(v)\r\n            wm[\"Sym_Val Set\"] = [sym_val_keySets,sym_val_valSets]\r\n    \r\n    return elemDicts\r\n\r\n# Place your code below this line\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = clean_SymValDict(elemDicts)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "0c4ce42b1eec4eed8035d10e12270fc2",
+      "Inputs": [
+        {
+          "Id": "715d5eb8400a49d68e4675ea776ce995",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d25f86b42589432686f7e0c250268c07",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Sym_Val Set\"];",
+      "Id": "2de2b7a9ebc846578be54fb28e57a028",
+      "Inputs": [
+        {
+          "Id": "9ecbdd78198c44448336063aaebc2d20",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2d0d3be0e01540f8873f7d7d3d1f7a12",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -2784,6 +2937,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "e5e8f6b2125848b4828085d9d32ab43a",
+      "End": "2e7deb5789184784b9194745530fccef",
+      "Id": "e58f384eda564440930bd67e525691cf",
+      "IsHidden": "False"
+    },
+    {
       "Start": "9a91e74b122843309841834e20b0cc14",
       "End": "16ce2ad0ba6b4a5dbeaecbb94532be24",
       "Id": "960fb14d69c140fdaad3b12a0e805400",
@@ -2829,6 +2988,12 @@
       "Start": "f91fcafbd74a4726a0feb1b7027b8a3c",
       "End": "c8c7221967ef4eac915368cb4fd5e5d0",
       "Id": "98f7ab4181a14fd1bad26b9a075a52da",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f91fcafbd74a4726a0feb1b7027b8a3c",
+      "End": "715d5eb8400a49d68e4675ea776ce995",
+      "Id": "b591698e1d774f829bd3c9d04887aa2c",
       "IsHidden": "False"
     },
     {
@@ -2889,6 +3054,24 @@
       "Start": "a0f12abf0dbe4c28b58a40e1e3de8e38",
       "End": "7cea65e062a244178e66602b78cf0657",
       "Id": "3969e026bde04205b717561400005d80",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1cb78ace155f460c8785296b97dab129",
+      "End": "36220c871ab94fcf83d4e9af068f27e0",
+      "Id": "234773fa013b4b22858ed5813e5c2260",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1cb78ace155f460c8785296b97dab129",
+      "End": "9ecbdd78198c44448336063aaebc2d20",
+      "Id": "42246a8f63e24a9dbf075c0d687d0aaa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d25f86b42589432686f7e0c250268c07",
+      "End": "4effa63525434b0f9e7f6bbd2f4fb1ad",
+      "Id": "11e30646793940228a2887e796126f84",
       "IsHidden": "False"
     }
   ],
@@ -3646,8 +3829,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5577.6699109276142,
-        "Y": -1535.144247540406
+        "X": 5820.1380799131366,
+        "Y": -1976.5606577448198
       },
       {
         "Name": "Code Block",
@@ -3656,8 +3839,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5610.0721237702028,
-        "Y": -1271.2684685627696
+        "X": 5852.5402927557252,
+        "Y": -1712.6848787671834
       },
       {
         "Name": "Code Block",
@@ -3666,8 +3849,58 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5527.9685157697468,
-        "Y": -1846.5381989032883
+        "X": 5770.4366847552692,
+        "Y": -2287.9546091077018
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "89f363cc1b2f4213b4795b8937400331",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5380.0,
+        "Y": -1458.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "988286026f774c11a051a069407c4ced",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2578.1711197236982,
+        "Y": 691.467869954277
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "afb7508bf7244548b91e70820277478d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2922.1488638919268,
+        "Y": 463.47596233712625
+      },
+      {
+        "Name": "clean_SymValDict",
+        "ShowGeometry": true,
+        "Id": "0c4ce42b1eec4eed8035d10e12270fc2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2146.9119110732822,
+        "Y": 703.56723928803524
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "2de2b7a9ebc846578be54fb28e57a028",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2932.4468229594113,
+        "Y": 906.87224277545931
       }
     ],
     "Annotations": [
@@ -3936,8 +4169,27 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 1910.7506830740977,
-        "Top": 359.16751356022849,
+        "Left": 1606.2629793047281,
+        "Top": 503.02596084891843,
+        "Width": 0.0,
+        "Height": 0.0,
+        "FontSize": 36.0,
+        "InitialTop": 0.0,
+        "InitialHeight": 0.0,
+        "TextblockHeight": 0.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "e59d4e8deeea44a0a571183ad690d46a",
+        "Title": "Sym Val Dict에서\n산출식에 사용된 것 이외를\n제거하기",
+        "DescriptionText": null,
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [],
+        "HasNestedGroups": false,
+        "Left": 2163.6082518460021,
+        "Top": 626.199041257761,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -3947,8 +4199,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -1757.6110254170833,
-    "Y": 588.685386775833,
-    "Zoom": 0.32701834329816043
+    "X": -1353.2374847502283,
+    "Y": -306.61521811631894,
+    "Zoom": 0.66188017328735915
   }
 }
