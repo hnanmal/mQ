@@ -250,7 +250,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
+      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -2496,7 +2496,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\ndef clean_SymValDict(elemDicts):\r\n    for dic in elemDicts:\r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            formula = wm[\"Dynamo 물량산출식\"]\r\n            SymValDicts = wm[\"Sym_Val Dict\"]\r\n            SymValItems = list(zip(SymValDicts.Keys, SymValDicts.Values))\r\n            sym_val_keySets = []\r\n            sym_val_valSets = []\r\n            for k,v in SymValItems:\r\n                if k in formula:\r\n                    sym_val_keySets.append(k)\r\n                    sym_val_valSets.append(v)\r\n            #wm[\"Sym_Val Set\"] = [sym_val_keySets,sym_val_valSets]\r\n            wm[\"Sym_Val Set\"] = dict(zip(sym_val_keySets,sym_val_valSets))\r\n            formula_eqSymRemove = formula.lstrip(\"=\")\r\n            tmp = formula_eqSymRemove\r\n            for k in sym_val_keySets:\r\n                if \"Exca\" in tmp or \"Back\" in tmp or \"Disp\" in tmp:\r\n                    if len(k) > 1:\r\n                        tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                else:\r\n                    tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                \r\n            \r\n            #wm[\"calcResult\"] = tmp.strip()\r\n            wm[\"calcResult\"] = round(eval(tmp.strip()),3)\r\n    \r\n    return elemDicts\r\n\r\n# Place your code below this line\r\n\r\nelemDicts_withSymValSet = clean_SymValDict(elemDicts)\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = clean_SymValDict(elemDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\ndef clean_SymValDict(elemDicts):\r\n    for dic in elemDicts:\r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            formula = wm[\"Dynamo 물량산출식\"]\r\n            SymValDicts = wm[\"Sym_Val Dict\"]\r\n            SymValItems = list(zip(SymValDicts.Keys, SymValDicts.Values))\r\n            sym_val_keySets = []\r\n            sym_val_valSets = []\r\n            for k,v in SymValItems:\r\n                if k in formula:\r\n                    sym_val_keySets.append(k)\r\n                    sym_val_valSets.append(v)\r\n            #wm[\"Sym_Val Set\"] = [sym_val_keySets,sym_val_valSets]\r\n            wm[\"Sym_Val Set\"] = dict(zip(sym_val_keySets,sym_val_valSets))\r\n            formula_eqSymRemove = formula.lstrip(\"=\")\r\n            tmp = formula_eqSymRemove\r\n            for k in sym_val_keySets: ## 이 부분은 좀더 범용 처리 필요할수도\r\n                priorSymList = [\"Exca\", \"Back\", \"Disp\"]\r\n                #any(list(map(lambda x: x in tmp, priorList)))\r\n                #if \"Exca\" in tmp or \"Back\" in tmp or \"Disp\" in tmp:\r\n                if any(list(map(lambda x: x in tmp, priorSymList))):\r\n                    appliedSym = list(filter(lambda x: x in tmp, priorSymList))[0]\r\n                    #if len(k) > 1:\r\n                    if k == appliedSym:\r\n                        tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                else:\r\n                    tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                \r\n            \r\n            #wm[\"calcResult\"] = tmp.strip()\r\n            wm[\"calcResult\"] = round(eval(tmp.strip()),3)\r\n    \r\n    return elemDicts\r\n\r\n# Place your code below this line\r\n\r\nelemDicts_withSymValSet = clean_SymValDict(elemDicts)\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = clean_SymValDict(elemDicts)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3642,6 +3642,117 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndb = IN[0]\r\nallCatSheetsNames =IN[1]\r\n\r\n\r\nparamSheet = db[0]\r\nallCatSheets = db[1:]\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtCatSheet(catSheet):\r\n    headers_CatSheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(catSheet[1])))\r\n    \r\n    return dict(headers_CatSheet)\r\n\r\ndef find_rangesAtCatSheet(catSheet, hdrs_withIdx):\r\n    return find_range_by_columnItem(catSheet, hdrs_withIdx[\"Family Type Name\"], \"H_\")\r\n\r\ndef get_DataOnRangesAtCatSheet(catSheet): \r\n    hdrs_withIdx = find_headersAtCatSheet(catSheet)\r\n    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values())\r\n    calcType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Q'ty Cal Type Tag\"]], catSheet))\r\n    calcTypes = list(map(lambda x: calcType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(catSheet, hdrs_withIdx).values()))\r\n    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(catSheet, hdrs_withIdx).keys()))\r\n    \r\n    hdrs_v = list(hdrs_withIdx.values())\r\n    hdrs_k = list(hdrs_withIdx.keys())\r\n    #tagDatas = list(zip(rgs_k,calcTypes))\r\n    \r\n    datas_allFamType = list(map(lambda x: list(zip(catSheet[x[0]-1:x[1]], range(x[0]-1,x[1]))), rgs_v))\r\n    #datas_allFamType = list(zip(tagDatas, datas_allFamType_))\r\n    \r\n    def setDict_OnEachFamType(data_famType):  ## 최종적으로 산출식 없는 것 걸러내기 추가해야 함\r\n        titleData = list(data_famType).pop(0)[0]\r\n        \r\n        famTypeName = titleData[hdrs_withIdx[\"Family Type Name\"]]\r\n        calcTypeName = titleData[hdrs_withIdx[\"Q'ty Cal Type Tag\"]]\r\n        data_famType_noneless = list(filter(lambda x: x[0][5] != None, data_famType))\r\n        ## WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: [list(map(lambda x: y[0][x], hdrs_v)), y[1]], data_famType_noneless))\r\n        hdrs_k.append(\"rIDX\")\r\n        dict_ = list(map(lambda x: dict(zip(hdrs_k, x[0]+[x[1]])), data_withHdrsIdx))\r\n        dicts_noneless = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        ## dict_gauge, 물량산출식 없는 항목 처리\r\n        dicts_final = []\r\n        needDefault_ColName = \"Gauge Code\"\r\n        noneRemove_ColName = \"Dynamo 물량산출식\"\r\n        for d in dicts_noneless:\r\n            d[\"Family Type Name\"] = famTypeName\r\n            \r\n            if calcTypeName == None:\r\n                pass            \r\n            elif noneRemove_ColName in d.keys():\r\n                d[\"Q'ty Cal Type Tag\"] = calcTypeName\r\n                d[needDefault_ColName] = \"\"\r\n                dicts_final.append(d)\r\n\r\n        \r\n        return dicts_final\r\n        \r\n    dicts_allFamType = list(map(lambda x: setDict_OnEachFamType(list(x)), datas_allFamType))\r\n    ds_famTypesAtCatSheet = dict(zip(rgs_k, dicts_allFamType))\r\n    ds_famTypesAtCatSheet_effCalcType = dict(filter(lambda x: all(list(map(lambda i: \"Q'ty Cal Type Tag\" in i, x[1]))), list(ds_famTypesAtCatSheet.items())))\r\n    ds_famTypesAtCatSheet_noneless = dict(filter(lambda x: len(list(x[1]))!=0, list(ds_famTypesAtCatSheet_effCalcType.items())))\r\n    \r\n    return  ds_famTypesAtCatSheet_noneless\r\n\r\n## AllInOne 딕셔너리에 정리\r\ndataOnRanges_allCat = list(map(get_DataOnRangesAtCatSheet, allCatSheets))\r\ndataOnRanges_allCat_WithCatNames = list(zip(allCatSheetsNames, dataOnRanges_allCat))\r\ndicts_AllInOne = {}\r\n\r\nfor d in dataOnRanges_allCat_WithCatNames:\r\n    catName = d[0]\r\n    dict_k_v = d[1].items()\r\n    for k,v in dict_k_v:\r\n        for wm in v:\r\n            wm[\"SheetName\"] = catName\r\n        dicts_AllInOne[k] = v\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = dicts_AllInOne\r\n#OUT = get_DataOnRangesAtCatSheet(allCatSheets[0])#allCatSheetsWithNames#",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "000f06ac5d844412994ef40b4057a11a",
+      "Inputs": [
+        {
+          "Id": "798645b44b2541869eebb7e2b11c5570",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "866fe130d5be4da3b59bb3722a0dbbc6",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a6f6808e72c5476eb31874fb60fbd602",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[i[\"wms\"][\"rIDX\"], i[\"wms\"][\"calcResult\"]];\n[i[\"wms\"][\"SheetName\"], i[\"wms\"][\"rIDX\"], i[\"wms\"][\"calcResult\"]];",
+      "Id": "5957d48611b3499fb59194a77710e772",
+      "Inputs": [
+        {
+          "Id": "70dcd5495e8f483c9a6534f483ce2606",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "528bfcbe670945e0b608f13c194fca41",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "22ca33e865c54addba300add5d7ea653",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.Transpose@var[]..[]",
+      "Id": "b9e378a0538448c68c23c6811e4d57e2",
+      "Inputs": [
+        {
+          "Id": "2f24c5ff4c0e4d56938e4e3ec6e1230d",
+          "Name": "lists",
+          "Description": "List of lists to be transposed\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2f8e40503c6a4350a708da1053d6b3d1",
+          "Name": "lists",
+          "Description": "List of transposed lists",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Swaps rows and columns in a list of lists. If there are some rows that are shorter than others, null values are inserted as place holders in the resultant array such that it is always rectangular.\n\nList.Transpose (lists: var[]..[]): var[]..[]"
     }
   ],
   "Connectors": [
@@ -3691,6 +3802,12 @@
       "Start": "16f6a93146ee4557a8eec29cac4eb344",
       "End": "cbcac752c4ef4adbbf500face4dae780",
       "Id": "fa5b938ede8a4671bb6ae0d22253dd0b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "16f6a93146ee4557a8eec29cac4eb344",
+      "End": "798645b44b2541869eebb7e2b11c5570",
+      "Id": "c9547823ce264377a9e42d796d8d6f4c",
       "IsHidden": "False"
     },
     {
@@ -3754,9 +3871,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "7b329bcb0cf844739a7e6e5f1a5a9e59",
-      "End": "4dfe3aa2a2224526a2855fca7f3bad83",
-      "Id": "992467ebf9e44878ac9618f6987f3484",
+      "Start": "4c4c0a55d8a14ffd85d7c51b2c5597ce",
+      "End": "866fe130d5be4da3b59bb3722a0dbbc6",
+      "Id": "445a1d0cfa4e4c6f9a63de2f51b4fefa",
       "IsHidden": "False"
     },
     {
@@ -4204,6 +4321,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "d25f86b42589432686f7e0c250268c07",
+      "End": "70dcd5495e8f483c9a6534f483ce2606",
+      "Id": "be3a8e2f5e194156b041f384c6f25908",
+      "IsHidden": "False"
+    },
+    {
       "Start": "2d0d3be0e01540f8873f7d7d3d1f7a12",
       "End": "da78ce8b753444e9805b2f8b113327c9",
       "Id": "278a807add294fbca5e73d950d74decc",
@@ -4375,6 +4498,18 @@
       "Start": "3157acc39c5446df959dd1dfac99017c",
       "End": "92d1ab762a3342a88ac949c71b6bd8fc",
       "Id": "4f1c78fbc36c42f882e3e88ca340dd7e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a6f6808e72c5476eb31874fb60fbd602",
+      "End": "4dfe3aa2a2224526a2855fca7f3bad83",
+      "Id": "2d402a09a1794363b5b65ae576ba7a64",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "22ca33e865c54addba300add5d7ea653",
+      "End": "2f24c5ff4c0e4d56938e4e3ec6e1230d",
+      "Id": "ddd7335b50c34e8ebb8b13ba3d0806d7",
       "IsHidden": "False"
     }
   ],
@@ -4602,8 +4737,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1072.1840296205664,
-        "Y": 748.05731001256743
+        "X": -959.30700588106367,
+        "Y": -243.81951561327622
       },
       {
         "Name": "Family List 데이터 파싱_물량Param 시트",
@@ -5452,8 +5587,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2639.6270629543428,
-        "Y": 929.47004313664877
+        "X": 3621.1887094768067,
+        "Y": 763.41213238745559
       },
       {
         "Name": "eval test",
@@ -5514,6 +5649,36 @@
         "Excluded": false,
         "X": 6386.0,
         "Y": -1048.0
+      },
+      {
+        "Name": "Family List 데이터 파싱_Category 시트",
+        "ShowGeometry": true,
+        "Id": "000f06ac5d844412994ef40b4057a11a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1070.500442788622,
+        "Y": 751.61159205317881
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "5957d48611b3499fb59194a77710e772",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2423.4263051144126,
+        "Y": 767.65387712031657
+      },
+      {
+        "Name": "List.Transpose",
+        "ShowGeometry": true,
+        "Id": "b9e378a0538448c68c23c6811e4d57e2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3146.42715549024,
+        "Y": 783.79250603138792
       }
     ],
     "Annotations": [
@@ -5684,17 +5849,17 @@
         "WidthAdjustment": 0.0,
         "HeightAdjustment": 0.0,
         "Nodes": [
-          "1cf6a1afd7ce4854a4230a961836579d",
           "ffe3ce92ec6b41c28dea986fb27302b8",
           "0d04816ca9f34db6a891541712eb1f5d",
           "1bd5112c1ae04bcfb1e2fd87f4860ba7",
-          "f99474b49e3e486e8933b2ac5d7484fa"
+          "f99474b49e3e486e8933b2ac5d7484fa",
+          "000f06ac5d844412994ef40b4057a11a"
         ],
         "HasNestedGroups": false,
         "Left": -1905.1840296205664,
         "Top": 498.05731001256743,
         "Width": 1840.0,
-        "Height": 412.0,
+        "Height": 415.55428204061138,
         "FontSize": 60.0,
         "InitialTop": 600.05731001256743,
         "InitialHeight": 293.0,
@@ -5724,7 +5889,7 @@
         "Height": 881.53259145630182,
         "FontSize": 72.0,
         "InitialTop": -2960.4825016823943,
-        "InitialHeight": 778.53259145630136,
+        "InitialHeight": 778.53259145630182,
         "TextblockHeight": 106.0,
         "Background": "#FFB5B5B5"
       },
@@ -5790,7 +5955,7 @@
         "Height": 1763.6347693963253,
         "FontSize": 36.0,
         "InitialTop": -2356.5748714573533,
-        "InitialHeight": 1720.6347693963253,
+        "InitialHeight": 1703.6347693963253,
         "TextblockHeight": 63.0,
         "Background": "#FFB5B5B5"
       },
@@ -5817,7 +5982,7 @@
         "Height": 881.5325914563,
         "FontSize": 72.0,
         "InitialTop": -1771.2197491434486,
-        "InitialHeight": 795.5325914563,
+        "InitialHeight": 778.5325914563,
         "TextblockHeight": 106.0,
         "Background": "#FFB5B5B5"
       },
@@ -5879,8 +6044,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -482.96012162186207,
-    "Y": -107.54950048984836,
-    "Zoom": 0.61235633337109707
+    "X": -3294.6864559872674,
+    "Y": -832.14245941380386,
+    "Zoom": 1.1217112330968697
   }
 }
