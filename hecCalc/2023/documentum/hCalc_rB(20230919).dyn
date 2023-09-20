@@ -250,7 +250,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -1606,7 +1606,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n    \r\ndef addExcaInElemDicts(elemDicts):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict)\r\n            try:\r\n                allExcasUni = Solid.ByUnion(allExcas)\r\n                eff_excaGeo = excaGeo.Split(allExcasUni)[0]\r\n                allExcas.append(excaGeo)\r\n            except:\r\n                eff_excaGeo = excaGeo\r\n                allExcas.append(excaGeo)\r\n            dic[\"ExcaGeo\"] = eff_excaGeo\r\n\r\n    return elemDicts\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ :\r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n\r\n    return geoResult\r\n\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    \r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_excas = addExcaInElemDicts(elemDicts)\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n\r\n            eff_excaGeo = excaGeo\r\n            splitResult = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = splitResult[0]\r\n            #try:\r\n            #    dic[\"effDisposalGeo\"] = splitResult[1]#eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n            #except:\r\n            #    dic[\"effDisposalGeo\"] = []\r\n        \r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            if \"Exca\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Back\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Disp\" in wm[\"Dynamo 물량산출식\"]:\r\n                wm[\"Sym_Val Dict\"][\"Exca\"] = dic[\"effExcaGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Back\"] = dic[\"effBackfillGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effExcaGeo\"].Volume - dic[\"effBackfillGeo\"].Volume\r\n\r\n                #try:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effDisposalGeo\"].Volume\r\n                #except:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = 0\r\n\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)#elemDicts_ExcasWithWholeExcaList\r\n#OUT = allUniGeo_UG_RC_Elems",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n    \r\ndef addExcaInElemDicts(elemDicts):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict)\r\n            try:\r\n                allExcasUni = Solid.ByUnion(allExcas)\r\n                eff_excaGeo = excaGeo.Split(allExcasUni)[0]\r\n                allExcas.append(excaGeo)\r\n            except:\r\n                eff_excaGeo = excaGeo\r\n                allExcas.append(excaGeo)\r\n            dic[\"ExcaGeo\"] = eff_excaGeo\r\n\r\n    return elemDicts\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ : ## 내부 빈공간 있는 RC부재는 꽉채워서 공제 \r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            pass\r\n\r\n    return geoResult\r\n\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    \r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_excas = addExcaInElemDicts(elemDicts)\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n\r\n            eff_excaGeo = excaGeo\r\n            splitResult = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = splitResult[0]\r\n            #try:\r\n            #    dic[\"effDisposalGeo\"] = splitResult[1]#eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n            #except:\r\n            #    dic[\"effDisposalGeo\"] = []\r\n        \r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            if \"Exca\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Back\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Disp\" in wm[\"Dynamo 물량산출식\"]:\r\n                wm[\"Sym_Val Dict\"][\"Exca\"] = dic[\"effExcaGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Back\"] = dic[\"effBackfillGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effExcaGeo\"].Volume - dic[\"effBackfillGeo\"].Volume\r\n\r\n                #try:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effDisposalGeo\"].Volume\r\n                #except:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = 0\r\n\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)#elemDicts_ExcasWithWholeExcaList\r\n#OUT = allUniGeo_UG_RC_Elems",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2212,6 +2212,213 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef extractCalcResult(elemDicts):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"]\r\n        for wm in wms:\r\n            keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res.append(dict(k_v))\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_Sheet_WM(elemDicts):\r\n    extractedDicts = extractCalcResult(elemDicts)\r\n    sortedDicts_sheet = sorted(extractedDicts, key=operator.itemgetter(\"SheetName\"))\r\n    grpDicts_Sheet = groupby(sortedDicts_sheet, lambda x: x[\"SheetName\"])\r\n    \r\n    res = {}\r\n    for k, g in grpDicts_Sheet:\r\n        sorted_g = sorted(list(g), key=operator.itemgetter(\"rIDX\"))\r\n        grped_g = groupby(sorted_g, lambda x: x[\"rIDX\"])\r\n        tmp = []\r\n        for k_,g_ in grped_g:\r\n            gg = copy.deepcopy(list(g_))\r\n            calcSum = sum(map(lambda x: x[\"calcResult\"],gg))\r\n            rIDX = gg[0][\"rIDX\"]\r\n            tmp.append((rIDX,calcSum))\r\n            \r\n        res[k] = tmp\r\n    return res\r\n\r\nextDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = extDicts\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "f12f2f24ce254bd0baef14f26c5d20e9",
+      "Inputs": [
+        {
+          "Id": "eb38296ae8b4424f892c47d4c8380597",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d9f7652d7dcd49818455cfcb11afd4d5",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSOffice.Data.ExportToExcel@string,string,int,int,var[][],bool,bool",
+      "Id": "b0c3445dc6ab4e039d191545bca59956",
+      "Inputs": [
+        {
+          "Id": "faa2be52ee7d471c8985ce7ca58962da",
+          "Name": "filePath",
+          "Description": "File representing the Excel workbook\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1c3422f41e304e7ebe217e877a696742",
+          "Name": "sheetName",
+          "Description": "Name of the worksheet containing data\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 1,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ba6dc91e90544795aaa10e5b4bca987e",
+          "Name": "startRow",
+          "Description": "Start row for writing data. Enter 0 for Row 1, 1 for Row 2, etc.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ebc1772714b843009591ea9ba9a59249",
+          "Name": "startColumn",
+          "Description": "Start column for writing data. Enter 0 for Column A, 1 for Column B, etc.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "64d88721c20f443b9dbcbf9358c72cd5",
+          "Name": "data",
+          "Description": "Data to write to the spreadsheet\n\nvar[][]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b847d31e98504260a7dcc619fe444c52",
+          "Name": "overWrite",
+          "Description": "Toggle to clear spreadsheet before writing\n\nbool\nDefault value : false",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a7cb786e30454e83979fb8f4c1a8c318",
+          "Name": "writeAsString",
+          "Description": "Toggle to switch between writing Excel file as strings\n\nbool\nDefault value : false",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "74bf515beec94e69bd433cd3979f8caf",
+          "Name": "data",
+          "Description": "Rows of data from the Excel worksheet",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Write data to a Microsoft Excel spreadsheet. Data is written by row with sublists to be written in successive rows. Rows and columns are zero-indexed; for example, the value in the data list at [0,0] will be written to cell A1. Null values and empty lists are written to Excel as empty cells. This node requires Microsoft Excel to be installed.\n\nData.ExportToExcel (filePath: string, sheetName: string, startRow: int, startColumn: int, data: var[][], overWrite: bool = false, writeAsString: bool = false): var[][]"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total_Boq_test.xlsx",
+      "InputValue": ".\\Total_Boq_test.xlsx",
+      "NodeType": "ExtensionNode",
+      "Id": "ecccb4f11a2543e29cb666423f4f697e",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "095ac27cee8044e7a2f1a3250bb3ef14",
+          "Name": "",
+          "Description": "File Path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system to get its file path."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"(AR) BOQ\";",
+      "Id": "4415ea07f3e84dada36b12e45a66edc6",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "3978938aaf084518a8b46188e620c9c8",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[0,1,2,3,4,5,6,7];\n[8,9,10,11,12,13,14];",
+      "Id": "3685036f6bec4ea08fe7f14723844ad5",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9d3ab268af5e4f01a51388ec81318692",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b77346713f824d1fbf87051fad274aba",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;",
+      "Id": "2a0ac99448f740b2a0938358ee3b451b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2817bb69836f4865959ad41208e54417",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -2676,6 +2883,42 @@
       "End": "966c11318b8a4a43afa0e303f1b32ac8",
       "Id": "bcc78099a0c24f06bd68907ae744dad9",
       "IsHidden": "False"
+    },
+    {
+      "Start": "1e09582488be4705b6ac572c258d018e",
+      "End": "eb38296ae8b4424f892c47d4c8380597",
+      "Id": "f4af9c3841ea48c08f2e8550c5297d8e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "095ac27cee8044e7a2f1a3250bb3ef14",
+      "End": "faa2be52ee7d471c8985ce7ca58962da",
+      "Id": "b84caffaa51045a3b3cba70222c5066d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3978938aaf084518a8b46188e620c9c8",
+      "End": "1c3422f41e304e7ebe217e877a696742",
+      "Id": "eba38e6dc4d745fabdd7682ac6b5e4cc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b77346713f824d1fbf87051fad274aba",
+      "End": "64d88721c20f443b9dbcbf9358c72cd5",
+      "Id": "5c75360959d24b658d79e742fc159907",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2817bb69836f4865959ad41208e54417",
+      "End": "ba6dc91e90544795aaa10e5b4bca987e",
+      "Id": "043e9348bcb348f7af1a9c574cfa7e35",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2817bb69836f4865959ad41208e54417",
+      "End": "ebc1772714b843009591ea9ba9a59249",
+      "Id": "26a849c8003b48e9a9d8791d002c8ed8",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -2687,6 +2930,13 @@
         "51b4738620874fe885b1b5ecce1e49b7",
         "79390c9ce7774e469399c480c2fd9540",
         "e4bace56c16d462b8e637e17ad1a1046"
+      ]
+    },
+    {
+      "Name": "Total_Boq_test.xlsx",
+      "ReferenceType": "External",
+      "Nodes": [
+        "ecccb4f11a2543e29cb666423f4f697e"
       ]
     }
   ],
@@ -2738,644 +2988,704 @@
     "ConnectorPins": [],
     "NodeViews": [
       {
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
         "Id": "1250bd18102c4ebaac9950d60dac8849",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "All Elements of Category",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3995.66226582738,
-        "Y": 1548.3273537118573
+        "X": -4060.4176389958079,
+        "Y": 1645.4604134644994
       },
       {
+        "Name": "All ElementsExceptRails",
+        "ShowGeometry": true,
         "Id": "c790cfc4c7d943cdb05ca3a612d673c4",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "All ElementsExceptRails",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3638.66226582738,
-        "Y": 1400.3273537118573
+        "X": -3703.4176389958079,
+        "Y": 1497.4604134644994
       },
       {
+        "Name": "Categories",
+        "ShowGeometry": true,
         "Id": "d78f3dfc768541ab8490b53194e174c5",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Categories",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -4331.6622658273791,
-        "Y": 1548.3273537118573
+        "X": -4396.4176389958066,
+        "Y": 1645.4604134644994
       },
       {
+        "Name": "List Create",
+        "ShowGeometry": true,
         "Id": "94dc2b3bd4e14a9fa5352e8ad0cbe58b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List Create",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3638.66226582738,
-        "Y": 1548.3273537118573
+        "X": -3703.4176389958079,
+        "Y": 1645.4604134644994
       },
       {
+        "Name": "List.Join",
+        "ShowGeometry": true,
         "Id": "bf37a72db0e847dba5e3d1c2ed14c8bd",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.Join",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3285.66226582738,
-        "Y": 1457.3273537118573
+        "X": -3350.4176389958079,
+        "Y": 1554.4604134644994
       },
       {
+        "Name": "Data.ImportExcel",
+        "ShowGeometry": true,
         "Id": "1eac1f1717ab40c98ea2a8a9b59421d3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Data.ImportExcel",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3400.5486975732852,
-        "Y": 300.12517693814777
+        "X": -3503.0780384232962,
+        "Y": 650.88344826713285
       },
       {
+        "Name": "File From Path",
+        "ShowGeometry": true,
         "Id": "caccad700bd84d8e8cb198c7fe1545aa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "File From Path",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3694.5486975732852,
-        "Y": 197.12517693814777
+        "X": -3797.0780384232962,
+        "Y": 547.88344826713285
       },
       {
+        "Name": "File Path",
+        "ShowGeometry": true,
         "Id": "51b4738620874fe885b1b5ecce1e49b7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "File Path",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -4337.5486975732856,
-        "Y": 197.12517693814777
+        "X": -4440.0780384232967,
+        "Y": 547.88344826713285
       },
       {
+        "Name": "Boolean",
+        "ShowGeometry": true,
         "Id": "76e75c1cd00342eeb418e14c2410b8f4",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Boolean",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3694.5486975732852,
-        "Y": 493.12517693814783
+        "X": -3797.0780384232962,
+        "Y": 843.883448267133
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "64985def907747329221585392bfc414",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3694.5486975732852,
-        "Y": 345.9526769381477
+        "X": -3797.0780384232962,
+        "Y": 696.71094826713284
       },
       {
+        "Name": "List.Deconstruct",
+        "ShowGeometry": true,
         "Id": "9180e2e72a3c4871ad3dcc4c90e647ef",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.Deconstruct",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -3360.83706024558,
-        "Y": 533.526559928548
+        "X": -3463.3664010955908,
+        "Y": 884.284831257533
       },
       {
+        "Name": "Family List 데이터 파싱_물량Param 시트",
+        "ShowGeometry": true,
         "Id": "ffe3ce92ec6b41c28dea986fb27302b8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Family List 데이터 파싱_물량Param 시트",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -1538.1840296205664,
         "Y": 600.05731001256743
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "c2e2ffc4ce8c4995823302e2e6edbf6b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 773.75382186345882,
         "Y": -1822.1074773245823
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "6cc32639f4334079a3ed3015057ed0c0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 749.92378866971762,
         "Y": -1668.7160257168089
       },
       {
+        "Name": "List.Flatten",
+        "ShowGeometry": true,
         "Id": "abba167faddc4ae4b7190a20329bc999",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.Flatten",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -2712.5937214550222,
-        "Y": 1209.5253463447273
+        "X": -2647.8383482865947,
+        "Y": 1511.7170877973915
       },
       {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
         "Id": "e9de4d33a0f8498aa88925d7de0302be",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -2417.5937214550222,
-        "Y": 1288.5253463447273
+        "X": -2352.8383482865947,
+        "Y": 1590.7170877973915
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "e01aca3b31524ecdb2fea0bcd4e569fe",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -2712.5937214550222,
-        "Y": 1387.3872213447273
+        "X": -2647.8383482865947,
+        "Y": 1689.5789627973916
       },
       {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
         "Id": "14224d161ba74300b783d019932dc09b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1971.5937214550222,
-        "Y": 1276.939096344727
+        "X": -1906.8383482865947,
+        "Y": 1579.1308377973912
       },
       {
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
         "Id": "85e664ba9cb643c5b3b2014270272b36",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Dictionary.ValueAtKey",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1436.5693549386824,
-        "Y": 2356.389553968399
+        "X": 1631.8382092049769,
+        "Y": 2917.0001355716304
       },
       {
+        "Name": "String.Contains",
+        "ShowGeometry": true,
         "Id": "28717ffdd04a4f7981357ebce2431665",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "String.Contains",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1161.5937214550222,
-        "Y": 1334.1115963447266
+        "X": -1096.8383482865947,
+        "Y": 1636.3033377973909
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "47c8c52edfba464cbc6491f9f5abc7cb",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1525.5937214550222,
-        "Y": 1424.939096344727
+        "X": -1460.8383482865947,
+        "Y": 1727.1308377973912
       },
       {
+        "Name": "List.AnyTrue",
+        "ShowGeometry": true,
         "Id": "32053cf3bae641e2abda33f7464839b9",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.AnyTrue",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -840.59372145502221,
-        "Y": 1334.1115963447266
+        "X": -775.83834828659474,
+        "Y": 1636.3033377973909
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "daee18045b714579b8b4547f68499e80",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1525.5937214550222,
-        "Y": 1276.939096344727
+        "X": -1460.8383482865947,
+        "Y": 1579.1308377973912
       },
       {
+        "Name": "lang_mode(영/한) select",
+        "ShowGeometry": true,
         "Id": "0d04816ca9f34db6a891541712eb1f5d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "lang_mode(영/한) select",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -1895.1840296205664,
         "Y": 668.05731001256743
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "ab9b7226a471462bbe05f1ffb8d082d3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 396.28383401574422,
         "Y": -1671.0143400591096
       },
       {
+        "Name": "Parameter.CreateProjectParameterForAllCategories",
+        "ShowGeometry": true,
         "Id": "041bb51a23734fcfbea1af777dfab763",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Parameter.CreateProjectParameterForAllCategories",
-        "ShowGeometry": true,
         "Excluded": true,
-        "X": -1141.5396162187837,
-        "Y": 4677.817819139691
+        "X": -3637.5044879869029,
+        "Y": -705.63582585037057
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "cec2f8eaacdf482dbee4a3fba8340394",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1569.2239656531021,
-        "Y": 4545.0022067943155
+        "X": -4065.1888374212213,
+        "Y": -838.451438195746
       },
       {
+        "Name": "Spec Types",
+        "ShowGeometry": true,
         "Id": "342eb3169fcc422988afb081f0128848",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Spec Types",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1894.5851039275908,
-        "Y": 4547.3623966353734
+        "X": -4390.5499756957106,
+        "Y": -836.0912483546881
       },
       {
+        "Name": "Group Types",
+        "ShowGeometry": true,
         "Id": "97eecaa0667140b2b217c07528ffcc32",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Group Types",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -1895.7070343317937,
-        "Y": 4677.5063235229445
+        "X": -4391.671906099913,
+        "Y": -705.947321467117
       },
       {
+        "Name": "List.UniqueItems",
+        "ShowGeometry": true,
         "Id": "9fac8931a6e44ba394f6b5087edcfafe",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.UniqueItems",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -222.09420639074597,
-        "Y": 2541.5320243568681
+        "X": -278.78516408096039,
+        "Y": 3341.5044273187818
       },
       {
+        "Name": "List.FilterByBoolMask",
+        "ShowGeometry": true,
         "Id": "995ccef9f1cd4b49aecc810576ba715f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.FilterByBoolMask",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -720.73976143693881,
-        "Y": 2507.7719408563016
+        "X": -777.43071912715322,
+        "Y": 3307.7443438182154
       },
       {
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
         "Id": "fdb901f20d644088a89f03651e881266",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Dictionary.ValueAtKey",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2514.5693549386824,
-        "Y": 2394.389553968399
+        "X": 2709.8382092049769,
+        "Y": 2955.0001355716304
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "014417a7a6a74588a86afc4c30d8ea08",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2494.8905508088696,
-        "Y": 2865.4312355026091
+        "X": 2690.1594050751642,
+        "Y": 3426.0418171058404
       },
       {
+        "Name": "setParamElementTypes",
+        "ShowGeometry": true,
         "Id": "ee95e619ed6b4a4092d10917064aaf58",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "setParamElementTypes",
-        "ShowGeometry": true,
         "Excluded": true,
-        "X": 2871.5693549386829,
-        "Y": 2432.389553968399
+        "X": 3066.8382092049774,
+        "Y": 2993.0001355716304
       },
       {
+        "Name": "Get_WMCodesAndBriefSpec",
+        "ShowGeometry": true,
         "Id": "ad5dc112707a4841a2b44b8eb9c1ca62",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Get_WMCodesAndBriefSpec",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2132.5693549386824,
-        "Y": 2394.389553968399
+        "X": 2327.8382092049769,
+        "Y": 2955.0001355716304
       },
       {
+        "Name": "Dictionary.ByKeysValues",
+        "ShowGeometry": true,
         "Id": "4eee53a8546c4694abfafd1926920870",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Dictionary.ByKeysValues",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1774.5693549386824,
-        "Y": 2322.389553968399
+        "X": 1969.8382092049769,
+        "Y": 2883.0001355716304
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "9e1934a59db94d298059a9bc8b9a66b6",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1774.5693549386824,
-        "Y": 2500.2170539683989
+        "X": 1969.8382092049769,
+        "Y": 3060.8276355716303
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "5942773aeb824c84bde85b7a139bac6b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 587.56935493868241,
-        "Y": 2301.8720539683991
+        "X": 782.83820920497692,
+        "Y": 2862.4826355716305
       },
       {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
         "Id": "590996bec97544a8a3c5eaecbf1bbd45",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 990.56935493868241,
-        "Y": 2390.389553968399
+        "X": 1185.8382092049769,
+        "Y": 2951.0001355716304
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "ea47f768c4464f6ca17b7b47bc073108",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 587.56935493868241,
-        "Y": 2479.8720539683991
+        "X": 782.83820920497692,
+        "Y": 3040.4826355716305
       },
       {
+        "Name": "물량Param시트 약자-매개변수 정리",
+        "ShowGeometry": true,
         "Id": "1bd5112c1ae04bcfb1e2fd87f4860ba7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "물량Param시트 약자-매개변수 정리",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -1072.1840296205664,
         "Y": 600.05731001256743
       },
       {
+        "Name": "List.FilterByBoolMask",
+        "ShowGeometry": true,
         "Id": "39f3fec13bdd481ca0f2851304a2cd56",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.FilterByBoolMask",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -564.59372145502221,
-        "Y": 1254.8184713447274
+        "X": -499.83834828659474,
+        "Y": 1557.0102127973917
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "a6e18086ddf04b59ab06a3c68dbbca06",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -229.59372145502221,
-        "Y": 1288.8184713447274
+        "X": -164.83834828659474,
+        "Y": 1591.0102127973917
       },
       {
+        "Name": "Family List 데이터 파싱_Category - 물량Param 시트 결합",
+        "ShowGeometry": true,
         "Id": "f99474b49e3e486e8933b2ac5d7484fa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Family List 데이터 파싱_Category - 물량Param 시트 결합",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -560.18402962056643,
         "Y": 657.05731001256743
       },
       {
+        "Name": "family list데이터 - Revit 부재 데이터 결합 & Sym_Val Dict 값 업데이트(타입,인스턴스 매개변수)",
+        "ShowGeometry": true,
         "Id": "3bf30dcbbca84eb08aafa5ed15d4042e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "family list데이터 - Revit 부재 데이터 결합 & Sym_Val Dict 값 업데이트(타입,인스턴스 매개변수)",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 746.76102821501365,
-        "Y": 670.4049710034011
+        "X": 486.10354279321018,
+        "Y": 1295.7568061274783
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "3e48607c97ad4d69855c68aad2472202",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": 824.575226853246,
         "Y": -1026.4846509869467
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "272e316735dc4172b7a5a61e4d4920d7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -682.31858006910443,
         "Y": 942.71190253920872
       },
       {
+        "Name": "토공 산출 구간",
+        "ShowGeometry": true,
         "Id": "fb1aef36c6274fd48c14e9a3127ec8e9",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "토공 산출 구간",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 1696.3407004606404,
-        "Y": 698.83748550556629
+        "X": 1347.1035427932102,
+        "Y": 1295.7568061274783
       },
       {
+        "Name": "부재/WM 별 산식에 의한 최종 계산",
+        "ShowGeometry": true,
         "Id": "0c4ce42b1eec4eed8035d10e12270fc2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "부재/WM 별 산식에 의한 최종 계산",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2038.265296418756,
-        "Y": 698.07594637191016
+        "X": 1746.1035427932102,
+        "Y": 1295.7568061274783
       },
       {
+        "Name": "Data.ExportToExcel",
+        "ShowGeometry": true,
         "Id": "3a2291d54fa74970b0cacd8a3a8a08b8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Data.ExportToExcel",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4747.3058016497289,
-        "Y": -68.550588570190314
+        "X": 4819.7907973623769,
+        "Y": 71.409585892615922
       },
       {
+        "Name": "Family List 데이터 파싱_Category 시트",
+        "ShowGeometry": true,
         "Id": "000f06ac5d844412994ef40b4057a11a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Family List 데이터 파싱_Category 시트",
-        "ShowGeometry": true,
         "Excluded": false,
         "X": -1070.500442788622,
         "Y": 751.61159205317881
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": false,
         "Id": "203941df416e457983ebdd89b47c4f2e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": false,
         "Excluded": false,
-        "X": 4327.4168155480911,
-        "Y": 2835.5804528331673
+        "X": 2617.5958627648483,
+        "Y": -1030.0476849618979
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "a814830d4a534b2a924c1e3facf8a431",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4304.9119208979455,
-        "Y": 3399.9142439162815
+        "X": 2595.0909681147027,
+        "Y": -465.71389387878344
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": false,
         "Id": "dba9fdd32e7d42c790bb8dbdbfef8bc7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": false,
         "Excluded": false,
-        "X": 5200.3373359798443,
-        "Y": 2802.402384792987
+        "X": 3490.5163831966015,
+        "Y": -1063.2257530020781
       },
       {
+        "Name": "WM별 총합 계산 및 엑셀 익스포트 준비",
+        "ShowGeometry": true,
         "Id": "df538152d8514dcaab3d75f0734a582b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "WM별 총합 계산 및 엑셀 익스포트 준비",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2479.2766681494627,
-        "Y": 657.01738092939877
+        "X": 2435.556503780329,
+        "Y": 1289.4545147567444
       },
       {
+        "Name": "Dictionary.Components",
+        "ShowGeometry": true,
         "Id": "d9de8a61787442ceb4b5e56fe75e7a1d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Dictionary.Components",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 3366.7815300706252,
-        "Y": 243.21327877129255
+        "X": 3813.7907973623765,
+        "Y": 141.90958589261592
       },
       {
+        "Name": "List.GetItemAtIndex",
+        "ShowGeometry": true,
         "Id": "ae19779d3103471bb4993d2624fee3c8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.GetItemAtIndex",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4147.6690947943353,
-        "Y": 406.26887514167657
+        "X": 4160.7907973623769,
+        "Y": 264.40958589261589
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "0e906b492e964f0388034bb3dba9715c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 3922.6216764508067,
-        "Y": 502.90969497168408
+        "X": 3813.7907973623765,
+        "Y": 324.23708589261594
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "79390c9ce7774e469399c480c2fd9540",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": -209.65260058930835,
-        "Y": -0.96981159305175879
+        "X": -498.1051001690239,
+        "Y": 98.87913056915761
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "e4bace56c16d462b8e637e17ad1a1046",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2753.5421829070156,
-        "Y": -7.1615438186892106
+        "X": 4483.7907973623769,
+        "Y": 65.237085892615937
       },
       {
+        "Name": "List.DropItems",
+        "ShowGeometry": true,
         "Id": "43c850fe5b414baaa43fa6abbf66d41a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "List.DropItems",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4504.1062226061867,
-        "Y": 307.29586922322534
+        "X": 4483.7907973623769,
+        "Y": 213.40958589261595
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "2524f0f864744ce88dfa2ab2d9d3e61d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 4212.4465960040807,
-        "Y": 182.32303439985554
+        "X": 4160.7907973623769,
+        "Y": 105.89208589261591
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "5439dd63dedb49b3a2f7682ca7a4cdfc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Excluded": false,
-        "X": 2909.7542882234125,
-        "Y": 724.40741828400883
+        "X": 2884.556503780329,
+        "Y": 1289.4545147567444
       },
       {
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Id": "92a5d0c5dcc842d7b250f2421b0731ad",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3783.4664379418518,
+        "Y": 1520.3355924786338
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "f12f2f24ce254bd0baef14f26c5d20e9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4383.5586035743745,
+        "Y": 1591.8532150526839
+      },
+      {
+        "Name": "Data.ExportToExcel",
+        "ShowGeometry": true,
+        "Id": "b0c3445dc6ab4e039d191545bca59956",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5201.7643795163749,
+        "Y": 1265.75088400004
+      },
+      {
+        "Name": "File Path",
+        "ShowGeometry": true,
+        "Id": "ecccb4f11a2543e29cb666423f4f697e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4674.9085189962389,
+        "Y": 1117.8659335555774
+      },
+      {
         "Name": "Code Block",
         "ShowGeometry": true,
+        "Id": "4415ea07f3e84dada36b12e45a66edc6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3497.8246796110329,
-        "Y": 1160.4917294879237
+        "X": 4681.0,
+        "Y": 1266.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "3685036f6bec4ea08fe7f14723844ad5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4726.8405342869364,
+        "Y": 1523.453746802641
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "2a0ac99448f740b2a0938358ee3b451b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4742.0,
+        "Y": 1393.0
       }
     ],
     "Annotations": [
@@ -3394,12 +3704,12 @@
           "bf37a72db0e847dba5e3d1c2ed14c8bd"
         ],
         "HasNestedGroups": false,
-        "Left": -4341.6622658273791,
-        "Top": 1284.3273537118573,
-        "Width": 1217.9999999999991,
+        "Left": -4406.4176389958066,
+        "Top": 1381.4604134644994,
+        "Width": 1217.9999999999986,
         "Height": 396.0,
         "FontSize": 72.0,
-        "InitialTop": 1400.3273537118573,
+        "InitialTop": 1497.4604134644994,
         "InitialHeight": 293.0,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -3420,12 +3730,12 @@
           "9180e2e72a3c4871ad3dcc4c90e647ef"
         ],
         "HasNestedGroups": false,
-        "Left": -4347.5486975732856,
-        "Top": 81.125176938147774,
+        "Left": -4450.0780384232967,
+        "Top": 431.88344826713285,
         "Width": 1195.0000000000005,
-        "Height": 619.40138299040018,
+        "Height": 619.40138299040007,
         "FontSize": 72.0,
-        "InitialTop": 197.12517693814777,
+        "InitialTop": 547.88344826713285,
         "InitialHeight": 481.40138299040018,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
@@ -3450,12 +3760,12 @@
           "a6e18086ddf04b59ab06a3c68dbbca06"
         ],
         "HasNestedGroups": false,
-        "Left": -2722.5937214550222,
-        "Top": 1136.5253463447273,
+        "Left": -2657.8383482865947,
+        "Top": 1438.7170877973915,
         "Width": 2721.0,
         "Height": 609.41374999999971,
         "FontSize": 36.0,
-        "InitialTop": 1209.5253463447273,
+        "InitialTop": 1511.7170877973915,
         "InitialHeight": 360.41374999999971,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -3474,12 +3784,12 @@
           "97eecaa0667140b2b217c07528ffcc32"
         ],
         "HasNestedGroups": false,
-        "Left": -1905.7070343317937,
-        "Top": 4472.0022067943155,
-        "Width": 1230.16741811301,
+        "Left": -4401.671906099913,
+        "Top": -911.451438195746,
+        "Width": 1230.1674181130102,
         "Height": 492.0,
         "FontSize": 36.0,
-        "InitialTop": 4545.0022067943155,
+        "InitialTop": -838.451438195746,
         "InitialHeight": 277.81561234537548,
         "TextblockHeight": 63.0,
         "Background": "#FFBB87C6"
@@ -3504,12 +3814,12 @@
           "ea47f768c4464f6ca17b7b47bc073108"
         ],
         "HasNestedGroups": false,
-        "Left": 577.56935493868241,
-        "Top": 2228.8720539683991,
+        "Left": 772.83820920497692,
+        "Top": 2789.4826355716305,
         "Width": 2553.0000000000005,
         "Height": 941.55918153421,
         "FontSize": 36.0,
-        "InitialTop": 2301.8720539683991,
+        "InitialTop": 2862.4826355716305,
         "InitialHeight": 708.55918153421,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -3552,15 +3862,90 @@
           "dba9fdd32e7d42c790bb8dbdbfef8bc7"
         ],
         "HasNestedGroups": false,
-        "Left": 4294.9119208979455,
-        "Top": 2729.402384792987,
+        "Left": 2585.0909681147027,
+        "Top": -1136.2257530020781,
         "Width": 1073.4254150818988,
-        "Height": 814.51185912329447,
+        "Height": 814.5118591232947,
         "FontSize": 36.0,
-        "InitialTop": 2802.402384792987,
-        "InitialHeight": 1187.8417617207228,
+        "InitialTop": -1063.2257530020781,
+        "InitialHeight": 742.5118591232947,
         "TextblockHeight": 63.0,
         "Background": "#FFA4E1FF"
+      },
+      {
+        "Id": "bc0cee792c2f42f5b7feff7ccbb98290",
+        "Title": "Family List엑셀파일 물량 기입 구간",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "3a2291d54fa74970b0cacd8a3a8a08b8",
+          "d9de8a61787442ceb4b5e56fe75e7a1d",
+          "ae19779d3103471bb4993d2624fee3c8",
+          "0e906b492e964f0388034bb3dba9715c",
+          "e4bace56c16d462b8e637e17ad1a1046",
+          "43c850fe5b414baaa43fa6abbf66d41a",
+          "2524f0f864744ce88dfa2ab2d9d3e61d"
+        ],
+        "HasNestedGroups": false,
+        "Left": 3803.7907973623765,
+        "Top": -194.76291410738406,
+        "Width": 1261.0000000000005,
+        "Height": 651.0,
+        "FontSize": 96.0,
+        "InitialTop": 65.237085892615937,
+        "InitialHeight": 404.0,
+        "TextblockHeight": 250.0,
+        "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "37c5fa300a2c41fb8719914b2749cb9f",
+        "Title": "심볼 및 값 추출(토공 포함) / 수식계산 / 익스포트 용 데이터 정리",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "3bf30dcbbca84eb08aafa5ed15d4042e",
+          "fb1aef36c6274fd48c14e9a3127ec8e9",
+          "0c4ce42b1eec4eed8035d10e12270fc2",
+          "df538152d8514dcaab3d75f0734a582b",
+          "5439dd63dedb49b3a2f7682ca7a4cdfc",
+          "7441a8b2f3f14e738ef80ca8786cf6ee",
+          "e59d4e8deeea44a0a571183ad690d46a"
+        ],
+        "HasNestedGroups": false,
+        "Left": 476.10354279321018,
+        "Top": 973.75680612747828,
+        "Width": 2572.4529609871188,
+        "Height": 484.0,
+        "FontSize": 72.0,
+        "InitialTop": 1089.7568061274783,
+        "InitialHeight": 351.0,
+        "TextblockHeight": 106.0,
+        "Background": "#FFFFAA45"
+      },
+      {
+        "Id": "72514d3581dd42a3a548b0f42539ef18",
+        "Title": "Total BOQ엑셀 파일 물량기입 구간",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "92a5d0c5dcc842d7b250f2421b0731ad"
+        ],
+        "HasNestedGroups": false,
+        "Left": 3773.4664379418518,
+        "Top": 1029.3355924786338,
+        "Width": 441.0,
+        "Height": 623.0,
+        "FontSize": 96.0,
+        "InitialTop": 1520.3355924786338,
+        "InitialHeight": 145.0,
+        "TextblockHeight": 481.0,
+        "Background": "#FFFFB8D8"
       },
       {
         "Id": "0ff82b1632ff4d8cbcded5b0beba520c",
@@ -3571,8 +3956,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -702.58072510885449,
-        "Top": 2412.8932017169345,
+        "Left": -759.27168279906891,
+        "Top": 3212.8656046788483,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -3583,15 +3968,15 @@
       },
       {
         "Id": "7441a8b2f3f14e738ef80ca8786cf6ee",
-        "Title": "UG RC Union 준비(UG 부재 전체 형상 유니온 - PIT, Trench는 내부공동 포함하는 Boundary로)\r\nexcavation 개별 형상 리스트\r\n\r\n하나 꺼내서\r\n\r\n 남은 나머지들 합쳐서 디퍼런스로 남기고 (기초별 유효 excavation 형상)\r\n\t\r\n\tUG RC Union이랑 디퍼런스 하면 백필\r\n\tUG RC Union이랑 인터섹트 하면 디스포잘",
+        "Title": "UG RC Union 준비(UG 부재 전체 형상 유니온 - PIT, Trench는 내부공동 포함하는 Boundary로)\r\nexcavation 개별 형상 리스트\r\n\r\n트레이에 하나 넣을 때마다,\n처음은 그냥 두고,\r\n두번째부터는 트레이에 있는 것과 겹치지 않는 부분만 남겨서 해당부분은 다음 코드로 반환 + 트레이 잔존\r\n    \r\n    UG RC Union이랑 디퍼런스 하면 백필\r\n    UG RC Union이랑 인터섹트 하면 디스포잘",
         "DescriptionText": null,
         "IsExpanded": true,
         "WidthAdjustment": 0.0,
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 1606.2629793047281,
-        "Top": 503.02596084891843,
+        "Left": 1347.1035427932102,
+        "Top": 1097.7568061274783,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -3609,8 +3994,46 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 2186.294043983808,
-        "Top": 416.532407347078,
+        "Left": 1746.1035427932102,
+        "Top": 1227.7568061274783,
+        "Width": 0.0,
+        "Height": 0.0,
+        "FontSize": 36.0,
+        "InitialTop": 0.0,
+        "InitialHeight": 0.0,
+        "TextblockHeight": 0.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "63669713819d404bae525815fc170901",
+        "Title": "Work Master Code\r\nGauge Code\r\nDescription : (L03)\r\nSpec. : (L04~L11)\r\nAdditional Spec : (Description 항목 값)",
+        "DescriptionText": null,
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [],
+        "HasNestedGroups": false,
+        "Left": 4357.53068241579,
+        "Top": 1373.8374342959507,
+        "Width": 0.0,
+        "Height": 0.0,
+        "FontSize": 36.0,
+        "InitialTop": 0.0,
+        "InitialHeight": 0.0,
+        "TextblockHeight": 0.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "f19247ff30a3425d93e36b7e7626b726",
+        "Title": "Total Boq 양식에서 Category(Large)에 해당하는 rIDX 먼저 찾고, 그 구간 들 내에서 Category(Middle)에 해당하는 rIDX 다시 찾고 그 구간에 속하는 WM set들 배치하기",
+        "DescriptionText": null,
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [],
+        "HasNestedGroups": false,
+        "Left": 4366.8175466726152,
+        "Top": 2115.9028820054123,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -3620,8 +4043,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -4228.3464943719873,
-    "Y": -1576.9944748423607,
-    "Zoom": 1.2486447442436224
+    "X": -3678.3190676088461,
+    "Y": -1412.2609916375868,
+    "Zoom": 0.95630372388618046
   }
 }
