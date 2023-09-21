@@ -250,7 +250,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_SQ3_박기범_20230913.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -2332,7 +2332,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_20230920.xlsx",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_20230920.xlsx",
       "InputValue": ".\\Total BOQ_20230920.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
@@ -2934,7 +2934,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwm_sheetDatas = IN[0]\r\n# Place your code below this line\r\nwm_sheetDatas_noneless = \\\r\n    list(filter(lambda row: not all(row),wm_sheetDatas))\r\n\r\nheaders = list(filter(lambda hd: hd[1] != None,enumerate(wm_sheetDatas_noneless[2])))\r\n#headers_reversed = list(map(lambda hd: list(reversed(hd)),headers))\r\nheaders_nonLineBreak = list(map(lambda hd: [hd[1].replace(\"\\n\",\" \"), hd[0]],headers))\r\n\r\nheaders_dict = {}\r\nfor i in headers_nonLineBreak:\r\n    if i[0] not in headers_dict:\r\n        headers_dict[i[0]] = i[1]\r\n\r\n#headers_dict = dict(headers_reversed)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = headers_dict",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwm_sheetDatas = IN[0]\r\n# Place your code below this line\r\nwm_sheetDatas_noneless = \\\r\n    list(filter(lambda row: not all(row),wm_sheetDatas))\r\n\r\ndef find_headers_wmSheet(wm_sheetDatas_noneless):\r\n\r\n    headers_tmp = wm_sheetDatas_noneless[2]\r\n    subHead_tmp = wm_sheetDatas_noneless[3]\r\n    \r\n    headers_L1 = []\r\n    for i,v in enumerate(headers_tmp):\r\n        if (v is not None): headers_L1.append(v)\r\n        else: headers_L1.append(headers_L1[i-1])\r\n    \r\n    headers_L1_L2 = []\r\n    for i,v in enumerate(subHead_tmp):\r\n        if (v is not None): headers_L1_L2.append(headers_L1[i] + \"_\" + v)\r\n        else: headers_L1_L2.append(headers_L1[i])\r\n        \r\n    return list(enumerate(headers_L1_L2))\r\n\r\nheaders = find_headers_wmSheet(wm_sheetDatas_noneless)\r\n\r\nheaders_nonLineBreak = list(map(lambda hd: [hd[1].replace(\"\\n\",\" \"), hd[0]],headers))\r\n\r\nheaders_dict = {}\r\nfor i in headers_nonLineBreak:\r\n    if i[0] not in headers_dict:\r\n        headers_dict[i[0]] = i[1]\r\n\r\n\r\n\r\n\r\n\r\n\r\ndef find_wmDicts(wm_sheetDatas_noneless):\r\n    decr_colDatas = list(map(lambda x: x[headers_dict[\"Category(Large)_Description\"]], wm_sheetDatas_noneless))\r\n    firsIDX = decr_colDatas.index(\"AR-Dummy\")\r\n\r\n    wm_sheetDatas_noHeads = wm_sheetDatas_noneless[firsIDX:]\r\n    wmDicts = []\r\n    \r\n    for row in wm_sheetDatas_noHeads:\r\n        #ref = headers_dict.items()\r\n        tmp = []\r\n        for k,idx in headers_dict.items():\r\n            if row[idx] is not None:\r\n                tmp.append([k,row[idx]])\r\n            else:\r\n                tmp.append([k,\"\"])\r\n        res = dict(tmp)\r\n        wmDicts.append(res)\r\n\r\n    return wmDicts\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = find_wmDicts(wm_sheetDatas_noneless)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2963,6 +2963,27 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total_Boq_test.xlsx",
+      "InputValue": ".\\Total_Boq_test.xlsx",
+      "NodeType": "ExtensionNode",
+      "Id": "f911e99d8eac431eb5fa5d2c2351f957",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "6881f9cf68494619afac543948dc4aaf",
+          "Name": "",
+          "Description": "File Path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system to get its file path."
     }
   ],
   "Connectors": [
@@ -3584,6 +3605,13 @@
       "Nodes": [
         "ecccb4f11a2543e29cb666423f4f697e"
       ]
+    },
+    {
+      "Name": "Total_Boq_test.xlsx",
+      "ReferenceType": "External",
+      "Nodes": [
+        "f911e99d8eac431eb5fa5d2c2351f957"
+      ]
     }
   ],
   "Thumbnail": "",
@@ -3820,8 +3848,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1631.8382092049769,
-        "Y": 2917.0001355716304
+        "X": 1486.3236970920871,
+        "Y": 3102.2004237153083
       },
       {
         "Name": "String.Contains",
@@ -3950,8 +3978,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2709.8382092049769,
-        "Y": 2955.0001355716304
+        "X": 2564.3236970920871,
+        "Y": 3140.2004237153083
       },
       {
         "Name": "Code Block",
@@ -3960,8 +3988,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2690.1594050751642,
-        "Y": 3426.0418171058404
+        "X": 2544.6448929622743,
+        "Y": 3611.2421052495183
       },
       {
         "Name": "setParamElementTypes",
@@ -3970,8 +3998,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 3066.8382092049774,
-        "Y": 2993.0001355716304
+        "X": 2921.3236970920875,
+        "Y": 3178.2004237153083
       },
       {
         "Name": "Get_WMCodesAndBriefSpec",
@@ -3980,8 +4008,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2327.8382092049769,
-        "Y": 2955.0001355716304
+        "X": 2182.3236970920871,
+        "Y": 3140.2004237153083
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -3990,8 +4018,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1969.8382092049769,
-        "Y": 2883.0001355716304
+        "X": 1824.3236970920871,
+        "Y": 3068.2004237153083
       },
       {
         "Name": "Code Block",
@@ -4000,8 +4028,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1969.8382092049769,
-        "Y": 3060.8276355716303
+        "X": 1824.3236970920871,
+        "Y": 3246.0279237153081
       },
       {
         "Name": "Code Block",
@@ -4010,8 +4038,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 782.83820920497692,
-        "Y": 2862.4826355716305
+        "X": 637.32369709208706,
+        "Y": 3047.6829237153083
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -4020,8 +4048,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1185.8382092049769,
-        "Y": 2951.0001355716304
+        "X": 1040.3236970920871,
+        "Y": 3136.2004237153083
       },
       {
         "Name": "Code Block",
@@ -4030,8 +4058,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 782.83820920497692,
-        "Y": 3040.4826355716305
+        "X": 637.32369709208706,
+        "Y": 3225.6829237153083
       },
       {
         "Name": "물량Param시트 약자-매개변수 정리",
@@ -4430,8 +4458,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4169.0783498793771,
-        "Y": 2670.8542311288384
+        "X": 4192.8027721781382,
+        "Y": 2684.4110438709872
       },
       {
         "Name": "Code Block",
@@ -4450,8 +4478,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4167.3166032327263,
-        "Y": 3137.5827008466372
+        "X": 4233.4060653507031,
+        "Y": 3147.7503104032489
       },
       {
         "Name": "Code Block",
@@ -4490,8 +4518,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4917.9292828442822,
-        "Y": 3156.4407970460029
+        "X": 5040.4657947933811,
+        "Y": 2967.8306757125847
       },
       {
         "Name": "extract_fromWMsheet",
@@ -4502,6 +4530,16 @@
         "Excluded": false,
         "X": 3649.3198894391726,
         "Y": 3312.7471518996031
+      },
+      {
+        "Name": "File Path",
+        "ShowGeometry": true,
+        "Id": "f911e99d8eac431eb5fa5d2c2351f957",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5718.9916024662234,
+        "Y": 1928.6836466314635
       }
     ],
     "Annotations": [
@@ -4553,7 +4591,7 @@
         "Height": 759.02425570333116,
         "FontSize": 72.0,
         "InitialTop": 547.883448267133,
-        "InitialHeight": 481.40138299040018,
+        "InitialHeight": 621.02425570333116,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
       },
@@ -4631,12 +4669,12 @@
           "ea47f768c4464f6ca17b7b47bc073108"
         ],
         "HasNestedGroups": false,
-        "Left": 772.83820920497692,
-        "Top": 2789.4826355716305,
+        "Left": 627.32369709208706,
+        "Top": 2974.6829237153083,
         "Width": 2553.0000000000005,
         "Height": 941.55918153421,
         "FontSize": 36.0,
-        "InitialTop": 2862.4826355716305,
+        "InitialTop": 3047.6829237153083,
         "InitialHeight": 708.55918153421,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -4682,7 +4720,7 @@
         "Left": 2585.0909681147027,
         "Top": -1136.2257530020781,
         "Width": 1073.4254150818988,
-        "Height": 802.5118591232947,
+        "Height": 814.5118591232947,
         "FontSize": 36.0,
         "InitialTop": -1063.2257530020781,
         "InitialHeight": 742.5118591232947,
@@ -4858,10 +4896,29 @@
         "InitialHeight": 0.0,
         "TextblockHeight": 0.0,
         "Background": "#FFC1D676"
+      },
+      {
+        "Id": "9739cf0340d340f2915828a964eda7c2",
+        "Title": "Category Description항목 이름을 키로 하고, 해당되는 WM code 리스트를 값으로 갖는 딕셔너리 필요",
+        "DescriptionText": null,
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [],
+        "HasNestedGroups": false,
+        "Left": 3730.6698390451065,
+        "Top": 3809.7174500955134,
+        "Width": 0.0,
+        "Height": 0.0,
+        "FontSize": 36.0,
+        "InitialTop": 0.0,
+        "InitialHeight": 0.0,
+        "TextblockHeight": 0.0,
+        "Background": "#FFC1D676"
       }
     ],
-    "X": -3880.9185870578362,
-    "Y": -3299.9523359833638,
-    "Zoom": 1.0660426567161037
+    "X": -3573.5694802132989,
+    "Y": -3210.6117414316554,
+    "Zoom": 1.0252335287739085
   }
 }
