@@ -1563,7 +1563,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef extractCalcResult(elemDicts):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"]\r\n        for wm in wms:\r\n            keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res.append(dict(k_v))\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts):\r\n    extractedDicts = extractCalcResult(elemDicts)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"Work Master Code\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"Work Master Code\"))\r\n    \r\n    res = {}\r\n    for k, g in grpDicts_WMC: \r\n        gg = copy.deepcopy(list(g))\r\n        calcSum = round(sum(map(lambda x: x[\"calcResult\"], gg)),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n\r\n        res[k] = {\"calcVal\": calcSum, \"wmSpecs\": wmSpecs}\r\n        \r\n    \r\n    \r\n    return res\r\n\r\nextDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef extractCalcResult(elemDicts):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"]\r\n        for wm in wms:\r\n            keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res_d = dict(k_v)\r\n            if \"Description\" in wm.Keys:\r\n                res_d[\"Description\"] = wm[\"Description\"]\r\n            else:\r\n                res_d[\"Description\"] = \"\"\r\n            res_d[\"wmcANDgauge\"] = \"\".join([wm[\"Work Master Code\"],wm[\"Gauge Code\"]])\r\n            \r\n            res.append(res_d)\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts):\r\n    extractedDicts = extractCalcResult(elemDicts)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    \r\n    res = []\r\n    for k, g in grpDicts_WMC: \r\n        wmCode = k\r\n        gg = copy.deepcopy(list(g))\r\n        calcSum = round(sum(map(lambda x: x[\"calcResult\"], gg)),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n        catStr = \"_\".join([wmSpecs[0],wmSpecs[1]])\r\n        specOnly = list(filter(lambda x: x!=0, wmSpecs))[3:]\r\n        addSpec = gg[0][\"Description\"]\r\n        dict_res = {\r\n            \"catStr\": catStr,\r\n            \"Work Master Code\": wmCode,\r\n            \"Gauge Code\": gg[0][\"Gauge Code\"],\r\n            \"Description\": wmSpecs[2],\r\n            \"Spec.\": \"\\n\".join(specOnly),\r\n            \"Additional Spec.\": addSpec,\r\n            \"calcVal\": calcSum, \r\n            #\"wmSpecs\": wmSpecs,\r\n            }\r\n        res.append(dict_res)\r\n    \r\n    \r\n    return res\r\n\r\nextDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2237,12 +2237,12 @@
       "WasExecuted": true,
       "Camera": {
         "Name": "9a893bfe-b5bc-4b0d-b0c0-365d427b3f85 Preview",
-        "EyeX": -5.1838970184326172,
-        "EyeY": 11.199221611022949,
-        "EyeZ": -7.1111626625061035,
-        "LookX": 0.18389701843261719,
-        "LookY": -0.19922161102294922,
-        "LookZ": -0.88883733749389648,
+        "EyeX": -17.0,
+        "EyeY": 24.0,
+        "EyeZ": 50.0,
+        "LookX": 12.0,
+        "LookY": -13.0,
+        "LookZ": -58.0,
         "UpX": 0.0,
         "UpY": 1.0,
         "UpZ": 0.0
@@ -2568,69 +2568,9 @@
       "Description": "Determines if the given list contains the given item. This function searches through the sublists contained in it.\n\nList.Contains (list: var[]..[], item: var[]..[]): bool"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i;",
-      "Id": "3e009a82071647fc978603072d28ff61",
-      "Inputs": [
-        {
-          "Id": "8ab3cb95013243289ef40171d668722a",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "eb7d458666924698b90b801f506e75c1",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DesignScript.Builtin.Dictionary.Keys",
-      "Id": "409fb36d59824291a7ab3ac4148cf9c6",
-      "Inputs": [
-        {
-          "Id": "2e5e60ee0deb4323bcc14ed3cfc163f5",
-          "Name": "dictionary",
-          "Description": "DesignScript.Builtin.Dictionary",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "2db1101ce45c4428bbe323f78987770e",
-          "Name": "keys",
-          "Description": "Keys of the Dictionary",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Produces the keys in a Dictionary.\n\nDictionary.Keys: string[]"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n        \r\ndef find_IsInList(List, str):\r\n    if str == None or List == None:\r\n        pass\r\n    else:\r\n        res = str in List\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_range_by_columnItem_discrim(db, col_idx, 판별항목):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInList(판별항목, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbd_name = IN[0]\r\ndescr판별항목 = IN[1]\r\n판별항목lv1 = descr판별항목[0]\r\n판별항목lv2 = descr판별항목[1]\r\ndb = IN[2]\r\n\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtSheet(Sheet):\r\n    headers_Sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(Sheet[2])))\r\n    res = dict(headers_Sheet)\r\n    del res[\"_\"]\r\n    \r\n    return res\r\n    \r\ndef find_headers_Building(Sheet, bd_name):\r\n    headers_bd = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(Sheet[3])))\r\n    headers_targetBD = list(filter(lambda x: x[0] == bd_name, headers_bd))\r\n    res = {}\r\n    res[\"targetBD\"] = headers_targetBD[0][1]\r\n    return res\r\n\r\ndef find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목):\r\n    return find_range_by_columnItem_discrim(Sheet, hdrs_withIdx[\"Description\"], 판별항목)\r\n\r\ndef get_DataOnRangesAtSheet(Sheet):\r\n    \r\n    hdrs_withIdx = dict(list(find_headersAtSheet(Sheet).items()) + list(find_headers_Building(Sheet, bd_name).items()))\r\n    rgs_v_lv1 = list(map(lambda x: x[1], find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목lv1).values()))\r\n    rgs_v_lv2 = list(map(lambda x: x[1], find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목lv2).values()))\r\n    \r\n    idxs_v_lv1 = list(map(lambda x: range(x[0],x[1]+1), rgs_v_lv1))\r\n\r\n    \r\n    #datas_lv1 = \r\n#    title_idx = map(lambda x: x[0], find_rangesAtCatSheet(Sheet, hdrs_withIdx).values())\r\n#\r\n#    rgs_v = list(map(lambda x: x[1], find_rangesAtCatSheet(Sheet, hdrs_withIdx).values()))\r\n#    rgs_k = list(map(lambda x: x, find_rangesAtCatSheet(Sheet, hdrs_withIdx).keys()))\r\n#    \r\n#    hdrs_v = list(hdrs_withIdx.values())\r\n#    hdrs_k = list(hdrs_withIdx.keys())\r\n#    eff_hdrs_v = hdrs_v[2:]\r\n#    eff_hdrs_k = hdrs_k[2:]\r\n#    \r\n    #datas_lv1 = list(map(lambda x: [x, Sheet[hdrs_withIdx[\"Description\"]][x]], idxs_v_lv1))\r\n    datas_lv1 = []\r\n    col_datas = list(map(lambda x: x[hdrs_withIdx[\"Description\"]], Sheet))\r\n    for rg in idxs_v_lv1:\r\n        lv1_str = col_datas[rg[0]-1]\r\n        tmp = []\r\n        for i in rg:\r\n            tmp.append([i, lv1_str, col_datas[i]])\r\n        \r\n        datas_lv1.append(tmp)\r\n\r\n    datas_lv2 = []\r\n    for rg in datas_lv1:\r\n        tmp = []\r\n        for idx,v in enumerate(rg):\r\n            if v[2] == None:\r\n                tmp.append([v[0],v[1],tmp[idx-1][2]])\r\n            else:\r\n                \r\n                tmp.append(v)\r\n        datas_lv2.append(tmp)\r\n\r\n    res = []\r\n#    for rg in datas_lv2:\r\n#        for i in rg:\r\n#            if \r\n    \r\n    \r\n    return datas_lv2\r\n\r\n\r\nOUT = get_DataOnRangesAtSheet(db)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom string import ascii_lowercase\r\nimport itertools\r\nfrom itertools import chain\r\n\r\ndef getCharValue(s):\r\n    # 베이스 케이스\r\n    if not s:\r\n        return 0\r\n \r\n    value = 0\r\n    # 입력 문자열을 대문자로 변환한 후 반복\r\n    for ch in s:\r\n        value = value * 26 + (ord(ch) - ord('A') + 1)\r\n    return value\r\n    \r\n#################################Module For Functional Programing#############################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n        \r\ndef find_IsInList(List, str):\r\n    if str == None or List == None:\r\n        pass\r\n    else:\r\n        res = str in List\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_range_by_columnItem_discrim(db, col_idx, 판별항목):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInList(판별항목, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    #endidxs_tmp= list(map(lambda x: x[0],res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbd_name = IN[0]\r\ndescr판별항목 = IN[1]\r\n판별항목lv1 = descr판별항목[0]\r\n판별항목lv2 = descr판별항목[1]\r\ndb = IN[2]\r\n\r\n\r\n# Place your code below this line\r\n\r\ndef find_headersAtSheet(Sheet):\r\n    headers_Sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(Sheet[2])))\r\n    res = dict(headers_Sheet)\r\n    del res[\"_\"]\r\n    \r\n    return res\r\n    \r\ndef find_headers_Building(Sheet, bd_name):\r\n    headers_bd = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(Sheet[3])))\r\n    headers_targetBD = list(filter(lambda x: x[0] == bd_name, headers_bd))\r\n    res = {}\r\n    res[\"targetBD\"] = headers_targetBD[0][1]\r\n    return res\r\n\r\ndef find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목):\r\n    return find_range_by_columnItem_discrim(Sheet, hdrs_withIdx[\"Description\"], 판별항목)\r\n\r\ndef get_DataOnRangesAtSheet(Sheet):\r\n    \r\n    hdrs_withIdx = dict(list(find_headersAtSheet(Sheet).items()) + list(find_headers_Building(Sheet, bd_name).items()))\r\n    rgs_v_lv1 = list(map(lambda x: x[1], find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목lv1).values()))\r\n    rgs_v_lv2 = list(map(lambda x: x[1], find_rangesAtSheet(Sheet, hdrs_withIdx, 판별항목lv2).values()))\r\n    \r\n    idxs_v_lv1 = list(map(lambda x: range(x[0],x[1]+1), rgs_v_lv1))\r\n\r\n    datas_lv1 = []\r\n    col_datas = list(map(lambda x: x[hdrs_withIdx[\"Description\"]], Sheet))\r\n    for rg in idxs_v_lv1:\r\n        lv1_str = col_datas[rg[0]-1]\r\n        tmp = []\r\n        for i in rg:\r\n            tmp.append([i, lv1_str, col_datas[i]])\r\n        \r\n        datas_lv1.append(tmp)\r\n\r\n    datas_lv2 = []\r\n    for rg in datas_lv1:\r\n        tmp = []\r\n        for idx,v in enumerate(rg):\r\n            if v[2] == None:\r\n                tmp.append([v[0],v[1],tmp[idx-1][2]])\r\n            else:\r\n                \r\n                tmp.append(v)\r\n        datas_lv2.append(tmp)\r\n\r\n    flatten_res = list(chain(*datas_lv2))\r\n    rres = itertools.groupby(flatten_res, lambda x: [x[1], x[2]])\r\n    \r\n    res = {}\r\n    for k, g in rres:\r\n        #print(list(g))\r\n        removedfirstelem_g = list(g)[1:]\r\n        res[\"_\".join(k)] = [removedfirstelem_g[0][0],removedfirstelem_g[-1][0]]\r\n    \r\n    return res\r\n\r\nhdrs_withIdx = dict(list(find_headersAtSheet(db).items()) + list(find_headers_Building(db, bd_name).items()))\r\n\r\nOUT = hdrs_withIdx, get_DataOnRangesAtSheet(db)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2953,6 +2893,228 @@
       ],
       "Replication": "Disabled",
       "Description": "Makes a new list out of the given inputs"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport subprocess\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef pip_install(package):\r\n    subprocess.check_call([\"pip\", \"install\", package])\r\n\r\npip_install(\"numpy\")\r\n# Assign your output to the OUT variable.\r\nOUT = 0",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "92e3526e93834efd8c29509a613b39e7",
+      "Inputs": [
+        {
+          "Id": "936dfc9c99d64583a46fe13eadfa711d",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f87482b31cfd40c9a64b7f5bdbc2d6e6",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import groupby\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nrangeDicts = IN[0]\r\nwmsList = IN[1]\r\n# Place your code below this line\r\n\r\nwmsSorted = sorted(wmsList, key=lambda x: x[\"Work Master Code\"])\r\nwmsGrped = groupby(wmsList, lambda x: x[\"catStr\"])\r\nwmsGrped_sorted = []\r\n\r\nfor k,v in wmsGrped:\r\n    grp_sorted = sorted(list(v), key=lambda x: x[\"Work Master Code\"])\r\n    stt_idx = rangeDicts[k][0]\r\n    length_grp = len(grp_sorted)\r\n    idxs = range(stt_idx, stt_idx+length_grp)\r\n    zip_grp_idxs = list(zip(idxs, grp_sorted))\r\n    for i in zip_grp_idxs:\r\n        d = i[1]\r\n        d[\"rIDX\"] = i[0]\r\n    \r\n    wmsGrped_sorted.append(grp_sorted)\r\n    \r\nwmsGrped_sorted_idxed = list(chain(*wmsGrped_sorted))\r\n\r\nres = []\r\nfor n,v in enumerate(wmsGrped_sorted_idxed):\r\n    if v[\"rIDX\"] == wmsGrped_sorted_idxed[n-1][\"rIDX\"] + 1:\r\n        res.append(v)\r\n    else:\r\n        pass\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = wmsGrped_sorted_idxed",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "cf52cd359968431c954ef0c1c105f09b",
+      "Inputs": [
+        {
+          "Id": "c65df92cac4c49448f02fb3db90aca10",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5d6a579e11fc46ff81e2a20afbd033ad",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "fc0b74d5401541c0bc827a65e85ad1a1",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import groupby\r\n\r\nimport DSOffice\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfilePath = IN[0]\r\nsheetName = IN[1]\r\nhdrs_withIdx = IN[2]\r\ndictList = IN[3]\r\n\r\n# Place your code below this line\r\nexportToExcel = DSOffice.Data.ExportToExcel\r\n#print(hdrs_withIdx)\r\n\r\nhdrsColIdxs = [\r\n        hdrs_withIdx[\"Work Master Code\"],\r\n        hdrs_withIdx[\"Gauge Code\"],\r\n        hdrs_withIdx[\"Description\"],\r\n        hdrs_withIdx[\"Spec.\"],\r\n        hdrs_withIdx[\"Additional Spec.(설계자 작성)\"],\r\n        hdrs_withIdx[\"targetBD\"],\r\n            ]\r\n\r\n\r\ndictList_grped = groupby(dictList, lambda x: x[\"catStr\"])\r\n\r\ndictList_grpedList = []\r\nfor k,grp in dictList_grped:\r\n    dictList_grpedList.append(list(grp))\r\n\r\ndef writeExcel(keys,startColhdr, grpedList):\r\n    for i in dictList_grpedList:\r\n        #keys = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\n        startCol = hdrs_withIdx[startColhdr]\r\n        startRow = i[0][\"rIDX\"]\r\n\r\n        datas = list(zip(*map(lambda y: map(lambda x: x[y], list(i)), keys)))\r\n        #res.append(datas)\r\n        exportToExcel(filePath, sheetName, startRow, startCol, datas)\r\n\r\nkeys1 = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\nkeys2 = [\"calcVal\"]\r\n\r\nwriteExcel(keys1,\"Work Master Code\", dictList_grpedList)\r\nwriteExcel(keys2,\"targetBD\", dictList_grpedList)\r\n# Assign your output to the OUT variable.\r\nOUT = hdrsColIdxs",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "53192363f9da457ca86140d19351bdfb",
+      "Inputs": [
+        {
+          "Id": "7d852923babc430fa1d5c8efa5cdde9f",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2a14711119634cb3be308f0f81f8e3c2",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b24df086c9204ccd9af377fabb5536aa",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "17c5e50fcdc64d49a30e6884d4f4a9e0",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f86a6da172074bfd8722962d69214204",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "filePath;\nsheetName;",
+      "Id": "29337ae8d2c94d488ebdc03de0a16ad6",
+      "Inputs": [
+        {
+          "Id": "f36f58acbd9d4a98a75c350160b56455",
+          "Name": "filePath",
+          "Description": "filePath",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "66b06265d43b492688394beaf19bea9d",
+          "Name": "sheetName",
+          "Description": "sheetName",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3422482c33ca4a8bb54f4221e08c54ac",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b9b1312780c54a8e89dc026b692e91e8",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];\ni[1];",
+      "Id": "008b88f58bd548188e4d5668e106d9e3",
+      "Inputs": [
+        {
+          "Id": "7a4717f20e8c4a92bf2544c39b2f6225",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "197c2806328b44c7b389b19b4bf208b1",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0e7bc4b0ebb94439a19e112cec4c9870",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -3275,12 +3437,6 @@
       "IsHidden": "False"
     },
     {
-      "Start": "04e2bf21646244d9a1090d5b680e0f73",
-      "End": "8ab3cb95013243289ef40171d668722a",
-      "Id": "48b72d29c8fc4971b0a893bb5efb4d78",
-      "IsHidden": "False"
-    },
-    {
       "Start": "859e8205f3a742078b7288d96db74aba",
       "End": "966c11318b8a4a43afa0e303f1b32ac8",
       "Id": "bcc78099a0c24f06bd68907ae744dad9",
@@ -3294,14 +3450,20 @@
     },
     {
       "Start": "d9f7652d7dcd49818455cfcb11afd4d5",
-      "End": "2e5e60ee0deb4323bcc14ed3cfc163f5",
-      "Id": "eaab43c22ddf4e23ad27c0525b81bfda",
+      "End": "5d6a579e11fc46ff81e2a20afbd033ad",
+      "Id": "389e038f7a0b43d38a5d4e01498869f9",
       "IsHidden": "False"
     },
     {
       "Start": "095ac27cee8044e7a2f1a3250bb3ef14",
       "End": "ca3839e498cc41deb8e9225ab7ab8210",
       "Id": "3507dc859328499a9a70256b268c8f40",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "095ac27cee8044e7a2f1a3250bb3ef14",
+      "End": "f36f58acbd9d4a98a75c350160b56455",
+      "Id": "da521293760640a6944015d2b99c5d3b",
       "IsHidden": "False"
     },
     {
@@ -3314,6 +3476,12 @@
       "Start": "2d12edf981f54677938d68adb8a3f14d",
       "End": "809aab676bdd45759176cd7fc1b7287c",
       "Id": "5d630b015d954f4b81ffdf8a226efd9d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2d12edf981f54677938d68adb8a3f14d",
+      "End": "66b06265d43b492688394beaf19bea9d",
+      "Id": "3eed20d5a085418fa01190c42fe1e4c6",
       "IsHidden": "False"
     },
     {
@@ -3503,6 +3671,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "2a21d79dc4e546c7a5d930f015a1ccf9",
+      "End": "7a4717f20e8c4a92bf2544c39b2f6225",
+      "Id": "b918aaeca00d4e5f909e2a895827a75b",
+      "IsHidden": "False"
+    },
+    {
       "Start": "75452394259f454aac6b7f0729e4e1f7",
       "End": "893113c989264cd19431bbb81823b560",
       "Id": "47d094e93a994b7696d97cc32e9c5a21",
@@ -3555,6 +3729,36 @@
       "End": "c86c20b170cf41b2b9cfee070d24dc41",
       "Id": "1ed0bc4a9cc74263a323881f163c065e",
       "IsHidden": "False"
+    },
+    {
+      "Start": "fc0b74d5401541c0bc827a65e85ad1a1",
+      "End": "17c5e50fcdc64d49a30e6884d4f4a9e0",
+      "Id": "4ca8f560e5dd4dd3a7a39ca65024d65d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3422482c33ca4a8bb54f4221e08c54ac",
+      "End": "7d852923babc430fa1d5c8efa5cdde9f",
+      "Id": "dd55b23d0df24617826dc5e7c96b711b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9b1312780c54a8e89dc026b692e91e8",
+      "End": "2a14711119634cb3be308f0f81f8e3c2",
+      "Id": "d459863f45cc46f29fb986d325612711",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "197c2806328b44c7b389b19b4bf208b1",
+      "End": "b24df086c9204ccd9af377fabb5536aa",
+      "Id": "b6e0a343b2734cb9a483af6c458abf0a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0e7bc4b0ebb94439a19e112cec4c9870",
+      "End": "c65df92cac4c49448f02fb3db90aca10",
+      "Id": "60563eca446148798bfd3211ce74def5",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -3572,7 +3776,8 @@
       "Name": "Total BOQ_20230920.xlsx",
       "ReferenceType": "External",
       "Nodes": [
-        "ecccb4f11a2543e29cb666423f4f697e"
+        "ecccb4f11a2543e29cb666423f4f697e",
+        "29337ae8d2c94d488ebdc03de0a16ad6"
       ]
     }
   ],
@@ -3630,8 +3835,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5245.7608133101676,
-        "Y": 2028.3256055923416
+        "X": -5494.1170761448629,
+        "Y": 1960.7580929093729
       },
       {
         "Name": "All ElementsExceptRails",
@@ -3640,8 +3845,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4888.7608133101676,
-        "Y": 1880.3256055923416
+        "X": -5137.1170761448629,
+        "Y": 1812.7580929093729
       },
       {
         "Name": "Categories",
@@ -3650,8 +3855,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5581.7608133101658,
-        "Y": 2028.3256055923416
+        "X": -5830.1170761448611,
+        "Y": 1960.7580929093729
       },
       {
         "Name": "List Create",
@@ -3660,8 +3865,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4888.7608133101676,
-        "Y": 2028.3256055923416
+        "X": -5137.1170761448629,
+        "Y": 1960.7580929093729
       },
       {
         "Name": "List.Join",
@@ -3670,8 +3875,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4535.7608133101676,
-        "Y": 1937.3256055923416
+        "X": -4784.1170761448629,
+        "Y": 1869.7580929093729
       },
       {
         "Name": "Data.ImportExcel",
@@ -3770,8 +3975,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1307.2287427133963,
-        "Y": 3219.710762018155
+        "X": -628.54263624231658,
+        "Y": 4068.4530504564436
       },
       {
         "Name": "lang_mode(영/한) select",
@@ -3800,8 +4005,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 158.22874271339629,
-        "Y": 3199.1932620181551
+        "X": -1777.5426362423166,
+        "Y": 4047.9355504564437
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -3810,8 +4015,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -176.77125728660371,
-        "Y": 3199.1932620181551
+        "X": -2112.5426362423168,
+        "Y": 4047.9355504564437
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -3820,8 +4025,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2385.2287427133961,
-        "Y": 3257.710762018155
+        "X": 449.4573637576832,
+        "Y": 4106.4530504564436
       },
       {
         "Name": "Code Block",
@@ -3830,8 +4035,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2385.2287427133961,
-        "Y": 3435.5382620181549
+        "X": 449.4573637576832,
+        "Y": 4284.280550456444
       },
       {
         "Name": "setParamElementTypes",
@@ -3840,8 +4045,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 2742.2287427133961,
-        "Y": 3295.710762018155
+        "X": 806.4573637576832,
+        "Y": 4144.4530504564436
       },
       {
         "Name": "Get_WMCodesAndBriefSpec",
@@ -3850,8 +4055,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2003.2287427133963,
-        "Y": 3257.710762018155
+        "X": 67.457363757683424,
+        "Y": 4106.4530504564436
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -3860,8 +4065,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1645.2287427133963,
-        "Y": 3185.710762018155
+        "X": -290.54263624231658,
+        "Y": 4034.4530504564436
       },
       {
         "Name": "Code Block",
@@ -3870,8 +4075,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1645.2287427133963,
-        "Y": 3363.5382620181549
+        "X": -290.54263624231658,
+        "Y": 4212.280550456444
       },
       {
         "Name": "Code Block",
@@ -3880,8 +4085,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 458.22874271339629,
-        "Y": 3165.1932620181551
+        "X": -1477.5426362423166,
+        "Y": 4013.9355504564437
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -3890,8 +4095,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 861.22874271339629,
-        "Y": 3253.710762018155
+        "X": -1074.5426362423166,
+        "Y": 4102.4530504564436
       },
       {
         "Name": "Code Block",
@@ -3900,8 +4105,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 458.22874271339629,
-        "Y": 3343.1932620181551
+        "X": -1477.5426362423166,
+        "Y": 4191.9355504564437
       },
       {
         "Name": "물량Param시트 약자-매개변수 정리",
@@ -3930,8 +4135,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 486.10354279321018,
-        "Y": 1295.7568061274783
+        "X": -257.94364223116736,
+        "Y": 600.14405312461463
       },
       {
         "Name": "Code Block",
@@ -3950,8 +4155,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1347.1035427932102,
-        "Y": 1295.7568061274783
+        "X": 603.05635776883264,
+        "Y": 600.14405312461463
       },
       {
         "Name": "부재/WM 별 산식에 의한 최종 계산",
@@ -3960,8 +4165,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1746.1035427932102,
-        "Y": 1295.7568061274783
+        "X": 1002.0563577688326,
+        "Y": 600.14405312461463
       },
       {
         "Name": "Data.ExportToExcel",
@@ -3970,8 +4175,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 5147.1654566364286,
-        "Y": 60.849113012807805
+        "X": 6051.7922586902987,
+        "Y": 180.5546633927116
       },
       {
         "Name": "Family List 데이터 파싱_Category 시트",
@@ -3990,8 +4195,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2435.556503780329,
-        "Y": 1289.4545147567444
+        "X": 1691.5093187559514,
+        "Y": 593.84176175388075
       },
       {
         "Name": "Dictionary.Components",
@@ -4000,8 +4205,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4141.1654566364286,
-        "Y": 131.34911301280783
+        "X": 5045.7922586902987,
+        "Y": 251.05466339271163
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -4010,8 +4215,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4488.1654566364286,
-        "Y": 253.84911301280778
+        "X": 5392.7922586902987,
+        "Y": 373.55466339271157
       },
       {
         "Name": "Code Block",
@@ -4020,8 +4225,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4141.1654566364286,
-        "Y": 313.67661301280782
+        "X": 5045.7922586902987,
+        "Y": 433.38216339271162
       },
       {
         "Name": "Code Block",
@@ -4040,8 +4245,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4811.1654566364286,
-        "Y": 54.67661301280782
+        "X": 5715.7922586902987,
+        "Y": 174.38216339271162
       },
       {
         "Name": "List.DropItems",
@@ -4050,8 +4255,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4811.1654566364286,
-        "Y": 202.84911301280783
+        "X": 5715.7922586902987,
+        "Y": 322.55466339271163
       },
       {
         "Name": "Code Block",
@@ -4060,8 +4265,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4488.1654566364286,
-        "Y": 95.3316130128078
+        "X": 5392.7922586902987,
+        "Y": 215.03716339271159
       },
       {
         "Name": "Code Block",
@@ -4070,8 +4275,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2884.556503780329,
-        "Y": 1289.4545147567444
+        "X": 2140.5093187559514,
+        "Y": 593.84176175388075
       },
       {
         "Name": "Code Block",
@@ -4080,8 +4285,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6523.40790877422,
-        "Y": 4231.1516432666449
+        "X": 6477.9105644782385,
+        "Y": 3498.4829241849066
       },
       {
         "Name": "WM별 계산결과 및 spec 정리",
@@ -4090,8 +4295,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7281.845665479771,
-        "Y": 4350.2612254136866
+        "X": 7984.2061822182568,
+        "Y": 3158.2566806336831
       },
       {
         "Name": "File Path",
@@ -4160,8 +4365,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -648.98835097011283,
-        "Y": 1185.0083187620783
+        "X": -2070.3558066147989,
+        "Y": 1303.7159304422937
       },
       {
         "Name": "Code Block",
@@ -4170,8 +4375,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1224.9271554872773,
-        "Y": 2116.67272834522
+        "X": 1620.5604366911455,
+        "Y": 1297.3503244576918
       },
       {
         "Name": "Code Block",
@@ -4180,8 +4385,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4383.7163557195,
-        "Y": 1978.344043315079
+        "X": 3753.54458217082,
+        "Y": 1963.2681635651104
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -4190,8 +4395,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5045.15428653432,
-        "Y": 1596.4796446449009
+        "X": 4873.03850535407,
+        "Y": 1765.2118382636313
       },
       {
         "Name": "Code Block",
@@ -4200,8 +4405,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4810.3417741516014,
-        "Y": 1692.2278830345795
+        "X": 4619.03850535407,
+        "Y": 1799.0393382636314
       },
       {
         "Name": "List.DropItems",
@@ -4210,8 +4415,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5478.3613118157955,
-        "Y": 1761.7322602319987
+        "X": 5196.03850535407,
+        "Y": 1837.2118382636313
       },
       {
         "Name": "Code Block",
@@ -4220,8 +4425,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5263.6976080244185,
-        "Y": 1841.2160179113098
+        "X": 4873.03850535407,
+        "Y": 1943.0393382636312
       },
       {
         "Name": "List.UniqueItems",
@@ -4230,8 +4435,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5847.7078910067366,
-        "Y": 1663.1540234587733
+        "X": 5491.03850535407,
+        "Y": 1837.2118382636313
       },
       {
         "Name": "extract_fromWMsheet",
@@ -4240,8 +4445,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4569.8180850072231,
-        "Y": 2443.0064038363066
+        "X": 4331.6191849577217,
+        "Y": 2807.8426937855425
       },
       {
         "Name": "Custom Selection",
@@ -4310,8 +4515,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2969.1959378593106,
-        "Y": 2124.8594062575626
+        "X": -2421.0598276896812,
+        "Y": 1962.910100980172
       },
       {
         "Name": "List.Flatten",
@@ -4320,8 +4525,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3710.1959378593106,
-        "Y": 1945.4082867712279
+        "X": -3162.0598276896812,
+        "Y": 1783.4589814938374
       },
       {
         "Name": "Code Block",
@@ -4330,8 +4535,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3710.1959378593106,
-        "Y": 2500.9655257438976
+        "X": -3162.0598276896812,
+        "Y": 2339.0162204665071
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -4340,8 +4545,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3415.1959378593106,
-        "Y": 2677.7616452302323
+        "X": -2867.0598276896812,
+        "Y": 2515.8123399528417
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -4350,8 +4555,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2969.1959378593106,
-        "Y": 2272.8594062575626
+        "X": -2421.0598276896812,
+        "Y": 2110.910100980172
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -4360,8 +4565,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1968.7927287507205,
-        "Y": 1876.8483192645588
+        "X": -1420.6566185810912,
+        "Y": 1714.8990139871682
       },
       {
         "Name": "Code Block",
@@ -4370,8 +4575,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1633.7927287507205,
-        "Y": 1876.8483192645588
+        "X": -1085.6566185810912,
+        "Y": 1714.8990139871682
       },
       {
         "Name": "List.Contains",
@@ -4380,28 +4585,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2523.1959378593106,
-        "Y": 2181.8594062575626
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "3e009a82071647fc978603072d28ff61",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 3190.0349500483921,
-        "Y": 999.64752923071387
-      },
-      {
-        "Name": "Dictionary.Keys",
-        "ShowGeometry": true,
-        "Id": "409fb36d59824291a7ab3ac4148cf9c6",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 7695.00789972049,
-        "Y": 4195.8211177508947
+        "X": -1975.0598276896812,
+        "Y": 2019.910100980172
       },
       {
         "Name": "Total BOQ 데이터 파싱_(AR) BOQ시트",
@@ -4410,8 +4595,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7822.901050769663,
-        "Y": 2451.417969226819
+        "X": 7991.4859153896068,
+        "Y": 2573.1159874780965
       },
       {
         "Name": "Code Block",
@@ -4420,8 +4605,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6217.19589893832,
-        "Y": 1897.4270868638034
+        "X": 5791.03850535407,
+        "Y": 1837.2118382636313
       },
       {
         "Name": "List.DropItems",
@@ -4430,8 +4615,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5522.6659187632022,
-        "Y": 2323.2885195163708
+        "X": 5195.53850535407,
+        "Y": 2164.2118382636318
       },
       {
         "Name": "Code Block",
@@ -4440,8 +4625,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5308.0022149718225,
-        "Y": 2402.772277195681
+        "X": 4872.53850535407,
+        "Y": 2270.0393382636312
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -4450,8 +4635,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5089.458893481722,
-        "Y": 2158.0359039292707
+        "X": 4872.53850535407,
+        "Y": 2092.2118382636318
       },
       {
         "Name": "List.UniqueItems",
@@ -4460,8 +4645,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5885.6511313473675,
-        "Y": 2193.9636774770638
+        "X": 5490.53850535407,
+        "Y": 2164.2118382636318
       },
       {
         "Name": "Code Block",
@@ -4470,8 +4655,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4854.6463810990017,
-        "Y": 2253.7841423189507
+        "X": 4618.53850535407,
+        "Y": 2126.0393382636312
       },
       {
         "Name": "String",
@@ -4480,8 +4665,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7423.4253081061315,
-        "Y": 2217.7115174156424
+        "X": 7655.1530904420788,
+        "Y": 2477.8141302417048
       },
       {
         "Name": "Code Block",
@@ -4490,8 +4675,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6222.4900304793218,
-        "Y": 2103.8828464077365
+        "X": 5790.53850535407,
+        "Y": 2164.2118382636318
       },
       {
         "Name": "List Create",
@@ -4502,6 +4687,56 @@
         "Excluded": false,
         "X": 6726.5324285373217,
         "Y": 1949.1555129621524
+      },
+      {
+        "Name": "pip test",
+        "ShowGeometry": true,
+        "Id": "92e3526e93834efd8c29509a613b39e7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": -7383.7164559370358,
+        "Y": -25.676804507870429
+      },
+      {
+        "Name": "Data formatting for Excel Export___________________________",
+        "ShowGeometry": true,
+        "Id": "cf52cd359968431c954ef0c1c105f09b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 8693.1973786282833,
+        "Y": 2399.5449514065308
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "53192363f9da457ca86140d19351bdfb",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 9585.7062032731665,
+        "Y": 1956.6434662040997
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "29337ae8d2c94d488ebdc03de0a16ad6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7670.2141308556584,
+        "Y": 1958.2619563814474
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "008b88f58bd548188e4d5668e106d9e3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 8426.121950536859,
+        "Y": 2308.2292951369573
       }
     ],
     "Annotations": [
@@ -4520,12 +4755,12 @@
           "bf37a72db0e847dba5e3d1c2ed14c8bd"
         ],
         "HasNestedGroups": false,
-        "Left": -5591.7608133101658,
-        "Top": 1764.3256055923416,
+        "Left": -5840.1170761448611,
+        "Top": 1696.7580929093729,
         "Width": 1217.9999999999982,
         "Height": 396.0,
         "FontSize": 72.0,
-        "InitialTop": 1880.3256055923416,
+        "InitialTop": 1812.7580929093729,
         "InitialHeight": 293.0,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -4575,18 +4810,18 @@
           "5942773aeb824c84bde85b7a139bac6b",
           "590996bec97544a8a3c5eaecbf1bbd45",
           "ea47f768c4464f6ca17b7b47bc073108",
-          "0ff82b1632ff4d8cbcded5b0beba520c",
           "995ccef9f1cd4b49aecc810576ba715f",
-          "9fac8931a6e44ba394f6b5087edcfafe"
+          "9fac8931a6e44ba394f6b5087edcfafe",
+          "0ff82b1632ff4d8cbcded5b0beba520c"
         ],
         "HasNestedGroups": false,
-        "Left": -186.77125728660371,
-        "Top": 3079.1932620181551,
+        "Left": -2122.5426362423168,
+        "Top": 3940.9355504564437,
         "Width": 3188.0,
-        "Height": 661.3449999999998,
+        "Height": 648.34500000000025,
         "FontSize": 36.0,
-        "InitialTop": 3152.1932620181551,
-        "InitialHeight": 708.55918153421,
+        "InitialTop": 4013.9355504564437,
+        "InitialHeight": 415.34500000000025,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
       },
@@ -4632,12 +4867,12 @@
           "2524f0f864744ce88dfa2ab2d9d3e61d"
         ],
         "HasNestedGroups": false,
-        "Left": 4131.1654566364286,
-        "Top": -205.32338698719218,
+        "Left": 5035.7922586902987,
+        "Top": -85.617836607288382,
         "Width": 1261.0,
         "Height": 651.0,
         "FontSize": 96.0,
-        "InitialTop": 54.67661301280782,
+        "InitialTop": 174.38216339271162,
         "InitialHeight": 404.0,
         "TextblockHeight": 250.0,
         "Background": "#FFFF7BAC"
@@ -4659,13 +4894,13 @@
           "e59d4e8deeea44a0a571183ad690d46a"
         ],
         "HasNestedGroups": false,
-        "Left": 476.10354279321018,
-        "Top": 881.79419582446462,
+        "Left": -267.94364223116736,
+        "Top": 477.84176175388075,
         "Width": 2572.4529609871188,
-        "Height": 575.96261030301366,
+        "Height": 433.30229137073388,
         "FontSize": 72.0,
-        "InitialTop": 997.79419582446462,
-        "InitialHeight": 351.0,
+        "InitialTop": 593.84176175388075,
+        "InitialHeight": 384.30229137073388,
         "TextblockHeight": 106.0,
         "Background": "#FFFFAA45"
       },
@@ -4680,12 +4915,12 @@
           "92a5d0c5dcc842d7b250f2421b0731ad"
         ],
         "HasNestedGroups": false,
-        "Left": 6513.40790877422,
-        "Top": 3740.1516432666449,
+        "Left": 6467.9105644782385,
+        "Top": 3007.4829241849066,
         "Width": 441.0,
         "Height": 623.0,
         "FontSize": 96.0,
-        "InitialTop": 4231.1516432666449,
+        "InitialTop": 3498.4829241849066,
         "InitialHeight": 145.0,
         "TextblockHeight": 481.0,
         "Background": "#FFFFB8D8"
@@ -4709,7 +4944,7 @@
         "Height": 434.90882656026497,
         "FontSize": 72.0,
         "InitialTop": -1785.1143350525797,
-        "InitialHeight": 303.93692716744897,
+        "InitialHeight": 303.93692716744908,
         "TextblockHeight": 106.0,
         "Background": "#FFFFC999"
       },
@@ -4731,13 +4966,13 @@
           "ff9036ffe34e498e92682212d56492b0"
         ],
         "HasNestedGroups": false,
-        "Left": -3720.1959378593106,
-        "Top": 1803.8483192645588,
+        "Left": -3172.0598276896812,
+        "Top": 1641.8990139871682,
         "Width": 2314.40320910859,
         "Height": 1035.9133259656735,
         "FontSize": 36.0,
-        "InitialTop": 1876.8483192645588,
-        "InitialHeight": 566.41375000000016,
+        "InitialTop": 1714.8990139871682,
+        "InitialHeight": 945.91332596567349,
         "TextblockHeight": 63.0,
         "Background": "#FFE8F7AD"
       },
@@ -4761,7 +4996,7 @@
         "Height": 477.95115044705381,
         "FontSize": 36.0,
         "InitialTop": 2463.6215313825805,
-        "InitialHeight": 434.95115044705381,
+        "InitialHeight": 417.95115044705381,
         "TextblockHeight": 63.0,
         "Background": "#FFFFB8D8"
       },
@@ -4774,8 +5009,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -176.77125728660371,
-        "Top": 3160.1932620181551,
+        "Left": -2112.5426362423168,
+        "Top": 4047.9355504564437,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -4793,8 +5028,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 1328.7110207326075,
-        "Top": 1005.7941958244646,
+        "Left": 584.66383570823,
+        "Top": 619.181442821601,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -4812,8 +5047,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 1746.1035427932102,
-        "Top": 1227.7568061274783,
+        "Left": 1002.0563577688326,
+        "Top": 841.14405312461463,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -4831,46 +5066,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 7366.7210731292234,
-        "Top": 3965.7619212474247,
-        "Width": 0.0,
-        "Height": 0.0,
-        "FontSize": 36.0,
-        "InitialTop": 0.0,
-        "InitialHeight": 0.0,
-        "TextblockHeight": 0.0,
-        "Background": "#FFC1D676"
-      },
-      {
-        "Id": "f19247ff30a3425d93e36b7e7626b726",
-        "Title": "Total Boq 양식에서 Category(Large)에 해당하는 rIDX 먼저 찾고, 그 구간 들 내에서 Category(Middle)에 해당하는 rIDX 다시 찾고 그 구간에 속하는 WM set들 배치하기",
-        "DescriptionText": null,
-        "IsExpanded": true,
-        "WidthAdjustment": 0.0,
-        "HeightAdjustment": 0.0,
-        "Nodes": [],
-        "HasNestedGroups": false,
-        "Left": 7219.6232666128672,
-        "Top": 4071.1205226305219,
-        "Width": 0.0,
-        "Height": 0.0,
-        "FontSize": 36.0,
-        "InitialTop": 0.0,
-        "InitialHeight": 0.0,
-        "TextblockHeight": 0.0,
-        "Background": "#FFC1D676"
-      },
-      {
-        "Id": "9739cf0340d340f2915828a964eda7c2",
-        "Title": "Category Description항목 이름을 키로 하고, 해당되는 WM code 리스트를 값으로 갖는 딕셔너리 필요",
-        "DescriptionText": null,
-        "IsExpanded": true,
-        "WidthAdjustment": 0.0,
-        "HeightAdjustment": 0.0,
-        "Nodes": [],
-        "HasNestedGroups": false,
-        "Left": 5160.8578711164519,
-        "Top": 4017.6033374969466,
+        "Left": 7241.0945022174492,
+        "Top": 3133.2225461954463,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -4880,8 +5077,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -10142.16939328373,
-    "Y": -3294.4136564555492,
-    "Zoom": 1.3634745073978418
+    "X": -10096.241051552575,
+    "Y": -2101.25944574834,
+    "Zoom": 1.0993775925728391
   }
 }
