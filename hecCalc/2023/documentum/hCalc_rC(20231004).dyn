@@ -1563,7 +1563,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef extractCalcResult(elemDicts):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"]\r\n        for wm in wms:\r\n            keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res_d = dict(k_v)\r\n            if \"Description\" in wm.Keys:\r\n                res_d[\"Description\"] = wm[\"Description\"]\r\n            else:\r\n                res_d[\"Description\"] = \"\"\r\n            res_d[\"wmcANDgauge\"] = \"\".join([wm[\"Work Master Code\"],wm[\"Gauge Code\"]])\r\n            \r\n            res.append(res_d)\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts):\r\n    extractedDicts = extractCalcResult(elemDicts)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    \r\n    res = []\r\n    for k, g in grpDicts_WMC: \r\n        wmCode = k\r\n        gg = copy.deepcopy(list(g))\r\n        calcSum = round(sum(map(lambda x: x[\"calcResult\"], gg)),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n        catStr = \"_\".join([wmSpecs[0],wmSpecs[1]])\r\n        specOnly = list(filter(lambda x: x!=0, wmSpecs))[3:]\r\n        addSpec = gg[0][\"Description\"]\r\n        dict_res = {\r\n            \"catStr\": catStr,\r\n            \"Work Master Code\": wmCode,\r\n            \"Gauge Code\": gg[0][\"Gauge Code\"],\r\n            \"Description\": wmSpecs[2],\r\n            \"Spec.\": \"\\n\".join(specOnly),\r\n            \"Additional Spec.\": addSpec,\r\n            \"calcVal\": calcSum, \r\n            #\"wmSpecs\": wmSpecs,\r\n            }\r\n        res.append(dict_res)\r\n    \r\n    \r\n    return res\r\n\r\nextDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\ndef extractCalcResult(elemDicts):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"]\r\n        for wm in wms:\r\n            keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res_d = dict(k_v)\r\n            if \"Description\" in wm.Keys:\r\n                res_d[\"Description\"] = wm[\"Description\"]\r\n            else:\r\n                res_d[\"Description\"] = \"\"\r\n            res_d[\"wmcANDgauge\"] = \"\".join([wm[\"Work Master Code\"],wm[\"Gauge Code\"]])\r\n            res_d[\"UoM\"] = wm[\"Unit\"]\r\n            res.append(res_d)\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts):\r\n    extractedDicts = extractCalcResult(elemDicts)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    \r\n    res = []\r\n    for k, g in grpDicts_WMC: \r\n        wmCode = k\r\n        gg = copy.deepcopy(list(g))\r\n        calcSum = round(sum(map(lambda x: x[\"calcResult\"], gg)),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n        catStr = \"_\".join([wmSpecs[0],wmSpecs[1]])\r\n        specOnly = list(filter(lambda x: x!=0, wmSpecs))[3:]\r\n        addSpec = gg[0][\"Description\"]\r\n        dict_res = {\r\n            \"catStr\": catStr,\r\n            \"Work Master Code\": wmCode,\r\n            \"Gauge Code\": gg[0][\"Gauge Code\"],\r\n            \"Description\": wmSpecs[2],\r\n            \"Spec.\": \"\\n\".join(specOnly),\r\n            \"Additional Spec.\": addSpec,\r\n            \"calcVal\": calcSum,\r\n            \"UoM\": gg[0][\"UoM\"]\r\n            #\"wmSpecs\": wmSpecs,\r\n            }\r\n        res.append(dict_res)\r\n    \r\n    \r\n    return res\r\n\r\nextDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1595,8 +1595,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_20230920.xlsx",
-      "InputValue": ".\\Total BOQ_20230920.xlsx",
+      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_20230920_src - 복사본.xlsx",
+      "InputValue": ".\\Total BOQ_20230920_src - 복사본.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
       "Inputs": [],
@@ -2213,12 +2213,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "4;",
+      "Code": "6;",
       "Id": "b34a66f0d7864ef283856170c2606a12",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "72a95324c21747128d0dc9cabbbed1fd",
+          "Id": "3dad539546ee4c6fb88e88a7adccf9a0",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -2237,12 +2237,12 @@
       "WasExecuted": true,
       "Camera": {
         "Name": "9a893bfe-b5bc-4b0d-b0c0-365d427b3f85 Preview",
-        "EyeX": -17.0,
-        "EyeY": 24.0,
-        "EyeZ": 50.0,
-        "LookX": 12.0,
-        "LookY": -13.0,
-        "LookZ": -58.0,
+        "EyeX": 22.072747549507767,
+        "EyeY": 12.024791304720566,
+        "EyeZ": -2.5910195140168071,
+        "LookX": 0.003917694091796875,
+        "LookY": -0.004245758056640625,
+        "LookZ": -0.018944263458251953,
         "UpX": 0.0,
         "UpY": 1.0,
         "UpZ": 0.0
@@ -2598,15 +2598,6 @@
           "Id": "ec0e917339cb4f81875e476c63e9f5d3",
           "Name": "IN[2]",
           "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "27d87943c571456dab1665971c560014",
-          "Name": "IN[3]",
-          "Description": "Input #3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2972,7 +2963,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import groupby\r\n\r\nimport DSOffice\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfilePath = IN[0]\r\nsheetName = IN[1]\r\nhdrs_withIdx = IN[2]\r\ndictList = IN[3]\r\n\r\n# Place your code below this line\r\nexportToExcel = DSOffice.Data.ExportToExcel\r\n#print(hdrs_withIdx)\r\n\r\nhdrsColIdxs = [\r\n        hdrs_withIdx[\"Work Master Code\"],\r\n        hdrs_withIdx[\"Gauge Code\"],\r\n        hdrs_withIdx[\"Description\"],\r\n        hdrs_withIdx[\"Spec.\"],\r\n        hdrs_withIdx[\"Additional Spec.(설계자 작성)\"],\r\n        hdrs_withIdx[\"targetBD\"],\r\n            ]\r\n\r\n\r\ndictList_grped = groupby(dictList, lambda x: x[\"catStr\"])\r\n\r\ndictList_grpedList = []\r\nfor k,grp in dictList_grped:\r\n    dictList_grpedList.append(list(grp))\r\n\r\ndef writeExcel(keys,startColhdr, grpedList):\r\n    for i in dictList_grpedList:\r\n        #keys = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\n        startCol = hdrs_withIdx[startColhdr]\r\n        startRow = i[0][\"rIDX\"]\r\n\r\n        datas = list(zip(*map(lambda y: map(lambda x: x[y], list(i)), keys)))\r\n        #res.append(datas)\r\n        exportToExcel(filePath, sheetName, startRow, startCol, datas)\r\n\r\nkeys1 = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\nkeys2 = [\"calcVal\"]\r\n\r\nwriteExcel(keys1,\"Work Master Code\", dictList_grpedList)\r\nwriteExcel(keys2,\"targetBD\", dictList_grpedList)\r\n# Assign your output to the OUT variable.\r\nOUT = hdrsColIdxs",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import groupby\r\n\r\nimport DSOffice\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfilePath = IN[0]\r\nsheetName = IN[1]\r\nhdrs_withIdx = IN[2]\r\ndictList = IN[3]\r\n\r\n# Place your code below this line\r\nexportToExcel = DSOffice.Data.ExportToExcel\r\n#print(hdrs_withIdx)\r\n\r\nhdrsColIdxs = [\r\n        hdrs_withIdx[\"Work Master Code\"],\r\n        hdrs_withIdx[\"Gauge Code\"],\r\n        hdrs_withIdx[\"Description\"],\r\n        hdrs_withIdx[\"Spec.\"],\r\n        hdrs_withIdx[\"Additional Spec.(설계자 작성)\"],\r\n        hdrs_withIdx[\"UoM\"],\r\n        hdrs_withIdx[\"targetBD\"],\r\n            ]\r\n\r\n\r\ndictList_grped = groupby(dictList, lambda x: x[\"catStr\"])\r\n\r\ndictList_grpedList = []\r\nfor k,grp in dictList_grped:\r\n    dictList_grpedList.append(list(grp))\r\n\r\ndef writeExcel(keys,startColhdr, grpedList):\r\n    for i in dictList_grpedList:\r\n        #keys = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\n        startCol = hdrs_withIdx[startColhdr]\r\n        startRow = i[0][\"rIDX\"]\r\n\r\n        datas = list(zip(*map(lambda y: map(lambda x: x[y], list(i)), keys)))\r\n        #res.append(datas)\r\n        exportToExcel(filePath, sheetName, startRow, startCol, datas)\r\n\r\nkeys1 = [\"Work Master Code\", \"Gauge Code\", \"Description\", \"Spec.\", \"Additional Spec.\", ]\r\nkeys2 = [\"UoM\"]\r\nkeys3 = [\"calcVal\"]\r\n\r\nwriteExcel(keys1,\"Work Master Code\", dictList_grpedList)\r\nwriteExcel(keys2,\"UoM\", dictList_grpedList)\r\nwriteExcel(keys3,\"targetBD\", dictList_grpedList)\r\n# Assign your output to the OUT variable.\r\nOUT = dictList_grpedList",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3113,6 +3104,16 @@
           "KeepListStructure": false
         }
       ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "//WM code 채워진 상황에서 일치하는  칸에 값 기입하는 로직 추가 필요\n//현재는 비워진 시트 기준으로 자동 채움 기능 구현",
+      "Id": "585ec18cd18f42599489c992855c056f",
+      "Inputs": [],
+      "Outputs": [],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
     }
@@ -3593,9 +3594,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "72a95324c21747128d0dc9cabbbed1fd",
+      "Start": "3dad539546ee4c6fb88e88a7adccf9a0",
       "End": "4d89c3085a1d4d59b9cb367d2023d6b4",
-      "Id": "084ce350169a43b1ab06975108a56deb",
+      "Id": "4f7b5f8eafa04ad3b6bc5ce3aec8b6ed",
       "IsHidden": "False"
     },
     {
@@ -3773,7 +3774,7 @@
       ]
     },
     {
-      "Name": "Total BOQ_20230920.xlsx",
+      "Name": "Total BOQ_20230920_src - 복사본.xlsx",
       "ReferenceType": "External",
       "Nodes": [
         "ecccb4f11a2543e29cb666423f4f697e",
@@ -3816,15 +3817,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 61.245059967041016,
-      "EyeY": 33.555679321289063,
-      "EyeZ": -3.2311515808105469,
-      "LookX": -53.736148834228516,
-      "LookY": -51.179946899414063,
-      "LookZ": -29.405628204345703,
-      "UpX": -0.40506431460380554,
-      "UpY": 0.88701057434082031,
-      "UpZ": -0.22166435420513153
+      "EyeX": 66.7216796875,
+      "EyeY": 39.518898010253906,
+      "EyeZ": 25.462112426757813,
+      "LookX": -59.295257568359375,
+      "LookY": -75.490676879882813,
+      "LookZ": -26.014503479003906,
+      "UpX": -0.55110710859298706,
+      "UpY": 0.79863512516021729,
+      "UpZ": -0.24179090559482574
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -3945,8 +3946,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3792.4530405595751,
-        "Y": 559.07060072276715
+        "X": -3772.2481374430936,
+        "Y": 617.67874541362835
       },
       {
         "Name": "Code Block",
@@ -3975,8 +3976,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -628.54263624231658,
-        "Y": 4068.4530504564436
+        "X": 201.75699127296343,
+        "Y": 3512.5442869698181
       },
       {
         "Name": "lang_mode(영/한) select",
@@ -3985,8 +3986,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4149.4530405595751,
-        "Y": 627.07060072276715
+        "X": -4179.5131799783376,
+        "Y": 610.28118161076191
       },
       {
         "Name": "Code Block",
@@ -4005,8 +4006,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1777.5426362423166,
-        "Y": 4047.9355504564437
+        "X": -947.24300872703657,
+        "Y": 3492.0267869698182
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -4015,8 +4016,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2112.5426362423168,
-        "Y": 4047.9355504564437
+        "X": -1282.2430087270368,
+        "Y": 3492.0267869698182
       },
       {
         "Name": "Dictionary.ValueAtKey",
@@ -4025,8 +4026,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 449.4573637576832,
-        "Y": 4106.4530504564436
+        "X": 1279.7569912729632,
+        "Y": 3550.5442869698181
       },
       {
         "Name": "Code Block",
@@ -4035,8 +4036,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 449.4573637576832,
-        "Y": 4284.280550456444
+        "X": 1279.7569912729632,
+        "Y": 3728.3717869698185
       },
       {
         "Name": "setParamElementTypes",
@@ -4045,8 +4046,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 806.4573637576832,
-        "Y": 4144.4530504564436
+        "X": 1636.7569912729632,
+        "Y": 3588.5442869698181
       },
       {
         "Name": "Get_WMCodesAndBriefSpec",
@@ -4055,8 +4056,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 67.457363757683424,
-        "Y": 4106.4530504564436
+        "X": 897.75699127296343,
+        "Y": 3550.5442869698181
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -4065,8 +4066,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -290.54263624231658,
-        "Y": 4034.4530504564436
+        "X": 539.75699127296343,
+        "Y": 3478.5442869698181
       },
       {
         "Name": "Code Block",
@@ -4075,8 +4076,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -290.54263624231658,
-        "Y": 4212.280550456444
+        "X": 539.75699127296343,
+        "Y": 3656.3717869698185
       },
       {
         "Name": "Code Block",
@@ -4085,8 +4086,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1477.5426362423166,
-        "Y": 4013.9355504564437
+        "X": -647.24300872703657,
+        "Y": 3458.0267869698182
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -4095,8 +4096,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1074.5426362423166,
-        "Y": 4102.4530504564436
+        "X": -244.24300872703657,
+        "Y": 3546.5442869698181
       },
       {
         "Name": "Code Block",
@@ -4105,8 +4106,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1477.5426362423166,
-        "Y": 4191.9355504564437
+        "X": -647.24300872703657,
+        "Y": 3636.0267869698182
       },
       {
         "Name": "물량Param시트 약자-매개변수 정리",
@@ -4115,8 +4116,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3326.4530405595751,
-        "Y": 559.07060072276715
+        "X": -3306.2481374430936,
+        "Y": 617.67874541362835
       },
       {
         "Name": "Family List 데이터 파싱_Category - 물량Param 시트 결합",
@@ -4125,8 +4126,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2814.4530405595751,
-        "Y": 616.07060072276715
+        "X": -2852.2481374430936,
+        "Y": 617.67874541362835
       },
       {
         "Name": "family list데이터 - Revit 부재 데이터 결합 & Sym_Val Dict 값 업데이트(타입,인스턴스 매개변수)",
@@ -4174,7 +4175,7 @@
         "Id": "3a2291d54fa74970b0cacd8a3a8a08b8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Excluded": false,
         "X": 6051.7922586902987,
         "Y": 180.5546633927116
       },
@@ -4185,8 +4186,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3324.7694537276307,
-        "Y": 710.62488276337854
+        "X": -3324.1999383485381,
+        "Y": 946.25467068925241
       },
       {
         "Name": "WM별 총합 계산 및 엑셀 익스포트 준비",
@@ -4285,8 +4286,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6477.9105644782385,
-        "Y": 3498.4829241849066
+        "X": 6428.7216493567294,
+        "Y": 2908.31271873086
       },
       {
         "Name": "WM별 계산결과 및 spec 정리",
@@ -4355,8 +4356,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2999.4364390203273,
-        "Y": 680.96904790692054
+        "X": -4147.1999383485381,
+        "Y": 912.25467068925218
       },
       {
         "Name": "Code Block",
@@ -4505,8 +4506,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4149.1883232113823,
-        "Y": -1693.8725798212597
+        "X": 4151.1139927065824,
+        "Y": -1680.3928933548616
       },
       {
         "Name": "Dictionary.Keys",
@@ -4709,7 +4710,7 @@
         "Y": 2399.5449514065308
       },
       {
-        "Name": "Python Script",
+        "Name": "Export to Total BOQ",
         "ShowGeometry": true,
         "Id": "53192363f9da457ca86140d19351bdfb",
         "IsSetAsInput": false,
@@ -4737,6 +4738,16 @@
         "Excluded": false,
         "X": 8426.121950536859,
         "Y": 2308.2292951369573
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "585ec18cd18f42599489c992855c056f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6633.0,
+        "Y": 1584.0
       }
     ],
     "Annotations": [
@@ -4815,12 +4826,12 @@
           "0ff82b1632ff4d8cbcded5b0beba520c"
         ],
         "HasNestedGroups": false,
-        "Left": -2122.5426362423168,
-        "Top": 3940.9355504564437,
+        "Left": -1292.2430087270368,
+        "Top": 3385.0267869698182,
         "Width": 3188.0,
         "Height": 648.34500000000025,
         "FontSize": 36.0,
-        "InitialTop": 4013.9355504564437,
+        "InitialTop": 3458.0267869698182,
         "InitialHeight": 415.34500000000025,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -4837,15 +4848,16 @@
           "0d04816ca9f34db6a891541712eb1f5d",
           "1bd5112c1ae04bcfb1e2fd87f4860ba7",
           "f99474b49e3e486e8933b2ac5d7484fa",
-          "000f06ac5d844412994ef40b4057a11a"
+          "000f06ac5d844412994ef40b4057a11a",
+          "91c3545aae754e43b03d7ab2410f3689"
         ],
         "HasNestedGroups": false,
-        "Left": -4159.4530405595751,
-        "Top": 457.07060072276715,
-        "Width": 1840.0,
-        "Height": 415.55428204061138,
+        "Left": -4189.5131799783376,
+        "Top": 508.28118161076191,
+        "Width": 1832.265042535244,
+        "Height": 599.9734890784905,
         "FontSize": 60.0,
-        "InitialTop": 559.07060072276715,
+        "InitialTop": 610.28118161076191,
         "InitialHeight": 296.55428204061138,
         "TextblockHeight": 92.0,
         "Background": "#FFFF7BAC"
@@ -4912,17 +4924,30 @@
         "WidthAdjustment": 0.0,
         "HeightAdjustment": 0.0,
         "Nodes": [
-          "92a5d0c5dcc842d7b250f2421b0731ad"
+          "92a5d0c5dcc842d7b250f2421b0731ad",
+          "8066549a4a9b47df80e48559f550e5c6",
+          "ecccb4f11a2543e29cb666423f4f697e",
+          "cb8eb6bb001d4e018998c1f81063a7b3",
+          "545bdda03ce34cbf8f380aa09996affe",
+          "23c16e6f54c54461a94198d996b688b8",
+          "aae6ee369697433d96978d6f0a38227c",
+          "29337ae8d2c94d488ebdc03de0a16ad6",
+          "6d3257a7ae1544ba96260a2930df41a0",
+          "008b88f58bd548188e4d5668e106d9e3",
+          "f12f2f24ce254bd0baef14f26c5d20e9",
+          "63669713819d404bae525815fc170901",
+          "cf52cd359968431c954ef0c1c105f09b",
+          "53192363f9da457ca86140d19351bdfb"
         ],
         "HasNestedGroups": false,
-        "Left": 6467.9105644782385,
-        "Top": 3007.4829241849066,
-        "Width": 441.0,
-        "Height": 623.0,
+        "Left": 6418.7216493567294,
+        "Top": 1804.1555129621524,
+        "Width": 3396.9845539164371,
+        "Height": 1486.1011676715307,
         "FontSize": 96.0,
-        "InitialTop": 3498.4829241849066,
+        "InitialTop": 1949.1555129621524,
         "InitialHeight": 145.0,
-        "TextblockHeight": 481.0,
+        "TextblockHeight": 135.0,
         "Background": "#FFFFB8D8"
       },
       {
@@ -4977,30 +5002,6 @@
         "Background": "#FFE8F7AD"
       },
       {
-        "Id": "ad228548e3e745ce84f6a9637ac7db58",
-        "Title": "<Double click here to edit group title>",
-        "DescriptionText": "<Double click here to edit group description>",
-        "IsExpanded": true,
-        "WidthAdjustment": 0.0,
-        "HeightAdjustment": 0.0,
-        "Nodes": [
-          "ecccb4f11a2543e29cb666423f4f697e",
-          "545bdda03ce34cbf8f380aa09996affe",
-          "23c16e6f54c54461a94198d996b688b8",
-          "cb8eb6bb001d4e018998c1f81063a7b3"
-        ],
-        "HasNestedGroups": false,
-        "Left": 6586.8458059051227,
-        "Top": 2390.6215313825805,
-        "Width": 891.19667817798745,
-        "Height": 477.95115044705381,
-        "FontSize": 36.0,
-        "InitialTop": 2463.6215313825805,
-        "InitialHeight": 417.95115044705381,
-        "TextblockHeight": 63.0,
-        "Background": "#FFFFB8D8"
-      },
-      {
         "Id": "0ff82b1632ff4d8cbcded5b0beba520c",
         "Title": "Revit에 있는 Family Type 항목만",
         "DescriptionText": null,
@@ -5009,8 +5010,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -2112.5426362423168,
-        "Top": 4047.9355504564437,
+        "Left": -1282.2430087270368,
+        "Top": 3492.0267869698182,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -5077,8 +5078,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -10096.241051552575,
-    "Y": -2101.25944574834,
-    "Zoom": 1.0993775925728391
+    "X": 7766.4044033606642,
+    "Y": 173.08178376063114,
+    "Zoom": 0.98234852849690468
   }
 }
