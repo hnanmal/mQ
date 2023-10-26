@@ -856,7 +856,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    \r\n    return Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n\r\n    \r\ndef addExcaInElemDicts(elemDicts):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict)\r\n            try:\r\n                allExcasUni = Solid.ByUnion(allExcas)\r\n                eff_excaGeo = excaGeo.Split(allExcasUni)[0]\r\n                allExcas.append(excaGeo)\r\n            except:\r\n                eff_excaGeo = excaGeo\r\n                allExcas.append(excaGeo)\r\n            dic[\"ExcaGeo\"] = eff_excaGeo\r\n\r\n    return elemDicts\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ : ## 내부 빈공간 있는 RC부재는 꽉채워서 공제 \r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            \r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            \r\n\r\n    return geoResult\r\n\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    \r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_excas = addExcaInElemDicts(elemDicts)\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n\r\n            eff_excaGeo = excaGeo\r\n            splitResult = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = splitResult[0]\r\n            #try:\r\n            #    dic[\"effDisposalGeo\"] = splitResult[1]#eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n            #except:\r\n            #    dic[\"effDisposalGeo\"] = []\r\n        \r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            if \"Exca\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Back\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Disp\" in wm[\"Dynamo 물량산출식\"]:\r\n                wm[\"Sym_Val Dict\"][\"Exca\"] = dic[\"effExcaGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Back\"] = dic[\"effBackfillGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effExcaGeo\"].Volume - dic[\"effBackfillGeo\"].Volume\r\n\r\n                #try:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effDisposalGeo\"].Volume\r\n                #except:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = 0\r\n\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\ndef makeExcaShape(elem, sym_valDict, surv_base_Gap):\r\n    def findBtmCrv(geo, sym_valDict): ##btmOffset = d1 + d2\r\n        offSetDist = sym_valDict[\"D1\"] + sym_valDict[\"D2\"]\r\n        #H2 = sym_valDict[\"H2\"] if sym_valDict[\"H2\"]>=0 else -sym_valDict[\"H2\"]\r\n        h = abs(sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        bdBox_fdn = BoundingBox.ByGeometry(geo).ToCuboid() ## 형상의 자그마한 요철 무시\r\n        srfs = bdBox_fdn.Explode() ## surface들\r\n        btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n        btmCrvs = btmSrf.PerimeterCurves()\r\n        btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n        offseted_btmPolCrv = btmPolCrv.Offset(offSetDist)\r\n        h_modified_btmPolCrv = offseted_btmPolCrv.Translate(0,0,-h-0.3)\r\n        return h_modified_btmPolCrv\r\n    \r\n    def findUprCrv(_btmPolCrv, sym_valDict):\r\n        btmCrvZ = _btmPolCrv.StartPoint.Z\r\n        test = (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        #H = abs(sym_valDict[\"H2\"]) + (sym_valDict[\"C1\"] + sym_valDict[\"C2\"] + sym_valDict[\"C3\"])\r\n        H = abs(round(btmCrvZ,2))\r\n        G = sym_valDict[\"G\"]\r\n        offSetDist = (G * H)\r\n        \r\n        uprPolCrv = _btmPolCrv.Translate(0,0,H).Offset(offSetDist)\r\n        uprCrvZ = uprPolCrv.StartPoint.Z\r\n        return uprPolCrv#_btmPolCrv,btmCrvZ,uprPolCrv,uprCrvZ #btmCrvZ,uprCrvZ,test\r\n\r\n\r\n    fdnsGeo = elem.Geometry()[0]\r\n    btmPolCrv = findBtmCrv(fdnsGeo, sym_valDict)\r\n    uprPolCrv = findUprCrv(btmPolCrv, sym_valDict)\r\n    res = Solid.ByLoft([btmPolCrv,uprPolCrv]).Translate(0,0,surv_base_Gap)\r\n    return res\r\n\r\n    \r\ndef addExcaInElemDicts(elemDicts, surv_base_Gap):\r\n    allExcas = []\r\n    for idx,dic in enumerate(elemDicts):\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        if excaBln:\r\n            sym_valDict = wms[0][\"Sym_Val Dict\"]\r\n            excaGeo = makeExcaShape(elem, sym_valDict, surv_base_Gap)\r\n            try:\r\n                allExcasUni = Solid.ByUnion(allExcas)\r\n                eff_excaGeo = excaGeo.Split(allExcasUni)[0]\r\n                allExcas.append(excaGeo)\r\n            except:\r\n                eff_excaGeo = excaGeo\r\n                allExcas.append(excaGeo)\r\n            dic[\"ExcaGeo\"] = eff_excaGeo\r\n\r\n    return elemDicts\r\n\r\n\r\ndef find_allGeo_UG_elems(elemDicts):\r\n    geoResult = []\r\n    for dic in elemDicts:\r\n        elem = dic[\"Elem\"]\r\n        wms = dic[\"wms\"]\r\n        excaBln = \"Exca\" in \"\".join(list(map(lambda x: x[\"Dynamo 물량산출식\"], wms)))\r\n        famType_ = wms[0][\"Family Type Name\"]\r\n            \r\n        if \"MAT_\" in famType_ or \"Mass_\" in famType_ or \"Pit\" in famType_ or \"Trench\" in famType_:\r\n            if \"Slab\" in famType_ or \"MAT_\" in famType_ or \"Mass_\" in famType_ : ## 내부 빈공간 있는 RC부재는 꽉채워서 공제 \r\n                srfs = elem.Geometry()[0].Explode() ## surface들\r\n                btmSrf = PolySurface.ByJoinedSurfaces(list(filter(lambda x: round(x.NormalAtParameter(0.5,0.5).Z, 3) == -1, srfs)))\r\n                btmCrvs = btmSrf.PerimeterCurves()\r\n                btmPolCrv = PolyCurve.ByJoinedCurves(btmCrvs)\r\n                btmCrvZ = btmPolCrv.StartPoint.Z\r\n                uprPolCrv = btmPolCrv.Translate(0,0,(0-btmCrvZ))\r\n                targetGeo = Solid.ByLoft([btmPolCrv,uprPolCrv])\r\n                geoResult.append(targetGeo)\r\n            else:\r\n                geoResult.append(elem.Geometry()[0])\r\n        elif \"PED_\" in famType_ or \"TG_\" in famType_ or \"SOG_\" in famType_ or \"UG\" in famType_:\r\n            geoResult.append(elem.Geometry()[0])\r\n            \r\n        elif excaBln:\r\n            geoResult.append(elem.Geometry()[0])\r\n            \r\n\r\n    return geoResult\r\n\r\n\r\ndef add_effExcaInElemDicts(elemDicts):\r\n    ## 서베이 포인트와 프로젝트 포인트의 Z값 차이로 인한 형상 높이 오류 수정값\r\n    surv_base_Gap = Revit.Elements.Coordinates.BasePoint().Z - Revit.Elements.Coordinates.SurveyPoint().Z\r\n    allGeo_UG_RC_Elems = find_allGeo_UG_elems(elemDicts)\r\n    allUniGeo_UG_RC_Elems = Solid.ByUnion(allGeo_UG_RC_Elems)\r\n    elemDicts_excas = addExcaInElemDicts(elemDicts, surv_base_Gap)\r\n    \r\n    for dic in elemDicts_excas:\r\n        if \"ExcaGeo\" in dic.keys():\r\n            excaGeo = dic[\"ExcaGeo\"]\r\n\r\n            eff_excaGeo = excaGeo\r\n            splitResult = eff_excaGeo.Split(allUniGeo_UG_RC_Elems)\r\n            dic[\"effExcaGeo\"] = eff_excaGeo\r\n            dic[\"effBackfillGeo\"] = splitResult[0]\r\n            #try:\r\n            #    dic[\"effDisposalGeo\"] = splitResult[1]#eff_excaGeo.Intersect(allUniGeo_UG_RC_Elems)\r\n            #except:\r\n            #    dic[\"effDisposalGeo\"] = []\r\n        \r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            if \"Exca\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Back\" in wm[\"Dynamo 물량산출식\"] or\\\r\n               \"Disp\" in wm[\"Dynamo 물량산출식\"]:\r\n                wm[\"Sym_Val Dict\"][\"Exca\"] = dic[\"effExcaGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Back\"] = dic[\"effBackfillGeo\"].Volume\r\n                wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effExcaGeo\"].Volume - dic[\"effBackfillGeo\"].Volume\r\n\r\n                #try:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = dic[\"effDisposalGeo\"].Volume\r\n                #except:\r\n                #    wm[\"Sym_Val Dict\"][\"Disp\"] = 0\r\n\r\n\r\n    return elemDicts_excas\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = add_effExcaInElemDicts(elemDicts)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -889,7 +889,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\n#doc = DocumentManager.Instance.CurrentDBDocument\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\ndef clean_SymValDict(elemDicts):\r\n    for dic in elemDicts:\r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            formula = wm[\"Dynamo 물량산출식\"]\r\n            SymValDicts = wm[\"Sym_Val Dict\"]\r\n            SymValItems = list(zip(SymValDicts.Keys, SymValDicts.Values))\r\n            sym_val_keySets = []\r\n            sym_val_valSets = []\r\n            for k,v in SymValItems:\r\n                if k in formula:\r\n                    sym_val_keySets.append(k)\r\n                    sym_val_valSets.append(v)\r\n            #wm[\"Sym_Val Set\"] = [sym_val_keySets,sym_val_valSets]\r\n            wm[\"Sym_Val Set\"] = dict(zip(sym_val_keySets,sym_val_valSets))\r\n            formula_eqSymRemove = formula.lstrip(\"=\")\r\n            tmp = formula_eqSymRemove\r\n            for k in sym_val_keySets: ## 이 부분은 좀더 범용 처리 필요할수도\r\n                priorSymList = [\"Exca\", \"Back\", \"Disp\"]\r\n                #any(list(map(lambda x: x in tmp, priorList)))\r\n                #if \"Exca\" in tmp or \"Back\" in tmp or \"Disp\" in tmp:\r\n                if any(list(map(lambda x: x in tmp, priorSymList))):\r\n                    appliedSym = list(filter(lambda x: x in tmp, priorSymList))[0]\r\n                    #if len(k) > 1:\r\n                    if k == appliedSym:\r\n                        tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                else:\r\n                    tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                \r\n            \r\n            #wm[\"calcResult\"] = tmp.strip()\r\n            wm[\"calcResult\"] = round(eval(tmp.strip()),3)\r\n    \r\n    return elemDicts\r\n\r\n# Place your code below this line\r\n\r\nelemDicts_withSymValSet = clean_SymValDict(elemDicts)\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = clean_SymValDict(elemDicts)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\nfrom functools import reduce\r\nimport copy\r\n###################################################################################################\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nadd = curry(lambda a,b: a + b)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n###########################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n\r\ndef clean_SymValDict(elemDicts):\r\n    for dic in elemDicts:\r\n        wms = dic[\"wms\"]\r\n        for wm in wms:\r\n            formula = wm[\"Dynamo 물량산출식\"]\r\n            SymValDicts = wm[\"Sym_Val Dict\"]\r\n            SymValItems = list(zip(SymValDicts.Keys, SymValDicts.Values))\r\n            sym_val_keySets = []\r\n            sym_val_valSets = []\r\n            for k,v in SymValItems:\r\n                if k in formula:\r\n                    sym_val_keySets.append(k)\r\n                    sym_val_valSets.append(v)\r\n            #wm[\"Sym_Val Set\"] = [sym_val_keySets,sym_val_valSets]\r\n            wm[\"Sym_Val Set\"] = dict(zip(sym_val_keySets,sym_val_valSets))\r\n            formula_eqSymRemove = formula.lstrip(\"=\")\r\n            tmp = formula_eqSymRemove\r\n            for k in sym_val_keySets: ## 이 부분은 좀더 범용 처리 필요할수도\r\n                priorSymList = [\"Exca\", \"Back\", \"Disp\"]\r\n                #any(list(map(lambda x: x in tmp, priorList)))\r\n                #if \"Exca\" in tmp or \"Back\" in tmp or \"Disp\" in tmp:\r\n                if any(list(map(lambda x: x in tmp, priorSymList))):\r\n                    appliedSym = list(filter(lambda x: x in tmp, priorSymList))[0]\r\n                    #if len(k) > 1:\r\n                    if k == appliedSym:\r\n                        tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                else:\r\n                    tmp = tmp.replace(k, str(wm[\"Sym_Val Set\"][k]))\r\n                \r\n            \r\n            #wm[\"calcResult\"] = tmp.strip()\r\n            wm[\"calcResult\"] = round(eval(tmp.strip()),3)\r\n    \r\n    return elemDicts\r\n\r\n# Place your code below this line\r\n\r\nelemDicts_withSymValSet = clean_SymValDict(elemDicts)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = clean_SymValDict(elemDicts)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1906,12 +1906,12 @@
       "WasExecuted": true,
       "Camera": {
         "Name": "9a893bfe-b5bc-4b0d-b0c0-365d427b3f85 Preview",
-        "EyeX": -17.0,
-        "EyeY": 24.0,
-        "EyeZ": 50.0,
-        "LookX": 12.0,
-        "LookY": -13.0,
-        "LookZ": -58.0,
+        "EyeX": -12.729831695556641,
+        "EyeY": 19.373985290527344,
+        "EyeZ": 29.360855102539063,
+        "LookX": 7.7298316955566406,
+        "LookY": -8.3739852905273438,
+        "LookZ": -37.360855102539063,
         "UpX": 0.0,
         "UpY": 1.0,
         "UpZ": 0.0
@@ -3036,6 +3036,195 @@
       ],
       "Replication": "Disabled",
       "Description": "Visualize the node's output"
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Views, DSRevitNodesUI",
+      "SelectedIndex": 44,
+      "SelectedString": "{3D}",
+      "NodeType": "ExtensionNode",
+      "Id": "929d9aee01714e5dae2bed16e3c5801a",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b12e0340c4b14131a5dc4ed437aa07f4",
+          "Name": "Views",
+          "Description": "The selected Views",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All views available in the current document."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Views.View.ExportAsImage@string",
+      "Id": "5373c63f42344400aabff9c290328fe8",
+      "Inputs": [
+        {
+          "Id": "7dd231c15c294186ad0b6ba05a09ec2b",
+          "Name": "view",
+          "Description": "Revit.Elements.Views.View",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b88671404ff14e4da3cf680fe3fb4d5f",
+          "Name": "path",
+          "Description": "A valid path for the image.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2f5964d2c4d3458988749a837a97a89b",
+          "Name": "var",
+          "Description": "A Bitmap Image.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Export the view as an image to the given path - defaults to png, but you can override the file type but supplying a path with the appropriate extension.\n\nView.ExportAsImage (path: string): var"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
+      "HintPath": "D:\\_00\\test_view",
+      "InputValue": "..\\..\\..\\..\\..\\_00\\test_view",
+      "NodeType": "ExtensionNode",
+      "Id": "43cfc0e8cd3743d28282123a28095756",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "74fae5a5c51146159138d42d38ac5d3a",
+          "Name": "",
+          "Description": "File Path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a file on the system to get its file path."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.DirectShape.ByGeometry@Autodesk.DesignScript.Geometry.Geometry,Revit.Elements.Category,Revit.Elements.Material,string",
+      "Id": "9c00d037545a47ff9e257e7d759f44ae",
+      "Inputs": [
+        {
+          "Id": "2eff0a76393647059b43cdb815c2689a",
+          "Name": "geometry",
+          "Description": "A Solid or Surface that will be tessellated and placed in the Revit model as a DirectShape\n\nGeometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2d2a3304c84b4cc0b08efe519908c58c",
+          "Name": "category",
+          "Description": "Must be a top level Built-in Category\n\nCategory",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5ad5dfff614f4eef9cd4ff5d2b25e31d",
+          "Name": "material",
+          "Description": "A Material to apply to the faces of the DirectShape\n\nMaterial\nDefault value : Revit.Elements.DirectShape.DynamoPreviewMaterial",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4c3f401707a84bebabd6f102e7741db6",
+          "Name": "name",
+          "Description": "A string name for the DirectShape\n\nstring\nDefault value : \"DirectShape\"",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7db0be430fef4226a6517e8b94f43cba",
+          "Name": "DirectShape",
+          "Description": "A DirectShape Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Create a Revit DirectShape given some geometry, a name for the shape, a Category, and Material. The geometry will be tessellated before being placed in the Revit model The category of a DirectShape cannot be changed after creation, so a new DirectShape will be generated if the category input is changed.\n\nDirectShape.ByGeometry (geometry: Geometry, category: Category, material: Material = Revit.Elements.DirectShape.DynamoPreviewMaterial, name: string = \"DirectShape\"): DirectShape"
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 264,
+      "SelectedString": "OST_GenericModel",
+      "NodeType": "ExtensionNode",
+      "Id": "cc04cf0106e74649a78c7d32340974f0",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d70d40203d8243dc83382e650fd69e2b",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Solid.ByUnion@Autodesk.DesignScript.Geometry.Solid[]",
+      "Id": "bcf90b96738a4b3a8a853f360b8792c0",
+      "Inputs": [
+        {
+          "Id": "9513ab658cb24fe4b4b630e67df055b8",
+          "Name": "solids",
+          "Description": "A collection of solids\n\nSolid[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2dc06ac938104d57ad0a7bf6966b9d3a",
+          "Name": "Solid",
+          "Description": "Solid",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Union a collection of solids into one solid\n\nSolid.ByUnion (solids: Solid[]): Solid"
     }
   ],
   "Connectors": [
@@ -3211,6 +3400,12 @@
       "Start": "f3849c2f660e4f0d9a1e89d3d58bb89f",
       "End": "f11a15768d5746ea9b3149fa74e9f064",
       "Id": "85b5073206fa40b0909d82e6560567ef",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f3849c2f660e4f0d9a1e89d3d58bb89f",
+      "End": "24e59d9484ab47fd8c80474bfd7cc638",
+      "Id": "8a184d86263d4f8690c1e9142f448780",
       "IsHidden": "False"
     },
     {
@@ -3430,6 +3625,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "af54601b54f14f269e499e30b2d9bccb",
+      "End": "9513ab658cb24fe4b4b630e67df055b8",
+      "Id": "07caa2b051064a6dbbc2fe7a6c39ca83",
+      "IsHidden": "False"
+    },
+    {
       "Start": "12c80170ba694c22b43e5c8cb13cca2a",
       "End": "3af6ae031cef40b8bfd4648638902c0c",
       "Id": "c408cf5480974a7d88de5e726b911ef9",
@@ -3505,12 +3706,6 @@
       "Start": "f811ed0700d54255b83c12394870eeff",
       "End": "7a75d2d18293473e89b54f0ee754c1e5",
       "Id": "ec85764a69f64eadb7a67c81b1d8b250",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "f811ed0700d54255b83c12394870eeff",
-      "End": "24e59d9484ab47fd8c80474bfd7cc638",
-      "Id": "9bf0912d330d4c2a98b5ee1596645739",
       "IsHidden": "False"
     },
     {
@@ -3662,6 +3857,30 @@
       "End": "328222afafa543d68afcfdc2f53476d0",
       "Id": "90298140022c4cd1a997f4175926c797",
       "IsHidden": "False"
+    },
+    {
+      "Start": "b12e0340c4b14131a5dc4ed437aa07f4",
+      "End": "7dd231c15c294186ad0b6ba05a09ec2b",
+      "Id": "cbeeb786676d43c7bdb6403aec07dbb0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "74fae5a5c51146159138d42d38ac5d3a",
+      "End": "b88671404ff14e4da3cf680fe3fb4d5f",
+      "Id": "b71a1f52d2ed428bafb29518cf9dd3a9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d70d40203d8243dc83382e650fd69e2b",
+      "End": "2d2a3304c84b4cc0b08efe519908c58c",
+      "Id": "117f12849e4f45a9aedd1f1b889e561f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2dc06ac938104d57ad0a7bf6966b9d3a",
+      "End": "2eff0a76393647059b43cdb815c2689a",
+      "Id": "d4c1600efde84c94bf5b21f10f2f8c44",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -3707,7 +3926,14 @@
     "warningCount": 0,
     "errorCount": 0
   },
-  "Bindings": [],
+  "Bindings": [
+    {
+      "NodeId": "9c00d037-545a-47ff-9e25-7e7d759f44ae",
+      "Binding": {
+        "ByGeometry_InClassDecl-1_InFunctionScope-1_Instance1_9c00d037-545a-47ff-9e25-7e7d759f44ae": "PFNPQVAtRU5WOkVudmVsb3BlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOlNPQVAtRU5DPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyIgeG1sbnM6U09BUC1FTlY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczpjbHI9Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vc29hcC9lbmNvZGluZy9jbHIvMS4wIiBTT0FQLUVOVjplbmNvZGluZ1N0eWxlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyI+DQo8U09BUC1FTlY6Qm9keT4NCjxhMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXIgaWQ9InJlZi0xIiB4bWxuczphMT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9jbHIvbnNhc3NlbS9Qcm90b0NvcmUvUHJvdG9Db3JlJTJDJTIwVmVyc2lvbiUzRDIuMTYuMS4yNzI3JTJDJTIwQ3VsdHVyZSUzRG5ldXRyYWwlMkMlMjBQdWJsaWNLZXlUb2tlbiUzRG51bGwiPg0KPE51bWJlck9mRWxlbWVudHM+MTwvTnVtYmVyT2ZFbGVtZW50cz4NCjxCYXNlLTBfSGFzRGF0YT50cnVlPC9CYXNlLTBfSGFzRGF0YT4NCjxCYXNlLTBfRGF0YSBpZD0icmVmLTMiPlBGTlBRVkF0UlU1V09rVnVkbVZzYjNCbElIaHRiRzV6T25oemFUMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFdGFXNXpkR0Z1WTJVaUlIaHRiRzV6T25oelpEMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFaUlIaHRiRzV6T2xOUFFWQXRSVTVEUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUlnZUcxc2JuTTZVMDlCVUMxRlRsWTlJbWgwZEhBNkx5OXpZMmhsYldGekxuaHRiSE52WVhBdWIzSm5MM052WVhBdlpXNTJaV3h2Y0dVdklpQjRiV3h1Y3pwamJISTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2YzI5aGNDOWxibU52WkdsdVp5OWpiSEl2TVM0d0lpQlRUMEZRTFVWT1ZqcGxibU52WkdsdVoxTjBlV3hsUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUkrRFFvOFUwOUJVQzFGVGxZNlFtOWtlVDROQ2p4aE1UcEVhWEpsWTNSVGFHRndaVk4wWVhSbElHbGtQU0p5WldZdE1TSWdlRzFzYm5NNllURTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2WTJ4eUwyNXpZWE56WlcwdlVtVjJhWFF1Uld4bGJXVnVkSE12VW1WMmFYUk9iMlJsY3lVeVF5VXlNRlpsY25OcGIyNGxNMFF5TGpFMkxqRXVOalV4TUNVeVF5VXlNRU4xYkhSMWNtVWxNMFJ1WlhWMGNtRnNKVEpESlRJd1VIVmliR2xqUzJWNVZHOXJaVzRsTTBSdWRXeHNJajROQ2p4emRISnBibWRKUkNCcFpEMGljbVZtTFRNaVBqSmhabVV4WXpneExUbGxaRGN0TkdRMll5MDVNemRqTFdZeU1qSXpNalU1WlRNNU5TMHdNRE0xWVdaaU5qd3ZjM1J5YVc1blNVUStEUW84YVc1MFNVUStNelV4T0RNNU1Ed3ZhVzUwU1VRK0RRbzhjM2x1WTBsa0lHbGtQU0p5WldZdE5DSStPR0ZsWTJReFptRXRaRFExTXkwMFlqWTJMVGhoWlRVdE9HRTRaRFkzWkdFeE5qYzBQQzl6ZVc1alNXUStEUW84YldGMFpYSnBZV3hKWkQ0eE1qZzBOVEF6UEM5dFlYUmxjbWxoYkVsa1BnMEtQQzloTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsUGcwS1BDOVRUMEZRTFVWT1ZqcENiMlI1UGcwS1BDOVRUMEZRTFVWT1ZqcEZiblpsYkc5d1pUNE5DZz09PC9CYXNlLTBfRGF0YT4NCjxCYXNlLTBfSGFzTmVzdGVkRGF0YT5mYWxzZTwvQmFzZS0wX0hhc05lc3RlZERhdGE+DQo8L2ExOkNhbGxTaXRlX3gwMDJCX1RyYWNlU2VyaWFsaXNlckhlbHBlcj4NCjwvU09BUC1FTlY6Qm9keT4NCjwvU09BUC1FTlY6RW52ZWxvcGU+DQo="
+      }
+    }
+  ],
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
@@ -3719,15 +3945,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 87.026153564453125,
-      "EyeY": -16.690378189086914,
-      "EyeZ": 11.334083557128906,
-      "LookX": -55.9735221862793,
-      "LookY": -15.829771041870117,
-      "LookZ": -60.421779632568359,
-      "UpX": 0.017791340127587318,
-      "UpY": 0.99965733289718628,
-      "UpZ": 0.019201058894395828
+      "EyeX": 87.086822509765625,
+      "EyeY": 42.451004028320313,
+      "EyeZ": 5.8868331909179688,
+      "LookX": -50.681198120117188,
+      "LookY": -77.5114974975586,
+      "LookZ": -48.412528991699219,
+      "UpX": -0.41990730166435242,
+      "UpY": 0.81411516666412354,
+      "UpZ": -0.40111652016639709
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -3878,7 +4104,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -330.86844724889011,
+        "X": -330.86844724889033,
         "Y": 2912.2884955348686
       },
       {
@@ -3958,7 +4184,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -30.868447248890106,
+        "X": -30.868447248890334,
         "Y": 2878.2884955348686
       },
       {
@@ -3968,7 +4194,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 372.13155275110989,
+        "X": 372.13155275110967,
         "Y": 2966.8059955348685
       },
       {
@@ -3978,7 +4204,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -30.868447248890106,
+        "X": -30.868447248890334,
         "Y": 3056.2884955348686
       },
       {
@@ -4018,8 +4244,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 6406.560111152201,
-        "Y": 186.40248513658912
+        "X": 6382.5892167550192,
+        "Y": 103.94086485787057
       },
       {
         "Name": "WM별 총합 계산 및 엑셀 익스포트 준비",
@@ -4038,8 +4264,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5045.7922586902987,
-        "Y": 251.05466339271163
+        "X": 5021.8213642931169,
+        "Y": 168.59304311399308
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -4048,8 +4274,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5392.7922586902987,
-        "Y": 373.55466339271163
+        "X": 5368.8213642931169,
+        "Y": 291.09304311399308
       },
       {
         "Name": "Code Block",
@@ -4058,8 +4284,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5045.7922586902987,
-        "Y": 433.38216339271162
+        "X": 5021.8213642931169,
+        "Y": 350.92054311399306
       },
       {
         "Name": "Code Block",
@@ -4068,8 +4294,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -562.2297595563391,
-        "Y": 175.33545522326415
+        "X": -3358.8440887570428,
+        "Y": 99.014596336695263
       },
       {
         "Name": "Code Block",
@@ -4078,8 +4304,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5715.7922586902987,
-        "Y": 174.38216339271162
+        "X": 5691.8213642931169,
+        "Y": 91.920543113993062
       },
       {
         "Name": "List.DropItems",
@@ -4088,8 +4314,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5715.7922586902987,
-        "Y": 322.55466339271163
+        "X": 5691.8213642931169,
+        "Y": 240.09304311399308
       },
       {
         "Name": "Code Block",
@@ -4098,8 +4324,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5392.7922586902987,
-        "Y": 215.03716339271162
+        "X": 5368.8213642931169,
+        "Y": 132.57554311399306
       },
       {
         "Name": "Code Block",
@@ -4263,7 +4489,7 @@
       },
       {
         "Name": "토공 형상 검토",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "459d10fe5baa468d9226fc41edb2fc12",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -4298,8 +4524,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3434.6188868642062,
-        "Y": -1208.4620442665562
+        "X": 3430.0071921554495,
+        "Y": -1176.1801813052582
       },
       {
         "Name": "Watch 3D",
@@ -4308,8 +4534,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3915.4525664502735,
-        "Y": -1434.9122410045402
+        "X": 3917.5458533974243,
+        "Y": -1430.7256671102393
       },
       {
         "Name": "Dictionary.Keys",
@@ -4618,8 +4844,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2688.1090155533634,
-        "Y": 286.95189754857881
+        "X": -2184.9894545335292,
+        "Y": -1037.1980487532792
       },
       {
         "Name": "Watch",
@@ -4628,8 +4854,68 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2800.5568071339721,
-        "Y": 2631.8529770651785
+        "X": 925.45861855632961,
+        "Y": -1113.9248461245463
+      },
+      {
+        "Name": "Views",
+        "ShowGeometry": true,
+        "Id": "929d9aee01714e5dae2bed16e3c5801a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 2959.7593772267514,
+        "Y": -476.15258321906776
+      },
+      {
+        "Name": "View.ExportAsImage",
+        "ShowGeometry": true,
+        "Id": "5373c63f42344400aabff9c290328fe8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": 3349.9838907236713,
+        "Y": -460.30084011275767
+      },
+      {
+        "Name": "File Path",
+        "ShowGeometry": true,
+        "Id": "43cfc0e8cd3743d28282123a28095756",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3023.0830151906516,
+        "Y": -240.12811444452177
+      },
+      {
+        "Name": "DirectShape.ByGeometry",
+        "ShowGeometry": true,
+        "Id": "9c00d037545a47ff9e257e7d759f44ae",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3913.1777836438068,
+        "Y": -996.38261071406521
+      },
+      {
+        "Name": "Categories",
+        "ShowGeometry": true,
+        "Id": "cc04cf0106e74649a78c7d32340974f0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3464.4616445026145,
+        "Y": -865.20219326703307
+      },
+      {
+        "Name": "Solid.ByUnion",
+        "ShowGeometry": true,
+        "Id": "bcf90b96738a4b3a8a853f360b8792c0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3657.6472867337875,
+        "Y": -1025.2291058615126
       }
     ],
     "Annotations": [
@@ -4733,12 +5019,12 @@
           "2524f0f864744ce88dfa2ab2d9d3e61d"
         ],
         "HasNestedGroups": false,
-        "Left": 5035.7922586902987,
-        "Top": 29.382163392711618,
+        "Left": 5011.8213642931169,
+        "Top": -53.079456886006938,
         "Width": 1615.7678524619023,
         "Height": 536.0,
         "FontSize": 96.0,
-        "InitialTop": 174.38216339271162,
+        "InitialTop": 91.920543113993062,
         "InitialHeight": 404.0,
         "TextblockHeight": 135.0,
         "Background": "#FFFFAA45"
@@ -4824,11 +5110,11 @@
         "HasNestedGroups": false,
         "Left": 2821.9395296349894,
         "Top": -1655.6336827022583,
-        "Width": 1380.5130368152841,
-        "Height": 579.17163843570211,
+        "Width": 1382.6063237624348,
+        "Height": 611.45350139700008,
         "FontSize": 72.0,
         "InitialTop": -1539.6336827022583,
-        "InitialHeight": 476.17163843570211,
+        "InitialHeight": 508.45350139700008,
         "TextblockHeight": 106.0,
         "Background": "#FF48B9FF"
       },
@@ -4924,7 +5210,7 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -663.08213191400978,
+        "Left": -663.08213191400955,
         "Top": 2883.0321845186213,
         "Width": 0.0,
         "Height": 0.0,
@@ -5011,8 +5297,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 3044.9681182593713,
-    "Y": -2338.359892186566,
-    "Zoom": 0.91648966826025824
+    "X": 622.62115857116692,
+    "Y": 451.6205893159833,
+    "Zoom": 0.12139230057370624
   }
 }
