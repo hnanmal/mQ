@@ -295,7 +295,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
+      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
       "InputValue": ".\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -1380,7 +1380,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_blank.xlsx",
+      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\Total BOQ_blank.xlsx",
       "InputValue": ".\\Total BOQ_blank.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
@@ -4107,6 +4107,81 @@
       ],
       "Replication": "Disabled",
       "Description": "Visualize the node's output"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallRevitElemsFlatten = IN[0]\r\nelemDicts = IN[1]\r\n# Place your code below this line\r\n\r\n\r\ndef filterEffRevitElems(allRevitElemsFlatten, elemDicts):\r\n    allFamTypesInExcel = elemDicts.keys()\r\n    \r\n    res = filter(lambda x: x.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\") in allFamTypesInExcel, allRevitElemsFlatten)\r\n    \r\n    return res\r\n# Assign your output to the OUT variable.\r\nOUT = filterEffRevitElems(allRevitElemsFlatten, elemDicts)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "7754ea696f254a40b64813fd566bbdf3",
+      "Inputs": [
+        {
+          "Id": "c1a56ff99ee24cedb3de72c30929abb4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "63b1b5f2e7a744cb994dcc01e07d794c",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "011d1cf7aecf4753af757b200d045a99",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef get_allElems(doc):\r\n    target_bic = Autodesk.Revit.DB.BuiltInCategory.OST_Levels\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    res = getElems(target_bic)\r\n\r\n    return res\r\n\r\ndef getGroundLevelElem(allLevelElems):\r\n    res = list(filter(lambda x: \"G.L\" in x.Name, allLevelElems))[0]\r\n    return res\r\n\r\nallLevelElems = get_allElems(doc)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = getGroundLevelElem(allLevelElems)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "ccb419d3e22b405f87c2c0338abb5160",
+      "Inputs": [
+        {
+          "Id": "9c217ad55c594674991f1f5d38764ac8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8e803674ad6340d2b0dcfeee737ab34f",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -4525,6 +4600,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "8ccaaaeb81e64cf0afd6b6f7368aeef8",
+      "End": "c1a56ff99ee24cedb3de72c30929abb4",
+      "Id": "24d7acb4ed4a433a913bce5586031c30",
+      "IsHidden": "False"
+    },
+    {
       "Start": "b1004f3eba744651bbdaac31efd7d762",
       "End": "0ff046ebd624422dad4be5c1cb3a9e98",
       "Id": "8136914391604a27bd6ad1296c1ed539",
@@ -4783,6 +4864,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "e9391c70df0048678c289024804c5811",
+      "End": "63b1b5f2e7a744cb994dcc01e07d794c",
+      "Id": "44861f9bc4aa45cba344abc8f5c586ed",
+      "IsHidden": "False"
+    },
+    {
       "Start": "d5330c434c3b43bc90729aae43a42048",
       "End": "2a89d775a32a4b27ab012d0abd5be9ac",
       "Id": "6a54ba02abe041e7add3419caa8fefe2",
@@ -5031,14 +5118,7 @@
     "warningCount": 0,
     "errorCount": 0
   },
-  "Bindings": [
-    {
-      "NodeId": "9c00d037-545a-47ff-9e25-7e7d759f44ae",
-      "Binding": {
-        "ByGeometry_InClassDecl-1_InFunctionScope-1_Instance1_9c00d037-545a-47ff-9e25-7e7d759f44ae": "PFNPQVAtRU5WOkVudmVsb3BlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOlNPQVAtRU5DPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyIgeG1sbnM6U09BUC1FTlY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczpjbHI9Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vc29hcC9lbmNvZGluZy9jbHIvMS4wIiBTT0FQLUVOVjplbmNvZGluZ1N0eWxlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyI+DQo8U09BUC1FTlY6Qm9keT4NCjxhMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXIgaWQ9InJlZi0xIiB4bWxuczphMT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9jbHIvbnNhc3NlbS9Qcm90b0NvcmUvUHJvdG9Db3JlJTJDJTIwVmVyc2lvbiUzRDIuMTYuMS4yNzI3JTJDJTIwQ3VsdHVyZSUzRG5ldXRyYWwlMkMlMjBQdWJsaWNLZXlUb2tlbiUzRG51bGwiPg0KPE51bWJlck9mRWxlbWVudHM+MTwvTnVtYmVyT2ZFbGVtZW50cz4NCjxCYXNlLTBfSGFzRGF0YT50cnVlPC9CYXNlLTBfSGFzRGF0YT4NCjxCYXNlLTBfRGF0YSBpZD0icmVmLTMiPlBGTlBRVkF0UlU1V09rVnVkbVZzYjNCbElIaHRiRzV6T25oemFUMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFdGFXNXpkR0Z1WTJVaUlIaHRiRzV6T25oelpEMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFaUlIaHRiRzV6T2xOUFFWQXRSVTVEUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUlnZUcxc2JuTTZVMDlCVUMxRlRsWTlJbWgwZEhBNkx5OXpZMmhsYldGekxuaHRiSE52WVhBdWIzSm5MM052WVhBdlpXNTJaV3h2Y0dVdklpQjRiV3h1Y3pwamJISTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2YzI5aGNDOWxibU52WkdsdVp5OWpiSEl2TVM0d0lpQlRUMEZRTFVWT1ZqcGxibU52WkdsdVoxTjBlV3hsUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUkrRFFvOFUwOUJVQzFGVGxZNlFtOWtlVDROQ2p4aE1UcEVhWEpsWTNSVGFHRndaVk4wWVhSbElHbGtQU0p5WldZdE1TSWdlRzFzYm5NNllURTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2WTJ4eUwyNXpZWE56WlcwdlVtVjJhWFF1Uld4bGJXVnVkSE12VW1WMmFYUk9iMlJsY3lVeVF5VXlNRlpsY25OcGIyNGxNMFF5TGpFMkxqRXVOalV4TUNVeVF5VXlNRU4xYkhSMWNtVWxNMFJ1WlhWMGNtRnNKVEpESlRJd1VIVmliR2xqUzJWNVZHOXJaVzRsTTBSdWRXeHNJajROQ2p4emRISnBibWRKUkNCcFpEMGljbVZtTFRNaVBqVTRZbVZrWTJWbUxUYzJNek10TkRNeE5DMWhNV014TFdWa1pXRXhZamcxWW1ZeU9TMHdNRE0xWVdZek5Ud3ZjM1J5YVc1blNVUStEUW84YVc1MFNVUStNelV4T0RJMk1Ud3ZhVzUwU1VRK0RRbzhjM2x1WTBsa0lHbGtQU0p5WldZdE5DSStZMkl4WlRFellqVXRNVEV4TUMwME5qRXhMV0V5TmpBdFpqSmhPVE0wWW1WbVpEUXpQQzl6ZVc1alNXUStEUW84YldGMFpYSnBZV3hKWkQ0eE1qZzBOVEF6UEM5dFlYUmxjbWxoYkVsa1BnMEtQQzloTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsUGcwS1BDOVRUMEZRTFVWT1ZqcENiMlI1UGcwS1BDOVRUMEZRTFVWT1ZqcEZiblpsYkc5d1pUNE5DZz09PC9CYXNlLTBfRGF0YT4NCjxCYXNlLTBfSGFzTmVzdGVkRGF0YT5mYWxzZTwvQmFzZS0wX0hhc05lc3RlZERhdGE+DQo8L2ExOkNhbGxTaXRlX3gwMDJCX1RyYWNlU2VyaWFsaXNlckhlbHBlcj4NCjwvU09BUC1FTlY6Qm9keT4NCjwvU09BUC1FTlY6RW52ZWxvcGU+DQo="
-      }
-    }
-  ],
+  "Bindings": [],
   "View": {
     "Dynamo": {
       "ScaleFactor": 1.0,
@@ -5288,7 +5368,7 @@
         "Id": "3bf30dcbbca84eb08aafa5ed15d4042e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": -24.928193932845716,
         "Y": 539.50437094321251
       },
@@ -5468,7 +5548,7 @@
         "Id": "cb8eb6bb001d4e018998c1f81063a7b3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": 5952.2405164528955,
         "Y": 1183.7182084639617
       },
@@ -6251,6 +6331,26 @@
         "Excluded": false,
         "X": 1763.1133916578392,
         "Y": -1263.2054948171708
+      },
+      {
+        "Name": "필터링 구간 (패밀리 리스트에 없는 이름 제외)",
+        "ShowGeometry": true,
+        "Id": "7754ea696f254a40b64813fd566bbdf3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -3110.4782300697216,
+        "Y": 1677.160888018328
+      },
+      {
+        "Name": "tttt",
+        "ShowGeometry": true,
+        "Id": "ccb419d3e22b405f87c2c0338abb5160",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1492.7874791670176,
+        "Y": 435.20013293508475
       }
     ],
     "Annotations": [
@@ -6594,7 +6694,7 @@
         "HasNestedGroups": false,
         "Left": 2392.5736421651827,
         "Top": -1877.1277572212618,
-        "Width": 1766.226981617483,
+        "Width": 1871.226981617483,
         "Height": 399.50260496744272,
         "FontSize": 36.0,
         "InitialTop": -1804.1277572212618,
@@ -6717,8 +6817,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -3430.0918441743379,
-    "Y": -744.31513387217763,
-    "Zoom": 0.68067137143356471
+    "X": 1523.6585911334864,
+    "Y": -175.2667612390232,
+    "Zoom": 0.82546514752216371
   }
 }
