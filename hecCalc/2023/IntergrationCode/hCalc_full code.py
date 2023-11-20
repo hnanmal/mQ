@@ -650,7 +650,11 @@ def make_dict_groupBy_WM(elemDicts):
     
     return res
 
-
+def getCompleteDicts_earth(elemDicts):
+    if earthWork_calcMode:
+        return calc_EarthWorkValue_InElemDicts(elemDicts, GL_zElev, paramSheetDic, wholeExca_CalcType)
+    else:
+        return [add_effExcaInElemDicts(elemDicts),0]
 
 
 
@@ -682,14 +686,6 @@ catFam_paramDic = matchWith_paramDic(catSheetDic, paramSheetDic)
 filteredEffRevitElems = filterEffRevitElems(allRevitElemsFlatten, catSheetDic)
 
 elemDicts_updated_sym_valDict = update_sym_valDict(matchWith_Elem_Dict(catFam_paramDic,filteredEffRevitElems))
-
-
-def getCompleteDicts_earth(elemDicts):
-    if earthWork_calcMode:
-        return calc_EarthWorkValue_InElemDicts(elemDicts, GL_zElev, paramSheetDic, wholeExca_CalcType)
-    else:
-        return [add_effExcaInElemDicts(elemDicts),0]
-
 
 elemDicts_updated_Earthwork = getCompleteDicts_earth(elemDicts_updated_sym_valDict)
 elemDicts_finalCalculated = finalCalc_SymValDict(elemDicts_updated_Earthwork[0])
