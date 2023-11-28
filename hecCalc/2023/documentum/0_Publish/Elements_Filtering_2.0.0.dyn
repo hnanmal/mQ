@@ -2,7 +2,7 @@
   "Uuid": "1d6d431a-e8c4-48aa-8b91-a874ff2542a8",
   "IsCustomNode": false,
   "Description": "Filtering Elements by given condition and Isolating them in view",
-  "Name": "Elements_Filtering_1.1.0",
+  "Name": "Elements_Filtering_2.0.0",
   "ElementResolver": {
     "ResolutionMap": {}
   },
@@ -39,9 +39,9 @@
       "Name": "3. 키워드 판별 모드**",
       "Type": "selection",
       "Type2": "dropdownSelection",
-      "Value": "'And' 모드",
+      "Value": "'Or' 모드",
       "Description": "A dropdown menu with customizable values.",
-      "SelectedIndex": 0
+      "SelectedIndex": 1
     }
   ],
   "Outputs": [],
@@ -446,7 +446,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nallElems = IN[0]\r\ninputParamName = IN[1]\r\n# Place your code below this line\r\ndef getParamValueByNameAsStr(elem, inputParamName):\r\n    allParam = elem.Parameters\r\n    allParamNames = list(map(lambda x: x.Name, allParam))\r\n    if inputParamName in allParamNames:\r\n        targetIdx = allParamNames.index(inputParamName)\r\n        res = str(allParam[targetIdx])\r\n    else:\r\n        res = \"\"\r\n    \r\n    return res\r\n\r\nres = map(lambda x: getParamValueByNameAsStr(x, inputParamName), allElems)\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = res",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\nallElems = IN[0]\r\ninputParamName = IN[1]\r\n# Place your code below this line\r\ndef getParamValueByNameAsStr(elem, inputParamName):\r\n    allParam = elem.Parameters\r\n    allParamNames = list(map(lambda x: x.Name, allParam))\r\n    if inputParamName in allParamNames and str(allParam[allParamNames.index(inputParamName)]).split(':')[-1] != \"\":\r\n        targetIdx = allParamNames.index(inputParamName)\r\n        res = str(allParam[targetIdx])\r\n    elif inputParamName == \"Level\" and \"Reference Level\" in allParamNames:\r\n        targetIdx = allParamNames.index(\"Reference Level\")\r\n        res = str(allParam[targetIdx])\r\n    elif inputParamName == \"Level\" and \"Base Level\" in allParamNames:\r\n        targetIdx = allParamNames.index(\"Base Level\")\r\n        res = str(allParam[targetIdx])\r\n    elif inputParamName == \"Level\" and \"Base Constraint\" in allParamNames:\r\n        targetIdx = allParamNames.index(\"Base Constraint\")\r\n        res = str(allParam[targetIdx])\r\n    else:\r\n        res = \"\"\r\n    \r\n    return res\r\n\r\nres = map(lambda x: getParamValueByNameAsStr(x, inputParamName), allElems)\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -563,8 +563,8 @@
           "Item": "2"
         }
       ],
-      "SelectedIndex": 0,
-      "SelectedString": "'And' 모드",
+      "SelectedIndex": 1,
+      "SelectedString": "'Or' 모드",
       "NodeType": "ExtensionNode",
       "Id": "8011d5d572f34e918e1cd66bb28fed8c",
       "Inputs": [],
@@ -634,78 +634,6 @@
       "Description": "Runs an embedded Python script."
     },
     {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference(\"ProtoGeometry\")\r\nfrom Autodesk.DesignScript.Geometry import *\r\n## Import ToDSType(bool) extension method\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n## Import geometry conversion extension methods\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n## Import DocumentManager and TransactionManager\r\nclr.AddReference(\"RevitServices\")\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\nfrom System.Collections.Generic import *\r\n\r\n## Import RevitAPI\r\nclr.AddReference(\"RevitAPI\")\r\nimport Autodesk\r\nfrom Autodesk.Revit.DB import *\r\n\r\n#clr.AddReference(\"DSCoreNodes\")\r\n#import DSCore\r\n#from DSCore.List import *\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\nuidoc=DocumentManager.Instance.CurrentUIApplication.ActiveUIDocument\r\n\r\nlnks = FilteredElementCollector(doc).OfClass(RevitLinkInstance)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Railings,\r\n    ]\r\n    return db\r\n\r\ndef get_allElems(doc,bics):\r\n    #bics = get_all_BIC()\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def getRailElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType()\r\n        return res\r\n\r\n    res = map(getElems, bics)\r\n\r\n\r\n\r\n\r\n\r\ndef getAllElemFromLinkedRVT(lnks):\r\n    bics = get_all_BIC()\r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    res = []\r\n    for i in lnks:\r\n        doclnk = i.GetLinkDocument()\r\n        coll = get_allElems(doclnk,bics)\r\n        \r\n        \r\n        res.append(coll)\r\n    TransactionManager.Instance.TransactionTaskDone()\r\n        \r\n    return res\r\n\r\n#out = getAllElemFromLinkedRVT(lnks)\r\n\r\n## Start Transaction\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nout = []\r\nfor i in lnks:\r\n    doclnk = i.GetLinkDocument()\r\n    coll = [\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Floors).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Roofs).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_StructuralFoundation).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_StructuralColumns).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_StructuralFraming).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Ceilings).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Doors).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Windows).WhereElementIsNotElementType().ToElements(),\r\n    FilteredElementCollector(doclnk).OfCategory(BuiltInCategory.OST_Stairs).WhereElementIsNotElementType().ToElements(),\r\n    ]\r\n    res = filter(lambda x: x != [], coll)\r\n    out.append(res)\r\n\r\n## End the Transaction\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n\r\n\r\n\r\nOUT = out\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = out",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "f43ff206d18f479ebd1c8de449773ada",
-      "Inputs": [
-        {
-          "Id": "1befadb9800742b68bdb88b7270de5f8",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "462b1419f1b346869b9a806bd19d5d2d",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.Flatten@var[]..[],int",
-      "Id": "5c85a6bf058147eab38d782503eafa2e",
-      "Inputs": [
-        {
-          "Id": "d2608ab134a04e1e8fcbd0a3f4bf4151",
-          "Name": "list",
-          "Description": "List to flatten.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "dcda139d9d3a449b9ee284397b36046a",
-          "Name": "amount",
-          "Description": "Layers of list nesting to remove (-1 will remove all list nestings)\n\nint\nDefault value : -1",
-          "UsingDefaultValue": true,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "762178f23cac4617bdb89c375ce2be4a",
-          "Name": "list",
-          "Description": "Flattened list by amount",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
-    },
-    {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
       "Code": "\"Please enter the string to be used in the filtering operation.\";",
@@ -716,6 +644,82 @@
           "Id": "7792cc1bf83e4a249e394a6e2c7820c4",
           "Name": "",
           "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"Reference Level\";",
+      "Id": "d4ff32eca7f0499e99a72b0fae2fd891",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "96f31c8306c4411a8d6ee56bdf19ddd7",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"1st\";\n\"2nd\";\n\"3rd\";\n\"ROOF\";\n\"PHROOF\";",
+      "Id": "4d3ae9ab486d4887b24db00d96465be0",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "dcbfa4fb493346e59ddfe972fc7d596b",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "da0bc9395d16411bb252574d3bbfef6f",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1623b86fa1554cd2babccc8271e7f284",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b52f3d30786147358faa249109115019",
+          "Name": "",
+          "Description": "Value of expression at line 4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4aaa935bde2c41248c962a0fc6dc7243",
+          "Name": "",
+          "Description": "Value of expression at line 5",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -790,13 +794,13 @@
     {
       "Start": "74520395db894ad8811daf9c5e13e6e5",
       "End": "71c6a36bac39451aa15121315f942819",
-      "Id": "8d0abb6afe37495fa9f21aaf6e47582d",
+      "Id": "a2c717c70398442ebeff1b7c62262a23",
       "IsHidden": "False"
     },
     {
       "Start": "c01d7f2d79a64cf894cdf02ccc093b13",
       "End": "45bf8782659f489da5dfad08fbf76007",
-      "Id": "7e339fcfd3084e4e825bdf70ad2a69f8",
+      "Id": "4ca25afae1314fc3856c8940dcfd7ab5",
       "IsHidden": "False"
     },
     {
@@ -827,12 +831,6 @@
       "Start": "5297ae5c7683432d96ad9dc34c66343f",
       "End": "eac62ed878af4ad9809abcfc8179af44",
       "Id": "a659f7009e9c4c959fd9a9eafddf8d03",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "462b1419f1b346869b9a806bd19d5d2d",
-      "End": "d2608ab134a04e1e8fcbd0a3f4bf4151",
-      "Id": "b344c7112c2246f7b5e18e4223e9b94e",
       "IsHidden": "False"
     }
   ],
@@ -873,217 +871,217 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": -17.0,
-      "EyeY": 24.0,
-      "EyeZ": 50.0,
-      "LookX": 12.0,
-      "LookY": -13.0,
-      "LookZ": -58.0,
-      "UpX": 0.0,
-      "UpY": 1.0,
-      "UpZ": 0.0
+      "EyeX": 2640.08984375,
+      "EyeY": 6628.7734375,
+      "EyeZ": 7286.80419921875,
+      "LookX": -9924.1708984375,
+      "LookY": -6026.029296875,
+      "LookZ": -9315.94140625,
+      "UpX": -0.14535830914974213,
+      "UpY": 0.97992467880249023,
+      "UpZ": -0.13644987344741821
     },
     "ConnectorPins": [],
     "NodeViews": [
       {
-        "Name": "0. Target View",
-        "ShowGeometry": true,
         "Id": "52b8d2097681485698d6920379d8f261",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "0. Target View",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2618.4781982923969,
         "Y": 351.62600593653053
       },
       {
-        "Name": "View.IsolateElementsTemporary",
-        "ShowGeometry": true,
         "Id": "fae76b6ab6504f0cb7b0dda24d8410a6",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "View.IsolateElementsTemporary",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1679.662433649064,
         "Y": 350.41390003035423
       },
       {
-        "Name": "List.FilterByBoolMask",
-        "ShowGeometry": true,
         "Id": "736cfa5572664bdfba2f857fa4d28655",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.FilterByBoolMask",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1326.9348008664786,
         "Y": 645.8165324082679
       },
       {
-        "Name": "All ElementsExceptRails",
-        "ShowGeometry": true,
         "Id": "688e0cc438684e9aad2a7e43a1d568a7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "All ElementsExceptRails",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1369.5815449651675,
         "Y": 592.35188723558167
       },
       {
-        "Name": "All Elements of Category",
-        "ShowGeometry": true,
         "Id": "a0d352a2307d4c4896780a3d6088fd17",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1726.5815449651675,
         "Y": 740.35188723558156
       },
       {
-        "Name": "Categories",
-        "ShowGeometry": true,
         "Id": "f61711bb2cb94542bfed1c5fcf6413ce",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Categories",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2062.5815449651673,
         "Y": 740.35188723558156
       },
       {
-        "Name": "List Create",
-        "ShowGeometry": true,
         "Id": "c992619b992047b99147625ced2ed27b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List Create",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1369.5815449651675,
         "Y": 740.35188723558156
       },
       {
-        "Name": "List.Join",
-        "ShowGeometry": true,
         "Id": "fe1fc4f5407a4a088f7cd0a5b9b24bcf",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.Join",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1016.5815449651675,
         "Y": 649.35188723558167
       },
       {
-        "Name": "List.Flatten",
-        "ShowGeometry": true,
         "Id": "7336b441bfc74ccfb2c07b1e63da13e2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.Flatten",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -764.5815449651675,
         "Y": 649.35188723558167
       },
       {
-        "Name": "Element.Parameters",
-        "ShowGeometry": true,
         "Id": "35783789c1a04289ac4cb588c1268659",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Element.Parameters",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -322.30652017457851,
         "Y": -412.31857179290279
       },
       {
-        "Name": "2. 포함여부 확인 문자열",
-        "ShowGeometry": true,
         "Id": "4311a01e33b749768d058448f66ca12c",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "2. 포함여부 확인 문자열",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2626.6442283931078,
         "Y": 1465.3417701621386
       },
       {
-        "Name": "1. 타겟 파라미터 이름",
-        "ShowGeometry": true,
         "Id": "ca36ce7054554ad5925f5673e58c7d14",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "1. 타겟 파라미터 이름",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2686.917708414705,
         "Y": 954.79747071461986
       },
       {
-        "Name": "getParamValueByNameAsStr",
-        "ShowGeometry": true,
         "Id": "9e92b707f1e34627ab994ae42640538c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "getParamValueByNameAsStr",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -321.36663657183885,
         "Y": 812.02071419451659
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "231b587172f144b3910fdab55c97df3e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2575.0,
         "Y": 1733.0
       },
       {
-        "Name": "확인 문자열 split",
-        "ShowGeometry": true,
         "Id": "a8e36753d00d489e85b0df1edbbfda76",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "확인 문자열 split",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -428.58220022341766,
         "Y": 1485.8906500200858
       },
       {
-        "Name": "3. 키워드 판별 모드**",
-        "ShowGeometry": true,
         "Id": "8011d5d572f34e918e1cd66bb28fed8c",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "3. 키워드 판별 모드**",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2673.5878983210432,
         "Y": 1250.2476689013092
       },
       {
-        "Name": "포함여부 판별",
-        "ShowGeometry": true,
         "Id": "7f710ca6d9c34094a9562426ac0025c7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "포함여부 판별",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 751.75684868715246,
         "Y": 931.93685195210628
       },
       {
-        "Name": "AllElementsFrom LinkedRVT",
-        "ShowGeometry": true,
-        "Id": "f43ff206d18f479ebd1c8de449773ada",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1767.4030796776676,
-        "Y": 1064.9070252327735
-      },
-      {
-        "Name": "List.Flatten",
-        "ShowGeometry": true,
-        "Id": "5c85a6bf058147eab38d782503eafa2e",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1285.4690429956102,
-        "Y": 975.11463072293759
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "6e0470ceee9941f5a7624f53f2e0ce5e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -3258.3483166886108,
         "Y": 1444.12314999971
+      },
+      {
+        "Id": "d4ff32eca7f0499e99a72b0fae2fd891",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -1332.0,
+        "Y": 1016.0
+      },
+      {
+        "Id": "4d3ae9ab486d4887b24db00d96465be0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": -801.0,
+        "Y": 1389.0
       }
     ],
     "Annotations": [
@@ -1114,8 +1112,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 1123.7192398628338,
-    "Y": 56.222326765673017,
-    "Zoom": 0.26459227722400341
+    "X": 829.25485385633738,
+    "Y": -180.8722392688494,
+    "Zoom": 0.43661237624491062
   }
 }
