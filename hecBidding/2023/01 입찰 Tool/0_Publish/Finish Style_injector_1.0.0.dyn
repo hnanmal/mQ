@@ -578,26 +578,6 @@
       "Description": "Creates a file object from a path."
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "\"Int Finish Style No\";",
-      "Id": "e228c77fcb0945b9ba0086dd9bb5e61c",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "8b1570fe3e6340b0812ddbefa5f1f8aa",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
       "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
       "NodeType": "BooleanInputNode",
       "InputValue": true,
@@ -1270,7 +1250,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Floor\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Floor\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    \r\n    datas_allCatType = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx.values())\r\n        hdrs_k = list(cat_hdrs_withIdx.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n    \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,2}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No (Key Name)\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]], data_catType_onlyStyleNo))\r\n        ### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        \r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n#OUT = hdrs_k\r\n\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Floor\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Floor\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    \r\n    datas_allCatType = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx.values())\r\n        hdrs_k = list(cat_hdrs_withIdx.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n    \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No (Key Name)\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]], data_catType_onlyStyleNo))\r\n        ### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        \r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n#OUT = hdrs_k\r\n\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1368,7 +1348,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Exterior Wall\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,2}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Exterior Wall\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1496,7 +1476,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Concrete Roof\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Concrete Roof\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,2}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Concrete Roof\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Concrete Roof\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1594,12 +1574,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\"Concrete Roof\", \"Cladding Roof\"];\n5;\n // 시작row 인덱스;\n[\n\"Style No (Key Name)\"\n,\"Roof Style Name\"\n,\"Roof Ref.\"\n,\"Base Material Roof\"\n,\"Roof Finish 1\"\n,\"Roof Finish 2\"\n,\"Roof Finish 3\"\n,\"Roof Finish 4\"\n,\"Roof Finish 5\"\n,\"Remark\"\n];",
+      "Code": "[\"Single Door\", \"Double Door\", \"Transsom\", \"Shutter / Sliding / Hanger / Swing / Revolving / Folding\"];\n5;\n // 시작row 인덱스;\n[\n\"Style No\"\n,\"Style Name (Key Name)\"\n,\"Ref. Door Size\"\n,\"Door\"\n,\"Frame\"\n,\"Vision\"\n,\"Panic\"\n,\"Remark\"\n];",
       "Id": "768e2a2b625f4c599f27bf328619349f",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "c6a718480ccc47178ec1c69fb698ab23",
+          "Id": "eebb09c5b17c4291b77324a6f0205e63",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -1608,7 +1588,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "b03c91f278a043b6a85408eb2ebb2edf",
+          "Id": "f5700195865a417b9aef8c5202f4c454",
           "Name": "",
           "Description": "Value of expression at line 2",
           "UsingDefaultValue": false,
@@ -1617,7 +1597,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "63fb4cb5a08341e5b3571b83dc7262d2",
+          "Id": "2bde50fd05b54b599d0bab089eb7ef48",
           "Name": "",
           "Description": "Value of expression at line 4",
           "UsingDefaultValue": false,
@@ -1632,7 +1612,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Concrete Roof\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Concrete Roof\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,2}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Single Door\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Single Door\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1678,6 +1658,104 @@
       "Outputs": [
         {
           "Id": "0854927caeeb4330a2ca9d19866642ef",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\"Sliding Type\", \"Awning Type\", \"Fix Type\", \"Combination Type\", \"Skylight\", \"MISC\", \"Louver\"];\n5;\n // 시작row 인덱스;\n[\n\"Style No\"\n,\"Style Name (Key Name)\"\n,\"Ref. Window Size\"\n,\"Glass\"\n,\"Frame\"\n,\"Remark\"\n];",
+      "Id": "66078d6f5fdc4e59ac9489c83c2af7d9",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9374de7c87794eab91a4d8a0cfc834ec",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "06a34677afb8462f82f5874b61432baa",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b7ebe69a75af47da85676dd5d9c218c9",
+          "Name": "",
+          "Description": "Value of expression at line 4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\nheaders = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Sliding Type\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Sliding Type\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return dicts_final#dict(zip(catTypeName,dicts_final))\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = dictsAIO\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Sliding Type\", row_sep_criteria)\r\n\r\n\r\n\r\n#catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Sliding Type\"]], sheet))\r\n#OUT = catType_colDatas\r\n\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "0391409575d34edfad80df57b34281c2",
+      "Inputs": [
+        {
+          "Id": "41bb779ace44433bb4d87796d5789cf8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b742dac896024e50a71628dade5caf8b",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "81a8f2d09b7f41668bf646ada40c41cf",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ae4095d312e2451d9d276d9f2b416de9",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b7c93f320e2d4372ad9eb871f957f656",
           "Name": "OUT",
           "Description": "Result of the python script",
           "UsingDefaultValue": false,
@@ -1986,6 +2064,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "54c4a9cdb28249e89dad5209ceb713c6",
+      "End": "41bb779ace44433bb4d87796d5789cf8",
+      "Id": "26e79f02b91743a8a84a46d0a66c8ec7",
+      "IsHidden": "False"
+    },
+    {
       "Start": "54475ae34f364023bb475c8507afadc4",
       "End": "c5aa1c4268c74bd2b82e5dcc6cc643e3",
       "Id": "b2e1d96a784245099ff63dfbb1b96d2d",
@@ -2040,21 +2124,39 @@
       "IsHidden": "False"
     },
     {
-      "Start": "c6a718480ccc47178ec1c69fb698ab23",
+      "Start": "eebb09c5b17c4291b77324a6f0205e63",
       "End": "035ef4fd84b0490fa2f329721e447def",
-      "Id": "7943a1d45bfb4639a2bb86811c12f964",
+      "Id": "b9dbb7011e744d09bf7a7dc89723037d",
       "IsHidden": "False"
     },
     {
-      "Start": "b03c91f278a043b6a85408eb2ebb2edf",
+      "Start": "f5700195865a417b9aef8c5202f4c454",
       "End": "de1041b1229a4bf091e5f0f5d878e97a",
-      "Id": "59d0dcfe3e5e4244a8d8fd3eae10b1b9",
+      "Id": "b2b7d7bf8105488492d3b165da3bd2e6",
       "IsHidden": "False"
     },
     {
-      "Start": "63fb4cb5a08341e5b3571b83dc7262d2",
+      "Start": "2bde50fd05b54b599d0bab089eb7ef48",
       "End": "56373630b31e4781be5b4cb9aed06175",
-      "Id": "d23837bc9d3746149daa757e68b1fe70",
+      "Id": "ca81ef51bbeb477383bc0593ead41511",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "9374de7c87794eab91a4d8a0cfc834ec",
+      "End": "b742dac896024e50a71628dade5caf8b",
+      "Id": "0670efc56e594cd9ba14f1e5d27c0942",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "06a34677afb8462f82f5874b61432baa",
+      "End": "81a8f2d09b7f41668bf646ada40c41cf",
+      "Id": "d3f07a42dad647a18e8590c667f156b4",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b7ebe69a75af47da85676dd5d9c218c9",
+      "End": "ae4095d312e2451d9d276d9f2b416de9",
+      "Id": "dc1751a5437d442790cffb10bef11b8a",
       "IsHidden": "False"
     }
   ],
@@ -2192,8 +2294,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -993.07668903796821,
-        "Y": 2642.437579205467
+        "X": 1230.4011467218907,
+        "Y": 3112.7886598469754
       },
       {
         "Name": "All Elements of Category",
@@ -2202,8 +2304,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -659.98100914828638,
-        "Y": 2637.437579205467
+        "X": 1563.4968266115725,
+        "Y": 3107.7886598469754
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -2212,8 +2314,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 235.6172321351678,
-        "Y": 2636.8318966354527
+        "X": 2459.0950678950267,
+        "Y": 3107.1829772769611
       },
       {
         "Name": "Element.Name",
@@ -2222,8 +2324,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -343.89910081924245,
-        "Y": 2767.7596607473811
+        "X": 1879.5787349406164,
+        "Y": 3238.1107413888894
       },
       {
         "Name": "IsFinishStyleSchedule?",
@@ -2232,8 +2334,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -72.384967046156362,
-        "Y": 2809.613618127421
+        "X": 2151.0928687137025,
+        "Y": 3279.9646987689293
       },
       {
         "Name": "ScheduleView.Fields",
@@ -2252,8 +2354,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1738.8862023075326,
-        "Y": 166.52881120827749
+        "X": -2766.2881563903643,
+        "Y": 156.44585803898048
       },
       {
         "Name": "빌딩리스트 경로",
@@ -2262,8 +2364,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2708.975049240029,
-        "Y": -20.964876201345987
+        "X": -4065.0151489649388,
+        "Y": -175.53696869255009
       },
       {
         "Name": "File From Path",
@@ -2272,18 +2374,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2081.8668368595963,
-        "Y": 145.53127110804473
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "e228c77fcb0945b9ba0086dd9bb5e61c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -2275.8996207712316,
-        "Y": 287.64300392499706
+        "X": -3115.2881563903643,
+        "Y": 23.445858038980475
       },
       {
         "Name": "Boolean",
@@ -2292,8 +2384,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2136.8332462547132,
-        "Y": 425.94124315022384
+        "X": -3115.2881563903643,
+        "Y": 410.44585803898048
       },
       {
         "Name": "Code Block",
@@ -2302,8 +2394,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1688.302517939753,
-        "Y": -950.163754849736
+        "X": -1674.9775211419724,
+        "Y": -1651.9469195328504
       },
       {
         "Name": "Parse_Finish Style No 시트(as dict)",
@@ -2422,8 +2514,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 968.02054361381511,
-        "Y": 2607.447253121079
+        "X": 3191.4983793736737,
+        "Y": 3077.7983337625874
       },
       {
         "Name": "Element.Name",
@@ -2432,8 +2524,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 641.50084479164207,
-        "Y": 2740.1661402253762
+        "X": 2864.9786805515009,
+        "Y": 3210.5172208668846
       },
       {
         "Name": "Code Block",
@@ -2442,8 +2534,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2286.963570641517,
-        "Y": 593.17628153247711
+        "X": -3115.2881563903643,
+        "Y": 171.27335803898046
       },
       {
         "Name": "Code Block",
@@ -2452,8 +2544,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1395.1794168597394,
-        "Y": 151.94778830425639
+        "X": -1990.3940443757115,
+        "Y": 187.66066595521488
       },
       {
         "Name": "Parse_Int Finish Style No 시트(as dict)",
@@ -2532,8 +2624,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1070.5763703551718,
-        "Y": 1458.9948771417578
+        "X": -1285.0934366525178,
+        "Y": 1448.1394207677361
       },
       {
         "Name": "Parse_Door Style No 시트(as dict)",
@@ -2542,8 +2634,28 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -343.70450906325368,
-        "Y": 1402.0979478985844
+        "X": -345.94214137689914,
+        "Y": 1291.6227141033519
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "66078d6f5fdc4e59ac9489c83c2af7d9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1130.2652805964053,
+        "Y": 2049.344279394435
+      },
+      {
+        "Name": "Parse_Window Style No 시트(as dict)",
+        "ShowGeometry": true,
+        "Id": "0391409575d34edfad80df57b34281c2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -338.82668028382841,
+        "Y": 1936.5942971635397
       }
     ],
     "Annotations": [
@@ -2589,13 +2701,13 @@
           "945f4de7301c4395a1f6270ba23163b8"
         ],
         "HasNestedGroups": false,
-        "Left": -1003.0766890379682,
-        "Top": 2491.8318966354527,
+        "Left": 1220.4011467218907,
+        "Top": 2962.1829772769611,
         "Width": 1483.693921173136,
         "Height": 449.78172149196826,
         "FontSize": 96.0,
-        "InitialTop": 2636.8318966354527,
-        "InitialHeight": 317.781721491968,
+        "InitialTop": 3107.1829772769611,
+        "InitialHeight": 317.78172149196826,
         "TextblockHeight": 135.0,
         "Background": "#FFC1D676"
       },
@@ -2610,16 +2722,16 @@
           "0848f41b17f94f6e97f501e47e0a7b5c",
           "7b92e55138f3489ca52142fcca7f7512",
           "f84d9778f3254f23ae93ec758002d1e1",
-          "e228c77fcb0945b9ba0086dd9bb5e61c",
-          "a8f7622ce2014a429a795d51a87760da"
+          "a8f7622ce2014a429a795d51a87760da",
+          "3c40068417d147198ec64126ee9ff7bb"
         ],
         "HasNestedGroups": false,
-        "Left": -2718.975049240029,
-        "Top": -165.964876201346,
-        "Width": 1228.0888469324964,
-        "Height": 723.90611935156983,
+        "Left": -4075.0151489649388,
+        "Top": -320.53696869255009,
+        "Width": 1556.7269925745745,
+        "Height": 862.98282673153062,
         "FontSize": 96.0,
-        "InitialTop": -20.964876201345987,
+        "InitialTop": -175.53696869255009,
         "InitialHeight": 591.90611935156983,
         "TextblockHeight": 135.0,
         "Background": "#FFFF7BAC"
@@ -2650,8 +2762,8 @@
         "Background": "#FFFF7BAC"
       }
     ],
-    "X": 1194.2097478708254,
-    "Y": -846.4070203882228,
-    "Zoom": 0.766600881853678
+    "X": 1020.257476931343,
+    "Y": -1447.9587105049666,
+    "Zoom": 0.76517119848739834
   }
 }
