@@ -10,7 +10,7 @@
 (def fire-missiles 
   (button :text "Fire!"
           :enabled? false))
-
+(+ 2 3)
 (b/bind
  safety
  (b/property fire-missiles :enabled?))
@@ -46,7 +46,7 @@
           ;;                   :value 6
           ;;                   :background "#999"
           ;;                   :foreground :blue)
-           :content form
-           )
+           :content form)
+           
     pack!
     show!)))
