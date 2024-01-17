@@ -21,12 +21,12 @@
   (println x "Hello, World!"))
 
 (def form
-  (grid-panel :columns 2
-              :items ["First Name" (text :id :first-name)
-                      "Last Name" (text :id :last-name)
+  (grid-panel :columns 3
+              :items ["First Name" (text :id :first-name) "1"
+                      "Last Name" (text :id :last-name) "2"
                       "Sex" (combobox :id :sex
-                                      :model ["Female" "Male"])
-                      "Age" (spinner :id :age)]))
+                                      :model ["Female" "Male"]) "3"
+                      "Age" (spinner :id :age) "4"])) 
 
 (defn -main [& args]
   (invoke-later
@@ -50,3 +50,5 @@
            
     pack!
     show!)))
+
+
