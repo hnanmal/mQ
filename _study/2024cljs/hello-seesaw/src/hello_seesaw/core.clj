@@ -10,7 +10,7 @@
 (def fire-missiles 
   (button :text "Fire!"
           :enabled? false))
-(+ 2 3)
+;; (+ 2 3)
 (b/bind
  safety
  (b/property fire-missiles :enabled?))
@@ -22,21 +22,23 @@
 
 (def form
   (grid-panel :columns 3
-              :items ["First Name" (text :id :first-name) "1"
-                      "Last Name" (text :id :last-name) "2"
-                      "Sex" (combobox :id :sex
-                                      :model ["Female" "Male"]) "3"
-                      "Age" (spinner :id :age) "4"])) 
+              :items ["[1]" "First Name" (text :id :first-name)
+                      "[2]" "Last Name" (text :id :last-name)
+                      "[3]" "Sex" (combobox :id :sex
+                                            :model ["Female" "Male" "Attack Helicopter"])
+                      "[4]" "Age" (spinner :id :age)]
+              :border [30 "Compound" 10]))
 
 (defn -main [& args]
   (invoke-later
    (->
-    ;; (frame :title "Hello",
-    ;;           ;; :content "Hello, Seesaw",
-    ;;           :content safety,
-    ;;           :on-close :exit) 
     (frame :title "Why Swing, why?",
            :on-close :exit
+           :menubar 
+           (menubar :items [(menu
+                             :text "File" 
+                             :items 
+                             ["Open" "save"])])
           ;;  :content (label :text "Hiya"
           ;;                  :border [100 "Compound" 10]
           ;;                  :background "#999"
@@ -46,9 +48,59 @@
           ;;                   :value 6
           ;;                   :background "#999"
           ;;                   :foreground :blue)
-           :content form)
+           :content form
+           )
            
     pack!
     show!)))
 
+(+ 1 2 3 4 5)
+(reduce + [1 2 3])
 
+(def example-dict 
+  {:a "good!"
+   :b "nice~"
+   :c "cute~"})
+
+(:a example-dict)
+(example-dict :a)
+
+(def blank-dict {})
+
+(def next-dict (assoc blank-dict 
+                      :title "Is this right?"
+                      :on-close :exit
+                      :content "king-ah!"
+            ))
+
+(next-dict :title)
+(next-dict :on-close)
+(next-dict :content)
+(:title next-dict)
+(:on-close next-dict)
+(:content next-dict)
+
+(= [:a :b :c] (list :a :b :c) (vec '(:a :b :c)) (vector :a :b :c))
+[:a :b :c]
+
+(list :a :b :c)
+(vec '(:a :b :c))
+(vector :a :b :c)
+
+(= [:a :b :c] (list :a :b :c) )
+
+(conj '(1 2 3) 4)
+
+(conj [1 2 3] 4)
+(set '(:a :a :b :c :c :c :c :d :d))
+(conj #{1 4 3} 2)
+
+(def x 
+  {:a 10
+   :b 20
+   :c 30})
+
+(= 20 ((hash-map :a 10, :b 20, :c 30) :b))
+
+(first x)
+(x :b)
