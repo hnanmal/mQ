@@ -104,3 +104,47 @@
 
 (first x)
 (x :b)
+(rest [10 20 30 40])
+
+(= 8 ((fn add-five [x] (+ x 5)) 3))
+
+(def add-five2 (partial + 5))
+(add-five2 3)
+
+(defn do-double
+  [x]
+  (* 2 x))
+(do-double 7)
+
+(defn greet [name]
+  (str "Hello, " name "!"))
+(greet "Dave")
+
+(map #(+ % 5) '(1 2 3))
+(filter #(> % 5) '(3 4 5 6 7))
+
+(last [1 2 3 4 5])
+(defn _last [col]
+  (nth col (dec (count col))))
+
+(_last ["b" "c" "d"])
+
+(defn _last-second [col]
+  (nth col (- (count col) 2)))
+(_last-second [1 2 3 4 5])
+
+(defn _nth [col n]
+  (first (last (split-at n col))))
+
+(_nth [:a :b :c] 0)
+
+(defn _count [col]
+  ;; (apply +
+         (reduce + (map (fn [x] 1) col))
+        ;;  )
+)
+
+(_count [1 2 3])
+
+(defn _reverse [col]
+  (let [y []]))
