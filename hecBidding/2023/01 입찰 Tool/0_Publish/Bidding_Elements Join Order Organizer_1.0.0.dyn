@@ -6,8 +6,26 @@
   "ElementResolver": {
     "ResolutionMap": {}
   },
-  "Inputs": [],
-  "Outputs": [],
+  "Inputs": [
+    {
+      "Id": "6b923875cdd142e293a8d3767f6a0ae5",
+      "Name": "Custom Selection",
+      "Type": "selection",
+      "Type2": "dropdownSelection",
+      "Value": "1. Fdn & Peds",
+      "Description": "A dropdown menu with customizable values.",
+      "SelectedIndex": 1
+    }
+  ],
+  "Outputs": [
+    {
+      "Id": "cc4d42a0673d48109e0c4c2bf4fb1dfd",
+      "Name": "Watch",
+      "Type": "unknown",
+      "InitialValue": "",
+      "Description": "Visualize the node's output"
+    }
+  ],
   "Nodes": [
     {
       "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
@@ -37,45 +55,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Get all elements of the specified category from the model."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.SetGeometryJoinOrder@Revit.Elements.Element,Revit.Elements.Element",
-      "Id": "512ca43149e3421db001699ad31da591",
-      "Inputs": [
-        {
-          "Id": "6a0dc9b8e42d41538c0008dc01e53529",
-          "Name": "cuttingElement",
-          "Description": "The element that should be cutting the other element\n\nElement",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "68ee932a31d94ba381ffc0c2bc203843",
-          "Name": "otherElement",
-          "Description": "The other element that is being cut by the cuttingElement\n\nElement",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "1e8521dbaad5408b827e7c0c3753b2cb",
-          "Name": "Element[]",
-          "Description": "Input elements with the geometry join order updated.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Sets the order in which the geometry of two elements is joined.\n\nElement.SetGeometryJoinOrder (cuttingElement: Element, otherElement: Element): Element[]"
     },
     {
       "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
@@ -299,48 +278,9 @@
       "Description": "Get all elements of the specified category from the model."
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.JoinGeometry@Revit.Elements.Element",
-      "Id": "2c9aeffc0a834f018308a56009993ba8",
-      "Inputs": [
-        {
-          "Id": "7add29c3448644fcaff1521e6dbedf7d",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b16de9958c564ab88e54853c4688af60",
-          "Name": "otherElement",
-          "Description": "Other element to join with\n\nElement",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "cd15633828bb495b82378028ebbfd45a",
-          "Name": "Element[]",
-          "Description": "The two joined elements",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Joins the geometry of two elements, if they are intersecting.\n\nElement.JoinGeometry (otherElement: Element): Element[]"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport os\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n    \r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njoinMode = list(map(lambda x: int(x), filter(lambda x: x!=\"\",IN[5].split(','))))\r\n\r\nfdns = IN[0]\r\ncolumns = IN[1]\r\nag_columns = \\\r\n    list(filter(lambda x: \"UG\" not in str(x.GetParameterValueByName(\"Type\")), columns))\r\nug_columns = \\\r\n    list(filter(lambda x: \"UG\" in str(x.GetParameterValueByName(\"Type\")), columns))\r\nbeams = IN[2]\r\nfloors = IN[3]\r\nroofs = IN[4]\r\n\r\ncwd = find_cwd()\r\n\r\ncatsList = [\r\n    fdns,\r\n    ug_columns,\r\n    ag_columns,\r\n    columns,\r\n    beams,\r\n    floors,\r\n    roofs,\r\n]\r\n\r\ntargetCats = list(map(lambda x: catsList[x], joinMode))\r\n# Place your code below this line\r\ndef make_elementJoinLog(lst,title):\r\n    f = open(f\"{cwd}\\\\Element Join log_{title}.txt\", 'w')\r\n    for i in lst:\r\n        f.write(i+'\\n')\r\n    f.close()\r\n\r\ndef set_joinOrder(cat1,cat2,title):\r\n    res = []\r\n    for i in cat1:\r\n        for j in cat2:\r\n            a = \"_\".join(i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\").split('_')[3:])\r\n            b = \"_\".join(j.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\").split('_')[3:])\r\n            if i.AreJoined(j):\r\n                Elements.Element.SetGeometryJoinOrder(i,j)\r\n                resStr = f\"[{a}, {b}] - join order complete!\"\r\n                res.append(resStr)\r\n            else:\r\n                try:\r\n                    i.JoinGeometry(j)\r\n                    Elements.Element.SetGeometryJoinOrder(i,j)\r\n                    resStr = f\"[{a}, {b}] - newely joined and order complete!\"\r\n                    res.append(resStr)\r\n                except:\r\n                    resStr = f\"[{a}, {b}] - nothing happened!\"\r\n                    res.append(resStr)\r\n    make_elementJoinLog(res,title)\r\n    return res\r\n\r\ndef set_columnJoinOrder(cat1,cat2,title):\r\n    res = []\r\n    for i in cat1:\r\n        for j in cat2:\r\n            a = i.GetParameterValueByName(\"Column Location Mark\")\r\n            b = j.GetParameterValueByName(\"Column Location Mark\")\r\n            if a == b:\r\n                if i.AreJoined(j):\r\n                    Elements.Element.SetGeometryJoinOrder(i,j)\r\n                    resStr = f\"[UG:{a}, AG:{b}] - join order complete!\"\r\n                    res.append(resStr)\r\n                else:\r\n                    try:\r\n                        i.JoinGeometry(j)\r\n                        Elements.Element.SetGeometryJoinOrder(i,j)\r\n                        resStr = f\"[UG:{a}, AG:{b}] - newely joined and order complete!\"\r\n                        res.append(resStr)\r\n                    except:\r\n                        resStr = f\"[UG:{a}, AG:{b}] - nothing happened!\"\r\n                        res.append(resStr)\r\n    make_elementJoinLog(res,title)\r\n    return res\r\n\r\ndef set_joinBySelection(targetCats,joinMode):\r\n    catsNameList = [\r\n    \"fdns\",\r\n    \"ug_cols\",\r\n    \"ag_cols\",\r\n    \"cols\",\r\n    \"beams\",\r\n    \"floors\",\r\n    \"roofs\",\r\n    ]\r\n    title = list(map(lambda x: catsNameList[x], joinMode))\r\n    if len(title) == 2:\r\n        title_str = '&'.join(title)\r\n        [cat1,cat2] = [*targetCats]\r\n        res = set_joinOrder(cat1,cat2,title_str)\r\n    elif title == [\"ug_cols\",\"ag_cols\"]:\r\n        title_str = '&'.join(title)\r\n        [cat1,cat2] = [*targetCats]\r\n        res = set_columnJoinOrder(cat1,cat2,title_str)\r\n    \r\n    return res\r\n\r\n#result = {\r\n#    \"Fdns & Peds Result\": set_joinOrder(fdns, ug_columns,\"fdn&ped\"),\r\n#    \"Peds & Columns Result\": set_columnJoinOrder(ug_columns,ag_columns,\"ped&col\"),\r\n#    \"Columns & Beams\": set_joinOrder(columns, beams, \"col&beam\"),\r\n#    }\r\n\r\nresult = set_joinBySelection(targetCats,joinMode)\r\n# Assign your output to the OUT variable.\r\n\r\n\r\nOUT = result",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport os\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n    \r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njoinMode = list(map(lambda x: int(x), filter(lambda x: x!=\"\",IN[6].split(','))))\r\n\r\nfdns = IN[0]\r\ncolumns = IN[1]\r\nag_columns = \\\r\n    list(filter(lambda x: \"UG\" not in str(x.GetParameterValueByName(\"Type\")), columns))\r\nug_columns = \\\r\n    list(filter(lambda x: \"UG\" in str(x.GetParameterValueByName(\"Type\")), columns))\r\nbeams = IN[2]\r\nwalls = IN[3]\r\nfloors = IN[4]\r\nroofs = IN[5]\r\n\r\ncwd = find_cwd()\r\n\r\ncatsList = [\r\n    fdns,\r\n    ug_columns,\r\n    ag_columns,\r\n    columns,\r\n    beams,\r\n    walls,\r\n    floors,\r\n    roofs,\r\n]\r\n\r\ntargetCats = list(map(lambda x: catsList[x], joinMode))\r\n# Place your code below this line\r\ndef make_elementJoinLog(lst,title,cwd):\r\n    folderPath = f\"{cwd}\\\\.dynLog\"\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    f = open(f\"{folderPath}\\\\Element Join log_{title}.txt\", 'w')\r\n    for i in lst:\r\n        f.write(i+'\\n')\r\n    f.close()\r\n\r\ndef set_joinOrder(cat1,cat2,title):\r\n    res = []\r\n    for i in cat1:\r\n        for j in cat2:\r\n            a = \"_\".join(i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\").split('_')[3:])\r\n            b = \"_\".join(j.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\").split('_')[3:])\r\n            if i.AreJoined(j):\r\n                Elements.Element.SetGeometryJoinOrder(i,j)\r\n                resStr = f\"[{a}, {b}] - join order complete!\"\r\n                res.append(resStr)\r\n            else:\r\n                try:\r\n                    i.JoinGeometry(j)\r\n                    Elements.Element.SetGeometryJoinOrder(i,j)\r\n                    resStr = f\"[{a}, {b}] - newely joined and order complete!\"\r\n                    res.append(resStr)\r\n                except:\r\n                    resStr = f\"[{a}, {b}] - nothing happened!\"\r\n                    res.append(resStr)\r\n    make_elementJoinLog(res,title,cwd)\r\n    return res\r\n\r\ndef set_columnJoinOrder(cat1,cat2,title):\r\n    res = []\r\n    for i in cat1:\r\n        for j in cat2:\r\n            a = i.GetParameterValueByName(\"Column Location Mark\")\r\n            b = j.GetParameterValueByName(\"Column Location Mark\")\r\n            if a == b:\r\n                if i.AreJoined(j):\r\n                    Elements.Element.SetGeometryJoinOrder(i,j)\r\n                    resStr = f\"[UG:{a}, AG:{b}] - join order complete!\"\r\n                    res.append(resStr)\r\n                else:\r\n                    try:\r\n                        i.JoinGeometry(j)\r\n                        Elements.Element.SetGeometryJoinOrder(i,j)\r\n                        resStr = f\"[UG:{a}, AG:{b}] - newely joined and order complete!\"\r\n                        res.append(resStr)\r\n                    except:\r\n                        resStr = f\"[UG:{a}, AG:{b}] - nothing happened!\"\r\n                        res.append(resStr)\r\n    make_elementJoinLog(res,title,cwd)\r\n    return res\r\n\r\ndef set_joinBySelection(targetCats,joinMode,cwd):\r\n    catsNameList = [\r\n    \"Fdns\",\r\n    \"Ug Cols\",\r\n    \"Ag Cols\",\r\n    \"Cols\",\r\n    \"Beams\",\r\n    \"Walls\",\r\n    \"Floors\",\r\n    \"Roofs\",\r\n    ]\r\n    title = list(map(lambda x: catsNameList[x], joinMode))\r\n    if len(title) == 2:\r\n        if title == [\"Ug Cols\",\"Ag Cols\"]:\r\n            title_str = ' & '.join(title)\r\n            [cat1,cat2] = [*targetCats]\r\n            res = set_columnJoinOrder(cat1,cat2,title_str)\r\n        else:\r\n            title_str = ' & '.join(title)\r\n            [cat1,cat2] = [*targetCats]\r\n            res = set_joinOrder(cat1,cat2,title_str)\r\n    elif len(title) == 8:\r\n        res = [\r\n            set_joinOrder(fdns,ug_columns,\"Fdns & Ug Cols\"),\r\n            set_columnJoinOrder(ug_columns,ag_columns,\"Ug Cols & Ag Cols\"),\r\n            set_joinOrder(columns,beams,\"Cols & Beams\"),\r\n            set_joinOrder(columns,floors,\"Cols & Floors\"),\r\n            set_joinOrder(columns,walls,\"Cols & Walls\"),\r\n            set_joinOrder(columns,roofs,\"Cols & Roofs\"),\r\n            set_joinOrder(floors,beams,\"Floors & Beams\"),\r\n            set_joinOrder(beams,walls,\"Beams & Walls\"),\r\n            set_joinOrder(beams,roofs,\"Beams & Roofs\"),\r\n            set_joinOrder(walls,floors,\"Walls & Floors\"),\r\n            set_joinOrder(walls,roofs,\"Walls & Roofs\"),\r\n            ]\r\n    \r\n    return res\r\n\r\n\r\nresult = set_joinBySelection(targetCats,joinMode,cwd)\r\n# Assign your output to the OUT variable.\r\n\r\n\r\nOUT = result",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -399,6 +339,15 @@
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
+        },
+        {
+          "Id": "ae69c1ab07074af08994ea5933c6079d",
+          "Name": "IN[6]",
+          "Description": "Input #6",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
         }
       ],
       "Outputs": [
@@ -416,200 +365,11 @@
       "Description": "Runs an embedded Python script."
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.AreJoined@Revit.Elements.Element",
-      "Id": "6aaf274125fb49aaa258b9ad55bb5ffc",
-      "Inputs": [
-        {
-          "Id": "866b9206f60f4412bee03d79e9d99e4e",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "62800a7fadbc436395a125e35da37411",
-          "Name": "otherElement",
-          "Description": "Second element to check\n\nElement",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "be03a74e0b1a42f0a2ce0ed5ad172841",
-          "Name": "bool",
-          "Description": "True if the two elements are joined, False otherwise",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Checks if two elements are joined\n\nElement.AreJoined (otherElement: Element): bool"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.Parameters",
-      "Id": "39bedc81a4424ed59f7f402604b7c798",
-      "Inputs": [
-        {
-          "Id": "0994a42a3d31492b9781837f8150ca32",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "b28efc2bd7c8425990b014f7ddf68b61",
-          "Name": "Parameter[]",
-          "Description": "Parameter[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[0][13];",
-      "Id": "64d17611768d4604a836b2da4c50500f",
-      "Inputs": [
-        {
-          "Id": "654d99c55aff4df1b2f35987bf34a033",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "ce2dddb4973e454ea3764925361b87a2",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.Parameters",
-      "Id": "b5c4c305a3d945dabb3926a115c1106c",
-      "Inputs": [
-        {
-          "Id": "15d359ef5b704e3296c63a1e0aba6760",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "4a815a64c3014d20800d065835376332",
-          "Name": "Parameter[]",
-          "Description": "Parameter[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Parameter.Value",
-      "Id": "5070ec0dbeec46dea4be40ebeed11205",
-      "Inputs": [
-        {
-          "Id": "25604180401b46a989ede83a2856b880",
-          "Name": "parameter",
-          "Description": "Revit.Elements.Parameter",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "fb7afccd1415481c88aab160267e858b",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the value of the parameter\n\nParameter.Value: var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.Parameters",
-      "Id": "6e4628caad8042c6ba58ced2bd8427a5",
-      "Inputs": [
-        {
-          "Id": "59389751583b4e3a9a40e1e8e812d400",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "837933afd3284269a1bf44422b2d6205",
-          "Name": "Parameter[]",
-          "Description": "Parameter[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
-    },
-    {
       "ConcreteType": "CoreNodeModels.Input.CustomSelection, CoreNodeModels",
       "SerializedItems": [
         {
           "Name": "All at Once",
-          "Item": ",0,1,2,3,4,5,6"
+          "Item": ",0,1,2,3,4,5,6,7"
         },
         {
           "Name": "1. Fdn & Peds",
@@ -625,31 +385,47 @@
         },
         {
           "Name": "4. Columns & Floors",
-          "Item": ",3,5"
-        },
-        {
-          "Name": "5. Beams & Floors",
-          "Item": ",4,5"
-        },
-        {
-          "Name": "6. Columns & Roofs",
           "Item": ",3,6"
         },
         {
-          "Name": "7. Beams & Roofs",
-          "Item": ",4,6"
+          "Name": "5. Columns & Walls",
+          "Item": ",3,5"
+        },
+        {
+          "Name": "6. Columns & Roofs",
+          "Item": ",3,7"
+        },
+        {
+          "Name": "7. Beams & Floors",
+          "Item": ",6,4"
+        },
+        {
+          "Name": "8. Beams & Walls",
+          "Item": ",4,5"
+        },
+        {
+          "Name": "9. Beams & Roofs",
+          "Item": ",4,7"
+        },
+        {
+          "Name": "10. Walls & Floors",
+          "Item": ",5,6"
+        },
+        {
+          "Name": "11. Walls & Roofs",
+          "Item": ",5,7"
         }
       ],
-      "SelectedIndex": 2,
-      "SelectedString": "2. Pes & AG Columns",
+      "SelectedIndex": 1,
+      "SelectedString": "1. Fdn & Peds",
       "NodeType": "ExtensionNode",
       "Id": "6b923875cdd142e293a8d3767f6a0ae5",
       "Inputs": [],
       "Outputs": [
         {
           "Id": "be442b20df4c4c3b9331533a4758c493",
-          "Name": "Value",
-          "Description": "The selected Value",
+          "Name": "value",
+          "Description": "Selected value",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -658,6 +434,85 @@
       ],
       "Replication": "Disabled",
       "Description": "A dropdown menu with customizable values."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "ea987c71366b4d3880edb43ebf1abd1e",
+      "Inputs": [
+        {
+          "Id": "6653c2d5d7c648e28d9888c966a7d4f5",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "edd4640b93ef46058783b2af3d3fb929",
+          "Name": "Elements",
+          "Description": "An element class.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 700,
+      "SelectedString": "OST_Walls",
+      "NodeType": "ExtensionNode",
+      "Id": "409aec9c9ed646a1ba2d36ce2e9d24d2",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "25c4d11283f6412789c9264b7b33b4b6",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "cc4d42a0673d48109e0c4c2bf4fb1dfd",
+      "Inputs": [
+        {
+          "Id": "684c57979f9d49d1a17a545a538e0154",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a556e008089c45aebde949c9ad737058",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualize the node's output"
     }
   ],
   "Connectors": [
@@ -665,12 +520,6 @@
       "Start": "7b041fd9d38e4ea08bb76bea7970c1c9",
       "End": "bca6e6013b414bfa8ecef039ebcca1d9",
       "Id": "a9c267db1a6d43ccac65bc9cecc80a18",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "7b041fd9d38e4ea08bb76bea7970c1c9",
-      "End": "0994a42a3d31492b9781837f8150ca32",
-      "Id": "cc7b0c05bf284168b8726697440181e2",
       "IsHidden": "False"
     },
     {
@@ -717,38 +566,38 @@
     },
     {
       "Start": "f5512a0e6a8b495793d9e06090e679dc",
-      "End": "91dc3ed2d80f48bbafe409ccb8dfc2bd",
-      "Id": "bdb67a9e4cc742e7a529d5640b508daf",
+      "End": "40697d1767dd4561bc85f194a169b774",
+      "Id": "94ec12d876484db3bc7376324170ebeb",
       "IsHidden": "False"
     },
     {
       "Start": "fd76e405a7cc4a23ba881bdc17d5806d",
-      "End": "40697d1767dd4561bc85f194a169b774",
-      "Id": "9634ec070a0546a3a058f174c70a6ba4",
+      "End": "092fa358bc2a4272b409136904ac8a4b",
+      "Id": "e9f152aa681a4c7d9e46614fd9505483",
       "IsHidden": "False"
     },
     {
-      "Start": "b28efc2bd7c8425990b014f7ddf68b61",
-      "End": "654d99c55aff4df1b2f35987bf34a033",
-      "Id": "3b09248127244e449aba61b9a0243d09",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "ce2dddb4973e454ea3764925361b87a2",
-      "End": "25604180401b46a989ede83a2856b880",
-      "Id": "a8e4fa7486a54d8babca3dcc2e31f025",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "fb7afccd1415481c88aab160267e858b",
-      "End": "59389751583b4e3a9a40e1e8e812d400",
-      "Id": "16dfaa5f14ac40e5a24ae5f538d951fb",
+      "Start": "3f18e512c5a94f0ba15b2103680ae8ca",
+      "End": "684c57979f9d49d1a17a545a538e0154",
+      "Id": "a35d98435b8740fca5bc008dc917b289",
       "IsHidden": "False"
     },
     {
       "Start": "be442b20df4c4c3b9331533a4758c493",
-      "End": "092fa358bc2a4272b409136904ac8a4b",
-      "Id": "0997d200444d4a33ac2d6fea723c7e72",
+      "End": "ae69c1ab07074af08994ea5933c6079d",
+      "Id": "89ef3ea3f82c4c1ab03d6521dc72587f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "edd4640b93ef46058783b2af3d3fb929",
+      "End": "91dc3ed2d80f48bbafe409ccb8dfc2bd",
+      "Id": "bcb9d31ab91e482dbd1aa616bc58bc0f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "25c4d11283f6412789c9264b7b33b4b6",
+      "End": "6653c2d5d7c648e28d9888c966a7d4f5",
+      "Id": "024bc7258f0f40c8a706b8f75d8965ee",
       "IsHidden": "False"
     }
   ],
@@ -812,16 +661,6 @@
         "Y": -74.539359295117322
       },
       {
-        "Name": "Element.SetGeometryJoinOrder",
-        "ShowGeometry": true,
-        "Id": "512ca43149e3421db001699ad31da591",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 2119.7461173758388,
-        "Y": -48.621549796738691
-      },
-      {
         "Name": "Categories",
         "ShowGeometry": true,
         "Id": "55b4932a7b9b4e409289bad4395ee098",
@@ -868,8 +707,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 29.902324084599627,
-        "Y": 483.12185926767972
+        "X": 38.017660300163527,
+        "Y": 630.82097839094206
       },
       {
         "Name": "Categories",
@@ -878,8 +717,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 26.816972101736724,
-        "Y": 660.02324049956007
+        "X": 34.932308317300624,
+        "Y": 807.72235962282241
       },
       {
         "Name": "All Elements of Category",
@@ -898,8 +737,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 451.55531309620073,
-        "Y": 482.6915907378114
+        "X": 459.67064931176469,
+        "Y": 630.39070986107367
       },
       {
         "Name": "All Elements of Category",
@@ -908,18 +747,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 448.57915965088705,
-        "Y": 656.92056758233912
-      },
-      {
-        "Name": "Element.JoinGeometry",
-        "ShowGeometry": true,
-        "Id": "2c9aeffc0a834f018308a56009993ba8",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1623.5267437331406,
-        "Y": 187.36386219932712
+        "X": 456.694495866451,
+        "Y": 804.61968670560145
       },
       {
         "Name": "Python Script",
@@ -928,83 +757,53 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1082.7463579844994,
-        "Y": 660.79582678972793
-      },
-      {
-        "Name": "Element.AreJoined",
-        "ShowGeometry": true,
-        "Id": "6aaf274125fb49aaa258b9ad55bb5ffc",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1507.3759705487246,
-        "Y": 281.21561494870991
-      },
-      {
-        "Name": "Element.Parameters",
-        "ShowGeometry": true,
-        "Id": "39bedc81a4424ed59f7f402604b7c798",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 889.447837466114,
-        "Y": -318.24157823017674
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "64d17611768d4604a836b2da4c50500f",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1230.794255350716,
-        "Y": -335.78737529483448
-      },
-      {
-        "Name": "Element.Parameters",
-        "ShowGeometry": true,
-        "Id": "b5c4c305a3d945dabb3926a115c1106c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1577.4514082000521,
-        "Y": -487.94826100594531
-      },
-      {
-        "Name": "Parameter.Value",
-        "ShowGeometry": true,
-        "Id": "5070ec0dbeec46dea4be40ebeed11205",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1554.6989194711734,
-        "Y": -291.30505949753797
-      },
-      {
-        "Name": "Element.Parameters",
-        "ShowGeometry": true,
-        "Id": "6e4628caad8042c6ba58ced2bd8427a5",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1844.4514082000521,
-        "Y": -467.94826100594531
+        "X": 1093.1622403319843,
+        "Y": 405.60670927634806
       },
       {
         "Name": "Custom Selection",
         "ShowGeometry": true,
         "Id": "6b923875cdd142e293a8d3767f6a0ae5",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 572.41704604396807,
+        "Y": 972.06147627989185
+      },
+      {
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
+        "Id": "ea987c71366b4d3880edb43ebf1abd1e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 664.67338689124688,
-        "Y": 868.34358310592552
+        "X": 437.06090147148711,
+        "Y": 456.4946931203749
+      },
+      {
+        "Name": "Categories",
+        "ShowGeometry": true,
+        "Id": "409aec9c9ed646a1ba2d36ce2e9d24d2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 28.375230298878222,
+        "Y": 457.359674839739
+      },
+      {
+        "Name": "Watch",
+        "ShowGeometry": true,
+        "Id": "cc4d42a0673d48109e0c4c2bf4fb1dfd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": true,
+        "Excluded": false,
+        "X": 1446.3005403041971,
+        "Y": 316.20031526043738
       }
     ],
     "Annotations": [],
-    "X": 31.337550465420236,
-    "Y": 89.8895092661295,
-    "Zoom": 0.434630233467839
+    "X": -283.20237659318866,
+    "Y": 32.920807701204239,
+    "Zoom": 0.50625880042828875
   }
 }
