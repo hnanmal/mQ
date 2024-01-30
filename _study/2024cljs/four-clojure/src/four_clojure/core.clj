@@ -92,9 +92,9 @@
    list*
    (map #(re-find #"\w" (str %)))
    (filter #(not (nil? %)))
-   (filter #(Integer. (re-find  #"\d+" %)))
-  ;;  (filter (fn [x] (= (str x) (clojure.string/upper-case x))))
-  ;;  (apply str) 
+   (filter #(not (re-find  #"[0-9.]+" (str %))))
+   (filter (fn [x] (= (str x) (clojure.string/upper-case x))))
+   (apply str) 
    ))
 
 (get-caps target)
@@ -107,16 +107,29 @@
 (= "C" (clojure.string/upper-case \c))
 (clojure.string/upper-case "c")
 
-(map #(re-find #"\w" (str %)) (seq "HLO, WRD!"))
 
-(re-find #"\w(.*)" "HLO, WRD!")
+(map #(not (re-find #"[0-9.]+" (str %))) (seq "$#A(*&987Zf"))
 
-(seq "HLO, WRD!")
-(list* "HLO, WRD!")
+(type (nth (map (fn [x] x) (seq "$#A(*&987Zf")) 1))
 
-(integer? "2")
+(re-find #"\w(.)" "HLO, WRD!")
 
-(Integer. (re-find  #"\d+" "$#A(*&987Zf"))
-(re-find  #"\w+" "$#A(*&987Zf")
-(re-find  #"\w+" "$#A(*&987Zf")
-(re-find  #"\w+" "$#A(*&987Zf")
+
+;; Problem 30 Compress a Sequence
+
+(defn comp-seq [col]
+  (->>
+   col
+  ;;  set
+   (group-by #(= (first %) (fnext %)))
+   ))
+
+(comp-seq "Leeeeeerrroyyy")
+(->>
+ "Leeeeeerrroyyy"
+ set
+ sort
+ (apply str)
+ )
+
+(comp-seq [1 1 2 3 3 2 2 3])
