@@ -118,18 +118,32 @@
 ;; Problem 30 Compress a Sequence
 
 (defn comp-seq [col]
-  (->>
-   col
-  ;;  set
-   (group-by #(= (first %) (fnext %)))
-   ))
+  (loop [src col
+         target (peek src)
+         res '()]
+    (if (= (count src) 0)
+      (res)
+      (if (some #{target} src)
+        (recur (pop src) (peek src) (res))
+        (recur (pop src) (peek (pop src)) (conj res (peek (pop src))))))
+   )
+)
+
+(comp-seq [1 1 2 3 3 4 5 5 5])
+
+(peek [1 2 3])
+(first [1 2 3])
+(peek '(1 2 3))
+(first '(1 2 3))
+(pop '(1 2 3)) 
+(pop [1 2 3])
 
 (comp-seq "Leeeeeerrroyyy")
 (->>
  "Leeeeeerrroyyy"
  set
  sort
- (apply str)
+;;  (apply str)
  )
-
+(some #{6} [6 7 8])
 (comp-seq [1 1 2 3 3 2 2 3])
