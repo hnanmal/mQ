@@ -12,7 +12,7 @@
       "Name": "File Path : Family List ",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\..\\..\\..\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
+      "Value": "..\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     }
@@ -30,7 +30,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nhtmlPath = IN[1]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ncwd = find_cwd()\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    folderPath = f\"{cwd}\\\\.dynLog\"\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"htmlResult_{timeStamp}.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    #timeStamp = time.strftime('%Y-%m-%d | %H:%M:%S', time.localtime(time.time()))\r\n    #timeStamp_ = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #f.write('End :::'+timeStamp+'::: \\n')\r\n    #for i in lst:\r\n    #    f.write(str(i)+'\\n')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef execute_file(fileName):\r\n    cwd = find_cwd()\r\n    folderPath = f\"{cwd}\\\\.dynLog\"\r\n    os.chdir(folderPath)\r\n    subprocess.run(args=[fileName], shell=True)\r\n    \r\n\r\nfileName = make_resultHTMLname(contents,\"test3\",cwd)\r\n\r\nresult = execute_file(fileName)\r\n\r\n#subprocess.run(args=[\"aaa.html\"], shell=True)\r\n# Assign your output to the OUT variable.\r\nOUT = fileName.split('.')[0]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = folderPath\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"FamilyTypes Check Result_{timeStamp}.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef execute_file(fileName):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    subprocess.run(args=[fileName], shell=True)\r\n    \r\n\r\nfileName = make_resultHTMLname(contents,\"test3\",cwd)\r\n\r\nresult = execute_file(fileName)\r\n\r\n#subprocess.run(args=[\"aaa.html\"], shell=True)\r\n# Assign your output to the OUT variable.\r\nOUT = fileName.split('.')[0]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -72,7 +72,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncssPart = IN[0]\r\ntablePart = IN[1]\r\nhtmlPath = IN[2]\r\n# Place your code below this line\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n\r\n<head>\r\n\t<meta charset=\"UTF-8\">\r\n\t<title>CSS Lists</title>\r\n\t<style>\r\n        {cssPart}\r\n\t</style>\r\n</head>\r\n\r\n<body>\r\n    {tablePart}\r\n</body>\r\n\r\n</html>\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\npjt_bdName = IN[0]\r\ncssPart = IN[1]\r\ntablePart = IN[2]\r\nfolderPath = IN[3]\r\n\r\n# Place your code below this line\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n\r\n<head>\r\n\t<meta charset=\"UTF-8\">\r\n\t<title>Family Types Check Result</title>\r\n\t<style>\r\n        {cssPart}\r\n\t</style>\r\n</head>\r\n\r\n<body>\r\n    <h3>Family Types Check Result - Revit & Excel</h3>\r\n    <h5>Project/Building Information : {pjt_bdName}</h5>\r\n    <h5>Check Result Path : </h5>\r\n    <p><blockquote>{folderPath}</blockquote></p>\r\n    \r\n    <div>\r\n    {tablePart}\r\n    </div>\r\n</body>\r\n\r\n</html>\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -100,6 +100,15 @@
           "Id": "d8a16d89c732450eb8edd21c000ab2a8",
           "Name": "IN[2]",
           "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1c20e80a757a4f4896ae186ad92215b5",
+          "Name": "IN[3]",
+          "Description": "Input #3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -537,8 +546,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
-      "InputValue": "..\\..\\..\\..\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
+      "HintPath": "C:\\MK\\mQ\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
+      "InputValue": "..\\hecCalc\\2023\\documentum\\0_Publish\\플랜트건축팀_BIM_팀 표준 Family List_Rev.0_시연용_20231107.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "99dc7cb1566d41bbacd757279acdee59",
       "Inputs": [],
@@ -1768,7 +1777,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ncssPart = '''\r\n        table {\r\n        border-collapse: collapse;\r\n        width: 100%;\r\n        }\r\n        \r\n        th {\r\n        text-align: center;\r\n        }\r\n\r\n        th, td {\r\n        padding: 10px;\r\n        border-bottom: 1px solid #808080;\r\n        }\r\n\r\n        /* 커서 갖다대면 색깔이 바뀌며 직관적으로 표현한다 */\r\n        tr:hover { background-color: #F5F5F5; }\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = cssPart",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ncssPart = '''\r\n        table {\r\n        border-collapse: collapse;\r\n        width: 100%;\r\n        }\r\n        \r\n        th {\r\n        text-align: center;\r\n        }\r\n\r\n        th, td {\r\n        padding: 10px;\r\n        border-bottom: 1px solid #808080;\r\n        }\r\n        \r\n        td {\r\n        border-right: 1px solid #808080;\r\n        }\r\n\r\n        /* 커서 갖다대면 색깔이 바뀌며 직관적으로 표현한다 */\r\n        tr:hover { background-color: #F5F5F5; }\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = cssPart",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1873,7 +1882,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nrows = IN[0]\r\nhdr = rows[0]\r\n# Place your code below this line\r\ndef make_th(hdr):\r\n    preStr = \"<tr>\"\r\n    postStr = \"</tr>\"\r\n    hdrStrs = list(map(lambda x: f\"<th>{x}</th>\", hdr))\r\n    res = \"\\n\".join([preStr]+hdrStrs+[postStr])\r\n    return res\r\n\r\ndef make_tr(row):\r\n    preStr = \"<tr>\"\r\n    postStr = \"</tr>\"\r\n    rowStrs = list(map(lambda x: f\"<td>{x}</td>\", row))\r\n    res = \"\\n\".join([preStr]+rowStrs+[postStr])\r\n    return res\r\n\r\ndef make_trs(rows):\r\n    rowsWithoutHdr = rows[1:]\r\n    rowsStrs = list(map(make_tr, rowsWithoutHdr))\r\n    res = \"\\n\".join(rowsStrs)\r\n    return res\r\n\r\ndef make_wholeTable(th,trs):\r\n    preStr = \"<table>\"\r\n    postStr = \"</table>\"\r\n    res = \"\\n\".join([preStr, th, trs, postStr])\r\n    return res\r\n# Assign your output to the OUT variable.\r\nOUT = make_wholeTable(make_th(hdr), make_trs(rows))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nrows = IN[0]\r\nhdr = rows[0]\r\n# Place your code below this line\r\ndef make_th(hdr):\r\n    preStr = \"<tr>\"\r\n    postStr = \"</tr>\"\r\n    hdrStrs = list(map(lambda x: f\"<th>{x}</th>\", hdr))\r\n    res = \"\\n\".join([preStr]+hdrStrs+[postStr])\r\n    return res\r\n\r\ndef make_tr(row):\r\n    preStr = \"<tr>\"\r\n    postStr = \"</tr>\"\r\n    if row[0] != \"\":\r\n        rowStrs = list(map(lambda x: f\"<th>{x}</th>\", row))\r\n    else:\r\n        rowStrs = list(map(lambda x: f\"<td>{x}</td>\", row))\r\n    res = \"\\n\".join([preStr]+rowStrs+[postStr])\r\n    return res\r\n\r\ndef make_trs(rows):\r\n    rowsWithoutHdr = rows[1:]\r\n    rowsStrs = list(map(make_tr, rowsWithoutHdr))\r\n    res = \"\\n\".join(rowsStrs)\r\n    return res\r\n\r\ndef make_wholeTable(th,trs):\r\n    preStr = \"<table>\"\r\n    postStr = \"</table>\"\r\n    res = \"\\n\".join([preStr, th, trs, postStr])\r\n    return res\r\n# Assign your output to the OUT variable.\r\nOUT = make_wholeTable(make_th(hdr), make_trs(rows))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1906,7 +1915,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport time\r\nimport subprocess\r\nimport os\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ncwd = find_cwd()\r\n\r\n\r\ntimeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\nfolderPath = f\"{cwd}\\\\.dynLog\"\r\nif not os.path.exists(folderPath):\r\n    os.makedirs(folderPath)\r\nfileName = f\"htmlResult_{timeStamp}.html\"\r\nfilePath = f\"{folderPath}\\\\\" + fileName\r\n# Assign your output to the OUT variable.\r\nOUT = filePath",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport time\r\nimport subprocess\r\nimport os\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ncwd = find_cwd()\r\n\r\n\r\ntimeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\nfolderPath = f\"{cwd}\\\\.dynLog\"\r\nif not os.path.exists(folderPath):\r\n    os.makedirs(folderPath)\r\nfileName = f\"htmlResult_{timeStamp}.html\"\r\nfilePath = f\"{folderPath}\\\\\" + fileName\r\n# Assign your output to the OUT variable.\r\nOUT = folderPath",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1935,6 +1944,235 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "1cd63db5faeb47359369de17cc9ea200",
+      "Inputs": [
+        {
+          "Id": "3ea260f0c6db4032b67d18ee0dfd39c2",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8d88d0354f614a5eb1a0273aabbf771f",
+          "Name": "Elements",
+          "Description": "An element class.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 437,
+      "SelectedString": "OST_ProjectInformation",
+      "NodeType": "ExtensionNode",
+      "Id": "a486b48e59944c00beef98332422f346",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "7e06c4bb6baf4e8aac74ac3d411a4ef3",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "82cff42f9c8a47e1ac924603403b9e5b",
+      "Inputs": [
+        {
+          "Id": "d512366aafc74004a34c9b160566f4d5",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8fe94422cf0448c1a28733fd6ec27a96",
+          "Name": "parameterName",
+          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 1,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8d7fbd24d20945b6ba50e45195b44170",
+          "Name": "var[]..[]",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n\"Project Name\",\n\"Building Name\"\n];",
+      "Id": "4d228addc42d4b0796ad636e084fe63b",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "5ff1557c22c444a19b314b72fa73f3c1",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.FirstItem@var[]..[]",
+      "Id": "b9e325b3fa8c4858bde7874f2e66366c",
+      "Inputs": [
+        {
+          "Id": "b9be935ebaac470db28fc71518085c30",
+          "Name": "list",
+          "Description": "List to get the first item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2f5bbd1a2d0c414eb853e935a1a589b6",
+          "Name": "item",
+          "Description": "First item in the list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns the first item in a list.\n\nList.FirstItem (list: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
+      "FunctionSignature": "DSCore.String.Join@string,string[]",
+      "FunctionType": "VariableArgument",
+      "NodeType": "FunctionNode",
+      "Id": "fc99f3ee3aa0482ca650bf1dd04825b4",
+      "Inputs": [
+        {
+          "Id": "547dbf83d406409f91d88e11477fb4d6",
+          "Name": "separator",
+          "Description": "String to be inserted between joined strings.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e827a60f790d4386859f109e424454cf",
+          "Name": "string0",
+          "Description": "Strings to be joined into a single string.\n\nstring[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2944fce9c5024787afe3052fb4a1afcf",
+          "Name": "string",
+          "Description": "A string made from the list of strings including the separator character.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Concatenates multiple strings into a single string, inserting the given separator between each joined string.\n\nString.Join (separator: string, strings: string[]): string"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\" - \";",
+      "Id": "3dc71e45bb434f36812ca55a23db619c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "04c74903a6d04925a814fef6ab4886e9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.FirstItem@var[]..[]",
+      "Id": "8c5246235b6a4348ab0a5a9feedc86da",
+      "Inputs": [
+        {
+          "Id": "3d07357e1e194709ba596c7291779891",
+          "Name": "list",
+          "Description": "List to get the first item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8d6ce861dc414312b0bc390de2142f5b",
+          "Name": "item",
+          "Description": "First item in the list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns the first item in a list.\n\nList.FirstItem (list: var[]..[]): var[]..[]"
     }
   ],
   "Connectors": [
@@ -2257,6 +2495,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "5289cdb5d5d94bb8bbcb74770befda17",
+      "End": "fffadde0834c4a4aa33390374c6623ae",
+      "Id": "a243e4b295024093860475f62d909980",
+      "IsHidden": "False"
+    },
+    {
       "Start": "c3e03aeaa1bf49db8319d562610ab5c0",
       "End": "051188353c8b4eb2b5bffb18880981a4",
       "Id": "fd67c51f648b4b7c940fee0eda78c1ee",
@@ -2281,12 +2525,6 @@
       "IsHidden": "False"
     },
     {
-      "Start": "004aa90a8d25440b85b0822862242aae",
-      "End": "fffadde0834c4a4aa33390374c6623ae",
-      "Id": "2fd4c0bc921c407ab3be2d7b6a13863b",
-      "IsHidden": "False"
-    },
-    {
       "Start": "226c58ef60804415a89175dbb28d8de7",
       "End": "19d69605f3b0494183046600773f2d6f",
       "Id": "942f079209b34204b7f891737e8eb257",
@@ -2300,8 +2538,8 @@
     },
     {
       "Start": "9c3d8035bc4148558e65d6bf2512aefc",
-      "End": "5817ae8173fe4c1787d71826440e2773",
-      "Id": "bbcc2e2ef7d948a3b2aeb5e993e9ee57",
+      "End": "94ebcdc1c2fd40d6ac09cd37a6d28a44",
+      "Id": "8abd840285e84ce99086d87f5d45a03c",
       "IsHidden": "False"
     },
     {
@@ -2318,20 +2556,68 @@
     },
     {
       "Start": "06d05e2503ec4677ac3166fae9f31628",
-      "End": "94ebcdc1c2fd40d6ac09cd37a6d28a44",
-      "Id": "80004cae64a241b9b931515b1bd31cbf",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "63ec65b9a9c54aa89396b6a8faf4071d",
       "End": "d8a16d89c732450eb8edd21c000ab2a8",
-      "Id": "88b5c7afb8d54e47a230bbb0ae86ca41",
+      "Id": "15682f7280f74bb2b1f370f722c9a43c",
       "IsHidden": "False"
     },
     {
       "Start": "63ec65b9a9c54aa89396b6a8faf4071d",
       "End": "252f38547e3b483b917fa963345e8932",
       "Id": "daa70d82e5634a8b8db29f8f9300e03e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "63ec65b9a9c54aa89396b6a8faf4071d",
+      "End": "1c20e80a757a4f4896ae186ad92215b5",
+      "Id": "7e597f878b0240b5ae798ac6b7614457",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8d88d0354f614a5eb1a0273aabbf771f",
+      "End": "b9be935ebaac470db28fc71518085c30",
+      "Id": "e89c164ea6174a309c3cf7cde2a256f9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7e06c4bb6baf4e8aac74ac3d411a4ef3",
+      "End": "3ea260f0c6db4032b67d18ee0dfd39c2",
+      "Id": "49c24f925215478cb8f475270ef97cc2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8d7fbd24d20945b6ba50e45195b44170",
+      "End": "e827a60f790d4386859f109e424454cf",
+      "Id": "fd6abc97932c407ca088a3b73fdf611c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5ff1557c22c444a19b314b72fa73f3c1",
+      "End": "8fe94422cf0448c1a28733fd6ec27a96",
+      "Id": "321fa02a9a2340bd8c8527519ebe558f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2f5bbd1a2d0c414eb853e935a1a589b6",
+      "End": "d512366aafc74004a34c9b160566f4d5",
+      "Id": "f368234d3a324109af041910bb506f3a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2944fce9c5024787afe3052fb4a1afcf",
+      "End": "3d07357e1e194709ba596c7291779891",
+      "Id": "75c4ef59c2374a568ac45af31b7e9998",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "04c74903a6d04925a814fef6ab4886e9",
+      "End": "547dbf83d406409f91d88e11477fb4d6",
+      "Id": "db900a16257343e68203dd2d60fc6cae",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8d6ce861dc414312b0bc390de2142f5b",
+      "End": "5817ae8173fe4c1787d71826440e2773",
+      "Id": "6b6cd1fff01448b6a79390573a391640",
       "IsHidden": "False"
     }
   ],
@@ -2393,574 +2679,654 @@
     "ConnectorPins": [],
     "NodeViews": [
       {
-        "Name": "Create HTML file and Open",
-        "ShowGeometry": true,
         "Id": "2cabe6edaa864378b8e899ddf0c9c539",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Name": "Create HTML file and Open",
+        "ShowGeometry": true,
+        "Excluded": false,
         "X": 6260.82015091242,
         "Y": 1765.8110523468915
       },
       {
-        "Name": "make_htmlStr",
-        "ShowGeometry": true,
         "Id": "a913887f8e4045b1be829bfeb6a36cf7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "make_htmlStr",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5981.82015091242,
         "Y": 1765.8110523468915
       },
       {
-        "Name": "All Elements of Category",
-        "ShowGeometry": true,
         "Id": "78239378beaf436f827b1dcd0caf5cbf",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 226.0327881986168,
         "Y": 1419.7518381928444
       },
       {
-        "Name": "Categories",
-        "ShowGeometry": true,
         "Id": "7e20c2e7e60d487cab5bf3217e8de243",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Categories",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -109.9672118013832,
         "Y": 1419.7518381928444
       },
       {
-        "Name": "allFamilyTypesPerCat",
-        "ShowGeometry": true,
         "Id": "9d4e07eb84a24d9daeabaa773966ebf0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "allFamilyTypesPerCat",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1029.0327881986168,
         "Y": 1328.7518381928444
       },
       {
-        "Name": "FamilyType.Name",
-        "ShowGeometry": true,
         "Id": "2d983678cd124be49367b4e573ce56bc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "FamilyType.Name",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1362.0327881986168,
         "Y": 1366.7518381928444
       },
       {
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
         "Id": "9d650c2f7d944978bf91568a2d2b91e4",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 583.0327881986168,
         "Y": 1476.7518381928444
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "adcf4bcceee24e15a87f7a637ebffaa8",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 226.0327881986168,
         "Y": 1567.5793381928443
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "2f02036c70f748088ea8dcf78d78dcea",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1029.0327881986168,
         "Y": 1624.5793381928443
       },
       {
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
         "Id": "b4adf57542fb42e3bb0ee14a3958d489",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1362.0327881986168,
         "Y": 1514.7518381928444
       },
       {
-        "Name": "List.UniqueItems",
-        "ShowGeometry": true,
         "Id": "d95e73e372a2449abb29dd7fb1d0af3e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.UniqueItems",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1029.0327881986168,
         "Y": 1476.7518381928444
       },
       {
-        "Name": "List.Insert",
-        "ShowGeometry": true,
         "Id": "3b262fe8a4af4b8c8eb5c5290d635bfa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.Insert",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1808.0327881986168,
         "Y": 1490.7518381928444
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "cea7b8bc0c854de4b65dea024b706054",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1362.0327881986168,
         "Y": 1692.5793381928443
       },
       {
-        "Name": "Data.ImportExcel",
-        "ShowGeometry": true,
         "Id": "7fad48ce1b7741439ec401e93078e09b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Data.ImportExcel",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2446.4562643253203,
         "Y": 2440.0550626009676
       },
       {
-        "Name": "File From Path",
-        "ShowGeometry": true,
         "Id": "6668770721804c3abd6de4a533d22aaa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "File From Path",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2892.7258057374238,
         "Y": 2445.4673831517516
       },
       {
-        "Name": "File Path : Family List ",
-        "ShowGeometry": true,
         "Id": "99dc7cb1566d41bbacd757279acdee59",
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
+        "Name": "File Path : Family List ",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -3705.2677635194709,
         "Y": 2226.1716051391672
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "4867f297ec224bdbad1d7dde516ece8c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -3007.6845148873467,
         "Y": 2606.5893860320484
       },
       {
-        "Name": "Boolean",
-        "ShowGeometry": true,
         "Id": "25a03f510ca64886924d3f6ab1429684",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Boolean",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -2726.5544433259615,
         "Y": 2701.1590307155766
       },
       {
-        "Name": "Excel data dictionarizationScript",
-        "ShowGeometry": true,
         "Id": "f83769bfe6844213876c8e52b05e82d3",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Excel data dictionarizationScript",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1531.0321420422906,
         "Y": 2292.3153082985964
       },
       {
-        "Name": "lang_mode(영/한) select",
-        "ShowGeometry": true,
         "Id": "5ae4707de2a1481897939bcfadee129c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "lang_mode(영/한) select",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1888.0321420422906,
         "Y": 2292.3153082985964
       },
       {
-        "Name": "Dictionary.Keys",
-        "ShowGeometry": true,
         "Id": "c25ac96ef9a54c4a930ad2cc791a44f0",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Keys",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 825.96785795770938,
         "Y": 2275.8153082985964
       },
       {
-        "Name": "Dictionary.Values",
-        "ShowGeometry": true,
         "Id": "7adba81c4ee944d3a55f1bca9648780a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.Values",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1115.0321420422906,
         "Y": 2308.8153082985964
       },
       {
-        "Name": "Dictionary.ValueAtKey",
-        "ShowGeometry": true,
         "Id": "41119b47edeb4934bdd60a072611d385",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -788.03214204229062,
         "Y": 2365.8153082985964
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "757dd99937764674a9423b9adafd1385",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -1115.0321420422906,
         "Y": 2456.6428082985963
       },
       {
-        "Name": "List.Flatten",
-        "ShowGeometry": true,
         "Id": "dea307190fc74a64b3f72a5497a03bfd",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.Flatten",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -150.03214204229062,
         "Y": 2365.8153082985964
       },
       {
-        "Name": "List.GroupByKey",
-        "ShowGeometry": true,
         "Id": "768b4404f7b549f18e38d2b8bc6a5cae",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.GroupByKey",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1140.9678579577094,
         "Y": 2275.8153082985964
       },
       {
-        "Name": "List.UniqueItems",
-        "ShowGeometry": true,
         "Id": "cb017ec627dd4b8aad9c57efb9595d6c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.UniqueItems",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": -450.03214204229062,
         "Y": 2365.8153082985964
       },
       {
-        "Name": "Dictionary.ByKeysValues",
-        "ShowGeometry": true,
         "Id": "aef9b0def95242d3b0c134278f7eca57",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.ByKeysValues",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1464.9678579577094,
         "Y": 2275.8153082985964
       },
       {
-        "Name": "List.UniqueItems",
-        "ShowGeometry": true,
         "Id": "05adeb1cfa6e4a91bebfa3f1d4b71c70",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.UniqueItems",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 144.96785795770938,
         "Y": 2421.8153082985964
       },
       {
-        "Name": "String.Split",
-        "ShowGeometry": true,
         "Id": "956c0971229d4f62a6de05cbd39af66f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String.Split",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 444.96785795770938,
         "Y": 2487.8153082985964
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "466a9d5a12c645a7bc9ae4fa14926a83",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 144.96785795770938,
         "Y": 2570.6428082985963
       },
       {
-        "Name": "List.FirstItem",
-        "ShowGeometry": true,
         "Id": "63c10ffd123442fc81bedb3496122ebb",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.FirstItem",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 825.96785795770938,
         "Y": 2487.8153082985964
       },
       {
-        "Name": "String.ToNumber",
-        "ShowGeometry": true,
         "Id": "21fb33c4e5354ba5878ba5e8eb5d2683",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "String.ToNumber",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1140.9678579577094,
         "Y": 2487.8153082985964
       },
       {
-        "Name": "List.SortByKey",
-        "ShowGeometry": true,
         "Id": "aae00f786dc34be4b43a6292153a902f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.SortByKey",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1464.9678579577094,
         "Y": 2453.8153082985964
       },
       {
-        "Name": "Dictionary.ValueAtKey",
-        "ShowGeometry": true,
         "Id": "b66e9c308f364b25879cbc0155b3c577",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 1822.9678579577094,
         "Y": 2347.8153082985964
       },
       {
-        "Name": "From Revit",
-        "ShowGeometry": true,
         "Id": "c0266473b27f4a7d9b98927dc317a14f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "From Revit",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2423.9575488759392,
         "Y": 1925.5657203765113
       },
       {
-        "Name": "From Excel",
-        "ShowGeometry": true,
         "Id": "0cb63f541748456e8ad7ce4c9141d77b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "From Excel",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2432.4490415237178,
         "Y": 2133.2103709030525
       },
       {
-        "Name": "make pairDictList",
-        "ShowGeometry": true,
         "Id": "b3941999ff4c4b48a5ed73f559d18577",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "make pairDictList",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2762.7375818064243,
         "Y": 2102.0712394272746
       },
       {
-        "Name": "Formatting for Excel_old",
-        "ShowGeometry": true,
         "Id": "99e65a4157b44f768cddfc74ab4bfa94",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Formatting for Excel_old",
+        "ShowGeometry": true,
         "Excluded": true,
         "X": 2707.7387245305936,
         "Y": 1666.7516751808118
       },
       {
-        "Name": "Data.ExportToExcel",
-        "ShowGeometry": true,
         "Id": "def80b8d6fdf4fd48ee0b710f759aa00",
         "IsSetAsInput": false,
         "IsSetAsOutput": true,
+        "Name": "Data.ExportToExcel",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 7360.5923398880286,
         "Y": 2591.4375206301552
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "97e0a90cf4dc4b2cbecb8f16f2abf5dc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 7086.5923398880286,
         "Y": 2628.2650206301546
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "0f9a66c5651a4ea8afb78864104a2e33",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 7086.5923398880286,
         "Y": 2776.0925206301549
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "2d08d2c2788a454f876bb43a7a09dd57",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2581.1085396881958,
         "Y": 2771.7242961844058
       },
       {
-        "Name": "List.AddItemToEnd",
-        "ShowGeometry": true,
         "Id": "a1b7e2d21af34b06bdecbf261d9e179f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.AddItemToEnd",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2977.7299025337711,
         "Y": 2693.3429522934503
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "b8ef1fcb8a0c45f5a765b2554fe1942f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 2708.5969769400845,
         "Y": 2569.1425636338195
       },
       {
-        "Name": "List.AddItemToFront",
-        "ShowGeometry": true,
         "Id": "f4b8d6618c974c6a99864aa06964a1b6",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.AddItemToFront",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3773.9705576395563,
         "Y": 2402.8023363076481
       },
       {
-        "Name": "List.Flatten",
-        "ShowGeometry": true,
         "Id": "64c3b4e33a52400696df80523bf1e591",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.Flatten",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4586.5655770616286,
         "Y": 2419.834049764167
       },
       {
-        "Name": "List.AddItemToFront",
-        "ShowGeometry": true,
         "Id": "a40a7d2d764c4e1a9f5b69b3211765a5",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.AddItemToFront",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4987.0974864594909,
         "Y": 2195.7464079382003
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "c737b55046464c2baf66770f12e22a41",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4669.2582659168847,
         "Y": 2040.6687736103295
       },
       {
-        "Name": "List.AddItemToFront",
-        "ShowGeometry": true,
         "Id": "5194d65da09f4c56b28347d41d4e7a27",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.AddItemToFront",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 4217.241570872965,
         "Y": 2545.8434723043624
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
         "Id": "2b0ad83288324919bcc88d28f7755ec4",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3841.1270137468182,
         "Y": 2955.0780410938828
       },
       {
-        "Name": "make_resultFilePath",
-        "ShowGeometry": true,
         "Id": "737a3265420c49f09598017510ceb4bb",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "make_resultFilePath",
+        "ShowGeometry": true,
         "Excluded": true,
         "X": 7086.5923398880286,
         "Y": 2480.4375206301547
       },
       {
-        "Name": "cssPart",
-        "ShowGeometry": true,
         "Id": "89ef1e64f32e4decb97dda06d2b55d2b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "cssPart",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5718.82015091242,
         "Y": 1708.8110523468915
       },
       {
-        "Name": "Formatting for Excel",
-        "ShowGeometry": true,
         "Id": "b31641bb075d472db53348c7577f33dc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "Formatting for Excel",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3178.6542370466245,
         "Y": 2094.8784387616124
       },
       {
-        "Name": "List.AddItemToEnd",
-        "ShowGeometry": true,
         "Id": "521f611943624ad698ce837980e4abbc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "List.AddItemToEnd",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 3228.4439966643031,
         "Y": 2585.7007008060136
       },
       {
-        "Name": "tablePart_",
-        "ShowGeometry": true,
         "Id": "f6d8103f6bbc435cb803358247c5bfa1",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "tablePart_",
+        "ShowGeometry": true,
         "Excluded": false,
         "X": 5718.82015091242,
         "Y": 1856.8110523468915
       },
       {
-        "Name": "htmlPath",
-        "ShowGeometry": true,
         "Id": "39626987d7594096932c5d06e53aad94",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
+        "Name": "htmlPath",
+        "ShowGeometry": true,
         "Excluded": false,
-        "X": 5814.7605604051232,
-        "Y": 2093.0313921377751
+        "X": 5657.9280612639,
+        "Y": 2107.4764907428876
+      },
+      {
+        "Id": "1cd63db5faeb47359369de17cc9ea200",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 3981.2219112769662,
+        "Y": 968.90491894955585
+      },
+      {
+        "Id": "a486b48e59944c00beef98332422f346",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Categories",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 3617.2219112769662,
+        "Y": 968.90491894955585
+      },
+      {
+        "Id": "82cff42f9c8a47e1ac924603403b9e5b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 4640.2219112769662,
+        "Y": 1205.5839739706159
+      },
+      {
+        "Id": "4d228addc42d4b0796ad636e084fe63b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 4338.2219112769662,
+        "Y": 1296.411473970616
+      },
+      {
+        "Id": "b9e325b3fa8c4858bde7874f2e66366c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "List.FirstItem",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 4338.2219112769662,
+        "Y": 1148.5839739706159
+      },
+      {
+        "Id": "fc99f3ee3aa0482ca650bf1dd04825b4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "String.Join",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 5086.2219112769662,
+        "Y": 1114.5839739706159
+      },
+      {
+        "Id": "3dc71e45bb434f36812ca55a23db619c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 4640.2219112769662,
+        "Y": 1057.411473970616
+      },
+      {
+        "Id": "8c5246235b6a4348ab0a5a9feedc86da",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Name": "List.FirstItem",
+        "ShowGeometry": true,
+        "Excluded": false,
+        "X": 5453.2219112769662,
+        "Y": 1114.5839739706159
       }
     ],
     "Annotations": [
@@ -3077,7 +3443,7 @@
         "Height": 564.00000000000045,
         "FontSize": 72.0,
         "InitialTop": 2480.4375206301547,
-        "InitialHeight": 440.82749999999987,
+        "InitialHeight": 440.6550000000002,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
@@ -3098,16 +3464,44 @@
         "Left": 5708.82015091242,
         "Top": 1592.8110523468915,
         "Width": 833.0,
-        "Height": 396.0,
+        "Height": 405.0,
         "FontSize": 72.0,
         "InitialTop": 1708.8110523468915,
         "InitialHeight": 293.0,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "2b61209e51074bc7bf36819373a00440",
+        "Title": "Get PJT & Building Name",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "1cd63db5faeb47359369de17cc9ea200",
+          "a486b48e59944c00beef98332422f346",
+          "82cff42f9c8a47e1ac924603403b9e5b",
+          "4d228addc42d4b0796ad636e084fe63b",
+          "b9e325b3fa8c4858bde7874f2e66366c",
+          "fc99f3ee3aa0482ca650bf1dd04825b4",
+          "3dc71e45bb434f36812ca55a23db619c",
+          "8c5246235b6a4348ab0a5a9feedc86da"
+        ],
+        "HasNestedGroups": false,
+        "Left": 3607.2219112769662,
+        "Top": 895.90491894955585,
+        "Width": 2032.0,
+        "Height": 574.50655502106019,
+        "FontSize": 36.0,
+        "InitialTop": 968.90491894955585,
+        "InitialHeight": 543.15789577840667,
+        "TextblockHeight": 63.0,
+        "Background": "#FFC1D676"
       }
     ],
-    "X": -6406.0511414740749,
-    "Y": -1935.4167825846607,
-    "Zoom": 1.1454634453645112
+    "X": -4447.2899207598994,
+    "Y": -1322.9935472395721,
+    "Zoom": 0.85123001038837842
   }
 }
