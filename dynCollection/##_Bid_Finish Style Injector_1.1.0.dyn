@@ -4,7 +4,12 @@
   "Description": "Inject Finish Style Data in Building List into Revit Key Schedule",
   "Name": "##_Bid_Finish Style Injector_1.1.0",
   "ElementResolver": {
-    "ResolutionMap": {}
+    "ResolutionMap": {
+      "DesignScript.Builtin.Dictionary": {
+        "Key": "DesignScript.Builtin.Dictionary",
+        "Value": "DesignScriptBuiltin.dll"
+      }
+    }
   },
   "Inputs": [
     {
@@ -12,7 +17,7 @@
       "Name": "빌딩리스트 경로",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\..\\..\\_SACE2\\30퍼센트모델링\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
+      "Value": "..\\etc\\_팀교육\\팀표준 최종 검토\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -21,9 +26,9 @@
       "Name": "Finish Category 선택",
       "Type": "selection",
       "Type2": "dropdownSelection",
-      "Value": "A_Floor Finish",
+      "Value": "E_Wall Style",
       "Description": "A dropdown menu with customizable values.",
-      "SelectedIndex": 0
+      "SelectedIndex": 4
     }
   ],
   "Outputs": [],
@@ -529,8 +534,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\_SACE2\\30퍼센트모델링\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
-      "InputValue": "..\\..\\..\\_SACE2\\30퍼센트모델링\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
+      "HintPath": "C:\\MK\\mQ\\etc\\_팀교육\\팀표준 최종 검토\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
+      "InputValue": "..\\etc\\_팀교육\\팀표준 최종 검토\\revit작업\\플랜트건축팀_BIM_팀 표준마감_Building List_Rev.A_for 입찰Tool_2023.12.15_mk.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "7b92e55138f3489ca52142fcca7f7512",
       "Inputs": [],
@@ -683,7 +688,7 @@
           "Item": "0"
         },
         {
-          "Name": "B_Base Finish",
+          "Name": "B_Skirt Finish",
           "Item": "1"
         },
         {
@@ -711,8 +716,8 @@
           "Item": "7"
         }
       ],
-      "SelectedIndex": 0,
-      "SelectedString": "A_Floor Finish",
+      "SelectedIndex": 4,
+      "SelectedString": "E_Wall Style",
       "NodeType": "ExtensionNode",
       "Id": "8c98f24029a4497aac14423d93e3fb15",
       "Inputs": [],
@@ -895,502 +900,6 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Floor\", \"Base\", \"Wall\", \"Ceiling\", \"Exterior Wall\", \"Roof\"];\n5;\n // 시작row 인덱스;",
-      "Id": "50c563e59cf34cf489e62dadfe7f663d",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "9dd97c5824c749a68a1d477ad9d38785",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "55ac39bfa3b24dfe85f45d816c9c7fa9",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\n#headers = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\nheaders = sorted(find_headersAtSheet(sheet),key=lambda x:find_headersAtSheet(sheet)[x])\r\ndel headers[0]\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Exterior Wall\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        eff_cat_hdrs = list(filter(lambda x: x!=None, cat_hdrsRow[2:]))\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return [eff_cat_hdrs, dict(zip(catTypeName,dicts_final))]\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\ndef make_finalForm_forOtherFinishStyle(dictsAIO):\r\n    #infFinish_order = [\"Floor\", \"Base\", \"Wall\", \"Ceiling\"]\r\n    \r\n    final_output = []\r\n\r\n    styleTypes = dictsAIO.values()\r\n    for styleType in styleTypes:\r\n        keys = styleType[0]\r\n        dd = styleType[1:][0].values()\r\n        tmp = []\r\n        for i in dd:\r\n            tmp = []\r\n            for k in keys:\r\n                tmp.append(i[k])\r\n            final_output.append(tmp)\r\n\r\n\r\n    return final_output\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = make_finalForm_forOtherFinishStyle(dictsAIO)\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "8dcc567c6e7a4764aa2e02daf8bc508d",
-      "Inputs": [
-        {
-          "Id": "d1142526a1604746b838c5d2cf7a1979",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "4e74ba990d604c2baae1e022a6fde9d8",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "46251b36c80342f6bb25542ae0d39e4c",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "fa41732ecc234dbfab0c8f2c67c1e46b",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Exterior Wall\", \"Interior Wall\"];\n5;\n // 시작row 인덱스;",
-      "Id": "199be1b40deb451cb099944bed05cf5f",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "60c62dc8154a44a9939d8fb8199ce6eb",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "393e2ae7bc7c44adb93482821e431751",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\n#headers = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\nheaders = sorted(find_headersAtSheet(sheet),key=lambda x:find_headersAtSheet(sheet)[x])\r\ndel headers[0]\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Concrete Roof\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Concrete Roof\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        eff_cat_hdrs = list(filter(lambda x: x!=None, cat_hdrsRow[2:]))\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return [eff_cat_hdrs, dict(zip(catTypeName,dicts_final))]\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\ndef make_finalForm_forOtherFinishStyle(dictsAIO):\r\n    #infFinish_order = [\"Floor\", \"Base\", \"Wall\", \"Ceiling\"]\r\n    \r\n    final_output = []\r\n\r\n    styleTypes = dictsAIO.values()\r\n    for styleType in styleTypes:\r\n        keys = styleType[0]\r\n        dd = styleType[1:][0].values()\r\n        tmp = []\r\n        for i in dd:\r\n            tmp = []\r\n            for k in keys:\r\n                tmp.append(i[k])\r\n            final_output.append(tmp)\r\n\r\n\r\n    return final_output\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = make_finalForm_forOtherFinishStyle(dictsAIO)\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "094d1b59a2e2437eaa095da8a63eb2f3",
-      "Inputs": [
-        {
-          "Id": "f78706680835496dbf475a1f0fa09cc8",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "44b2369c7cb242a0b2990315fa28aca3",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "35d2c99054884c66a59d80ac7abb6882",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "9aaf81e30a934982847bc89d38d2a3f0",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Concrete Roof\", \"Cladding Roof\"];\n5;\n // 시작row 인덱스;",
-      "Id": "a178b1ecea2e451081dce38a20ed1b7c",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "961951c6be8d4326b7f98e9ad4d99382",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "a5ac1df91c1340e79467968da6c05ea8",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Single Door\", \"Double Door\", \"Transsom\", \"Shutter / Sliding / Hanger / Swing / Revolving / Folding\"];\n5;\n // 시작row 인덱스;",
-      "Id": "768e2a2b625f4c599f27bf328619349f",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "27d6ae9bdba6425d9a7e61f45a95b27e",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "e4b0ab15285549d7ba70fead01b6e41e",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\n#headers = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\nheaders = sorted(find_headersAtSheet(sheet),key=lambda x:find_headersAtSheet(sheet)[x])\r\ndel headers[0]\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Single Door\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Single Door\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        eff_cat_hdrs = list(filter(lambda x: x!=None, cat_hdrsRow[2:]))\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n                elif i == \"Fire Rating\":\r\n                    oneDict[i] = \"\"\r\n\r\n        return [eff_cat_hdrs, dict(zip(catTypeName,dicts_final))]\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\ndef make_finalForm_forOtherFinishStyle(dictsAIO):\r\n    #infFinish_order = [\"Floor\", \"Base\", \"Wall\", \"Ceiling\"]\r\n    \r\n    final_output = []\r\n\r\n    styleTypes = dictsAIO.values()\r\n    for styleType in styleTypes:\r\n        keys = styleType[0]\r\n        dd = styleType[1:][0].values()\r\n        tmp = []\r\n        for i in dd:\r\n            tmp = []\r\n            for k in keys:\r\n                tmp.append(i[k])\r\n            final_output.append(tmp)\r\n\r\n\r\n    return final_output\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = make_finalForm_forOtherFinishStyle(dictsAIO)\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Exterior Wall\", row_sep_criteria)\r\n#OUT = rangesATSheet\r\n\r\n",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "cb9e45040c6143fd839b72562fe31314",
-      "Inputs": [
-        {
-          "Id": "745898377abe4bcb9e422029e1b7870c",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "035ef4fd84b0490fa2f329721e447def",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "de1041b1229a4bf091e5f0f5d878e97a",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "0854927caeeb4330a2ca9d19866642ef",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Sliding Type\", \"Awning Type\", \"Fix Type\", \"Combination Type\", \"Skylight\", \"MISC\", \"Louver\"];\n5;\n // 시작row 인덱스;",
-      "Id": "66078d6f5fdc4e59ac9489c83c2af7d9",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "925525a2a55b468d8112b4185bab8a7e",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "a5752300b2c543659726f796121c2823",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\n#headers = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\nheaders = sorted(find_headersAtSheet(sheet),key=lambda x:find_headersAtSheet(sheet)[x])\r\ndel headers[0]\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Sliding Type\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Sliding Type\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    datas_allCatType_withSubHdrs = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    def remove_elem_atIdx(lst, idx):\r\n        del lst[idx]\r\n        return lst \r\n    datas_allCatType = list(map(lambda x: remove_elem_atIdx(x,1), datas_allCatType_withSubHdrs))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        eff_cat_hdrs = list(filter(lambda x: x!=None, cat_hdrsRow[2:]))\r\n        \r\n        cat_hdrs_withIdx_all = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx_all.values())\r\n        hdrs_k = list(cat_hdrs_withIdx_all.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n        cat_hdrs_withIdx_originName = dict(list(zip(eff_hdrs_k, eff_hdrs_v)))\r\n        \r\n        cat_hdrs_withIdx = { k.replace(' (Key Name)', ''): v for k, v in cat_hdrs_withIdx_originName.items() }\r\n        \r\n                    \r\n        \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No\"]], data_catType_onlyStyleNo))\r\n#        #### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n\r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n                elif i == \"Fire Rating\":\r\n                    oneDict[i] = \"\"\r\n\r\n        return [eff_cat_hdrs, dict(zip(catTypeName,dicts_final))]\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\ndef make_finalForm_forOtherFinishStyle(dictsAIO):\r\n    #infFinish_order = [\"Floor\", \"Base\", \"Wall\", \"Ceiling\"]\r\n    \r\n    final_output = []\r\n\r\n    styleTypes = dictsAIO.values()\r\n    for styleType in styleTypes:\r\n        keys = styleType[0]\r\n        dd = styleType[1:][0].values()\r\n        tmp = []\r\n        for i in dd:\r\n            tmp = []\r\n            for k in keys:\r\n                tmp.append(i[k])\r\n            final_output.append(tmp)\r\n\r\n\r\n    return final_output\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = make_finalForm_forOtherFinishStyle(dictsAIO)\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n\r\n#rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Sliding Type\", row_sep_criteria)\r\n\r\n\r\n\r\n#catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Sliding Type\"]], sheet))\r\n#OUT = catType_colDatas\r\n\r\n",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "0391409575d34edfad80df57b34281c2",
-      "Inputs": [
-        {
-          "Id": "41bb779ace44433bb4d87796d5789cf8",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b742dac896024e50a71628dade5caf8b",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "81a8f2d09b7f41668bf646ada40c41cf",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "b7c93f320e2d4372ad9eb871f957f656",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import reduce\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = IN[2]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\ninfFinish_order = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef find_range_by_columnItem_Eq(db, col_idx, row_sep_criteria):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsIn_list(x[1], row_sep_criteria), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n    famTypeNames = list(map(lambda x: x[1],res))\r\n    famTypeNamesIdxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(famTypeNames, zip(famTypeNamesIdxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\nheaders = sorted(find_headersAtSheet(sheet),key=lambda x:find_headersAtSheet(sheet)[x])\r\ndel headers[0]\r\n\r\ndef get_DataOnRangesAtSheet(sheet, row_sep_criteria):\r\n    hdrs_withIdx = find_headersAtSheet(sheet)\r\n    rangesATSheet = find_rangesAtSheet_eq(sheet, hdrs_withIdx, \"Floor\", row_sep_criteria)\r\n    title_idx = map(lambda x: x[0], rangesATSheet.values())\r\n    catType_colDatas = list(map(lambda x: x[hdrs_withIdx[\"Floor\"]], sheet))\r\n    catTypes = list(map(lambda x: catType_colDatas[x], title_idx))\r\n    rgs_v = list(map(lambda x: x[1], rangesATSheet.values()))\r\n    rgs_k = list(map(lambda x: x, rangesATSheet.keys()))\r\n    \r\n    \r\n    datas_allCatType = list(map(lambda x: sheet[x[0]-1:x[1]], rgs_v))\r\n    \r\n    def setDict_OnEachCatType(data_catType):\r\n        cat_hdrsRow = data_catType.pop(0)\r\n        eff_cat_hdrs = list(filter(lambda x: x!=None, cat_hdrsRow[2:]))\r\n        \r\n        cat_hdrs_withIdx = dict(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(cat_hdrsRow))))\r\n        \r\n        hdrs_v = list(cat_hdrs_withIdx.values())\r\n        hdrs_k = list(cat_hdrs_withIdx.keys())\r\n        eff_hdrs_v = hdrs_v[1:]\r\n        eff_hdrs_k = hdrs_k[1:]\r\n    \r\n        ## 문자 1~2자리 + 숫자 2자리\r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        \r\n        \r\n        data_catType_noneless = list(filter(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]] != None, data_catType))\r\n        data_catType_onlyStyleNo = list(filter(lambda x: p.match(str(x[cat_hdrs_withIdx[\"Style No (Key Name)\"]])), data_catType))\r\n        catTypeName = list(map(lambda x: x[cat_hdrs_withIdx[\"Style No (Key Name)\"]], data_catType_onlyStyleNo))\r\n        ### WM row 별 header명 과 짝짓기\r\n        data_withHdrsIdx = list(map(lambda y: list(map(lambda x: y[x], eff_hdrs_v)), data_catType_onlyStyleNo))\r\n        dict_ = list(map(lambda x: dict(zip(eff_hdrs_k, x)), data_withHdrsIdx))\r\n        dicts_final = list(map(lambda y: dict(filter(lambda x: x[1]!=None, y.items())),dict_))\r\n        \r\n        for oneDict in dicts_final:\r\n            keys = oneDict.keys()\r\n            for i in hdrs_k:\r\n                if i not in keys:\r\n                    oneDict[i] = \"\"\r\n\r\n        return [eff_cat_hdrs, dict(zip(catTypeName,dicts_final))]\r\n    \r\n    return dict(zip(row_sep_criteria, map(setDict_OnEachCatType, datas_allCatType)))\r\n    \r\n\r\ndictsAIO = get_DataOnRangesAtSheet(sheet, row_sep_criteria)\r\n\r\ndef make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order):\r\n#    infFinish_order = [\"Floor\", \"Base\", \"Wall\", \"Ceiling\"]\r\n    \r\n    final_output = []\r\n    for i in infFinish_order:\r\n        keys = dictsAIO[i][0]\r\n        dicts = dictsAIO[i][1:]\r\n        \r\n        for j in dicts:\r\n            dd = j.values()\r\n            tmp = []\r\n            for d in dd:\r\n                tmp2 = []\r\n                for k in keys:\r\n                    tmp2.append(d[k])\r\n                tmp.append(tmp2)\r\n        final_output.append(tmp)\r\n    return final_output \r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\n#hdrs_withIdx = find_headersAtSheet(sheet)\r\n#hdrs_v = list(hdrs_withIdx.values())\r\n#hdrs_k = list(hdrs_withIdx.keys())\r\n#OUT = hdrs_k\r\n\r\n",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "1787ae4a90704f468e93b85c7e26f062",
-      "Inputs": [
-        {
-          "Id": "02be00896bfc40368cf5c9588d19d0a1",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "e53774c105a249f5a305965203aa502f",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "6d06cccf2ae149ecb83013378b931f4b",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "7269f85899e54a9187e79b14df3b1f7e",
-          "Name": "IN[3]",
-          "Description": "Input #3",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "00dc8f6b62414029a4bcf3e67cb85e9d",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "[\"Floor\", \"Base\", \"Wall\", \"Ceiling\"];",
-      "Id": "ce869654c8964417aaea73a4f0666c64",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "0cc1909b39fb412babb3e73bde57e3ee",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
-      "FunctionSignature": "DSCore.List.Join@var[]..[]",
-      "FunctionType": "VariableArgument",
-      "NodeType": "FunctionNode",
-      "Id": "35b42533714e4b12b11737ac976ec3eb",
-      "Inputs": [
-        {
-          "Id": "5040f83e3be6417f8499dd2bee1d564a",
-          "Name": "list0",
-          "Description": "Lists to join into one.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "44a003dba5884be49ac2ef34d9ecba2d",
-          "Name": "list1",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "7b952f0d2d2a4494b9d18a77e57c1c9e",
-          "Name": "list2",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "b884c6afd45245caaac48252f35c1067",
-          "Name": "list3",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "41125c8f0f4b458285e794cfaa8753c4",
-          "Name": "list4",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "02959a494a7743c4aba0e214071fe49f",
-          "Name": "list",
-          "Description": "Joined list.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Concatenates all given lists into a single list.\n\nList.Join (lists: var[]..[]): var[]..[]"
-    },
-    {
       "ConcreteType": "CoreNodeModels.CreateList, CoreNodeModels",
       "VariableInputPorts": true,
       "NodeType": "ExtensionNode",
@@ -1543,7 +1052,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nwholeDatas = IN[0]\r\ndataStartRowIdx = 0\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nrow_sep_criteria = IN[1]\r\ninfFinish_order = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_DBareas_ByRanges(db, ranges, grpName_colIdx):\r\n    resDic = {}\r\n    for i in ranges.items():\r\n        name = i[0]\r\n        rngs = i[1]\r\n        \r\n        return rngs\r\n    pass\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, ':'), ':')\r\n\r\nres = ranges\r\n\r\n#res = group_ByRanges(wholeDatas, ranges, grpName_colIdx)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\nhdrs_withIdx = find_headersAtSheet(sheet)\r\nhdrs_v = list(hdrs_withIdx.values())\r\nhdrs_k = list(hdrs_withIdx.keys())\r\nOUT = res\r\n",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndataStartRowIdx = IN[2]\r\nwholeDatas = IN[0]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nignoreHdr_idxDic = IN[1]\r\n\r\ncatSepRuleChar = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_areaHeaders(areasDB):\r\n    #res = list(filter(lambda x: '#' in x[1], areasDB))\r\n    res = []\r\n    for idx,v in enumerate(areasDB):\r\n        if '#' in  str(v[1]):\r\n            res.append([idx,v])\r\n            #res = [idx,v]\r\n    firstHdr = res[0]\r\n    return firstHdr\r\n\r\ndef get_DBareas_ByRanges(db, ranges, ignoreHdr_idxDic):\r\n    resDic = {}\r\n    res = []\r\n    for i in ranges.items():\r\n        catName = i[0]\r\n        rngs_sepRowIdx = i[1]\r\n        rngs_stt = i[1][1][0]\r\n        rngs_end = i[1][1][1]\r\n        areaDB = db[rngs_stt:rngs_end+1]\r\n        \r\n        ignoreHdr_idx = ignoreHdr_idxDic[catName]\r\n        hdrsRow = get_areaHeaders(areaDB)\r\n        netHdrs = go\\\r\n        (\r\n            hdrsRow[1],\r\n            enumerate,\r\n            filter(lambda x: x[0] != ignoreHdr_idx),\r\n            list,\r\n            map(lambda x: x[1]),\r\n            filter(lambda x: x != '#'),\r\n            filter(lambda x: x != None),\r\n            list,\r\n        )\r\n        netHdrsIdx_inRow = list(map(lambda x: hdrsRow[1].index(x), netHdrs))\r\n        \r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        stylNoIdx = go\\\r\n        (\r\n            hdrsRow[1],\r\n            filter(lambda x: \"Style No\" in str(x)),\r\n            list,\r\n            lambda x: x[0],\r\n            lambda x: hdrsRow[1].index(x)\r\n        )\r\n        effRow = go\\\r\n        (\r\n            areaDB[hdrsRow[0]+1:],\r\n            filter(lambda x: p.match(str(x[stylNoIdx]))),\r\n            list,\r\n        )\r\n        effAreaData = go\\\r\n        (\r\n            effRow,\r\n            map(lambda x: map(lambda y: x[y], netHdrsIdx_inRow)),\r\n            map(lambda x: map(lambda y: \"\" if y == None else y, x)),\r\n        )\r\n        \r\n        \r\n        res.append(effAreaData)\r\n    return res\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, catSepRuleChar), catSepRuleChar)\r\n\r\n\r\nres = get_DBareas_ByRanges(wholeDatas, ranges, ignoreHdr_idxDic)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1603,12 +1112,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "0;\n[\":\"];",
+      "Code": "0;\n\":\";",
       "Id": "1d463d8ea2374619ba256e57c003eacc",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "9119d4036179484a8860610a8b475206",
+          "Id": "8d467a0b26604acb818d8f0540d16ecb",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -1617,9 +1126,1014 @@
           "KeepListStructure": false
         },
         {
-          "Id": "fdb9d512fad5403a93ff66a2fb132464",
+          "Id": "ea86cb15e488466c8d4306798b565931",
           "Name": "",
           "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "{\n\"Floor Finish\": x,\n\"Skirt Finish\": x,\n\"Wall Finish\": x,\n\"Ceiling Finish\": x\n};",
+      "Id": "3c5ea198aa934ea9a6306fb103a4cffb",
+      "Inputs": [
+        {
+          "Id": "e3f8dcff108a45e4887a33e0452c345b",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ab935a2b07cb4a6ea95484000e795461",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "test;",
+      "Id": "292761f933534b20a82a185794df07b9",
+      "Inputs": [
+        {
+          "Id": "bfdfe29247ec4b919ae74c95a3dd26c5",
+          "Name": "test",
+          "Description": "test",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "476755766b674b279d4fbc976fbcde70",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndataStartRowIdx = IN[2]\r\nwholeDatas = IN[0]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nignoreHdr_idxDic = IN[1]\r\n\r\ncatSepRuleChar = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_areaHeaders(areasDB):\r\n    #res = list(filter(lambda x: '#' in x[1], areasDB))\r\n    res = []\r\n    for idx,v in enumerate(areasDB):\r\n        if '#' in  str(v[1]):\r\n            res.append([idx,v])\r\n            #res = [idx,v]\r\n    firstHdr = res[0]\r\n    return firstHdr\r\n\r\ndef get_DBareas_ByRanges(db, ranges, ignoreHdr_idxDic):\r\n    resDic = {}\r\n    res = []\r\n    for i in ranges.items():\r\n        catName = i[0]\r\n        rngs_sepRowIdx = i[1]\r\n        rngs_stt = i[1][1][0]\r\n        rngs_end = i[1][1][1]\r\n        areaDB = db[rngs_stt:rngs_end+1]\r\n        \r\n        ignoreHdr_idx = ignoreHdr_idxDic[catName]\r\n        hdrsRow = get_areaHeaders(areaDB)\r\n        netHdrs = go\\\r\n        (\r\n            hdrsRow[1],\r\n            enumerate,\r\n            filter(lambda x: x[0] != ignoreHdr_idx),\r\n            list,\r\n            map(lambda x: x[1]),\r\n            filter(lambda x: x != '#'),\r\n            filter(lambda x: x != None),\r\n            list,\r\n        )\r\n        netHdrsIdx_inRow = list(map(lambda x: hdrsRow[1].index(x), netHdrs))\r\n        \r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        stylNoIdx = go\\\r\n        (\r\n            hdrsRow[1],\r\n            filter(lambda x: \"Style No\" in str(x)),\r\n            list,\r\n            lambda x: x[0],\r\n            lambda x: hdrsRow[1].index(x)\r\n        )\r\n        effRow = go\\\r\n        (\r\n            areaDB[hdrsRow[0]+1:],\r\n            filter(lambda x: p.match(str(x[stylNoIdx]))),\r\n            list,\r\n        )\r\n        effAreaData = go\\\r\n        (\r\n            effRow,\r\n            map(lambda x: map(lambda y: x[y], netHdrsIdx_inRow)),\r\n            map(lambda x: map(lambda y: \"\" if y == None else y, x)),\r\n        )\r\n        \r\n        \r\n        res.append(effAreaData)\r\n    return netHdrs, res\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, catSepRuleChar), catSepRuleChar)\r\n\r\n#testSample = get_DBareas_ByRanges(wholeDatas, ranges)[0]\r\n\r\n\r\n\r\n\r\n\r\nres = get_DBareas_ByRanges(wholeDatas, ranges, ignoreHdr_idxDic)\r\n\r\n#res = group_ByRanges(wholeDatas, ranges, grpName_colIdx)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\nhdrs_withIdx = find_headersAtSheet(sheet)\r\nhdrs_v = list(hdrs_withIdx.values())\r\nhdrs_k = list(hdrs_withIdx.keys())\r\nOUT = res\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "622e64b78c524228b2eacd4b2e785abf",
+      "Inputs": [
+        {
+          "Id": "173a76461dee451c82523f5b23c910dd",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8eb21ef4b92841b1a1c6e8a0a638c736",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "44bced26d3014fe69cefb765c2733dbc",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "016e27d25244404ea03980f0de699e6f",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "af1d27f3b1ed404d91a6f38310679e79",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;\n\":\";",
+      "Id": "f0b0184428844430adb30e9cdcca2637",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b76cb6451f724f9e94c48b03200e24fe",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e40f2b912ccc4cacb97de21dea10fd7b",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "{\n\"Exterior Wall\": x,\n\"Interior Wall\": x\n};",
+      "Id": "0bd970a950be4ff18f8afce32bf452b1",
+      "Inputs": [
+        {
+          "Id": "62f3a948beb74080807401b6c7c5bd6d",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7ca1f010a645451185f601bffaaf621e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.WallType.ByName@string",
+      "Id": "75edf09508374ef5a4df65df94dca1ae",
+      "Inputs": [
+        {
+          "Id": "e3caad297c714cf18bd178bcfe8a6bf8",
+          "Name": "name",
+          "Description": "string",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1238a4ddf1de458e902e36671c5a849b",
+          "Name": "WallType",
+          "Description": "WallType",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Select a walltype from the current document by name\n\nWallType.ByName (name: string): WallType"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n\"z_proto_ExtWall\",\n\"z_proto_IntWall\"\n];",
+      "Id": "4b29bb064e944d90968343108451f6bd",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ba8c1efa31fb42898b12e7a6092be72d",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.ElementType.Duplicate@string",
+      "Id": "d804d043e8df4840b6b2995201fc1d92",
+      "Inputs": [
+        {
+          "Id": "c107af3ba7734b0681bcb9a688dc66e9",
+          "Name": "elementType",
+          "Description": "Revit.Elements.ElementType",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2f4796b202e44ac484527367325e6d6f",
+          "Name": "name",
+          "Description": "The new name of the element type.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "8b13e8298aa343a08fb22eeae72e9006",
+          "Name": "ElementType",
+          "Description": "The duplicated element type.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Shortest",
+      "Description": "Duplicates an existing element type and assigns it a new name.\n\nElementType.Duplicate (name: string): ElementType"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "wallTest;",
+      "Id": "f4a161b26c824df9935ec538dd3042ba",
+      "Inputs": [
+        {
+          "Id": "2a149a2e2fa240ddb09d3032bff096ff",
+          "Name": "wallTest",
+          "Description": "wallTest",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9b89751d25044eb59817aa9ad8ac34bf",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
+      "Id": "044e94b03f3d489bae6842ec4d089411",
+      "Inputs": [
+        {
+          "Id": "e7a9ac52bf6e417cb4e69f20b5e35c0d",
+          "Name": "list",
+          "Description": "List to fetch an item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": true,
+          "KeepListStructure": true
+        },
+        {
+          "Id": "dcbe3cb94bfa498f98510d87022a1688",
+          "Name": "index",
+          "Description": "Index of the item to be fetched.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d06715fce4bc4ba8ad5d25399d0b3224",
+          "Name": "item",
+          "Description": "Item in the list at the given index.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;",
+      "Id": "ed3cf8d47a624fa0a5d0ee02ce27a599",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "41edda527c4c40ebbd5e7c858b59074a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = 0",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "6d508bab5be14b2bb7b4330d7df32901",
+      "Inputs": [
+        {
+          "Id": "a0582c933c1343db997e9c65d883bf14",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2e6ce424b2ed4417b1cc42ad913eb4c6",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "1;",
+      "Id": "e069d87e6a8f4920a3ca0a0f074a5fab",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "99ddba9130d041aaa31312b296de697f",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
+      "Id": "3fe3e3f79c8446319b5b0903459b9d27",
+      "Inputs": [
+        {
+          "Id": "76d7f92520e94ab7b3357aa4fc1ba639",
+          "Name": "list",
+          "Description": "List to fetch an item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": true,
+          "KeepListStructure": true
+        },
+        {
+          "Id": "65cc9fdf5e6b4ebd969db856b5e9c351",
+          "Name": "index",
+          "Description": "Index of the item to be fetched.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4f8941714bd7435a8b651a11ff1c8883",
+          "Name": "item",
+          "Description": "Item in the list at the given index.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
+      "FunctionSignature": "DSCore.String.Join@string,string[]",
+      "FunctionType": "VariableArgument",
+      "NodeType": "FunctionNode",
+      "Id": "66b2dacdc4bc4ef5b5a50e290de16699",
+      "Inputs": [
+        {
+          "Id": "de8f8efaca9d43239f7b18cd35e09f8d",
+          "Name": "separator",
+          "Description": "String to be inserted between joined strings.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ae062c9f19ab41a48f0a26cb49d24b51",
+          "Name": "string0",
+          "Description": "Strings to be joined into a single string.\n\nstring[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6d21b9942ac649d688598f6d8a1d26d5",
+          "Name": "string",
+          "Description": "A string made from the list of strings including the separator character.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Concatenates multiple strings into a single string, inserting the given separator between each joined string.\n\nString.Join (separator: string, strings: string[]): string"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"_\";",
+      "Id": "72d97ca73bea4a4b84bef3464fef439d",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "95cb4c6c76464cdb8bcf418aad323a77",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.CreateList, CoreNodeModels",
+      "VariableInputPorts": true,
+      "NodeType": "ExtensionNode",
+      "Id": "f08b75867c4442649c11b21bc57f71d4",
+      "Inputs": [
+        {
+          "Id": "e6b842e4bc8b45e091d58a8dae58d1a8",
+          "Name": "item0",
+          "Description": "Item Index #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a3f6cbbe81fc4fa3a7077b06d26a7a5d",
+          "Name": "item1",
+          "Description": "Item Index #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2d0bb58bb02742c8bd6070245cbf32ec",
+          "Name": "list",
+          "Description": "A list (type: var[]..[])",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Makes a new list out of the given inputs"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndataStartRowIdx = IN[2]\r\nwholeDatas = IN[0]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nignoreHdr_idxDic = IN[1]\r\n\r\ncatSepRuleChar = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_areaHeaders(areasDB):\r\n    #res = list(filter(lambda x: '#' in x[1], areasDB))\r\n    res = []\r\n    for idx,v in enumerate(areasDB):\r\n        if '#' in  str(v[1]):\r\n            res.append([idx,v])\r\n            #res = [idx,v]\r\n    firstHdr = res[0]\r\n    return firstHdr\r\n\r\ndef get_DBareas_ByRanges(db, ranges, ignoreHdr_idxDic):\r\n    resDic = {}\r\n    res = []\r\n    for i in ranges.items():\r\n        catName = i[0]\r\n        rngs_sepRowIdx = i[1]\r\n        rngs_stt = i[1][1][0]\r\n        rngs_end = i[1][1][1]\r\n        areaDB = db[rngs_stt:rngs_end+1]\r\n        \r\n        ignoreHdr_idx = ignoreHdr_idxDic[catName]\r\n        hdrsRow = get_areaHeaders(areaDB)\r\n        netHdrs = go\\\r\n        (\r\n            hdrsRow[1],\r\n            enumerate,\r\n            filter(lambda x: x[0] != ignoreHdr_idx),\r\n            list,\r\n            map(lambda x: x[1]),\r\n            filter(lambda x: x != '#'),\r\n            filter(lambda x: x != None),\r\n            list,\r\n        )\r\n        netHdrsIdx_inRow = list(map(lambda x: hdrsRow[1].index(x), netHdrs))\r\n        \r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        stylNoIdx = go\\\r\n        (\r\n            hdrsRow[1],\r\n            filter(lambda x: \"Style No\" in str(x)),\r\n            list,\r\n            lambda x: x[0],\r\n            lambda x: hdrsRow[1].index(x)\r\n        )\r\n        effRow = go\\\r\n        (\r\n            areaDB[hdrsRow[0]+1:],\r\n            filter(lambda x: p.match(str(x[stylNoIdx]))),\r\n            list,\r\n        )\r\n        effAreaData = go\\\r\n        (\r\n            effRow,\r\n            map(lambda x: map(lambda y: x[y], netHdrsIdx_inRow)),\r\n            map(lambda x: map(lambda y: \"\" if y == None else y, x)),\r\n        )\r\n        \r\n        \r\n        res.append(effAreaData)\r\n    return netHdrs, res\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, catSepRuleChar), catSepRuleChar)\r\n\r\n#testSample = get_DBareas_ByRanges(wholeDatas, ranges)[0]\r\n\r\n\r\n\r\n\r\n\r\nres = get_DBareas_ByRanges(wholeDatas, ranges, ignoreHdr_idxDic)\r\n\r\n#res = group_ByRanges(wholeDatas, ranges, grpName_colIdx)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\nhdrs_withIdx = find_headersAtSheet(sheet)\r\nhdrs_v = list(hdrs_withIdx.values())\r\nhdrs_k = list(hdrs_withIdx.keys())\r\nOUT = res\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "2c2c987d4b954a3882f2f62425db531a",
+      "Inputs": [
+        {
+          "Id": "5e441327294842f6aa525279056c0d67",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "482d147e3d434d1faaf7ca93984626a3",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "80053988ef744585ac1087a91d32e9a5",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "74a5331ccfd8420ca35a37b5ca9c98a3",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5be945b247c7420aab204caf00ab420b",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;\n\":\";",
+      "Id": "4bfee6c5fa40433e9a09d422952cf98c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "de4d360568e74cdc9b6fb643b5e9da55",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "543a3f3e595f4c2da0f5e7b996999abc",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "{\n\"Concrete Roof\": x,\n\"Cladding Roof\": x\n};",
+      "Id": "c3e2e56ebc6f464aa3c6fe3f1a8efd19",
+      "Inputs": [
+        {
+          "Id": "fc12efc095534c31b846cb9d70bf83b8",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "52df480ddfdb45309bf3c5ff39d50bc9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndataStartRowIdx = IN[2]\r\nwholeDatas = IN[0]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nignoreHdr_idxDic = IN[1]\r\n\r\ncatSepRuleChar = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_areaHeaders(areasDB):\r\n    #res = list(filter(lambda x: '#' in x[1], areasDB))\r\n    res = []\r\n    for idx,v in enumerate(areasDB):\r\n        if '#' in  str(v[1]):\r\n            res.append([idx,v])\r\n            #res = [idx,v]\r\n    firstHdr = res[0]\r\n    return firstHdr\r\n\r\ndef get_DBareas_ByRanges(db, ranges, ignoreHdr_idxDic):\r\n    resDic = {}\r\n    res = []\r\n    for i in ranges.items():\r\n        catName = i[0]\r\n        rngs_sepRowIdx = i[1]\r\n        rngs_stt = i[1][1][0]\r\n        rngs_end = i[1][1][1]\r\n        areaDB = db[rngs_stt:rngs_end+1]\r\n        \r\n        ignoreHdr_idx = ignoreHdr_idxDic[catName]\r\n        hdrsRow = get_areaHeaders(areaDB)\r\n        netHdrs = go\\\r\n        (\r\n            hdrsRow[1],\r\n            enumerate,\r\n            filter(lambda x: x[0] != ignoreHdr_idx),\r\n            list,\r\n            map(lambda x: x[1]),\r\n            filter(lambda x: x != '#'),\r\n            filter(lambda x: x != None),\r\n            list,\r\n        )\r\n        netHdrsIdx_inRow = list(map(lambda x: hdrsRow[1].index(x), netHdrs))\r\n        \r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        stylNoIdx = go\\\r\n        (\r\n            hdrsRow[1],\r\n            filter(lambda x: \"Style No\" in str(x)),\r\n            list,\r\n            lambda x: x[0],\r\n            lambda x: hdrsRow[1].index(x)\r\n        )\r\n        effRow = go\\\r\n        (\r\n            areaDB[hdrsRow[0]+1:],\r\n            filter(lambda x: p.match(str(x[stylNoIdx]))),\r\n            list,\r\n        )\r\n        effAreaData = go\\\r\n        (\r\n            effRow,\r\n            map(lambda x: map(lambda y: x[y], netHdrsIdx_inRow)),\r\n            map(lambda x: map(lambda y: \"\" if y == None else y, x)),\r\n        )\r\n        \r\n        \r\n        res.append(effAreaData)\r\n    return netHdrs, res\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, catSepRuleChar), catSepRuleChar)\r\n\r\n#testSample = get_DBareas_ByRanges(wholeDatas, ranges)[0]\r\n\r\n\r\n\r\n\r\n\r\nres = get_DBareas_ByRanges(wholeDatas, ranges, ignoreHdr_idxDic)\r\n\r\n#res = group_ByRanges(wholeDatas, ranges, grpName_colIdx)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\nhdrs_withIdx = find_headersAtSheet(sheet)\r\nhdrs_v = list(hdrs_withIdx.values())\r\nhdrs_k = list(hdrs_withIdx.keys())\r\nOUT = res\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "30b4beaaf4474fa5817bfaeac2567441",
+      "Inputs": [
+        {
+          "Id": "053e0067fe784e98a7b26b2bf137a23a",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a5c615a2da2b4bb284512ed84f581eee",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "4ae302a00124479996d375d4dcdc7c6c",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "31e9172fc1244cec801777aab51ded87",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1925e2a3f10946d697f5680dd0f3374c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;\n\":\";",
+      "Id": "ac8e8a7efa5f44c4a84dcfe89f0b3da3",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "84500f59e430432cac9dc224bfe61473",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "bbddd6eb88414f0e895c9412f0b30f4b",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "{\n\"Single Door\": x,\n\"Double Door\": x,\n\"Double Door + Transsom\": x,\n\"Shutter / Sliding / Hanger / Swing / Revolving / Folding\": x\n};",
+      "Id": "8c2ba427b5974777bef5bae274ab91cf",
+      "Inputs": [
+        {
+          "Id": "945807cedae94515a0e176ab385a5918",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ca60241bc9574b7b99c3c597db92d3ac",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom functools import partial\r\nfrom itertools import chain\r\n\r\nimport re\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndataStartRowIdx = IN[2]\r\nwholeDatas = IN[0]\r\nsheet = wholeDatas[dataStartRowIdx:]\r\nignoreHdr_idxDic = IN[1]\r\n\r\ncatSepRuleChar = IN[3]\r\n\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, str):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in str\r\n        return res\r\n\r\ndef find_IsIn_list(target, lst):\r\n    if target == None or str == None:\r\n        pass\r\n    else:\r\n        res = target in lst\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db))\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    res = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,res))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb]\r\n\r\n    DB_prime_Areas_Names = list(map(lambda x: x[1],res))\r\n    DB_prime_Areas_Names_Idxs = list(map(lambda x: x[0],res))\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,res))\r\n    rangeEndIdxs = endidxs\r\n    result = dict(zip(DB_prime_Areas_Names, zip(DB_prime_Areas_Names_Idxs, zip(rangeSttIdxs,rangeEndIdxs))))\r\n    return result\r\n\r\ndef modify_DB_prime_Areas_Names(AIOdict, rule_Char):\r\n    res = list(map(lambda x: x, AIOdict.items()))\r\n    keys = list(map(lambda x: x[0].split(rule_Char)[0], res))\r\n    vals = list(map(lambda x: x[1], res))\r\n    return dict(zip(keys, vals))\r\n    \r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))\r\n    \r\n    return dict(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):\r\n    return find_range_by_columnItem(sheet, hdrs_withIdx[trgt_hdr], trgt_str)\r\n\r\ndef find_rangesAtSheet_eq(sheet, hdrs_withIdx, trgt_hdr, row_sep_criteria):\r\n    res = find_range_by_columnItem_Eq(sheet, hdrs_withIdx[trgt_hdr], row_sep_criteria)\r\n    \r\n    return res\r\n\r\ndef get_areaHeaders(areasDB):\r\n    #res = list(filter(lambda x: '#' in x[1], areasDB))\r\n    res = []\r\n    for idx,v in enumerate(areasDB):\r\n        if '#' in  str(v[1]):\r\n            res.append([idx,v])\r\n            #res = [idx,v]\r\n    firstHdr = res[0]\r\n    return firstHdr\r\n\r\ndef get_DBareas_ByRanges(db, ranges, ignoreHdr_idxDic):\r\n    resDic = {}\r\n    res = []\r\n    for i in ranges.items():\r\n        catName = i[0]\r\n        rngs_sepRowIdx = i[1]\r\n        rngs_stt = i[1][1][0]\r\n        rngs_end = i[1][1][1]\r\n        areaDB = db[rngs_stt:rngs_end+1]\r\n        \r\n        ignoreHdr_idx = ignoreHdr_idxDic[catName]\r\n        hdrsRow = get_areaHeaders(areaDB)\r\n        netHdrs = go\\\r\n        (\r\n            hdrsRow[1],\r\n            enumerate,\r\n            filter(lambda x: x[0] != ignoreHdr_idx),\r\n            list,\r\n            map(lambda x: x[1]),\r\n            filter(lambda x: x != '#'),\r\n            filter(lambda x: x != None),\r\n            list,\r\n        )\r\n        netHdrsIdx_inRow = list(map(lambda x: hdrsRow[1].index(x), netHdrs))\r\n        \r\n        p = re.compile('[A-Z]{1,3}\\d{2}')\r\n        stylNoIdx = go\\\r\n        (\r\n            hdrsRow[1],\r\n            filter(lambda x: \"Style No\" in str(x)),\r\n            list,\r\n            lambda x: x[0],\r\n            lambda x: hdrsRow[1].index(x)\r\n        )\r\n        effRow = go\\\r\n        (\r\n            areaDB[hdrsRow[0]+1:],\r\n            filter(lambda x: p.match(str(x[stylNoIdx]))),\r\n            list,\r\n        )\r\n        effAreaData = go\\\r\n        (\r\n            effRow,\r\n            map(lambda x: map(lambda y: x[y], netHdrsIdx_inRow)),\r\n            map(lambda x: map(lambda y: \"\" if y == None else y, x)),\r\n        )\r\n        \r\n        \r\n        res.append(effAreaData)\r\n    return netHdrs, res\r\n\r\nranges = modify_DB_prime_Areas_Names(find_range_by_columnItem(wholeDatas, 1, catSepRuleChar), catSepRuleChar)\r\n\r\n#testSample = get_DBareas_ByRanges(wholeDatas, ranges)[0]\r\n\r\n\r\n\r\n\r\n\r\nres = get_DBareas_ByRanges(wholeDatas, ranges, ignoreHdr_idxDic)\r\n\r\n#res = group_ByRanges(wholeDatas, ranges, grpName_colIdx)\r\n\r\n# Assign your output to the OUT variable.\r\n\r\n#OUT = make_finalForm_forIntFinishStyle(dictsAIO, infFinish_order)\r\n\r\nhdrs_withIdx = find_headersAtSheet(sheet)\r\nhdrs_v = list(hdrs_withIdx.values())\r\nhdrs_k = list(hdrs_withIdx.keys())\r\nOUT = res\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "5a2c07ab66ab4b42804c5de4845140f9",
+      "Inputs": [
+        {
+          "Id": "a961295184fc442791c2248c2580f5e4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e47f3dfb278e457296d5dcd7f75d3df7",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1f63224e02d445ea84a9c5bfe99c0563",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "863f630538ab4dfa9ec2c7a8a13d4715",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ed1496a49f0f44578c692ebaac92fd4e",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;\n\":\";",
+      "Id": "5824e8ab20de419bbc4feb350e02c8bd",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "48c78de276214ce6aee8765d71e8d4a1",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "071e2caaab564de3b9ed9ddba8b59eea",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "{\n\"Sliding Type\": x,\n\"Awning Type\": x,\n\"Fix Type\": x,\n\"Combination Type\": x,\n\"Skylight\": x,\n\"MISC\": x,\n\"Louver\": x\n};",
+      "Id": "ae721479b1714e839e0ed27173b88d2c",
+      "Inputs": [
+        {
+          "Id": "ee88b02a42d6443b99d3f45f8abe038f",
+          "Name": "x",
+          "Description": "x",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1bdfef2303484a4e8bfb7a64e33dc489",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "4;",
+      "Id": "960c256fcd3c4bcc99c7e747a35f3404",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "fef16740333340a09e8dfc52910ee182",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "4;",
+      "Id": "969373f47cce4f9bbfa19af2d2757406",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8758aac8b8d3459582e191fe7a725558",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "4;",
+      "Id": "72783eef69254ce289fd25763f60644a",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "e6eb928644c6489599f77dfc313b4838",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "4;",
+      "Id": "25454599a22143848779c02cb0bef2b8",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "13035d7db89040f4a1232ce48804270f",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "5;",
+      "Id": "ea96cdd67ea840639cffe15927b9c675",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "58d1dd0b35ac4488ba340a50de917150",
+          "Name": "",
+          "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -1795,170 +2309,32 @@
     },
     {
       "Start": "030a208640dd4a41b5edc81a92b9a6c6",
-      "End": "02be00896bfc40368cf5c9588d19d0a1",
-      "Id": "2bf2b02caaf745518a386d0500942369",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "030a208640dd4a41b5edc81a92b9a6c6",
       "End": "6e57472b5fdd43d090f15a912850b3a2",
-      "Id": "9a8172c659ad46de89d3a06892803d7f",
+      "Id": "4d459c04b5f2453aa3629082b4b25c16",
       "IsHidden": "False"
     },
     {
       "Start": "fbb1776f52924b14a1b14c49c9dc2b31",
-      "End": "d1142526a1604746b838c5d2cf7a1979",
-      "Id": "55d9071380ff4ab69879bd6937155caf",
+      "End": "173a76461dee451c82523f5b23c910dd",
+      "Id": "b9562a8c262c4d27aa1d32e1255ff3ba",
       "IsHidden": "False"
     },
     {
       "Start": "4b926b434b37431bb0bb14a65c3d2817",
-      "End": "f78706680835496dbf475a1f0fa09cc8",
-      "Id": "1670325a45794a119cf1dd087a1d784d",
+      "End": "5e441327294842f6aa525279056c0d67",
+      "Id": "9cf95560a63c41d7b2127195a139fc80",
       "IsHidden": "False"
     },
     {
       "Start": "415f34146ae14dd19816ee3e73190d64",
-      "End": "745898377abe4bcb9e422029e1b7870c",
-      "Id": "ee41e81277d842b2a7e5d5335664292b",
+      "End": "053e0067fe784e98a7b26b2bf137a23a",
+      "Id": "719d2507186a4980b22ff9ff7552ac30",
       "IsHidden": "False"
     },
     {
       "Start": "54c4a9cdb28249e89dad5209ceb713c6",
-      "End": "41bb779ace44433bb4d87796d5789cf8",
-      "Id": "26e79f02b91743a8a84a46d0a66c8ec7",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "9dd97c5824c749a68a1d477ad9d38785",
-      "End": "e53774c105a249f5a305965203aa502f",
-      "Id": "acfb6b30caf44450a8c2c18cf3564a89",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "9dd97c5824c749a68a1d477ad9d38785",
-      "End": "0065c4444243486ab7dc9ba2a6aca53f",
-      "Id": "1d4168546b8f4b4c8f203da4210570eb",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "55ac39bfa3b24dfe85f45d816c9c7fa9",
-      "End": "6d06cccf2ae149ecb83013378b931f4b",
-      "Id": "6e82b8a1f6c3462fac016fa56777241d",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "fa41732ecc234dbfab0c8f2c67c1e46b",
-      "End": "c4aaa69460024fc38ed4a587af3d144c",
-      "Id": "5dac6a0c90fe423a9c557062253fe327",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "60c62dc8154a44a9939d8fb8199ce6eb",
-      "End": "4e74ba990d604c2baae1e022a6fde9d8",
-      "Id": "f546358663f449a9aa6bbb0a39810f04",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "393e2ae7bc7c44adb93482821e431751",
-      "End": "46251b36c80342f6bb25542ae0d39e4c",
-      "Id": "3cc722a9858f4bed9ed2977cfbf871d5",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "9aaf81e30a934982847bc89d38d2a3f0",
-      "End": "81a066eeb44f406e9d5008fccb3f6a25",
-      "Id": "55f7e72aa88e4bdd9efe001163b05e10",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "961951c6be8d4326b7f98e9ad4d99382",
-      "End": "44b2369c7cb242a0b2990315fa28aca3",
-      "Id": "c7a7fdedfdd549a388707b123f2eb9de",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "a5ac1df91c1340e79467968da6c05ea8",
-      "End": "35d2c99054884c66a59d80ac7abb6882",
-      "Id": "81d14cc5479e44b29d98fbdfd12f3a9d",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "27d6ae9bdba6425d9a7e61f45a95b27e",
-      "End": "035ef4fd84b0490fa2f329721e447def",
-      "Id": "67ec7873cf7e4100a8647751a279473e",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "e4b0ab15285549d7ba70fead01b6e41e",
-      "End": "de1041b1229a4bf091e5f0f5d878e97a",
-      "Id": "fe2741e9c40448678970e70b44e80f21",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "0854927caeeb4330a2ca9d19866642ef",
-      "End": "c2d54493da6349ae9eea53f2846b1738",
-      "Id": "21734ee4318244bdba54cd748610b747",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "925525a2a55b468d8112b4185bab8a7e",
-      "End": "b742dac896024e50a71628dade5caf8b",
-      "Id": "bd9f8dce011941cfba145b74a5de7dd8",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "a5752300b2c543659726f796121c2823",
-      "End": "81a8f2d09b7f41668bf646ada40c41cf",
-      "Id": "1d7072185bcb46e797abd285fc47beb7",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "b7c93f320e2d4372ad9eb871f957f656",
-      "End": "2f4922ca29584f8685ddcf46a3862891",
-      "Id": "985f42f47c3e4dfa8695e3591bff52a5",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "00dc8f6b62414029a4bcf3e67cb85e9d",
-      "End": "5040f83e3be6417f8499dd2bee1d564a",
-      "Id": "658fc22fb98349ae81d4da78f2a1bcff",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "0cc1909b39fb412babb3e73bde57e3ee",
-      "End": "7269f85899e54a9187e79b14df3b1f7e",
-      "Id": "6bcc1d6f589c46158127689309df67d9",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "02959a494a7743c4aba0e214071fe49f",
-      "End": "0c06f83add944ba3b745dfe51a197dee",
-      "Id": "c9720d19f15545b3af5d4892da455cc4",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "61692a60326843a386d6daa9765c5ad9",
-      "End": "44a003dba5884be49ac2ef34d9ecba2d",
-      "Id": "0b655f389c1241e7a4519df8f91578df",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "32073765aded438fb00db8b7d8c41cee",
-      "End": "7b952f0d2d2a4494b9d18a77e57c1c9e",
-      "Id": "fcd69b9d77004405bf91dd2f1e7e4c20",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "f396a2b0b8a94805999809f4760584ce",
-      "End": "b884c6afd45245caaac48252f35c1067",
-      "Id": "c58c35573f284de6bba30d69e13fa628",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "6479281751664766b158ab7cdeebc112",
-      "End": "41125c8f0f4b458285e794cfaa8753c4",
-      "Id": "5d661070e713427886b2ac37fe0c9f52",
+      "End": "a961295184fc442791c2248c2580f5e4",
+      "Id": "fe6f756a88ab41318a618c1a1c051cbd",
       "IsHidden": "False"
     },
     {
@@ -1974,15 +2350,219 @@
       "IsHidden": "False"
     },
     {
-      "Start": "9119d4036179484a8860610a8b475206",
-      "End": "9123b95a5b274cf49e684c2cd05b49d4",
-      "Id": "b6f664f1489f474eb2bb090aa951dfa2",
+      "Start": "9de4c88b6e604ed495e8786feae144d2",
+      "End": "bfdfe29247ec4b919ae74c95a3dd26c5",
+      "Id": "01652c45909541d2ab8903aac6f4e60f",
       "IsHidden": "False"
     },
     {
-      "Start": "fdb9d512fad5403a93ff66a2fb132464",
+      "Start": "8d467a0b26604acb818d8f0540d16ecb",
+      "End": "9123b95a5b274cf49e684c2cd05b49d4",
+      "Id": "9ad97ddc9f0b408aac372674b6e9ee9f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ea86cb15e488466c8d4306798b565931",
       "End": "c838c6d6f4234699b4f3f6727bebe8bf",
-      "Id": "75933ec97d7f4b3bb03767c8d4975c10",
+      "Id": "0f6139d99dd347c0a1dd6487f179a715",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ab935a2b07cb4a6ea95484000e795461",
+      "End": "0065c4444243486ab7dc9ba2a6aca53f",
+      "Id": "7077e9e4501e4ea6865ce702065a2c8f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "476755766b674b279d4fbc976fbcde70",
+      "End": "0c06f83add944ba3b745dfe51a197dee",
+      "Id": "ca27e8ae44ee4707848a6e2dff92e31c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "af1d27f3b1ed404d91a6f38310679e79",
+      "End": "2a149a2e2fa240ddb09d3032bff096ff",
+      "Id": "7ddd688d9d61477ea70129531437e03e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "af1d27f3b1ed404d91a6f38310679e79",
+      "End": "c4aaa69460024fc38ed4a587af3d144c",
+      "Id": "cc6956d981fb4f578ef9bf2177dd488d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b76cb6451f724f9e94c48b03200e24fe",
+      "End": "44bced26d3014fe69cefb765c2733dbc",
+      "Id": "06939a4b820e4c9b9b0fbf2f87bf8ee3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e40f2b912ccc4cacb97de21dea10fd7b",
+      "End": "016e27d25244404ea03980f0de699e6f",
+      "Id": "369ee433ebb14fcd961152d32a60c57c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7ca1f010a645451185f601bffaaf621e",
+      "End": "8eb21ef4b92841b1a1c6e8a0a638c736",
+      "Id": "994f46c041cb4c3e942a9c24ccf30182",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1238a4ddf1de458e902e36671c5a849b",
+      "End": "c107af3ba7734b0681bcb9a688dc66e9",
+      "Id": "073c09079ac64a6c8f94ff2ce79da9a0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ba8c1efa31fb42898b12e7a6092be72d",
+      "End": "e3caad297c714cf18bd178bcfe8a6bf8",
+      "Id": "bf53b29a77e64884a7bc7f41e4cabeff",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "9b89751d25044eb59817aa9ad8ac34bf",
+      "End": "e7a9ac52bf6e417cb4e69f20b5e35c0d",
+      "Id": "14793b39253944a29fa4b60459df7723",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "9b89751d25044eb59817aa9ad8ac34bf",
+      "End": "76d7f92520e94ab7b3357aa4fc1ba639",
+      "Id": "056bc893d8e44158be6727a18255a307",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d06715fce4bc4ba8ad5d25399d0b3224",
+      "End": "2f4796b202e44ac484527367325e6d6f",
+      "Id": "412862ab46e44ca18de7e1e9bf5bcd39",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d06715fce4bc4ba8ad5d25399d0b3224",
+      "End": "e6b842e4bc8b45e091d58a8dae58d1a8",
+      "Id": "8b8bbf529c8d4c88ac04808ac2f9e527",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "41edda527c4c40ebbd5e7c858b59074a",
+      "End": "dcbe3cb94bfa498f98510d87022a1688",
+      "Id": "acdc8255ee4b48b48eb393ca98a3b0a5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "99ddba9130d041aaa31312b296de697f",
+      "End": "65cc9fdf5e6b4ebd969db856b5e9c351",
+      "Id": "a87fde30d9e541d0b8fb74ddfa00a83d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "4f8941714bd7435a8b651a11ff1c8883",
+      "End": "a3f6cbbe81fc4fa3a7077b06d26a7a5d",
+      "Id": "38ae47a1c88745d7ac40c83e73404f1b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "95cb4c6c76464cdb8bcf418aad323a77",
+      "End": "de8f8efaca9d43239f7b18cd35e09f8d",
+      "Id": "379ea52a13fb4ff58bf462c102bdec8c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5be945b247c7420aab204caf00ab420b",
+      "End": "81a066eeb44f406e9d5008fccb3f6a25",
+      "Id": "1354819e6e444d4cbcd37d844d4139a0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "de4d360568e74cdc9b6fb643b5e9da55",
+      "End": "80053988ef744585ac1087a91d32e9a5",
+      "Id": "8ac8e6be8d2049f7b0fc576bec92c281",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "543a3f3e595f4c2da0f5e7b996999abc",
+      "End": "74a5331ccfd8420ca35a37b5ca9c98a3",
+      "Id": "b502ffc346be457eb21908e32598c618",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "52df480ddfdb45309bf3c5ff39d50bc9",
+      "End": "482d147e3d434d1faaf7ca93984626a3",
+      "Id": "54890794f2e04e4886cb7b797d845a26",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1925e2a3f10946d697f5680dd0f3374c",
+      "End": "c2d54493da6349ae9eea53f2846b1738",
+      "Id": "9eeb1099af6f4700bed9aff86a8c4e93",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "84500f59e430432cac9dc224bfe61473",
+      "End": "4ae302a00124479996d375d4dcdc7c6c",
+      "Id": "71c246440efb4caf8112f964235e0731",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "bbddd6eb88414f0e895c9412f0b30f4b",
+      "End": "31e9172fc1244cec801777aab51ded87",
+      "Id": "ecccf9cf3d2e4fc9ac4cef8a3bd811bc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ca60241bc9574b7b99c3c597db92d3ac",
+      "End": "a5c615a2da2b4bb284512ed84f581eee",
+      "Id": "d88a1fb680be458d9d0fc93153ecc525",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "48c78de276214ce6aee8765d71e8d4a1",
+      "End": "1f63224e02d445ea84a9c5bfe99c0563",
+      "Id": "06972ab6c86141efbbc1a2784b7ccb53",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "071e2caaab564de3b9ed9ddba8b59eea",
+      "End": "863f630538ab4dfa9ec2c7a8a13d4715",
+      "Id": "6da03c7c55d74144b73232d5d6dd9568",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1bdfef2303484a4e8bfb7a64e33dc489",
+      "End": "e47f3dfb278e457296d5dcd7f75d3df7",
+      "Id": "2bb25303348147ee8407e74ac9bd861d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fef16740333340a09e8dfc52910ee182",
+      "End": "ee88b02a42d6443b99d3f45f8abe038f",
+      "Id": "556f75642ea84b40b84d483cba2b487f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8758aac8b8d3459582e191fe7a725558",
+      "End": "945807cedae94515a0e176ab385a5918",
+      "Id": "8d68d215dadc4197973f582b714d04d0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e6eb928644c6489599f77dfc313b4838",
+      "End": "fc12efc095534c31b846cb9d70bf83b8",
+      "Id": "bf3ca89382a34a30b5b1132e58fc88f7",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "13035d7db89040f4a1232ce48804270f",
+      "End": "62f3a948beb74080807401b6c7c5bd6d",
+      "Id": "960a9098a7c9465ea76d5d600c9c2520",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "58d1dd0b35ac4488ba340a50de917150",
+      "End": "e3f8dcff108a45e4887a33e0452c345b",
+      "Id": "e9dbab83f9f84beeb558bfc1b3a474f1",
       "IsHidden": "False"
     }
   ],
@@ -2050,8 +2630,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4898.5503185154057,
-        "Y": 843.93844630826334
+        "X": 4804.2979220863763,
+        "Y": 517.19680535429211
       },
       {
         "Name": "Code Block",
@@ -2060,8 +2640,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5172.5503185154066,
-        "Y": 843.93844630826356
+        "X": 5078.2979220863763,
+        "Y": 517.19680535429234
       },
       {
         "Name": "Code Block",
@@ -2070,8 +2650,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4076.0644114498191,
-        "Y": 1169.5317700420478
+        "X": 3981.8120150207892,
+        "Y": 842.79012908807658
       },
       {
         "Name": "Python Script",
@@ -2080,8 +2660,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 4517.5503185154057,
-        "Y": 788.93844630826356
+        "X": 4423.2979220863763,
+        "Y": 462.19680535429234
       },
       {
         "Name": "Code Block",
@@ -2090,8 +2670,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4027.6811147637454,
-        "Y": 693.93844630826356
+        "X": 3933.4287183347155,
+        "Y": 367.19680535429234
       },
       {
         "Name": "Code Block",
@@ -2100,8 +2680,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3973.3883494935435,
-        "Y": 1001.2972591354167
+        "X": 3879.1359530645136,
+        "Y": 674.55561818144542
       },
       {
         "Name": "Code Block",
@@ -2110,8 +2690,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4059.11376834123,
-        "Y": 845.72471725064793
+        "X": 3964.8613719122,
+        "Y": 518.9830762966767
       },
       {
         "Name": "Categories",
@@ -2120,8 +2700,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 759.83201881472314,
-        "Y": 2082.5170008488431
+        "X": 128.47113948916581,
+        "Y": -662.02629526586122
       },
       {
         "Name": "All Elements of Category",
@@ -2130,8 +2710,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1092.927698704405,
-        "Y": 2077.5170008488431
+        "X": 461.56681937884764,
+        "Y": -667.02629526586122
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -2140,8 +2720,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1988.5259399878591,
-        "Y": 2076.9113182788287
+        "X": 1357.1650606623018,
+        "Y": -667.63197783587555
       },
       {
         "Name": "Element.Name",
@@ -2150,8 +2730,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1409.0096070334489,
-        "Y": 2207.8390823907571
+        "X": 777.64872770789157,
+        "Y": -536.70421372394719
       },
       {
         "Name": "IsFinishStyleSchedule?",
@@ -2160,8 +2740,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1680.523740806535,
-        "Y": 2249.693039770797
+        "X": 1049.1628614809777,
+        "Y": -494.85025634390729
       },
       {
         "Name": "ScheduleView.Fields",
@@ -2170,8 +2750,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3572.9923753373137,
-        "Y": 973.333070595706
+        "X": 3434.755527241402,
+        "Y": 765.97779845183959
       },
       {
         "Name": "Data.ImportExcel",
@@ -2180,8 +2760,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2766.2881563903643,
-        "Y": 156.44585803898048
+        "X": -2762.6097672248857,
+        "Y": 178.51619303185197
       },
       {
         "Name": "빌딩리스트 경로",
@@ -2190,8 +2770,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4065.0151489649388,
-        "Y": -175.53696869255009
+        "X": -4061.33675979946,
+        "Y": -153.4666336996786
       },
       {
         "Name": "File From Path",
@@ -2200,8 +2780,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3115.2881563903643,
-        "Y": 23.445858038980475
+        "X": -3111.6097672248857,
+        "Y": 45.516193031851969
       },
       {
         "Name": "Boolean",
@@ -2210,8 +2790,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3115.2881563903643,
-        "Y": 410.44585803898048
+        "X": -3111.6097672248857,
+        "Y": 432.51619303185197
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -2220,8 +2800,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1929.1733061999166,
-        "Y": 854.5233426104727
+        "X": 2369.911601864464,
+        "Y": 563.35190749719561
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -2230,8 +2810,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3126.3216771310458,
-        "Y": 1346.0558059070106
+        "X": 2711.6111328433126,
+        "Y": 1000.4636856672334
       },
       {
         "Name": "Finish Category 선택",
@@ -2250,8 +2830,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2834.7851836040295,
-        "Y": 1910.8995561994277
+        "X": 2161.214919000508,
+        "Y": -6.8965814475919842
       },
       {
         "Name": "Element.Name",
@@ -2260,8 +2840,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2508.2654847818567,
-        "Y": 2043.6184433037249
+        "X": 1834.6952201783356,
+        "Y": 125.82230565670523
       },
       {
         "Name": "Code Block",
@@ -2270,8 +2850,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3115.2881563903643,
-        "Y": 171.27335803898046
+        "X": -3111.6097672248857,
+        "Y": 193.34369303185196
       },
       {
         "Name": "Code Block",
@@ -2280,128 +2860,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1990.3940443757115,
-        "Y": 187.66066595521488
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "50c563e59cf34cf489e62dadfe7f663d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1771.07595786621,
-        "Y": -165.26635452150822
-      },
-      {
-        "Name": "Parse_Wall Style No 시트(as dict)",
-        "ShowGeometry": true,
-        "Id": "8dcc567c6e7a4764aa2e02daf8bc508d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -300.5288247446988,
-        "Y": 327.490508914572
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "199be1b40deb451cb099944bed05cf5f",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1069.5205854373003,
-        "Y": 379.88823441093143
-      },
-      {
-        "Name": "Parse_Roof Style No 시트(as dict)",
-        "ShowGeometry": true,
-        "Id": "094d1b59a2e2437eaa095da8a63eb2f3",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -300.88155301021243,
-        "Y": 816.89952928203127
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "a178b1ecea2e451081dce38a20ed1b7c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1086.7989087042852,
-        "Y": 903.96119077144317
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "768e2a2b625f4c599f27bf328619349f",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1285.0934366525178,
-        "Y": 1448.1394207677361
-      },
-      {
-        "Name": "Parse_Door Style No 시트(as dict)",
-        "ShowGeometry": true,
-        "Id": "cb9e45040c6143fd839b72562fe31314",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -299.26839992709245,
-        "Y": 1333.986135664263
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "66078d6f5fdc4e59ac9489c83c2af7d9",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -1130.2652805964053,
-        "Y": 2049.344279394435
-      },
-      {
-        "Name": "Parse_Window Style No 시트(as dict)",
-        "ShowGeometry": true,
-        "Id": "0391409575d34edfad80df57b34281c2",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -301.35224456991705,
-        "Y": 1930.0128350361745
-      },
-      {
-        "Name": "Parse_Int Finish Style No 시트(as dict)",
-        "ShowGeometry": true,
-        "Id": "1787ae4a90704f468e93b85c7e26f062",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -310.04272632280026,
-        "Y": -244.44128979407742
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "ce869654c8964417aaea73a4f0666c64",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -849.51904935536072,
-        "Y": -348.60237264897523
-      },
-      {
-        "Name": "List.Join",
-        "ShowGeometry": true,
-        "Id": "35b42533714e4b12b11737ac976ec3eb",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1033.3985108596246,
-        "Y": 698.70361619387359
+        "X": -2080.96301753735,
+        "Y": 176.64552057069125
       },
       {
         "Name": "List Create",
@@ -2410,8 +2870,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 139.95259305565924,
-        "Y": 328.34737979045673
+        "X": 176.47496543838997,
+        "Y": 1094.4761052114497
       },
       {
         "Name": "List Create",
@@ -2420,8 +2880,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 125.36590576947583,
-        "Y": 822.3127186551269
+        "X": 154.8898776312808,
+        "Y": 1371.458595284696
       },
       {
         "Name": "List Create",
@@ -2430,8 +2890,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 140.36701385726406,
-        "Y": 1323.8244368952455
+        "X": 169.89098571906902,
+        "Y": 1872.9703135248146
       },
       {
         "Name": "List Create",
@@ -2440,8 +2900,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 157.85514997864777,
-        "Y": 1964.4567499781015
+        "X": 187.37912184045274,
+        "Y": 2513.6026266076706
       },
       {
         "Name": "Code Block",
@@ -2454,14 +2914,14 @@
         "Y": 1647.1936713608075
       },
       {
-        "Name": "Parse_시트(as dict)",
+        "Name": "Parse_시트(as dict)_only int",
         "ShowGeometry": true,
         "Id": "0213dd99b96344cf8ae386893d4cce96",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1099.2236014709067,
-        "Y": -982.85866836476055
+        "X": -578.66700993947609,
+        "Y": -336.06242104727949
       },
       {
         "Name": "Code Block",
@@ -2470,8 +2930,318 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1658.3148358026763,
-        "Y": -673.35956669060988
+        "X": -984.66700993947609,
+        "Y": -169.40742104727951
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "3c5ea198aa934ea9a6306fb103a4cffb",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -984.66700993947609,
+        "Y": -392.2349210472795
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "292761f933534b20a82a185794df07b9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1285.6787480571654,
+        "Y": 573.24560948622741
+      },
+      {
+        "Name": "Parse_시트(as dict)",
+        "ShowGeometry": true,
+        "Id": "622e64b78c524228b2eacd4b2e785abf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -509.11101056377265,
+        "Y": 784.53883999214236
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "f0b0184428844430adb30e9cdcca2637",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -842.11101056377265,
+        "Y": 935.1938399921421
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "0bd970a950be4ff18f8afce32bf452b1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -842.11101056377265,
+        "Y": 744.36633999214223
+      },
+      {
+        "Name": "WallType.ByName",
+        "ShowGeometry": true,
+        "Id": "75edf09508374ef5a4df65df94dca1ae",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4136.7876861989389,
+        "Y": 1551.3609884972427
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "4b29bb064e944d90968343108451f6bd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3850.5631640924325,
+        "Y": 1519.4477223432787
+      },
+      {
+        "Name": "ElementType.Duplicate",
+        "ShowGeometry": true,
+        "Id": "d804d043e8df4840b6b2995201fc1d92",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": 4927.6652822657352,
+        "Y": 1572.8268674471326
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "f4a161b26c824df9935ec538dd3042ba",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3170.6793662271834,
+        "Y": 1695.8654064916243
+      },
+      {
+        "Name": "List.GetItemAtIndex",
+        "ShowGeometry": true,
+        "Id": "044e94b03f3d489bae6842ec4d089411",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3578.9008151051171,
+        "Y": 1826.5035482038741
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ed3cf8d47a624fa0a5d0ee02ce27a599",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3324.0815712039162,
+        "Y": 2160.6573415099119
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "6d508bab5be14b2bb7b4330d7df32901",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4587.066466236407,
+        "Y": 1813.0972836614369
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "e069d87e6a8f4920a3ca0a0f074a5fab",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3327.195726284006,
+        "Y": 2320.1870399142585
+      },
+      {
+        "Name": "List.GetItemAtIndex",
+        "ShowGeometry": true,
+        "Id": "3fe3e3f79c8446319b5b0903459b9d27",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3582.014970185206,
+        "Y": 2294.2937647032536
+      },
+      {
+        "Name": "String.Join",
+        "ShowGeometry": true,
+        "Id": "66b2dacdc4bc4ef5b5a50e290de16699",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4282.3572339841321,
+        "Y": 2061.8379660123633
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "72d97ca73bea4a4b84bef3464fef439d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4003.3710068242171,
+        "Y": 1915.742013648435
+      },
+      {
+        "Name": "List Create",
+        "ShowGeometry": true,
+        "Id": "f08b75867c4442649c11b21bc57f71d4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3879.2453922693153,
+        "Y": 2141.9444675696564
+      },
+      {
+        "Name": "Parse_시트(as dict)",
+        "ShowGeometry": true,
+        "Id": "2c2c987d4b954a3882f2f62425db531a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -503.04210195188784,
+        "Y": 1383.015065105054
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "4bfee6c5fa40433e9a09d422952cf98c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -836.04210195188784,
+        "Y": 1533.6700651050539
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "c3e2e56ebc6f464aa3c6fe3f1a8efd19",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -836.04210195188784,
+        "Y": 1342.8425651050538
+      },
+      {
+        "Name": "Parse_시트(as dict)",
+        "ShowGeometry": true,
+        "Id": "30b4beaaf4474fa5817bfaeac2567441",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -510.65779109167249,
+        "Y": 1937.801590151297
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ac8e8a7efa5f44c4a84dcfe89f0b3da3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -843.65779109167249,
+        "Y": 2088.456590151297
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "8c2ba427b5974777bef5bae274ab91cf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1243.3849729446974,
+        "Y": 1890.8731377819502
+      },
+      {
+        "Name": "Parse_시트(as dict)",
+        "ShowGeometry": true,
+        "Id": "5a2c07ab66ab4b42804c5de4845140f9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -509.11547396189303,
+        "Y": 2519.612220913692
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "5824e8ab20de419bbc4feb350e02c8bd",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -842.115473961893,
+        "Y": 2670.2672209136922
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ae721479b1714e839e0ed27173b88d2c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1241.842655814916,
+        "Y": 2472.683768544342
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "960c256fcd3c4bcc99c7e747a35f3404",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1419.1144024383939,
+        "Y": 2471.4060372533254
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "969373f47cce4f9bbfa19af2d2757406",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1458.965636610086,
+        "Y": 1894.1450204028961
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "72783eef69254ce289fd25763f60644a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1052.8081067412863,
+        "Y": 1336.7589175152816
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "25454599a22143848779c02cb0bef2b8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1060.9618624693353,
+        "Y": 745.806816000457
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ea96cdd67ea840639cffe15927b9c675",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1188.2747838890016,
+        "Y": -394.67997055296468
       }
     ],
     "Annotations": [
@@ -2492,12 +3262,12 @@
           "bac19085d0ff4cf3b0235e559a4744a7"
         ],
         "HasNestedGroups": false,
-        "Left": 3963.3883494935435,
-        "Top": 548.93844630826356,
-        "Width": 1520.1619690218631,
+        "Left": 3869.1359530645136,
+        "Top": 222.19680535429234,
+        "Width": 1520.1619690218627,
         "Height": 752.59332373378425,
         "FontSize": 96.0,
-        "InitialTop": 693.93844630826356,
+        "InitialTop": 367.19680535429234,
         "InitialHeight": 620.59332373378425,
         "TextblockHeight": 135.0,
         "Background": "#FFC1D676"
@@ -2517,12 +3287,12 @@
           "945f4de7301c4395a1f6270ba23163b8"
         ],
         "HasNestedGroups": false,
-        "Left": 749.83201881472314,
-        "Top": 1931.9113182788287,
+        "Left": 118.47113948916581,
+        "Top": -812.63197783587555,
         "Width": 1483.693921173136,
         "Height": 449.78172149196826,
         "FontSize": 96.0,
-        "InitialTop": 2076.9113182788287,
+        "InitialTop": -667.63197783587555,
         "InitialHeight": 317.78172149196826,
         "TextblockHeight": 135.0,
         "Background": "#FFC1D676"
@@ -2542,15 +3312,36 @@
           "3c40068417d147198ec64126ee9ff7bb"
         ],
         "HasNestedGroups": false,
-        "Left": -4075.0151489649388,
-        "Top": -320.53696869255009,
+        "Left": -4071.33675979946,
+        "Top": -298.4666336996786,
         "Width": 1556.7269925745745,
         "Height": 862.98282673153062,
         "FontSize": 96.0,
-        "InitialTop": -175.53696869255009,
+        "InitialTop": -153.4666336996786,
         "InitialHeight": 730.98282673153062,
         "TextblockHeight": 135.0,
         "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "9ab97d4bfcac4b52bee5462574cd4002",
+        "Title": "int Finish Style",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "0213dd99b96344cf8ae386893d4cce96"
+        ],
+        "HasNestedGroups": false,
+        "Left": -588.66700993947609,
+        "Top": -409.06242104727949,
+        "Width": 304.0,
+        "Height": 305.0,
+        "FontSize": 36.0,
+        "InitialTop": -336.06242104727949,
+        "InitialHeight": 262.0,
+        "TextblockHeight": 63.0,
+        "Background": "#FFC1D676"
       },
       {
         "Id": "5ebcb414e0a34d8bbe08487c1907673e",
@@ -2572,8 +3363,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 2672.8347037935855,
-    "Y": 1313.8432569596257,
-    "Zoom": 1.5154702630177008
+    "X": -142.52496602006579,
+    "Y": -218.64897894081389,
+    "Zoom": 0.43643971162789524
   }
 }
