@@ -11,8 +11,8 @@
     {
       "Id": "1774378d3556407e91e9987e17052fa9",
       "Name": "Watch",
-      "Type": "unknown",
-      "InitialValue": "",
+      "Type": "string",
+      "InitialValue": "\n<!DOCTYPE html>\n<html lang=\"ko\">\n\n<head>\n    <link rel=\"shortcut icon\" href=\"#\">\n    <meta charset=\"UTF-8\">\n    <title>Dyn_HTML template</title>\n    <style>\n        \nbody { margin: 0; }\ncanvas { display: block; }\n\n\n    </style>\n</head>\n\n<body>\n\n\n\n<script type =\"module\" src=\"./js/script.js\"></script>\n\n</body>\n\n</html>\n",
       "Description": "Visualize the node's output"
     }
   ],
@@ -20,7 +20,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\n#bdName = IN[2]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = folderPath\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"index.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\n\r\ndef execute_chromeIndex(cwd):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    cmdStr = \"start chrome http:localhost:8000\"\r\n    cmdList= cmdStr.split(' ')\r\n    #subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\n\r\nfileName = make_resultHTMLname(contents,\"test\",cwd)\r\n#fileName = \"Test1.html\"\r\n\r\n#execute_file(fileName)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = execute_chromeIndex(cwd)#fileName.split('.')[0]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\nimport asyncio\r\nimport multiprocessing\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\ncwd = folderPath\r\n#bdName = IN[2]\r\n# Place your code below this line\r\n\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"index.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\n\r\ndef execute_chromeIndex(cwd):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    cmdStr = \"start chrome http:localhost:8000\"\r\n    cmdList= cmdStr.split(' ')\r\n    #subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\n\r\nfileName = make_resultHTMLname(contents,\"test\",cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = execute_chromeIndex(cwd)#fileName.split('.')[0]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -39,15 +39,6 @@
           "Id": "252f38547e3b483b917fa963345e8932",
           "Name": "IN[1]",
           "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "dafca0680f5648d684b1dd245df2406c",
-          "Name": "IN[2]",
-          "Description": "Input #2",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -911,7 +902,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njsPart = IN[0]\r\ncssPart = IN[1]\r\ntablePart = IN[2]\r\n\r\n# Place your code below this line\r\n##folderPath_r = folderPath.replace('\\\\','\\\\\\\\')\r\n\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n\r\n<head>\r\n    <link rel=\"shortcut icon\" href=\"#\">\r\n    <meta charset=\"UTF-8\">\r\n    <title>my first three.js app</title>\r\n    <style>\r\n        {cssPart}\r\n    </style>\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n\r\n<script type =\"module\" src=\"./js/script.js\"></script>\r\n\r\n</body>\r\n\r\n</html>\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njsPart = IN[0]\r\ncssPart = IN[1]\r\ntablePart = IN[2]\r\n\r\n# Place your code below this line\r\n##folderPath_r = folderPath.replace('\\\\','\\\\\\\\')\r\n\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n\r\n<head>\r\n    <link rel=\"shortcut icon\" href=\"#\">\r\n    <meta charset=\"UTF-8\">\r\n    <title>Dyn_HTML template</title>\r\n    <style>\r\n        {cssPart}\r\n    </style>\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n\r\n<script type =\"module\" src=\"./js/script.js\"></script>\r\n\r\n</body>\r\n\r\n</html>\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -962,7 +953,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport os\r\n\r\nimport subprocess\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncwd = IN[0]\r\n# Place your code below this line\r\nbatStr = \"\"\"\r\n@echo on\r\npython -m http.server\r\ncmd /k\r\n\"\"\"\r\ntitle = \"localWebserver\"\r\n\r\ndef make_startSever_bat(batStr,title,cwd):\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"{title}.bat\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(batStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef startBat(fileName, cwd):\r\n    cmdStr = f\".\\\\{fileName}\"\r\n    cmdList= cmdStr.split(' ')\r\n    \r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\nfileName = make_startSever_bat(batStr,title,cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = startBat(fileName, cwd)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport os\r\nimport asyncio\r\nimport multiprocessing\r\nimport subprocess\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncwd = IN[0]\r\n# Place your code below this line\r\nbatStr = \"\"\"\r\n@echo on\r\npython -m http.server\r\ncmd /k\r\n\"\"\"\r\n##cmd /k\r\ntitle = \"localWebserver\"\r\n\r\ndef make_startSever_bat(batStr,title,cwd):\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"{title}.bat\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(batStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef startBat(fileName, cwd):\r\n    cmdStr = f\".\\\\{fileName}\"\r\n    cmdList= cmdStr.split(' ')\r\n    os.chdir(cwd)\r\n    \r\n    res = subprocess.Popen(args=cmdList, shell=True)\r\n    return res\r\n\r\nbatFileName = make_startSever_bat(batStr,title,cwd)\r\n#res = multiprocessing.Process(name=\"SubProcess\", target=startBat, args=(batFileName, cwd))\r\n# Assign your output to the OUT variable.\r\nOUT = startBat(batFileName, cwd)\r\n\r\n#startBat(fileName, cwd)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1249,8 +1240,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 8040.96569514597,
-        "Y": 2375.4577193957271
+        "X": 8448.3714718434712,
+        "Y": 2372.9885934763479
       },
       {
         "Name": "cssPart",
@@ -1553,7 +1544,7 @@
         "HasNestedGroups": false,
         "Left": 6765.7939169649471,
         "Top": 2059.8807955647735,
-        "Width": 1556.1717781810221,
+        "Width": 1963.5775548785241,
         "Height": 625.73694733200227,
         "FontSize": 72.0,
         "InitialTop": 2175.8807955647735,
@@ -1587,8 +1578,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -9269.7333191510061,
-    "Y": -1969.8845686867398,
-    "Zoom": 1.2259901877851382
+    "X": -2146.016621470435,
+    "Y": -433.12990270013722,
+    "Zoom": 0.35375593374475867
   }
 }
