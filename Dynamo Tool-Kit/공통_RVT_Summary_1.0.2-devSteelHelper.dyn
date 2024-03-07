@@ -2009,7 +2009,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncats = IN[0]\r\ntypesGrps = IN[1]\r\ndataPairs = list(zip(cats,typesGrps))\r\n\r\n# Place your code below this line\r\ndef catNameWithSubContents(pair):\r\n    cat = pair[0]\r\n    types = pair[1]\r\n    preStr = \"<p>\"\r\n    postStr = \"</p>\"\r\n    head = \"<strong>\"+cat+\"</strong>\"\r\n    subs = \"<br>\".join(types)\r\n    res = \"\".join([preStr,head,\"<blockquote>\",subs,\"</blockquote>\",postStr])\r\n    return res\r\n\r\ndef make_wholePages(dataPairs):\r\n    preStr = \"<div>\"\r\n    postStr = \"</div>\"\r\n    trs = list(map(catNameWithSubContents,dataPairs))\r\n    res = \"\\n\".join([preStr, *trs, postStr])\r\n    return res\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_wholePages(dataPairs)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncats = IN[0]\r\ntypesGrps = IN[1]\r\ndataPairs = list(zip(cats,typesGrps))\r\n\r\n# Place your code below this line\r\ndef catNameWithSubContents(pair):\r\n    cat = pair[0]\r\n    types = pair[1]\r\n    preStr = \"<p>\"\r\n    postStr = \"</p>\"\r\n    head = \"<strong style='font-size:140%'>\"+cat+\"</strong>\"\r\n    #head = \"<h5>\"+cat+\"</h5>\"\r\n    subs = \"<br>\".join(types)\r\n    res = \"\".join([preStr,head,\"<blockquote>\",subs,\"</blockquote>\",postStr])\r\n    return res\r\n\r\ndef make_wholePages(dataPairs):\r\n    preStr = \"<div>\"\r\n    postStr = \"</div>\"\r\n    trs = list(map(catNameWithSubContents,dataPairs))\r\n    res = \"\\n\".join([preStr, *trs, postStr])\r\n    return res\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_wholePages(dataPairs)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3861,7 +3861,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda i: go\\\r\n    (\r\n        elems,\r\n        filter(lambda x: propCodes[i] in findTypeName(x)),\r\n        list,\r\n\r\n    )\r\n    grpPerKind = list(map(lambda x: findGroup(x), cnt))\r\n    res = []\r\n    for grp in grpPerKind:\r\n        tmp = []\r\n        if len(list(grp))==0:\r\n            res.append([])\r\n        else:\r\n            heavy, medium, light = [], [], []\r\n            for i in grp:\r\n                if findTypeWeight(i) == \"Heavy\":\r\n                    heavy.append(findTypeName(i))\r\n                elif findTypeWeight(i) == \"Medium\":\r\n                    medium.append(findTypeName(i))\r\n                elif findTypeWeight(i) == \"Light\":\r\n                    light.append(findTypeName(i))\r\n            \r\n            if len(heavy)==0:\r\n                heavy_set = [\" \"*10,\"!! Heavy !!\",\"\",\"부재 없음\"]\r\n            else:\r\n                heavy_set = [\" \"*10,\"!! Heavy !!\",\"\",*list(set(heavy))]\r\n\r\n            if len(medium)==0:\r\n                medium_set = [\" \"*10,\"!! Medium !!\",\"\",\"부재 없음\",\" \"*10]\r\n            else:\r\n                medium_set = [\" \"*10,\"!! Medium !!\",\"\",*list(set(medium))]\r\n\r\n            if len(heavy)==0:\r\n                light_set = [\" \"*10,\"!! Light !!\",\"\",\"부재 없음\",\" \"*10]\r\n            else:\r\n                light_set = [\" \"*10,\"!! Light !!\",\"\",*list(set(light))]\r\n            \r\n            #tmp = heavy_set, medium_set, light_set\r\n            tmp.append(heavy_set + medium_set + light_set)\r\n            #tmp.append(medium_set)\r\n            #tmp.append(light_set)\r\n            res.append(tmp)\r\n    return res\r\n\r\ngrpsWithoutName = groupByProperties(allFrames, propCodes, propNames)\r\n\r\ndef insertNamesIntoGrps(grpsWithoutName):\r\n    cnt = range(len(propCodes))\r\n    res = []\r\n    for i in cnt:\r\n        grp = grpsWithoutName[i]\r\n        if len(grp)==0:\r\n            res.append([propNames[i],\"-\"*20,\"\",\"부재없음\",\"#\"*50,\" \"*10])\r\n        else:\r\n            res.append([propNames[i],\"-\"*20,\"\",*grp,\"#\"*50,\" \"*10])\r\n    return res\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = insertNamesIntoGrps(grpsWithoutName)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda i: go\\\r\n    (\r\n        elems,\r\n        filter(lambda x: propCodes[i] in findTypeName(x)),\r\n        list,\r\n\r\n    )\r\n    grpPerKind = list(map(lambda x: list(findGroup(x)), cnt))\r\n    res = []\r\n    for grp in grpPerKind:\r\n        tmp = []\r\n        if len(grp)==0:\r\n            res.append([])\r\n        else:\r\n            heavy, medium, light, etc = [], [], [], []\r\n            for i in grp:\r\n                if findTypeWeight(i) == \"Heavy\":\r\n                    heavy.append(findTypeName(i))\r\n                elif findTypeWeight(i) == \"Light\":\r\n                    light.append(findTypeName(i))\r\n                elif findTypeWeight(i) == \"Medium\":\r\n                    medium.append(findTypeName(i))\r\n                else:\r\n                    etc.append(findTypeName(i))\r\n            pretag = \"<strong style='font-size:100%'>\"\r\n            posttag = \"</strong>\"\r\n            if len(heavy)==0:\r\n                heavy_set = [\" \"*10,pretag+\"!! Heavy !!\"+posttag,\"\",\"부재 없음\"]\r\n            else:\r\n                heavy_set = [\" \"*10,pretag+\"!! Heavy !!\"+posttag,\"\",*sorted(list(set(heavy)))]\r\n\r\n            if len(medium)==0:\r\n                medium_set = [\" \"*10,pretag+\"!! Medium !!\"+posttag,\"\",\"부재 없음\",\" \"*10]\r\n            else:\r\n                medium_set = [\" \"*10,pretag+\"!! Medium !!\"+posttag,\"\",*sorted(list(set(medium)))]\r\n\r\n            if len(light)==0:\r\n                light_set = [\" \"*10,pretag+\"!! Light !!\"+posttag,\"\",\"부재 없음\",\" \"*10]\r\n            else:\r\n                light_set = [\" \"*10,pretag+\"!! Light !!\"+posttag,\"\",*sorted(list(set(light)))]\r\n                \r\n            if len(etc)==0:\r\n                etc_set = []\r\n            else:\r\n                etc_set = [\" \"*10,pretag+\"!! Etc. !!\"+posttag,\"\",*sorted(list(set(etc)))]\r\n            \r\n\r\n            tmp.append(heavy_set + medium_set + light_set + etc_set)\r\n\r\n            res.append(tmp)\r\n    return res\r\n\r\ngrpsWithoutName = groupByProperties(allFrames, propCodes, propNames)\r\n\r\ndef insertNamesIntoGrps(grpsWithoutName):\r\n    cnt = range(len(propCodes))\r\n    res = []\r\n    for i in cnt:\r\n        grp = grpsWithoutName[i]\r\n        if len(grp)==0:\r\n            res.append([\"<strong style='font-size:120%'> [ \"+propNames[i]+\" ] </strong>\",\"-\"*20,\"\",\"부재없음\",\"=\"*50,\" \"*10])\r\n        else:\r\n            res.append([\"<strong style='font-size:120%'> [ \"+propNames[i]+\" ] </strong>\",\"-\"*20,\"\",*grp,\"=\"*50,\" \"*10])\r\n    return res\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = insertNamesIntoGrps(grpsWithoutName)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -4094,57 +4094,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Type Name\")\r\n    return res\r\n\r\ndef groupByPropertiesAndWeight(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda i: go\\\r\n    (\r\n        elems,\r\n        filter(lambda x: propCodes[i] in findTypeName(x)),\r\n        list,\r\n        lambda x: map(\\\r\n            lambda y: y.GetParameterValueByName(\"Family and Type\").\\\r\n                GetParameterValueByName(\"Nominal Weight\"),x) if len(x)!=0 else \"\",\r\n        list,\r\n    )\r\n    nomWeightslist = map(lambda x: findGroup(x), cnt)\r\n    \r\n    res = []\r\n    for nomWeights in nomWeightslist:\r\n        if len(nomWeights) == 0:\r\n            res.append(\"\")\r\n        else:\r\n            heavy,light,medium = [],[],[]\r\n            for i in nomWeights:\r\n                if i >= 90:\r\n                    heavy.append(\"Heavy\")\r\n                elif i <30:\r\n                    light.append(\"Light\")\r\n                else:\r\n                    medium.append(\"Medium\")\r\n            res.append(heavy)\r\n            res.append(medium)\r\n            res.append(light)\r\n                \r\n    return res\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = groupByPropertiesAndWeight(allFrames, propCodes, propNames)",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "0581b3a7b5e6484fbd632810dad476a1",
-      "Inputs": [
-        {
-          "Id": "f8b5e68d7f3e475da97cd7cbd49a659b",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "e98bb55540d74ad49a27855574865b35",
-          "Name": "IN[1]",
-          "Description": "Input #1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "07f8072e3c3840718deef281a15db3bd",
-          "Name": "IN[2]",
-          "Description": "Input #2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "0cf965342e93498fafa074b99c1eaedc",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -5019,12 +4968,6 @@
     },
     {
       "Start": "6c10471bfd524d58a4c497f146b6bcc7",
-      "End": "f8b5e68d7f3e475da97cd7cbd49a659b",
-      "Id": "9afd3c241b1b4b7fa6719060a3d4adba",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "6c10471bfd524d58a4c497f146b6bcc7",
       "End": "b672c5ee4eb0455ead2d2211d773533b",
       "Id": "2c8c398005b545ceb1b47bf0380f638f",
       "IsHidden": "False"
@@ -5054,21 +4997,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "1b9b1ba53cf74107b059c8a09054345a",
-      "End": "e98bb55540d74ad49a27855574865b35",
-      "Id": "091ec52982d54bfc955437b46c0d7432",
-      "IsHidden": "False"
-    },
-    {
       "Start": "dfac19b13c6a4666a8a7ec21d42fe27d",
       "End": "e113ab3717e64ff6bd538ad72ce589bf",
       "Id": "e70a9d8f46c74f3ea1ab98afc19375ce",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "dfac19b13c6a4666a8a7ec21d42fe27d",
-      "End": "07f8072e3c3840718deef281a15db3bd",
-      "Id": "23927f8ea3bc43b7b730687bbd46ab19",
       "IsHidden": "False"
     },
     {
@@ -6376,16 +6307,6 @@
         "Y": 4831.0
       },
       {
-        "Name": "빔 그루핑_nominal Weights",
-        "ShowGeometry": true,
-        "Id": "0581b3a7b5e6484fbd632810dad476a1",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 733.79039574458216,
-        "Y": 5711.3864104297263
-      },
-      {
         "Name": "Element.Parameters",
         "ShowGeometry": true,
         "Id": "a6f38370345e46e9a99c2f7e521bbca1",
@@ -6486,7 +6407,7 @@
         "Height": 719.00000000000091,
         "FontSize": 96.0,
         "InitialTop": 4106.0962767521005,
-        "InitialHeight": 587.00000000000045,
+        "InitialHeight": 587.00000000000091,
         "TextblockHeight": 135.0,
         "Background": "#FFC1D676"
       },
@@ -6556,7 +6477,7 @@
         "Height": 674.33047204623062,
         "FontSize": 72.0,
         "InitialTop": 4000.25232311055,
-        "InitialHeight": 508.0,
+        "InitialHeight": 571.33047204623062,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
@@ -6589,7 +6510,7 @@
         "Height": 920.37858442803008,
         "FontSize": 72.0,
         "InitialTop": 5898.1997723493969,
-        "InitialHeight": 807.051084428027,
+        "InitialHeight": 807.05108442802975,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
@@ -6619,7 +6540,7 @@
         "Height": 660.43576524889068,
         "FontSize": 72.0,
         "InitialTop": 7921.0472571589671,
-        "InitialHeight": 557.43576524888249,
+        "InitialHeight": 557.43576524889068,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
@@ -6652,7 +6573,7 @@
         "Height": 674.23617311908038,
         "FontSize": 72.0,
         "InitialTop": 7032.2227099107968,
-        "InitialHeight": 571.23617311908129,
+        "InitialHeight": 571.23617311908038,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
@@ -6687,8 +6608,8 @@
         "Background": "#FFFFAA45"
       }
     ],
-    "X": -773.61415824481583,
-    "Y": -6014.81218681757,
-    "Zoom": 1.1811747712233267
+    "X": -1110.3563450483284,
+    "Y": -6214.37589042335,
+    "Zoom": 1.2189105247463712
   }
 }
