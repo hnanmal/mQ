@@ -15,7 +15,7 @@ filter = curry(filter)
 map = curry(map)
 reduce = curry(reduce)
 
-go = lambda *args: reduce(lambda a,f: f(a), args) ## ÇÔ¼öµµ Ãà¾à °¡´É ##
+go = lambda *args: reduce(lambda a,f: f(a), args) ## í•¨ìˆ˜ë„ ì¶•ì•½ ê°€ëŠ¥ ##
 
 def dictUpdate(dic1,dic2):
     res = dic1.update(dic2)
@@ -42,7 +42,7 @@ wholeDatas = IN[1]
 db = wholeDatas[1:]
 allCatSheetsNames = IN[2][2:]
 
-calcStdSheet = db[0] ##»êÃâ±âÁØ ½ÃÆ®
+calcStdSheet = db[0] ##ì‚°ì¶œê¸°ì¤€ ì‹œíŠ¸
 allCatSheets = db[1:]
 
 
@@ -56,13 +56,13 @@ def find_IsInStr(target, string):
         return res
 
 def find_range_by_columnItem(db, col_idx, sep_rule):
-    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idx¿¡ ÇØ´çÇÏ´Â µ¥ÀÌÅÍ¸¸ ÃßÃâ)
+    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idxì— í•´ë‹¹í•˜ëŠ” ë°ì´í„°ë§Œ ì¶”ì¶œ)
     last_idx_tdb = len(tdb)-1
     tdb_enum = enumerate(tdb)
     target_RowNumber = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))
     endidxs_tmp= list(map(lambda x: x[0]-1,target_RowNumber))
     endidxs_tmp.pop(0)
-    endidxs = endidxs_tmp + [last_idx_tdb] ## °¢ ±¸°£º° ¸¶Áö¸· Çà ¹øÈ£
+    endidxs = endidxs_tmp + [last_idx_tdb] ## ê° êµ¬ê°„ë³„ ë§ˆì§€ë§‰ í–‰ ë²ˆí˜¸
     rangeSttIdxs = list(map(lambda x: x[0]+1,target_RowNumber))
     rangeEndIdxs = endidxs
     result = list(zip(rangeSttIdxs, rangeEndIdxs))
@@ -82,24 +82,24 @@ def find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):
 
 def get_DataOnRowAreasAtSheet(sheet:list, discrHDRStr, discrRowStr):
     """
-    ÆÇº°±âÁØ Header¹®ÀÚ¿­(discrHDRStr)ÀÌ µé¾îÀÖ´Â ¿­¿¡¼­,
-    ÆÇº°±âÁØ Çà ¹®ÀÚ¿­(discrRowStr)ÀÌ µé¾îÀÖ´Â Çà¹øÈ£ ±âÁØÀ¸·Î ±¸¿ªÀ» ³ª´©¾î µ¥ÀÌÅÍ ¸®½ºÆ® ¹İÈ¯
+    íŒë³„ê¸°ì¤€ Headerë¬¸ìì—´(discrHDRStr)ì´ ë“¤ì–´ìˆëŠ” ì—´ì—ì„œ,
+    íŒë³„ê¸°ì¤€ í–‰ ë¬¸ìì—´(discrRowStr)ì´ ë“¤ì–´ìˆëŠ” í–‰ë²ˆí˜¸ ê¸°ì¤€ìœ¼ë¡œ êµ¬ì—­ì„ ë‚˜ëˆ„ì–´ ë°ì´í„° ë¦¬ìŠ¤íŠ¸ ë°˜í™˜
     """
     
     hdrs_withIdx = find_headersAtSheet(sheet)
     rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdx, discrHDRStr, discrRowStr)
-    typesTitle_idx = list(map(lambda x: x[0]-1, rowAreasAtSheet)) # °¢ Å¸ÀÔ ¸íÀÌ À§Ä¡ÇÑ ÀÎµ¦½º
+    typesTitle_idx = list(map(lambda x: x[0]-1, rowAreasAtSheet)) # ê° íƒ€ì… ëª…ì´ ìœ„ì¹˜í•œ ì¸ë±ìŠ¤
     rowsGrps_perType_withNone = list(map(lambda x: sheet[x[0]-1:x[1]], rowAreasAtSheet))
-    # NoneÁ¦°Å
+    # Noneì œê±°
     rowsGrps_perType = go(
         rowsGrps_perType_withNone,
-        ## ÇÏ³ªÀÇ Å¸ÀÔÀ» ±ÔÁ¤ÇÏ´Â ÇàµéÀÇ ¸ğÀÓ¿¡¼­
+        ## í•˜ë‚˜ì˜ íƒ€ì…ì„ ê·œì •í•˜ëŠ” í–‰ë“¤ì˜ ëª¨ì„ì—ì„œ
         map(lambda rowGrp: \
-        ## ÇÑ Çà¾¿ °ñ¶ó¼­
+        ## í•œ í–‰ì”© ê³¨ë¼ì„œ
         map(lambda row: \
-        ## ÇàÀ» ±¸¼ºÇÏ´Â ¼¿ °ª Áß NoneÀÌ ÀÖÀ¸¸é ºó¹®ÀÚ¿­·Î Ä¡È¯
+        ## í–‰ì„ êµ¬ì„±í•˜ëŠ” ì…€ ê°’ ì¤‘ Noneì´ ìˆìœ¼ë©´ ë¹ˆë¬¸ìì—´ë¡œ ì¹˜í™˜
         map(lambda cell: "" if cell==None else cell, row), rowGrp) ),
-        ## ¸Ê °´Ã¼°¡ ¹İÈ¯µÇ¹Ç·Î ¸®½ºÆ® º¯È¯
+        ## ë§µ ê°ì²´ê°€ ë°˜í™˜ë˜ë¯€ë¡œ ë¦¬ìŠ¤íŠ¸ ë³€í™˜
         list,
     )
     
@@ -108,7 +108,7 @@ def get_DataOnRowAreasAtSheet(sheet:list, discrHDRStr, discrRowStr):
 
 def setDict_OnEachCalType(data_perType, hdrs_withIdx):
     """
-    data_perType: '#' µîÀÇ ±¸ºĞ±âÈ£¸¦ ÅëÇØ ³ª´µ¾îÁø Çà ±¸°£ ³» ÀüÃ¼ µ¥ÀÌÅÍ_(Çà±âÁØÀ¸·Î ±¸ºĞµÈ Çü½Ä)
+    data_perType: '#' ë“±ì˜ êµ¬ë¶„ê¸°í˜¸ë¥¼ í†µí•´ ë‚˜ë‰˜ì–´ì§„ í–‰ êµ¬ê°„ ë‚´ ì „ì²´ ë°ì´í„°_(í–‰ê¸°ì¤€ìœ¼ë¡œ êµ¬ë¶„ëœ í˜•ì‹)
     """
     hdrs_withIdxDict = dict(hdrs_withIdx)
     eff_hdrs_idx = list(zip(*hdrs_withIdx))[1]
@@ -118,42 +118,42 @@ def setDict_OnEachCalType(data_perType, hdrs_withIdx):
 
     paramDicts_withTypeName = go(
         data_perType,
-        ## ¿¢¼¿ "Ç×¸ñ" ¿­¿¡ °ªÀÌ ¾ø´Â Çà Á¦¿Ü
-        filter(lambda row: row[hdrs_withIdxDict["Ç×¸ñ"]] != None), list,
+        ## ì—‘ì…€ "í•­ëª©" ì—´ì— ê°’ì´ ì—†ëŠ” í–‰ ì œì™¸
+        filter(lambda row: row[hdrs_withIdxDict["í•­ëª©"]] != None), list,
         
-        ## ¸ğµç Null °ª ºó¹®ÀÚ¿­·Î Ä¡È¯
+        ## ëª¨ë“  Null ê°’ ë¹ˆë¬¸ìì—´ë¡œ ì¹˜í™˜
         map(lambda row: list(map(lambda cell: cell if cell!=None else "",row))), list,
 
-        ## Çì´õ¿¡ ÇØ´çÇÏ´Â Çà °ªÀ» ÃßÃâ--
+        ## í—¤ë”ì— í•´ë‹¹í•˜ëŠ” í–‰ ê°’ì„ ì¶”ì¶œ--
         map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,
         
-        ## Çì´õÀÌ¸§°ú Çà ³»ºÎÀÇ °ªÀ» 2°³¾¿ Â¦Áö¾î ÁÜ
+        ## í—¤ë”ì´ë¦„ê³¼ í–‰ ë‚´ë¶€ì˜ ê°’ì„ 2ê°œì”© ì§ì§€ì–´ ì¤Œ
         map(lambda row: list(zip(eff_hdrs_name, row))), list,
         
-        ## Çì´õÀÌ¸§ : °ªÀÇ ÇüÅÂ·Î °¢ Çà µ¥ÀÌÅÍ¸¦ µñ¼Å³Ê¸®·Î ¸¸µë
+        ## í—¤ë”ì´ë¦„ : ê°’ì˜ í˜•íƒœë¡œ ê° í–‰ ë°ì´í„°ë¥¼ ë”•ì…”ë„ˆë¦¬ë¡œ ë§Œë“¬
         map(lambda x: dict(x)), list,
         
-        ## "»êÃâ¼ö½Ä ¾àÀÚ" Å°¿¡ ÇÒ´çµÈ °ªÀÌ ºó¹®ÀÚ¿­ÀÎ °æ¿ì Á¦¿Ü
-        filter(lambda d: d["»êÃâ¼ö½Ä ¾àÀÚ"]!=""), list,
+        ## "ì‚°ì¶œìˆ˜ì‹ ì•½ì" í‚¤ì— í• ë‹¹ëœ ê°’ì´ ë¹ˆë¬¸ìì—´ì¸ ê²½ìš° ì œì™¸
+        filter(lambda d: d["ì‚°ì¶œìˆ˜ì‹ ì•½ì"]!=""), list,
         
-        ## µñ¼Å³Ê¸®¿¡ "Q'ty Cal Type Tag" Å°-°ª Ãß°¡
+        ## ë”•ì…”ë„ˆë¦¬ì— "Q'ty Cal Type Tag" í‚¤-ê°’ ì¶”ê°€
         map(lambda d: dictUpdate(d,{"Q'ty Cal Type Tag":calcTypeName})), list,
         
-        ## µñ¼Å³Ê¸®¿¡ "applyForCalc" Å°-°ª Ãß°¡
-        ## ("¼öµ¿ ÀÔ·Â°ª"Ç×¸ñÀÌ ÀÖ´Â °æ¿ì¿¡´Â ±×°ªÀ» Àû¿ëÇÏ°í ¾Æ´Ñ°æ¿ì "Parameter"Ç×¸ñ °ª
+        ## ë”•ì…”ë„ˆë¦¬ì— "applyForCalc" í‚¤-ê°’ ì¶”ê°€
+        ## ("ìˆ˜ë™ ì…ë ¥ê°’"í•­ëª©ì´ ìˆëŠ” ê²½ìš°ì—ëŠ” ê·¸ê°’ì„ ì ìš©í•˜ê³  ì•„ë‹Œê²½ìš° "Parameter"í•­ëª© ê°’
         map(lambda d: dictUpdate(d, { "applyForCalc":\
-            d["¼öµ¿ ÀÔ·Â°ª"] if d["¼öµ¿ ÀÔ·Â°ª"] != "" \
+            d["ìˆ˜ë™ ì…ë ¥ê°’"] if d["ìˆ˜ë™ ì…ë ¥ê°’"] != "" \
             else d["Parameter"] if d["Parameter"] != "" \
             else 0 })), list,
         
-        ## Å¸ÀÔÀÌ¸§À» Å°°ªÀ¸·Î ÇÏ´Â ÁßÃ¸ µñ¼Å³Ê¸® Çü¼º
+        ## íƒ€ì…ì´ë¦„ì„ í‚¤ê°’ìœ¼ë¡œ í•˜ëŠ” ì¤‘ì²© ë”•ì…”ë„ˆë¦¬ í˜•ì„±
         lambda x: {calcTypeName: x},
     )
 
     return paramDicts_withTypeName
 
 ###################################################################################################################
-#!!! ÇÔ¼ö°¡ ³Ê¹« Å©´Ù ÂÉ°³ÀÚ
+#!!! í•¨ìˆ˜ê°€ ë„ˆë¬´ í¬ë‹¤ ìª¼ê°œì
 #!!! setDict_OnEachFamType
 #!!! -> setDict_EachRow_perGroup//setDict_stdWM_perGroup//setDict_applied_perGroup
 ###################################################################################################################
@@ -163,15 +163,15 @@ def setDict_OnEachCalType(data_perType, hdrs_withIdx):
 
 def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
     """
-    data_perType: '#' µîÀÇ ±¸ºĞ±âÈ£¸¦ ÅëÇØ ³ª´µ¾îÁø Çà ±¸°£ ³» ÀüÃ¼ µ¥ÀÌÅÍ_(Çà±âÁØÀ¸·Î ±¸ºĞµÈ Çü½Ä)
-    hdrs_withIdx: Çì´õ ¸í°ú ÀÎµ¦½º ¹øÈ£°¡ ¼ø¼­´ë·Î ³ª¿­µÈ ÁßÃ¸ ¸®½ºÆ®
-    cat : Room ½ÃÆ® ¿©ºÎ ÆÇº°¿ë ÀÔ·Â°ª
+    data_perType: '#' ë“±ì˜ êµ¬ë¶„ê¸°í˜¸ë¥¼ í†µí•´ ë‚˜ë‰˜ì–´ì§„ í–‰ êµ¬ê°„ ë‚´ ì „ì²´ ë°ì´í„°_(í–‰ê¸°ì¤€ìœ¼ë¡œ êµ¬ë¶„ëœ í˜•ì‹)
+    hdrs_withIdx: í—¤ë” ëª…ê³¼ ì¸ë±ìŠ¤ ë²ˆí˜¸ê°€ ìˆœì„œëŒ€ë¡œ ë‚˜ì—´ëœ ì¤‘ì²© ë¦¬ìŠ¤íŠ¸
+    cat : Room ì‹œíŠ¸ ì—¬ë¶€ íŒë³„ìš© ì…ë ¥ê°’
     """
     hdrs_withIdxDict = dict(hdrs_withIdx)
     eff_hdrs_idx = list(zip(*hdrs_withIdx))[1]
     eff_hdrs_name = list(zip(*hdrs_withIdx))[0]
-    # data_perType ¿¡¼­, Å¸ÀÔ ±×·ì º°·Î "Q'ty Cal Type Tag" ¿­¿¡ ÀÖ´Â °ªÀÌ
-    # NoneÀÏ¶§°¡ ÀÖÀ¸¹Ç·Î ¿¹¿ÜÃ³¸®¸¦ ÇØÁÖ´Â ±¸°£
+    # data_perType ì—ì„œ, íƒ€ì… ê·¸ë£¹ ë³„ë¡œ "Q'ty Cal Type Tag" ì—´ì— ìˆëŠ” ê°’ì´
+    # Noneì¼ë•Œê°€ ìˆìœ¼ë¯€ë¡œ ì˜ˆì™¸ì²˜ë¦¬ë¥¼ í•´ì£¼ëŠ” êµ¬ê°„
     calcTypeName = data_perType[0][hdrs_withIdxDict["Q'ty Cal Type Tag"]] \
         if data_perType[0][hdrs_withIdxDict["Q'ty Cal Type Tag"]]!=None else "N/A"
     stdFamTypeNo = data_perType[0][hdrs_withIdxDict["NO"]]
@@ -179,68 +179,68 @@ def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
 
     wmspec_headers = ["Work Master Code", "GaugeCode", "Unit"]\
         + list(filter(lambda x: "Work Cat" in x or "Spec" in x, eff_hdrs_name))\
-        + ["Description","ÀÔÂû_¹°·®»êÃâ½Ä", "½ÇÇà_¹°·®»êÃâ½Ä"]
+        + ["Description","ì…ì°°_ë¬¼ëŸ‰ì‚°ì¶œì‹", "ì‹¤í–‰_ë¬¼ëŸ‰ì‚°ì¶œì‹"]
     
-    # ±×·ì ¾ÈÀÇ ¸ğµç ÇàÀ» ¸®½ºÆ®¿¡¼­ Ä®·³ ¸íÀÌ ºÙÀº µñ¼Å³Ê¸®·Î ÀüÈ¯ÇÏ´Â ±¸°£
-    # ½ÇÁ¦ Àû¿ë ÆĞ¹Ğ¸® Å¸ÀÔ ¹× °¢°¢ °³º°ÇÒ´ç WM Á¤¸®
+    # ê·¸ë£¹ ì•ˆì˜ ëª¨ë“  í–‰ì„ ë¦¬ìŠ¤íŠ¸ì—ì„œ ì¹¼ëŸ¼ ëª…ì´ ë¶™ì€ ë”•ì…”ë„ˆë¦¬ë¡œ ì „í™˜í•˜ëŠ” êµ¬ê°„
+    # ì‹¤ì œ ì ìš© íŒ¨ë°€ë¦¬ íƒ€ì… ë° ê°ê° ê°œë³„í• ë‹¹ WM ì •ë¦¬
     rowDicts = go(
         data_perType,
-        ## ¸ğµç Null °ª ºó¹®ÀÚ¿­·Î Ä¡È¯
+        ## ëª¨ë“  Null ê°’ ë¹ˆë¬¸ìì—´ë¡œ ì¹˜í™˜
         map(lambda row: list(map(lambda cell: cell if cell!=None else "",row))), list,
         
-        ## Çì´õ¿¡ ÇØ´çÇÏ´Â Çà ³»¿ëÀ» ÃßÃâ
+        ## í—¤ë”ì— í•´ë‹¹í•˜ëŠ” í–‰ ë‚´ìš©ì„ ì¶”ì¶œ
         map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,
         
-        ## Çì´õÀÌ¸§°ú Çà ³»ºÎÀÇ °ªÀ» 2°³¾¿ Â¦Áö¾î ÁÜ
+        ## í—¤ë”ì´ë¦„ê³¼ í–‰ ë‚´ë¶€ì˜ ê°’ì„ 2ê°œì”© ì§ì§€ì–´ ì¤Œ
         map(lambda row: list(zip(eff_hdrs_name, row))), list,        
 
-        ## Çì´õÀÌ¸§ : °ªÀÇ ÇüÅÂ·Î °¢ Çà µ¥ÀÌÅÍ¸¦ µñ¼Å³Ê¸®·Î ¸¸µë
+        ## í—¤ë”ì´ë¦„ : ê°’ì˜ í˜•íƒœë¡œ ê° í–‰ ë°ì´í„°ë¥¼ ë”•ì…”ë„ˆë¦¬ë¡œ ë§Œë“¬
         map(lambda x: dict(x)), list,
     )
 
-    # ±×·ì ³»ÀÇ ¸ğµç Çàµñ¼Å³Ê¸® µé Áß Ã£°íÀÚ ÇÏ´Â ±ÔÄ¢¿¡ µû¶ó Âü°ÅÁş ¿©ºÎ¸¦ ¹İÈ¯ÇÏ´Â ÇÔ
+    # ê·¸ë£¹ ë‚´ì˜ ëª¨ë“  í–‰ë”•ì…”ë„ˆë¦¬ ë“¤ ì¤‘ ì°¾ê³ ì í•˜ëŠ” ê·œì¹™ì— ë”°ë¼ ì°¸ê±°ì§“ ì—¬ë¶€ë¥¼ ë°˜í™˜í•˜ëŠ” í•¨
     def findRow_AppliedType(rowDict, tgtHDRname, rule=None):
         p = re.compile('[0-9]{3,5}')
         target = str(rowDict[tgtHDRname])
-        ## ÇÔ¼ö È£Ãâ½Ã ±¸ºĞÀÚ(rule) ¾øÀÌ È£ÃâÇÑ °æ¿ì
-        ## -Room Category ½ÃÆ® ¿ë ÀÌ¸ç "Standard Type" Ç×¸ñÀÇ °ªÀÌ 000ÇüÅÂÀÇ ¼ıÀÚÀÎÁö¸¦ ÆÇº°
-        ## -Room Category Áß "Standard Type" Ä®·³¿¡ ·ë ³Ñ¹ö, "Family Type Name" Ä®·³¿¡ ·ë ÀÌ¸§ ÀÔ·ÂÇÏ°Ô µÇ¾îÀÖÀ½
+        ## í•¨ìˆ˜ í˜¸ì¶œì‹œ êµ¬ë¶„ì(rule) ì—†ì´ í˜¸ì¶œí•œ ê²½ìš°
+        ## -Room Category ì‹œíŠ¸ ìš© ì´ë©° "Standard Type" í•­ëª©ì˜ ê°’ì´ 000í˜•íƒœì˜ ìˆ«ìì¸ì§€ë¥¼ íŒë³„
+        ## -Room Category ì¤‘ "Standard Type" ì¹¼ëŸ¼ì— ë£¸ ë„˜ë²„, "Family Type Name" ì¹¼ëŸ¼ì— ë£¸ ì´ë¦„ ì…ë ¥í•˜ê²Œ ë˜ì–´ìˆìŒ
         if rule==None:
             p = re.compile('[0-9]{3,5}')
             m = p.match(target)
             stdCase = target =="Room No"
             res = all([m or stdCase])
-        ## ±¸ºĞÀÚ(rule)°¡ Á¤±ÔÇ¥Çö½Ä °´Ã¼·Î µé¾î¿Â °æ¿ì
+        ## êµ¬ë¶„ì(rule)ê°€ ì •ê·œí‘œí˜„ì‹ ê°ì²´ë¡œ ë“¤ì–´ì˜¨ ê²½ìš°
         elif isinstance(rule, re.Pattern):
             m = p.match(target)
             res = all([m])
-        ## ±¸ºĞÀÚ(rule)°¡ ¹®ÀÚ¿­·Î µé¾î¿Â °æ¿ì
+        ## êµ¬ë¶„ì(rule)ê°€ ë¬¸ìì—´ë¡œ ë“¤ì–´ì˜¨ ê²½ìš°
         else:
             res = rule in target
         return res
     
-    # ±×·ì ³»ÀÇ ¸ğµç Çà µñ¼Å³Ê¸® Áß, °³º° Àû¿ë ÆĞ¹Ğ¸®¸íÀÌ ¾Æ´Ñ °øÅë WM Ç×¸ñ¿¡ ´ëÇÑ Á¤º¸ ÃßÃâ
+    # ê·¸ë£¹ ë‚´ì˜ ëª¨ë“  í–‰ ë”•ì…”ë„ˆë¦¬ ì¤‘, ê°œë³„ ì ìš© íŒ¨ë°€ë¦¬ëª…ì´ ì•„ë‹Œ ê³µí†µ WM í•­ëª©ì— ëŒ€í•œ ì •ë³´ ì¶”ì¶œ
     stdFamTypeInfo = go(
         rowDicts,
-        ## ¿¢¼¿ "¹°·®»êÃâ½Ä", "Work Master Code" ¿­¿¡ °ªÀÌ ¾ø´Â Çà Á¦¿Ü
-        ## Family Type Name¿¡ "H_" ¹®ÀÚ¿­ Æ÷ÇÔµÈ °æ¿ì Á¦¿Ü
-        filter(lambda d: d["ÀÔÂû_¹°·®»êÃâ½Ä"] != ""),
-        filter(lambda d: d["½ÇÇà_¹°·®»êÃâ½Ä"] != ""),
+        ## ì—‘ì…€ "ë¬¼ëŸ‰ì‚°ì¶œì‹", "Work Master Code" ì—´ì— ê°’ì´ ì—†ëŠ” í–‰ ì œì™¸
+        ## Family Type Nameì— "H_" ë¬¸ìì—´ í¬í•¨ëœ ê²½ìš° ì œì™¸
+        filter(lambda d: d["ì…ì°°_ë¬¼ëŸ‰ì‚°ì¶œì‹"] != ""),
+        filter(lambda d: d["ì‹¤í–‰_ë¬¼ëŸ‰ì‚°ì¶œì‹"] != ""),
         filter(lambda d: d["Work Master Code"] != ""),
         filter( lambda d: \
             (not findRow_AppliedType(d, "Standard Type")) or (not findRow_AppliedType(d, "Standard Type", rule="H_")) \
-            ### ·ëÄ«Å×°í¸®ÀÎ °æ¿ì´Â "Standard Type"Ç×¸ñ¿¡ °ªÀÌ ¼ıÀÚ°¡ ¾Æ´Ï°Å³ª, "H_"¹®ÀÚ¿­ÀÌ Æ÷ÇÔµÇÁö ¾ÊÀº Ç×¸ñ ÃßÃâ
+            ### ë£¸ì¹´í…Œê³ ë¦¬ì¸ ê²½ìš°ëŠ” "Standard Type"í•­ëª©ì— ê°’ì´ ìˆ«ìê°€ ì•„ë‹ˆê±°ë‚˜, "H_"ë¬¸ìì—´ì´ í¬í•¨ë˜ì§€ ì•Šì€ í•­ëª© ì¶”ì¶œ
             if cat == "roomCat" else\
-            ### ·ëÄ«Å×°í¸®°¡ ¾Æ´Ñ °æ¿ì, "Family Type Name" Ç×¸ñ¿¡ "H_"¹®ÀÚ¿­ Æ÷ÇÔµÇÁö ¾ÊÀº Ç×¸ñ ÃßÃâ 
+            ### ë£¸ì¹´í…Œê³ ë¦¬ê°€ ì•„ë‹Œ ê²½ìš°, "Family Type Name" í•­ëª©ì— "H_"ë¬¸ìì—´ í¬í•¨ë˜ì§€ ì•Šì€ í•­ëª© ì¶”ì¶œ 
             not findRow_AppliedType(d, "Family Type Name", rule="H_") ),
         list,
         
-        # wmSpecs ¼Ó¼ºµéÀ» Çì´õ·Î ÇÏ´Â »õ·Î¿î µñ¼Å³Ê¸® Çü¼º ¹× °ª Ãß°¡(°ªÀº listÇüÅÂ)
+        # wmSpecs ì†ì„±ë“¤ì„ í—¤ë”ë¡œ í•˜ëŠ” ìƒˆë¡œìš´ ë”•ì…”ë„ˆë¦¬ í˜•ì„± ë° ê°’ ì¶”ê°€(ê°’ì€ listí˜•íƒœ)
         map( lambda d: \
             go(
-                ### wmspec°ü·Ã Ç×¸ñµé °ªÀ» ¸®½ºÆ®·Î ¸ğÀ½
+                ### wmspecê´€ë ¨ í•­ëª©ë“¤ ê°’ì„ ë¦¬ìŠ¤íŠ¸ë¡œ ëª¨ìŒ
                 map(lambda x: d[x], wmspec_headers), list,
-                ### Ç×¸ñ¸í°ú Ç×¸ñ°ªÀ» ¸ğ¾Æ¼­ µñ¼Å³Ê¸® ÇüÅÂ·Î º¯È¯
+                ### í•­ëª©ëª…ê³¼ í•­ëª©ê°’ì„ ëª¨ì•„ì„œ ë”•ì…”ë„ˆë¦¬ í˜•íƒœë¡œ ë³€í™˜
                 lambda x: zip(wmspec_headers,x), dict,
             )
         ),
@@ -249,11 +249,11 @@ def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
     
     def dictsUnion_withInnerKey(dicts:list,innerkey):
         """
-        ÃÖ»óÀ§ Å°°ªÀÌ "ÇÏ³ª"ÀÌ°í, ±× ÇÏÀ§¿¡ Á¾¼ÓµÈ µñ¼Å³Ê¸®ÀÇ Å°±¸¼ºÀÌ µ¿ÀÏÇÑ º¹¼öÀÇ µñ¼Å³Ê¸® Áß ,
-        Å° °ªÀÌ µ¿ÀÏÇÑ °ÍÀÌ ÀÖÀ» ¶§ µñ¼Å³Ê¸®º°·Î ÇØ´ç Å°¿¡ ´ëÀÀÇÏ´Â °ªµéÀ»
-        ¸Ç Ã³À½ÀÇ µñ¼Å³Ê¸®·Î °ªÀ¸·Î ÀçÇÒ´çÇÏ°í ÇØ´ç µñ¼Å³Ê¸®¸¸ ¹İÈ¯
+        ìµœìƒìœ„ í‚¤ê°’ì´ "í•˜ë‚˜"ì´ê³ , ê·¸ í•˜ìœ„ì— ì¢…ì†ëœ ë”•ì…”ë„ˆë¦¬ì˜ í‚¤êµ¬ì„±ì´ ë™ì¼í•œ ë³µìˆ˜ì˜ ë”•ì…”ë„ˆë¦¬ ì¤‘ ,
+        í‚¤ ê°’ì´ ë™ì¼í•œ ê²ƒì´ ìˆì„ ë•Œ ë”•ì…”ë„ˆë¦¬ë³„ë¡œ í•´ë‹¹ í‚¤ì— ëŒ€ì‘í•˜ëŠ” ê°’ë“¤ì„
+        ë§¨ ì²˜ìŒì˜ ë”•ì…”ë„ˆë¦¬ë¡œ ê°’ìœ¼ë¡œ ì¬í• ë‹¹í•˜ê³  í•´ë‹¹ ë”•ì…”ë„ˆë¦¬ë§Œ ë°˜í™˜
         """
-        # ÃÖ»óÀ§ Å°°ªÀ» ±âÁØÀ¸·Î µñ¼Å³Ê¸®µé ±×·çÇÎ
+        # ìµœìƒìœ„ í‚¤ê°’ì„ ê¸°ì¤€ìœ¼ë¡œ ë”•ì…”ë„ˆë¦¬ë“¤ ê·¸ë£¨í•‘
         if len(dicts) != 0:
             groupedDicts = go(
                 dicts,
@@ -262,20 +262,20 @@ def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
                 map(lambda x: list(map(lambda y: list(y), x))),
                 list,
             )
-            # ÃÖ»óÀ§ Å°°ªÀÌ Áßº¹µÇ´Â µñ¼Å³Ê¸®¸¦ ¸ğÀº ¸®½ºÆ®
+            # ìµœìƒìœ„ í‚¤ê°’ì´ ì¤‘ë³µë˜ëŠ” ë”•ì…”ë„ˆë¦¬ë¥¼ ëª¨ì€ ë¦¬ìŠ¤íŠ¸
             plurals = list(map(lambda y: y[1], filter(lambda x: len(x[1])>1, groupedDicts)))
-            # ÃÖ»óÀ§ Å°°ªÀÌ ´Ù¸¥ ¾î¶² µñ¼Å³Ê¸®¿Í Áßº¹µÇÁö ¾Ê´Â ´ÜÀÏ °³Ã¼µé ¸ğÀº ¸®½ºÆ®
+            # ìµœìƒìœ„ í‚¤ê°’ì´ ë‹¤ë¥¸ ì–´ë–¤ ë”•ì…”ë„ˆë¦¬ì™€ ì¤‘ë³µë˜ì§€ ì•ŠëŠ” ë‹¨ì¼ ê°œì²´ë“¤ ëª¨ì€ ë¦¬ìŠ¤íŠ¸
             singles = list(map(lambda y: y[1][0], filter(lambda x: len(x[1])==1, groupedDicts)))
-            # ÇÏºÎµñ¼Å³Ê¸® ±¸¼ºÅ° ÀüÃ¼
+            # í•˜ë¶€ë”•ì…”ë„ˆë¦¬ êµ¬ì„±í‚¤ ì „ì²´
             #hdrs = list(dicts[0][list(dicts[0].keys())[0]].keys())
             
-            # plurals ¾ø´Â °æ¿ì Ã³¸®
+            # plurals ì—†ëŠ” ê²½ìš° ì²˜ë¦¬
             if len(plurals)==0:
                 res = singles
             else:
                 newPlurals = []
                 for sameKeyGroup in plurals:
-                    ### ÃÖ»ó´Ü Å°
+                    ### ìµœìƒë‹¨ í‚¤
                     titleKey = list(sameKeyGroup[0].keys())[0]
                     newD = deepcopy(sameKeyGroup[0])
                     newD[titleKey][innerkey]=[]
@@ -286,58 +286,58 @@ def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
         
             return res
         
-    # ±×·ì ³»ÀÇ ¸ğµç Çà µñ¼Å³Ê¸® Áß, °³º° Àû¿ë ÆĞ¹Ğ¸®¿¡ ´ëÇÑ Á¤º¸ ÃßÃâ
-    # ¿¢¼¿ ½ÃÆ®¿¡¼­ "Family Type Name" Ä®·³ÀÇ °ªÀÌ º¸¶ó»öÀ¸·Î ±âÀÔµÈ ¸ğµç Çà ´ë»ó
-    actualAppliedFamTypeInfo = go( ##!!! Àû¿ë ÆĞ¹Ğ¸® ÀÌ¸§ µ¿ÀÏÇÑ°Ô ÀÖÀ»¶§ ³»¿ë ÇÕÄ¡´Â ±¸°£ Ãß°¡ ÇÊ¿ä
+    # ê·¸ë£¹ ë‚´ì˜ ëª¨ë“  í–‰ ë”•ì…”ë„ˆë¦¬ ì¤‘, ê°œë³„ ì ìš© íŒ¨ë°€ë¦¬ì— ëŒ€í•œ ì •ë³´ ì¶”ì¶œ
+    # ì—‘ì…€ ì‹œíŠ¸ì—ì„œ "Family Type Name" ì¹¼ëŸ¼ì˜ ê°’ì´ ë³´ë¼ìƒ‰ìœ¼ë¡œ ê¸°ì…ëœ ëª¨ë“  í–‰ ëŒ€ìƒ
+    actualAppliedFamTypeInfo = go( ##!!! ì ìš© íŒ¨ë°€ë¦¬ ì´ë¦„ ë™ì¼í•œê²Œ ìˆì„ë•Œ ë‚´ìš© í•©ì¹˜ëŠ” êµ¬ê°„ ì¶”ê°€ í•„ìš”
         rowDicts,
-        ## Family Type Name Ç×¸ñ Áß "H_" ¹®ÀÚ¿­ÀÌ Æ÷ÇÔµÈ °³Ã¼¸¸ ÇÊÅÍ¸µ
+        ## Family Type Name í•­ëª© ì¤‘ "H_" ë¬¸ìì—´ì´ í¬í•¨ëœ ê°œì²´ë§Œ í•„í„°ë§
         filter( lambda d: \
             findRow_AppliedType(d, "Standard Type") \
             if cat == "roomCat" else\
             findRow_AppliedType(d, "Family Type Name", rule="H_")
             ),
         
-        ## Çà µñ¼Å³Ê¸®¿¡ wmSpecs ¼Ó¼º ¹× °ª Ãß°¡(°ªÀº listÇüÅÂ)
-        ##!!! Àû¿ë ÆĞ¹Ğ¸® ÀÌ¸§ µ¿ÀÏÇÑ°Ô ÀÖÀ»¶§ ³»¿ë ÇÕÄ¡´Â ±¸°£ Ãß°¡ ÇÊ¿ä - °øÅë WM Ãß°¡ ÄÚµå´Â ºĞ¸® ÇÊ¿ä
+        ## í–‰ ë”•ì…”ë„ˆë¦¬ì— wmSpecs ì†ì„± ë° ê°’ ì¶”ê°€(ê°’ì€ listí˜•íƒœ)
+        ##!!! ì ìš© íŒ¨ë°€ë¦¬ ì´ë¦„ ë™ì¼í•œê²Œ ìˆì„ë•Œ ë‚´ìš© í•©ì¹˜ëŠ” êµ¬ê°„ ì¶”ê°€ í•„ìš” - ê³µí†µ WM ì¶”ê°€ ì½”ë“œëŠ” ë¶„ë¦¬ í•„ìš”
         map( lambda d: dictUpdate(d, {"wmSpecs": \
             go(
-                ### wmspec°ü·Ã Ç×¸ñµé °ªÀ» ¸®½ºÆ®·Î ¸ğÀ½
+                ### wmspecê´€ë ¨ í•­ëª©ë“¤ ê°’ì„ ë¦¬ìŠ¤íŠ¸ë¡œ ëª¨ìŒ
                 map(lambda x: d[x], wmspec_headers), list,
-                ### Ç×¸ñ¸í°ú Ç×¸ñ°ªÀ» ¸ğ¾Æ¼­ µñ¼Å³Ê¸® ÇüÅÂ·Î º¯È¯
+                ### í•­ëª©ëª…ê³¼ í•­ëª©ê°’ì„ ëª¨ì•„ì„œ ë”•ì…”ë„ˆë¦¬ í˜•íƒœë¡œ ë³€í™˜
                 lambda x: zip(wmspec_headers,x), dict,
                 
-                ### wmSpecs Ç×¸ñÀ» ¸®½ºÆ® ±¸Á¶·Î ¼öÁ¤ÇØ µÎ±â & °³º° WMÁ¤º¸°¡ ¾ø´Â °æ¿ì´Â ¸®½ºÆ®¿¡¼­ Á¦¿Ü
+                ### wmSpecs í•­ëª©ì„ ë¦¬ìŠ¤íŠ¸ êµ¬ì¡°ë¡œ ìˆ˜ì •í•´ ë‘ê¸° & ê°œë³„ WMì •ë³´ê°€ ì—†ëŠ” ê²½ìš°ëŠ” ë¦¬ìŠ¤íŠ¸ì—ì„œ ì œì™¸
                 #lambda x: [x] if x["Work Master Code"]!="" else [],
-                ### stdFamTypeÀÇ WMÁ¤º¸¿Í ÇÕÄ¡±â - ¹ÛÀ¸·Î ºĞ¸® ÇÊ¿ä
+                ### stdFamTypeì˜ WMì •ë³´ì™€ í•©ì¹˜ê¸° - ë°–ìœ¼ë¡œ ë¶„ë¦¬ í•„ìš”
                 lambda x: [ *stdFamTypeInfo, x \
                     if x["Work Master Code"]!="" else ["No Individual WM information"] ],
-                ### °³º° WMÁ¤º¸°¡ ¾ø´Â °æ¿ì´Â ¸®½ºÆ®¿¡¼­ Á¦¿Ü
+                ### ê°œë³„ WMì •ë³´ê°€ ì—†ëŠ” ê²½ìš°ëŠ” ë¦¬ìŠ¤íŠ¸ì—ì„œ ì œì™¸
                 filter(lambda x: isinstance(x,dict)), list,
             ) }) 
         ), list,
         
-        ## ¹ÛÀ¸·Î ²¨³»Áø WorkMaster °ü·Ã ¼Ó¼º »èÁ¦
+        ## ë°–ìœ¼ë¡œ êº¼ë‚´ì§„ WorkMaster ê´€ë ¨ ì†ì„± ì‚­ì œ
         map(lambda d: dictDeleteKeys(d, wmspec_headers)), list,
         
-        ## µñ¼Å³Ê¸®¿¡ Q'ty Cal Type Tag Å°¿¡ °ª ¾÷µ¥ÀÌÆ®
+        ## ë”•ì…”ë„ˆë¦¬ì— Q'ty Cal Type Tag í‚¤ì— ê°’ ì—…ë°ì´íŠ¸
         map(lambda d: dictUpdate(d,{"Q'ty Cal Type Tag": calcTypeName})), list,
         
-        ## µñ¼Å³Ê¸®¿¡ Standard TypeÅ°¿¡ °ª ¾÷µ¥ÀÌÆ®
+        ## ë”•ì…”ë„ˆë¦¬ì— Standard Typeí‚¤ì— ê°’ ì—…ë°ì´íŠ¸
         map( lambda d: dictUpdate(d,{"NO":d["Standard Type"], "Standard Type":stdFamTypeName})) \
             if cat=="roomCat" \
             else map(lambda d: dictUpdate(d,{"NO":stdFamTypeNo, "Standard Type":stdFamTypeName}) ), 
         list,
         
-        ## µñ¼Å³Ê¸®¿¡ wmSpecs ³» "Work Master Code" °ªÀ» GaugeCode Æ÷ÇÔÇÑ °ªÀ¸·Î ¾÷µ¥ÀÌÆ® (ÇÊ¿äÇÑ°¡?)
+        ## ë”•ì…”ë„ˆë¦¬ì— wmSpecs ë‚´ "Work Master Code" ê°’ì„ GaugeCode í¬í•¨í•œ ê°’ìœ¼ë¡œ ì—…ë°ì´íŠ¸ (í•„ìš”í•œê°€?)
         
         
-        ## Family Type Name ¹®ÀÚ¿­À» Å°°ªÀ¸·Î ÇÏ´Â µñ¼Å³Ê¸®·Î º¯Çü
+        ## Family Type Name ë¬¸ìì—´ì„ í‚¤ê°’ìœ¼ë¡œ í•˜ëŠ” ë”•ì…”ë„ˆë¦¬ë¡œ ë³€í˜•
         #map(lambda d: {d["Family Type Name"]:d}), list,
         map(lambda d: {f'{d["NO"]}'+"_"+d["Family Type Name"]:d})\
             if cat=="roomCat" \
             else map(lambda d: {d["Family Type Name"]:d}), list,
         
-        ## ÃÖ»óÀ§ Å°°¡ 1°³ÀÎ µñ¼Å³Ê¸®µé Áß ÃÖ»óÀ§ Å° °ªÀÌ °°Àº µñ¼Å³Ê¸® µé¸¸ "wmSpecs" ³»¿ë ÇÕÄ¡±â
+        ## ìµœìƒìœ„ í‚¤ê°€ 1ê°œì¸ ë”•ì…”ë„ˆë¦¬ë“¤ ì¤‘ ìµœìƒìœ„ í‚¤ ê°’ì´ ê°™ì€ ë”•ì…”ë„ˆë¦¬ ë“¤ë§Œ "wmSpecs" ë‚´ìš© í•©ì¹˜ê¸°
         #lambda x: dictsUnion_withInnerKey(x, "wmSpecs"),
         
     )
@@ -356,17 +356,17 @@ def dataToDict(setDict_f, args, cat=None):
             else setDict_f(datas, hdrs_withIdx)
         ),
             
-        ## ºó ¸®½ºÆ®¶ó¼­ ¸ÅÄ¡ÇÒ ¼ö ¾ø´Â °³Ã¼ Á¦¿Ü
+        ## ë¹ˆ ë¦¬ìŠ¤íŠ¸ë¼ì„œ ë§¤ì¹˜í•  ìˆ˜ ì—†ëŠ” ê°œì²´ ì œì™¸
         filter(lambda x: x!=[] and x!=None), list,
         
-        ## »êÃâ±âÁØ ½ÃÆ®¿Í, Ä«Å×°í¸®º° ½ÃÆ®ÀÇ »êÃâ °á°ú¹°ÀÌ ¾ç½ÄÀÌ Á¶±İ ´Ù¸£¹Ç·Î
-        ## °¢ ´ÜÀ§ µ¥ÀÌÅÍ°¡ ¸®½ºÆ®ÀÎÁö ¿©ºÎ¸¦ È®ÀÎÈÄ ÆîÃÄÁÖ´Â ±¸°£ Ãß°¡
+        ## ì‚°ì¶œê¸°ì¤€ ì‹œíŠ¸ì™€, ì¹´í…Œê³ ë¦¬ë³„ ì‹œíŠ¸ì˜ ì‚°ì¶œ ê²°ê³¼ë¬¼ì´ ì–‘ì‹ì´ ì¡°ê¸ˆ ë‹¤ë¥´ë¯€ë¡œ
+        ## ê° ë‹¨ìœ„ ë°ì´í„°ê°€ ë¦¬ìŠ¤íŠ¸ì¸ì§€ ì—¬ë¶€ë¥¼ í™•ì¸í›„ í¼ì³ì£¼ëŠ” êµ¬ê°„ ì¶”ê°€
         lambda x: list(chain(*x)) if all(map(lambda y: isinstance(y, list),x)) else x,
     )    
 
     return res
 
-def dataToDict_tmp(setDict_f, args, cat=None): ### µğ¹ö±ë ¿ëÀ¸·Î¸¸ ÇÑÁ¤Àû »ç¿ë
+def dataToDict_tmp(setDict_f, args, cat=None): ### ë””ë²„ê¹… ìš©ìœ¼ë¡œë§Œ í•œì •ì  ì‚¬ìš©
     (datas_perType, hdrs_withIdx) = args
     res = go(
         datas_perType,
@@ -391,7 +391,7 @@ def match_FamTypeWithCalcType(calcStdTypeDict, allCatFamTypeDict):
     pass
 
 
-calcStdTypeData = get_DataOnRowAreasAtSheet(calcStdSheet, "±¸°£ÆÇº°", "#")
+calcStdTypeData = get_DataOnRowAreasAtSheet(calcStdSheet, "êµ¬ê°„íŒë³„", "#")
 #calcStdTypeDict = dataToDict(setDict_OnEachCalType, calcStdTypeData)
 
 #roomFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[0], "Standard Type", "H_")
