@@ -1,4 +1,4 @@
-# Load the Python Standard and DesignScript Libraries
+# Load the Python Standard and DesignScript Libraries"
 import sys
 import clr
 clr.AddReference('ProtoGeometry')
@@ -45,7 +45,14 @@ allCatSheetsNames = IN[2][2:]
 calcStdSheet = db[0] ##산출기준 시트
 allCatSheets = db[1:]
 
-
+#wmspec_headers = [
+#    "Work Master Code" ,"GaugeCode" ,"Unit" ,"Work Category-L1"
+#    ,"Work Category-L2" ,"Work Category-L3" ,"Spec. 1- L4" ,"Spec. 2- L5"
+#    ,"Spec. 3- L6" ,"Spec. 4- L7" ,"Spec. 5- L8" ,"Spec. 6- L9"
+#    ,"Spec. 7- L10" ,"Spec. 8- L11" ,"BOQ Spec1" ,"BOQ Spec2" ,"BOQ Spec3"
+#    ,"BOQ Spec4" ,"BOQ Spec5" ,"BOQ Spec6" ,"BOQ Spec7" ,"BOQ Spec8" ,"BOQ Spec9"
+#    ,"Description" ,"입찰_물량산출식" ,"실행_물량산출식"
+#]
 # Place your code below this line
 
 def find_IsInStr(target, string):
@@ -70,372 +77,319 @@ def find_range_by_columnItem(db, col_idx, sep_rule):
 
     
 def find_headersAtSheet(sheet):
-    headers_sheet = map(lambda x: [x[1].replace("\n",""),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1])))
+    headers_sheet = list(map(lambda x: [x[1].replace("\n",""),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1]))))
     
-    #return dict(headers_sheet)
-    return list(headers_sheet)
+    return dict(headers_sheet)
+    #return list(headers_sheet)
 
-def find_rangesAtSheet(sheet, hdrs_withIdx, trgt_hdr, trgt_str):
-    hdrs_withIdxDict = dict(hdrs_withIdx)
+def find_rangesAtSheet(sheet, hdrs_withIdxDict, trgt_hdr, trgt_str):
+    #hdrs_withIdxDict = dict(hdrs_withIdx)
     return find_range_by_columnItem(sheet, hdrs_withIdxDict[trgt_hdr], trgt_str)
 
 
-def get_DataOnRowAreasAtSheet(sheet:list, discrHDRStr, discrRowStr):
+def get_DataOnGrpsAtSheet(sheet:list, discrHDRStr, discrRowStr):
     """
     판별기준 Header문자열(discrHDRStr)이 들어있는 열에서,
     판별기준 행 문자열(discrRowStr)이 들어있는 행번호 기준으로 구역을 나누어 데이터 리스트 반환
     """
     
-    hdrs_withIdx = find_headersAtSheet(sheet)
-    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdx, discrHDRStr, discrRowStr)
-    typesTitle_idx = list(map(lambda x: x[0]-1, rowAreasAtSheet)) # 각 타입 명이 위치한 인덱스
+    hdrs_withIdxDict = find_headersAtSheet(sheet)
+    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdxDict, discrHDRStr, discrRowStr)
+#    typesTitle_idx = list(map(lambda x: x[0]-1, rowAreasAtSheet)) # 각 타입 명이 위치한 인덱스
     rowsGrps_perType_withNone = list(map(lambda x: sheet[x[0]-1:x[1]], rowAreasAtSheet))
-    # None제거
-    rowsGrps_perType = go(
-        rowsGrps_perType_withNone,
+    # None 데이터 치환 구간
+    rowsListGrps_perType = go(#>
+        rowsGrps_perType_withNone, list,
         ## 하나의 타입을 규정하는 행들의 모임에서
         map(lambda rowGrp: \
         ## 한 행씩 골라서
-        map(lambda row: \
+        list(map(lambda row: \
         ## 행을 구성하는 셀 값 중 None이 있으면 빈문자열로 치환
-        map(lambda cell: "" if cell==None else cell, row), rowGrp) ),
+        list(map(lambda cell: "" if cell==None else cell, row)), rowGrp)) ),
         ## 맵 객체가 반환되므로 리스트 변환
         list,
-    )
+    )#<
     
-    return (rowsGrps_perType, hdrs_withIdx)
+    return (rowsListGrps_perType, hdrs_withIdxDict)
 
-
-def setDict_OnEachCalType(data_perType, hdrs_withIdx):
+def cvt_rowsListGrps_toDictGrps(rowsListGrps_perType, hdrs_withIdxDict):
     """
-    data_perType: '#' 등의 구분기호를 통해 나뉘어진 행 구간 내 전체 데이터_(행기준으로 구분된 형식)
+    헤더 행과 다수의 컨텐츠 행으로 이루어진 rowListGrps를,
+    모든 행을 헤더와 결합된 딕셔너리화 해서 rowDictGrps를 만드는 함수
     """
-    hdrs_withIdxDict = dict(hdrs_withIdx)
-    eff_hdrs_idx = list(zip(*hdrs_withIdx))[1]
-    eff_hdrs_name = list(zip(*hdrs_withIdx))[0]
-    # 
-    calcTypeName = data_perType[0][hdrs_withIdxDict["Q'ty Cal Type Tag"]]
+    eff_hdrs_idx = hdrs_withIdxDict.values()
+    eff_hdrs_name = hdrs_withIdxDict.keys()
+    
+    rowsDictGrps_perType = go(#>
+        rowsListGrps_perType,
+        ## 하나의 타입을 규정하는 행들의 모임에서 한 행 씩 조작하는 함수들을 구상 후
+        ## 맵 함수 내에서 go로 합성하여 반복시켜 사용
+        map(lambda rowGrp: go(#>>
+            ### 그룹 전체 가져와서
+            rowGrp,
+            ### 각 행을 리스트 타입으로 변환
+            map(list), list,
+            ### 헤더에 해당하는 행 값을 추출--
+            map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,
+            ### 헤더이름과 행 내부의 값을 2개씩 짝지어 줌
+            map(lambda row: list(zip(eff_hdrs_name, row))), list,
+            ### 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬
+            map(lambda x: dict(x)), list,
+            )#<<
+        ), list,
+    )#<
+    return rowsDictGrps_perType
 
-    paramDicts_withTypeName = go(
-        data_perType,
-        ## 엑셀 "항목" 열에 값이 없는 행 제외
-        filter(lambda row: row[hdrs_withIdxDict["항목"]] != None), list,
-        
-        ## 모든 Null 값 빈문자열로 치환
-        map(lambda row: list(map(lambda cell: cell if cell!=None else "",row))), list,
+# 행딕셔너리 별 입력한 규칙에 따라 참거짓 여부를 반환하는 함수
+def findRow_AppliedType(rowDict, tgtHDRname, rule=None):
+    p = re.compile('[0-9]{3,5}')
+    target = str(rowDict[tgtHDRname])
+    ## 함수 호출시 구분자(rule) 없이 호출한 경우
+    ## -Room Category 시트 용 이며 "Standard Type" 항목의 값이 000형태의 숫자인지를 판별
+    ## -Room Category 중 "Standard Type" 칼럼에 룸 넘버, "Family Type Name" 칼럼에 룸 이름 입력하게 되어있음
+    if rule==None:
+        p = re.compile('[0-9]{3,5}')
+        m = p.match(target)
+        stdCase = target =="Room No"
+        res = all([m or stdCase])
+    ## 구분자(rule)가 정규표현식 객체로 들어온 경우
+    elif isinstance(rule, re.Pattern):
+        m = p.match(target)
+        res = all([m])
+    ## 구분자(rule)가 문자열로 들어온 경우
+    else:
+        res = rule in target
+    return res
 
-        ## 헤더에 해당하는 행 값을 추출--
-        map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,
-        
-        ## 헤더이름과 행 내부의 값을 2개씩 짝지어 줌
-        map(lambda row: list(zip(eff_hdrs_name, row))), list,
-        
-        ## 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬
-        map(lambda x: dict(x)), list,
-        
-        ## "산출수식 약자" 키에 할당된 값이 빈문자열인 경우 제외
-        filter(lambda d: d["산출수식 약자"]!=""), list,
-        
-        ## 딕셔너리에 "Q'ty Cal Type Tag" 키-값 추가
-        map(lambda d: dictUpdate(d,{"Q'ty Cal Type Tag":calcTypeName})), list,
-        
-        ## 딕셔너리에 "applyForCalc" 키-값 추가
-        ## ("수동 입력값"항목이 있는 경우에는 그값을 적용하고 아닌경우 "Parameter"항목 값
-        map(lambda d: dictUpdate(d, { "applyForCalc":\
-            d["수동 입력값"] if d["수동 입력값"] != "" \
-            else d["Parameter"] if d["Parameter"] != "" \
-            else 0 })), list,
-        
-        ## 타입이름을 키값으로 하는 중첩 딕셔너리 형성
-        lambda x: {calcTypeName: x},
+
+
+def form_TypeDict(rowsDictGrps,titleKeyName,sttIdx):
+    """
+    rowsDictGrps_perType을 받아서 각 그룹의 이름을 키로 하는
+    새로운 중첩구조의 Dictionary를 만들어서,
+    바깥에서 타입이름으로 딕셔너리에 접근하면 
+    바로 해당 구성내용을 반환해주는 데이터 구조를 만드는 함수
+    """
+    typeDict = go(#>
+        rowsDictGrps, list,
+        filter(lambda x: x!=[]),
+        map(lambda rowsDictGrp: \
+            ### 그룹 전체 첫행 중 타이틀키값과 나머지 row 들 dict를 짝지어 새로운 딕셔너리로 형성
+            [list(rowsDictGrp)[0][titleKeyName],go(#>>
+                list(rowsDictGrp)[sttIdx:],
+                #### 모두 빈칸인 값일때 제외 필터링
+                filter(lambda row: any(list(map(lambda cell: cell!="", list(row.values()))))),
+                list,
+            )]#<<
+        ),list,
+        dict,
+    )#<
+    
+    return typeDict
+
+def updateDict_symValPair(calcTypeDict):
+    allCalcTypeNames = list(calcTypeDict.keys())
+    res = {}
+    for x in allCalcTypeNames:
+        type = {}
+        for rD in calcTypeDict[x]:
+            if rD["수동 입력값"]!="" and rD["산출수식 약자"]!="":
+                rD["applyForCalc"] = rD["수동 입력값"]
+                type[rD["산출수식 약자"]]=rD["applyForCalc"]
+            elif rD["Parameter"]!="" and rD["산출수식 약자"]!="":
+                rD["applyForCalc"] = rD["Parameter"]
+                type[rD["산출수식 약자"]]=rD["applyForCalc"]
+        res[x] = type
+    return res
+   
+
+def find_stdWMdicts_inGrp(rowsDictGrp):
+    res = go(
+        rowsDictGrp, list,
+        ## 엑셀 "물량산출식", "Work Master Code" 열에 값이 없는 행 제외
+        filter(lambda rD: rD["입찰_물량산출식"] != "" and rD["실행_물량산출식"] != ""),
+        filter(lambda rD: rD["Work Master Code"] != ""),
+        ## Family Type Name에 "H_" 문자열 포함된 경우 제외
+        filter(lambda rD: not findRow_AppliedType(rD, "Family Type Name", rule="H_")),
+        ## 행 딕셔너리의 NO, Standard Type 업데이트
+        map(lambda rD: dictUpdate(rD,{"NO":rowsDictGrp[0]["NO"], "Standard Type":rowsDictGrp[0]["Standard Type"]})),
+        ## Q'ty Cal Type Tag 업데이트
+        map(lambda rD: dictUpdate(rD,{"Q'ty Cal Type Tag":rowsDictGrp[0]["Q'ty Cal Type Tag"]})),
+        list,
     )
-
-    return paramDicts_withTypeName
-
-###################################################################################################################
-#!!! 함수가 너무 크다 쪼개자
-#!!! setDict_OnEachFamType
-#!!! -> setDict_EachRow_perGroup//setDict_stdWM_perGroup//setDict_applied_perGroup
-###################################################################################################################
-
-#def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
+    return res
 
 
-def setDict_OnEachFamType(data_perType, hdrs_withIdx, cat=None):
-    """
-    data_perType: '#' 등의 구분기호를 통해 나뉘어진 행 구간 내 전체 데이터_(행기준으로 구분된 형식)
-    hdrs_withIdx: 헤더 명과 인덱스 번호가 순서대로 나열된 중첩 리스트
-    cat : Room 시트 여부 판별용 입력값
-    """
-    hdrs_withIdxDict = dict(hdrs_withIdx)
-    eff_hdrs_idx = list(zip(*hdrs_withIdx))[1]
-    eff_hdrs_name = list(zip(*hdrs_withIdx))[0]
-    # data_perType 에서, 타입 그룹 별로 "Q'ty Cal Type Tag" 열에 있는 값이
-    # None일때가 있으므로 예외처리를 해주는 구간
-    calcTypeName = data_perType[0][hdrs_withIdxDict["Q'ty Cal Type Tag"]] \
-        if data_perType[0][hdrs_withIdxDict["Q'ty Cal Type Tag"]]!=None else "N/A"
-    stdFamTypeNo = data_perType[0][hdrs_withIdxDict["NO"]]
-    stdFamTypeName = data_perType[0][hdrs_withIdxDict["Standard Type"]]
+def find_stdWMdicts_forCat(rowsDictsGrps):
+    res = go(#>
+        rowsDictsGrps, list,
+        map(find_stdWMdicts_inGrp),
+        #filter(lambda x: x!=[]),
+        list,
+    )#<
+    return res
 
+def find_appliedTypeDicts_forCat(rowsDictsGrps):
+    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())
+    wmspec_headers = ["Work Master Code", "GaugeCode", "Unit"]\
+        + list(filter(lambda x: "Work Cat" in x or "Spec" in x, eff_hdrs_name))\
+        + ["Description","입찰_물량산출식", "실행_물량산출식"]
+    #stdWMsDicts = find_stdWMdicts_forCat(rowsDictGrps)
+    
+    appliedTypeDicts = go(#>
+        rowsDictsGrps,
+        map(lambda rowsDictsGrp: go(#>>
+            rowsDictsGrp, list,
+            ## Family Type Name에 "H_" 문자열 포함된 경우만 필터링
+            filter(lambda rD: findRow_AppliedType(rD, "Family Type Name", rule="H_")),
+            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두
+            map(lambda rD: dictUpdate(rD,{"NO":rowsDictsGrp[0]["NO"], "Standard Type":rowsDictsGrp[0]["Standard Type"]})),
+            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두
+            map(lambda rD: dictUpdate(rD,{"Q'ty Cal Type Tag":rowsDictsGrp[0]["Q'ty Cal Type Tag"]})),
+            
+            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)
+            map(lambda rD: dictUpdate(rD, {"wmSpecs": go(
+                ### wmspec관련 항목들 값을 리스트로 모음
+                map(lambda x: rD[x], wmspec_headers), list,
+                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환
+                lambda x: zip(wmspec_headers,x), dict,
+                ### wmSpecs 항목을 리스트 구조로 수정해 두기
+                lambda x: [x] if x["Work Master Code"]!="" else [],
+                
+            )}) ),
+            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제
+            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,
+            #filter(lambda rD: rD["wmSpecs"][0]["Work Master Code"]!=""),
+            list,
+            )#<<
+        ),
+        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간
+        filter(lambda x: list(x)!=[]),
+        list,
+    )#<
+    
+    return appliedTypeDicts
+
+def find_appliedTypeDicts_forRoom(rowsDictsGrps):
+    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())
     wmspec_headers = ["Work Master Code", "GaugeCode", "Unit"]\
         + list(filter(lambda x: "Work Cat" in x or "Spec" in x, eff_hdrs_name))\
         + ["Description","입찰_물량산출식", "실행_물량산출식"]
     
-    # 그룹 안의 모든 행을 리스트에서 칼럼 명이 붙은 딕셔너리로 전환하는 구간
-    # 실제 적용 패밀리 타입 및 각각 개별할당 WM 정리
-    rowDicts = go(
-        data_perType,
-        ## 모든 Null 값 빈문자열로 치환
-        map(lambda row: list(map(lambda cell: cell if cell!=None else "",row))), list,
-        
-        ## 헤더에 해당하는 행 내용을 추출
-        map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,
-        
-        ## 헤더이름과 행 내부의 값을 2개씩 짝지어 줌
-        map(lambda row: list(zip(eff_hdrs_name, row))), list,        
-
-        ## 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬
-        map(lambda x: dict(x)), list,
-    )
-
-    # 그룹 내의 모든 행딕셔너리 들 중 찾고자 하는 규칙에 따라 참거짓 여부를 반환하는 함
-    def findRow_AppliedType(rowDict, tgtHDRname, rule=None):
-        p = re.compile('[0-9]{3,5}')
-        target = str(rowDict[tgtHDRname])
-        ## 함수 호출시 구분자(rule) 없이 호출한 경우
-        ## -Room Category 시트 용 이며 "Standard Type" 항목의 값이 000형태의 숫자인지를 판별
-        ## -Room Category 중 "Standard Type" 칼럼에 룸 넘버, "Family Type Name" 칼럼에 룸 이름 입력하게 되어있음
-        if rule==None:
-            p = re.compile('[0-9]{3,5}')
-            m = p.match(target)
-            stdCase = target =="Room No"
-            res = all([m or stdCase])
-        ## 구분자(rule)가 정규표현식 객체로 들어온 경우
-        elif isinstance(rule, re.Pattern):
-            m = p.match(target)
-            res = all([m])
-        ## 구분자(rule)가 문자열로 들어온 경우
-        else:
-            res = rule in target
-        return res
-    
-    # 그룹 내의 모든 행 딕셔너리 중, 개별 적용 패밀리명이 아닌 공통 WM 항목에 대한 정보 추출
-    stdFamTypeInfo = go(
-        rowDicts,
-        ## 엑셀 "물량산출식", "Work Master Code" 열에 값이 없는 행 제외
-        ## Family Type Name에 "H_" 문자열 포함된 경우 제외
-        filter(lambda d: d["입찰_물량산출식"] != ""),
-        filter(lambda d: d["실행_물량산출식"] != ""),
-        filter(lambda d: d["Work Master Code"] != ""),
-        filter( lambda d: \
-            (not findRow_AppliedType(d, "Standard Type")) or (not findRow_AppliedType(d, "Standard Type", rule="H_")) \
-            ### 룸카테고리인 경우는 "Standard Type"항목에 값이 숫자가 아니거나, "H_"문자열이 포함되지 않은 항목 추출
-            if cat == "roomCat" else\
-            ### 룸카테고리가 아닌 경우, "Family Type Name" 항목에 "H_"문자열 포함되지 않은 항목 추출 
-            not findRow_AppliedType(d, "Family Type Name", rule="H_") ),
-        list,
-        
-        # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)
-        map( lambda d: \
-            go(
-                ### wmspec관련 항목들 값을 리스트로 모음
-                map(lambda x: d[x], wmspec_headers), list,
-                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환
-                lambda x: zip(wmspec_headers,x), dict,
-            )
-        ),
-        list,
-    )
-    
-    def dictsUnion_withInnerKey(dicts:list,innerkey):
-        """
-        최상위 키값이 "하나"이고, 그 하위에 종속된 딕셔너리의 키구성이 동일한 복수의 딕셔너리 중 ,
-        키 값이 동일한 것이 있을 때 딕셔너리별로 해당 키에 대응하는 값들을
-        맨 처음의 딕셔너리로 값으로 재할당하고 해당 딕셔너리만 반환
-        """
-        # 최상위 키값을 기준으로 딕셔너리들 그루핑
-        if len(dicts) != 0:
-            groupedDicts = go(
-                dicts,
-                lambda col: sorted(col, key=lambda x:list(x.keys())),
-                lambda col: groupby(col, lambda x: list(x.keys())),
-                map(lambda x: list(map(lambda y: list(y), x))),
-                list,
-            )
-            # 최상위 키값이 중복되는 딕셔너리를 모은 리스트
-            plurals = list(map(lambda y: y[1], filter(lambda x: len(x[1])>1, groupedDicts)))
-            # 최상위 키값이 다른 어떤 딕셔너리와 중복되지 않는 단일 개체들 모은 리스트
-            singles = list(map(lambda y: y[1][0], filter(lambda x: len(x[1])==1, groupedDicts)))
-            # 하부딕셔너리 구성키 전체
-            #hdrs = list(dicts[0][list(dicts[0].keys())[0]].keys())
+    appliedTypeDicts = go(#>
+        rowsDictsGrps,
+        map(lambda rowsDictsGrp: go(#>>
+            rowsDictsGrp, list,
+            ## Family Type Name에 "H_" 문자열 포함된 경우만 필터링
+            filter(lambda rD: findRow_AppliedType(rD, "Standard Type")),
+            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두
+            map(lambda rD: dictUpdate(rD,{"NO":rD["Standard Type"], "Standard Type":rowsDictsGrp[0]["Standard Type"]})),
+            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두
+            map(lambda rD: dictUpdate(rD,{"Q'ty Cal Type Tag":rowsDictsGrp[0]["Q'ty Cal Type Tag"]})),
             
-            # plurals 없는 경우 처리
-            if len(plurals)==0:
-                res = singles
-            else:
-                newPlurals = []
-                for sameKeyGroup in plurals:
-                    ### 최상단 키
-                    titleKey = list(sameKeyGroup[0].keys())[0]
-                    newD = deepcopy(sameKeyGroup[0])
-                    newD[titleKey][innerkey]=[]
-                    for d in sameKeyGroup:
-                        newD[titleKey][innerkey].append(d[titleKey][innerkey][0])
-                    newPlurals.append(newD)
-                res = newPlurals + singles
-        
-            return res
-        
-    # 그룹 내의 모든 행 딕셔너리 중, 개별 적용 패밀리에 대한 정보 추출
-    # 엑셀 시트에서 "Family Type Name" 칼럼의 값이 보라색으로 기입된 모든 행 대상
-    actualAppliedFamTypeInfo = go( ##!!! 적용 패밀리 이름 동일한게 있을때 내용 합치는 구간 추가 필요
-        rowDicts,
-        ## Family Type Name 항목 중 "H_" 문자열이 포함된 개체만 필터링
-        filter( lambda d: \
-            findRow_AppliedType(d, "Standard Type") \
-            if cat == "roomCat" else\
-            findRow_AppliedType(d, "Family Type Name", rule="H_")
-            ),
-        
-        ## 행 딕셔너리에 wmSpecs 속성 및 값 추가(값은 list형태)
-        ##!!! 적용 패밀리 이름 동일한게 있을때 내용 합치는 구간 추가 필요 - 공통 WM 추가 코드는 분리 필요
-        map( lambda d: dictUpdate(d, {"wmSpecs": \
-            go(
+            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)
+            map(lambda rD: dictUpdate(rD, {"wmSpecs": go(
                 ### wmspec관련 항목들 값을 리스트로 모음
-                map(lambda x: d[x], wmspec_headers), list,
+                map(lambda x: rD[x], wmspec_headers), list,
                 ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환
                 lambda x: zip(wmspec_headers,x), dict,
+                ### wmSpecs 항목을 리스트 구조로 수정해 두기
+                lambda x: [x] if x["Work Master Code"]!="" else [],
                 
-                ### wmSpecs 항목을 리스트 구조로 수정해 두기 & 개별 WM정보가 없는 경우는 리스트에서 제외
-                #lambda x: [x] if x["Work Master Code"]!="" else [],
-                ### stdFamType의 WM정보와 합치기 - 밖으로 분리 필요
-                lambda x: [ *stdFamTypeInfo, x \
-                    if x["Work Master Code"]!="" else ["No Individual WM information"] ],
-                ### 개별 WM정보가 없는 경우는 리스트에서 제외
-                filter(lambda x: isinstance(x,dict)), list,
-            ) }) 
-        ), list,
-        
-        ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제
-        map(lambda d: dictDeleteKeys(d, wmspec_headers)), list,
-        
-        ## 딕셔너리에 Q'ty Cal Type Tag 키에 값 업데이트
-        map(lambda d: dictUpdate(d,{"Q'ty Cal Type Tag": calcTypeName})), list,
-        
-        ## 딕셔너리에 Standard Type키에 값 업데이트
-        map( lambda d: dictUpdate(d,{"NO":d["Standard Type"], "Standard Type":stdFamTypeName})) \
-            if cat=="roomCat" \
-            else map(lambda d: dictUpdate(d,{"NO":stdFamTypeNo, "Standard Type":stdFamTypeName}) ), 
-        list,
-        
-        ## 딕셔너리에 wmSpecs 내 "Work Master Code" 값을 GaugeCode 포함한 값으로 업데이트 (필요한가?)
-        
-        
-        ## Family Type Name 문자열을 키값으로 하는 딕셔너리로 변형
-        #map(lambda d: {d["Family Type Name"]:d}), list,
-        map(lambda d: {f'{d["NO"]}'+"_"+d["Family Type Name"]:d})\
-            if cat=="roomCat" \
-            else map(lambda d: {d["Family Type Name"]:d}), list,
-        
-        ## 최상위 키가 1개인 딕셔너리들 중 최상위 키 값이 같은 딕셔너리 들만 "wmSpecs" 내용 합치기
-        #lambda x: dictsUnion_withInnerKey(x, "wmSpecs"),
-        
-    )
-    
-    return eff_hdrs_idx#actualAppliedFamTypeInfo
-
-
-
-def dataToDict(setDict_f, args, cat=None):
-    (datas_perType, hdrs_withIdx) = args
-    res = go(
-        datas_perType,
-        ## 
-        map( lambda datas: \
-            setDict_f(datas, hdrs_withIdx, cat=cat) if cat=="roomCat" \
-            else setDict_f(datas, hdrs_withIdx)
+            )}) ),
+            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제
+            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,
+            #filter(lambda rD: rD["wmSpecs"][0]["Work Master Code"]!=""),
+            list,
+            )#<<
         ),
-            
-        ## 빈 리스트라서 매치할 수 없는 개체 제외
-        filter(lambda x: x!=[] and x!=None), list,
+        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간
+        filter(lambda x: list(x)!=[]),
+        list,
+    )#<
+    
+    return appliedTypeDicts
+
+def merge_sameFamType_wmSpecs(appliedTypeDicts):
+    def merge_inGrp(appliedTypeDicts_perGrp):
+        keysPerGrp = go(#>
+            appliedTypeDicts_perGrp,
+            map(lambda rD: rD["Family Type Name"]),
+            filter(lambda x: "H_" in x),
+            ## 중복 Family Type Name 단일화
+            set,
+            list,
+        )#<
         
-        ## 산출기준 시트와, 카테고리별 시트의 산출 결과물이 양식이 조금 다르므로
-        ## 각 단위 데이터가 리스트인지 여부를 확인후 펼쳐주는 구간 추가
-        lambda x: list(chain(*x)) if all(map(lambda y: isinstance(y, list),x)) else x,
-    )    
-
-    return res
-
-def dataToDict_tmp(setDict_f, args, cat=None): ### 디버깅 용으로만 한정적 사용
-    (datas_perType, hdrs_withIdx) = args
-    res = go(
-        datas_perType,
-        ## 
-        map( lambda datas: \
-            setDict_f(datas, hdrs_withIdx, cat=cat) if cat=="roomCat" \
-            else setDict_f(datas, hdrs_withIdx)
-        ), list,
-    )
+        for k in keysPerGrp:
+            sameNameDicts = list(filter(lambda x: x["Family Type Name"] == k, appliedTypeDicts_perGrp))
+            if len(sameNameDicts)>=2:
+                for i,rD in enumerate(sameNameDicts[1:]):
+                    sameNameDicts[0]["wmSpecs"].append(*rD["wmSpecs"])
+                appliedTypeDicts_perGrp.remove(sameNameDicts[i+1])
+            else:                
+                pass
+        return appliedTypeDicts_perGrp
     
-    return res
+    return map(merge_inGrp, appliedTypeDicts)
 
-def merge_wmSpecs_sameKey(d:dict):
-    pass
+
+
+def inject_stdWMtoAppliedTypeDicts(appliedTypeDicts, allCat_stdWMdicts_stdTypeName):
+    def inject_inGrp(appliedTypeDict_perGrp):
+        for rD in appliedTypeDict_perGrp:
+            if rD["Standard Type"] in list(allCat_stdWMdicts_stdTypeName.keys()):
+                rD["wmSpecs"] = rD["wmSpecs"] + allCat_stdWMdicts_stdTypeName[rD["Standard Type"]]
+            else:
+                pass
+
+        return appliedTypeDict_perGrp
+    return list(map(inject_inGrp, appliedTypeDicts))
     
-
-def match_FamTypeWithCalcType(calcStdTypeDict, allCatFamTypeDict):
-    allFamTypeDicts = list(chain(*allCatFamTypeDict))
-    res = dictsMerge(allFamTypeDicts)
-    
+def updateFamTypeDicts_symValPair(total_appliedTypeDicts, calcTypeDict_symValPair):
+    res = {}
+    for d in total_appliedTypeDicts:
+        if d["Q'ty Cal Type Tag"]!="":
+            symValPair = calcTypeDict_symValPair[d["Q'ty Cal Type Tag"]]
+            d["Sym_Val Dict"] = symValPair
+        res[d["Family Type Name"]] = d    
     return res
-    pass
+    
+    
+    
+    
+calcSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(calcStdSheet, "구간판별", "#")
+calcSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*calcSheet_rowsListGrps_perType)
+calcTypeDict = form_TypeDict(calcSheet_rowsDictGrps_perType,"Q'ty Cal Type Tag",sttIdx=1)
+calcTypeDict_symValPair = updateDict_symValPair(calcTypeDict)
 
+roomSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(allCatSheets[0], "Standard Type", "H_")
+roomSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*roomSheet_rowsListGrps_perType)
+room_stdWMdicts = find_stdWMdicts_forCat(deepcopy(roomSheet_rowsDictGrps_perType))
+room_stdWMdicts_stdTypeName = form_TypeDict(room_stdWMdicts, "Standard Type",sttIdx=0)
 
-calcStdTypeData = get_DataOnRowAreasAtSheet(calcStdSheet, "구간판별", "#")
-#calcStdTypeDict = dataToDict(setDict_OnEachCalType, calcStdTypeData)
+room_appliedTypeDicts = find_appliedTypeDicts_forRoom(roomSheet_rowsDictGrps_perType)
+room_appliedTypeDicts_noDupl = merge_sameFamType_wmSpecs(room_appliedTypeDicts)
 
-#roomFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[0], "Standard Type", "H_")
-#roomFamTypeDict = dataToDict(setDict_OnEachFamType, roomFamTypeData, cat="roomCat")
-#
-#allCatFamTypeData = map( lambda x: get_DataOnRowAreasAtSheet(x, "Standard Type", "H_"), allCatSheets[1:] )
-#allCatFamTypeDict = [roomFamTypeDict] + list(map( lambda x: dataToDict(setDict_OnEachFamType, x), allCatFamTypeData ))
+room_appliedTypeDicts_withStdWm = list(chain(*inject_stdWMtoAppliedTypeDicts(room_appliedTypeDicts_noDupl, room_stdWMdicts_stdTypeName)))
 
-#allCatFamType_CalcDict = 
+# 룸 제외 모든 카테고리 시트 처리
+allCatSheet_rowsListGrps = map( lambda x: get_DataOnGrpsAtSheet(x, "Standard Type", "H_"), allCatSheets[1:] )
+allCatSheet_rowsDictGrps = map( lambda x: cvt_rowsListGrps_toDictGrps(*x), allCatSheet_rowsListGrps )
 
-floorsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[1], "Standard Type", "H_")
-#floorsFamTypeDict = dataToDict(setDict_OnEachFamType, floorsFamTypeData)
-#res = setDict_OnEachFamType(floorsFamTypeData)
+# "Standard Type" 별 wm 공통항목 찾기
+allCat_stdWMdicts = list(map( lambda x: find_stdWMdicts_forCat(x), deepcopy(allCatSheet_rowsDictGrps) ))
+# "Standard Type" 명으로 검색할 수 있는, 전 카테고리 "Standard Type" 별 공통 WM항목 사전 만들기
+allCat_stdWMdicts_stdTypeName = dictsMerge(list(map(lambda x: form_TypeDict(x, "Standard Type",sttIdx=0), allCat_stdWMdicts)))
 
-#roofsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[2], "Standard Type", "H_")
-#roofsFamTypeDict = dataToDict(setDict_OnEachFamType, roofsFamTypeData)
-#
-#wallsExtFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[3], "Standard Type", "H_")
-#wallsExtFamTypeDict = dataToDict(setDict_OnEachFamType, wallsExtFamTypeData)
-#
-#wallsIntFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[4], "Standard Type", "H_")
-#wallsIntFamTypeDict = dataToDict(setDict_OnEachFamType, wallsIntFamTypeData)
-#
-#stFdnsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[5], "Standard Type", "H_")
-#stFdnsFamTypeDict = dataToDict(setDict_OnEachFamType, stFdnsFamTypeData)
-#
-#stColsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[6], "Standard Type", "H_")
-#stColsFamTypeDict = dataToDict(setDict_OnEachFamType, stColsFamTypeData)
-#
-#stFrmsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[7], "Standard Type", "H_")
-#stFrmsFamTypeDict = dataToDict(setDict_OnEachFamType, stFrmsFamTypeData)
-#
-#ceilingsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[8], "Standard Type", "H_")
-#ceilingsFamTypeDict = dataToDict(setDict_OnEachFamType, ceilingsFamTypeData)
-#
-#doorsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[9], "Standard Type", "H_")
-#doorsFamTypeDict = dataToDict(setDict_OnEachFamType, doorsFamTypeData)
-#
-#windowsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[10], "Standard Type", "H_")
-#windowsFamTypeDict = dataToDict(setDict_OnEachFamType, windowsFamTypeData)
-#
-#stairsFamTypeData = get_DataOnRowAreasAtSheet(allCatSheets[11], "Standard Type", "H_")
-#stairsFamTypeDict = dataToDict(setDict_OnEachFamType, stairsFamTypeData)
+allCat_appliedTypeDicts = map( lambda x: find_appliedTypeDicts_forCat(x), allCatSheet_rowsDictGrps )
+allCat_appliedTypeDicts_noDupl = map( lambda x: merge_sameFamType_wmSpecs(x), allCat_appliedTypeDicts )
+
+allCat_appliedTypeDicts_withStdWm = list(chain(*chain(*map( lambda x: inject_stdWMtoAppliedTypeDicts(x,allCat_stdWMdicts_stdTypeName), allCat_appliedTypeDicts_noDupl ))))
+
+total_appliedTypeDicts = room_appliedTypeDicts_withStdWm + allCat_appliedTypeDicts_withStdWm
+FamTypeDicts_symValPair = updateFamTypeDicts_symValPair(total_appliedTypeDicts,calcTypeDict_symValPair)
 
 # Assign your output to the OUT variable.
 
-OUT = calcStdTypeData#match_FamTypeWithCalcType(calcStdTypeDict, allCatFamTypeDict)
+OUT = FamTypeDicts_symValPair
