@@ -2966,66 +2966,6 @@
       "Description": "Runs an embedded Python script."
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[303];",
-      "Id": "14a71ea2dc2949afb7207efdedfbd42c",
-      "Inputs": [
-        {
-          "Id": "31c884cc215843d29b609ef69cf1bdcb",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "667635d53191461e89689a72a85ce93e",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"Elem\"];",
-      "Id": "8efc0f0f6b2d4f4c8ea84dbe89b12cb3",
-      "Inputs": [
-        {
-          "Id": "3fad3c5f5d1e4369994c6d8f80a67788",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "e7063aa887204c7b957806540b69c0de",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
       "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ncalcMode = IN[0]\r\nelemDicts = IN[1]\r\n\r\n\r\n# Place your code below this line\r\n\r\ndef calcFormula_each_WmSpecs(elemDicts, calcMode):\r\n    calc_key = \"실행_물량산출식\" if calcMode==\"실행\" else \"입찰_물량산출식\"\r\n    \r\n    def calcFormula_dict(d):\r\n        e = d[\"Elem\"]\r\n        postSymValDict = d[\"wms\"][\"Post_Sym_Val Dict\"]\r\n        Sym_Vals = list(zip(postSymValDict.Keys, list(map(str, postSymValDict.Values))))\r\n        sortedSym_Vals = sorted(Sym_Vals, key=lambda x: len(x[0]), reverse=True)\r\n        wmSpecss = d[\"wms\"][\"wmSpecs\"]\r\n        for i in wmSpecss:\r\n            applyFormula = i[calc_key]\r\n            if not applyFormula.startswith('_'):\r\n                substFormula = applyFormula\r\n                for x in sortedSym_Vals:\r\n                    substFormula = substFormula.replace(*x)\r\n                i[\"applyFormula\"] = applyFormula\r\n                i[\"substFormula\"] = substFormula\r\n                try:\r\n                    i[\"Quantity\"] = round(eval(substFormula.strip('=')),3)\r\n                except:\r\n                    i[\"Quantity\"] = substFormula\r\n            else:\r\n                i[\"applyFormula\"] = applyFormula\r\n                i[\"substFormula\"] = applyFormula\r\n                i[\"Quantity\"] = \"\"\r\n        return d\r\n    \r\n    res = []\r\n    for d in elemDicts:\r\n        res.append(calcFormula_dict(d))\r\n#        e = d[\"Elem\"]\r\n#        postSymValDict = d[\"wms\"][\"Post_Sym_Val Dict\"]\r\n#        Sym_Vals = list(zip(postSymValDict.Keys, list(map(str, postSymValDict.Values))))\r\n#        sortedSym_Vals = sorted(Sym_Vals, key=lambda x: len(x[0]), reverse=True)\r\n#        wmSpecss = d[\"wms\"][\"wmSpecs\"]\r\n#        for i in wmSpecss:\r\n#            applyFormula = i[calc_key]\r\n#            substFormula = applyFormula\r\n#            for x in sortedSym_Vals:\r\n#                substFormula = substFormula.replace(*x)\r\n#            \r\n#            i[\"applyFormula\"] = applyFormula\r\n#            i[\"substFormula\"] = substFormula\r\n#            if substFormula.startswith('_'):\r\n#                i[\"Quantity\"] = applyFormula\r\n#            else:\r\n#                try:\r\n#                    i[\"Quantity\"] = round(eval(substFormula.strip('=')),3)\r\n#                except:\r\n#                    i[\"Quantity\"] = substFormula\r\n    \r\n    return res\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = calcFormula_each_WmSpecs(elemDicts, calcMode)",
@@ -3154,11 +3094,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\ni[\"wms\"][\"wmSpecs\"][x],\ni[\"wms\"][\"wmSpecs\"][y],\ni[\"wms\"][\"wmSpecs\"][\"Description\"],\ni[\"wms\"][\"wmSpecs\"][\"applyFormula\"],\ni[\"wms\"][\"wmSpecs\"][\"substFormula\"],\ni[\"wms\"][\"wmSpecs\"][\"Quantity\"],\ni[\"wms\"][\"wmSpecs\"][\"Unit\"],\ni[\"wms\"][\"wmSpecs\"][\"rIDX\"]\n];",
+      "Code": "[\ni[\"wms\"][\"wmSpecs\"][a],\ni[\"wms\"][\"wmSpecs\"][b],\ni[\"wms\"][\"wmSpecs\"][c],\ni[\"wms\"][\"wmSpecs\"][d],\ni[\"wms\"][\"wmSpecs\"][\"Description\"],\ni[\"wms\"][\"wmSpecs\"][\"applyFormula\"],\ni[\"wms\"][\"wmSpecs\"][\"substFormula\"],\ni[\"wms\"][\"wmSpecs\"][\"Quantity\"],\ni[\"wms\"][\"wmSpecs\"][\"Unit\"],\ni[\"wms\"][\"wmSpecs\"][\"rIDX\"]\n];",
       "Id": "6886a36f3590498ea5f564bc7bd347fb",
       "Inputs": [
         {
-          "Id": "a19d15d3b40e42159eb552c7e51a7475",
+          "Id": "7bb32466f2ac4c34b0da4f7d10290e3e",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -3167,18 +3107,36 @@
           "KeepListStructure": false
         },
         {
-          "Id": "eb6740bbdd1a444d94fad4fad51901d7",
-          "Name": "x",
-          "Description": "x",
+          "Id": "b930483622a14b6ab9ccafdba3e38f5b",
+          "Name": "a",
+          "Description": "a",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "b49a9278c779413a8d7e3a44cb21277d",
-          "Name": "y",
-          "Description": "y",
+          "Id": "672e633ed35247d0a93c3a8a644a2475",
+          "Name": "b",
+          "Description": "b",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "50e6625651d54618b46deb234c9b73ba",
+          "Name": "c",
+          "Description": "c",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "439c32893a0a4182847efaae30635018",
+          "Name": "d",
+          "Description": "d",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -3187,7 +3145,7 @@
       ],
       "Outputs": [
         {
-          "Id": "ed51f175ed20408db2aef74f42201d72",
+          "Id": "70e066912e6d40ae965962d3ffcf2931",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3737,7 +3695,7 @@
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "3d9c8f894a68412aadc876ef2180ab68",
+          "Id": "ec17ea92509741c0b8dabbcf6c1f6c49",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3746,7 +3704,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "cce12d04ff0e407ebc149551e9080e89",
+          "Id": "9769c36e7ca74e998013e3f016d62cf5",
           "Name": "",
           "Description": "Value of expression at line 2",
           "UsingDefaultValue": false,
@@ -5823,6 +5781,98 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nfrom itertools import chain\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ngrps = IN[0]\r\n# Place your code below this line\r\ndef make_tr(row):\r\n    preStr = \"<tr>\"\r\n    postStr = \"</tr>\"\r\n    rowStrs = list(map(lambda x: f\"<td>{x}</td>\", row))\r\n    res = \"\\n\".join([preStr]+rowStrs+[postStr])\r\n    return res\r\n\r\ndef make_trs(rows):\r\n    rowsStrs = list(map(make_tr, rows))\r\n    res = \"\\n\".join(rowsStrs)\r\n    return res\r\n\r\ndef make_wholeTable(rows):\r\n    preStr = \"<table>\"\r\n    postStr = \"</table>\"\r\n    trs = make_trs(rows)\r\n    res = \"\\n\".join([preStr, trs, postStr])\r\n    return res\r\n\r\ndef transTo_tableForm(grp):\r\n    chkbox_tagStr = '<input type=\"checkbox\" id=\"chkbox\" name=\"checks\">'\r\n\r\n    title = \"<h5>\"+grp.pop(0)+\"</h5>\"\r\n    res = [title]\r\n    res.append(make_trs(grp))\r\n    \r\n    return res\r\n    \r\nrows = list(map(transTo_tableForm, grps))\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_wholeTable(rows)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "5cd2326afbd841d795a1f47d8f16fcf7",
+      "Inputs": [
+        {
+          "Id": "cc052f2ee3fe4c80883164c21bca5656",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1481de8e3bcc40b08dc6231bd2a83a07",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n    \"Work Master Code\" ,\"GaugeCode\" ,\"Unit\" ,\"Work Category-L1\"\n    ,\"Work Category-L2\" ,\"Work Category-L3\" ,\"Spec. 1- L4\" ,\"Spec. 2- L5\"\n    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\n    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\n    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\n    ,\"Description\" ,\"입찰_물량산출식\" ,\"실행_물량산출식\" ,\"rIDX\"\n];",
+      "Id": "f0c4c064f1d14a0187a00c98dff1b989",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "1ecf1da2b6784a7e8b58689194d8b0a5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[6];\ni[7];",
+      "Id": "13eefa5b48074c729c506ed79f1032d5",
+      "Inputs": [
+        {
+          "Id": "141e3c6db6eb4d01b5c1b66a62e90544",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "fb2754e6f29e4e8a80e87ce8d8ea924f",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "66e8a2955dbf45f3b0935dfb1fd79605",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -6481,12 +6531,6 @@
       "IsHidden": "False"
     },
     {
-      "Start": "667635d53191461e89689a72a85ce93e",
-      "End": "3fad3c5f5d1e4369994c6d8f80a67788",
-      "Id": "4925e4fa95b4443bb602fbb083bbe1f9",
-      "IsHidden": "False"
-    },
-    {
       "Start": "b4835f9063384b88aee9393fbb8d6ba8",
       "End": "1b2a7b880c0649c1b2fa6ceef37fc6e2",
       "Id": "11f3f24e075c41da84f0be4365712fa2",
@@ -6500,20 +6544,14 @@
     },
     {
       "Start": "b4835f9063384b88aee9393fbb8d6ba8",
-      "End": "a19d15d3b40e42159eb552c7e51a7475",
-      "Id": "af2078c26d904b6e97fe230668d5b787",
+      "End": "7bb32466f2ac4c34b0da4f7d10290e3e",
+      "Id": "2fa2217685f845e2aebaca3530f27851",
       "IsHidden": "False"
     },
     {
       "Start": "7f1ed869682c4a4594c6a1912c0d7cdc",
       "End": "51dd00ffd7304563a68c380857a8ce47",
       "Id": "b2f4e86690014643831e10d7bab5bd07",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "7f1ed869682c4a4594c6a1912c0d7cdc",
-      "End": "31c884cc215843d29b609ef69cf1bdcb",
-      "Id": "6ad5ee21a96340599d6aedb8d3aa9b23",
       "IsHidden": "False"
     },
     {
@@ -6541,9 +6579,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "ed51f175ed20408db2aef74f42201d72",
+      "Start": "70e066912e6d40ae965962d3ffcf2931",
       "End": "65abf31cd1b74becb8c56be5f8bafe5a",
-      "Id": "526e000289e1462bbe1a3d489d27a7fe",
+      "Id": "06004e85fe00412f99b981a79c3c3c13",
       "IsHidden": "False"
     },
     {
@@ -6661,15 +6699,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "3d9c8f894a68412aadc876ef2180ab68",
-      "End": "eb6740bbdd1a444d94fad4fad51901d7",
-      "Id": "2dc97798298b4ec4af99b634e7806ca5",
+      "Start": "ec17ea92509741c0b8dabbcf6c1f6c49",
+      "End": "b930483622a14b6ab9ccafdba3e38f5b",
+      "Id": "781099dc57464a7eb33a79fcedf415c2",
       "IsHidden": "False"
     },
     {
-      "Start": "cce12d04ff0e407ebc149551e9080e89",
-      "End": "b49a9278c779413a8d7e3a44cb21277d",
-      "Id": "d88dba3b9bf74912b3e0175e17e9a453",
+      "Start": "9769c36e7ca74e998013e3f016d62cf5",
+      "End": "672e633ed35247d0a93c3a8a644a2475",
+      "Id": "a00b0cea051d45eaaf8dca1296552a9e",
       "IsHidden": "False"
     },
     {
@@ -6706,6 +6744,12 @@
       "Start": "097671495b114307ba4f8b4dd1c506c7",
       "End": "2eca085c0d984145876567bf86dd7a1a",
       "Id": "a477c2c0e60f4bc280ce12637ef2be2c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "097671495b114307ba4f8b4dd1c506c7",
+      "End": "cc052f2ee3fe4c80883164c21bca5656",
+      "Id": "dac53c4aa7694133a0aa021e05807389",
       "IsHidden": "False"
     },
     {
@@ -6955,12 +6999,6 @@
       "IsHidden": "False"
     },
     {
-      "Start": "ee1abc67ba364c2996d59f89b4a84625",
-      "End": "e040cd905de141c8a8e0ef78b5e99845",
-      "Id": "a7664c7f56b84faa8a02546c20ef7188",
-      "IsHidden": "False"
-    },
-    {
       "Start": "08d5504b044e4a58974b9040f8ab0d8b",
       "End": "0f61da31d4a74a89a680b4aa00296f60",
       "Id": "d32570713c52423bb804bc36e8e4944b",
@@ -7060,6 +7098,30 @@
       "Start": "ce28df24e1c04249b217dbbda4314bce",
       "End": "c00c4b8eb30046c7998cc0379f1bf9ed",
       "Id": "b1716d1835254c3db9149eab0cc93704",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1481de8e3bcc40b08dc6231bd2a83a07",
+      "End": "e040cd905de141c8a8e0ef78b5e99845",
+      "Id": "264703b88f70484eb0f57192bc5f95ca",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1ecf1da2b6784a7e8b58689194d8b0a5",
+      "End": "141e3c6db6eb4d01b5c1b66a62e90544",
+      "Id": "928ba87f3da14cf586e65354ac3699e3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fb2754e6f29e4e8a80e87ce8d8ea924f",
+      "End": "50e6625651d54618b46deb234c9b73ba",
+      "Id": "47aef7422d864770a09f03f161f8203c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "66e8a2955dbf45f3b0935dfb1fd79605",
+      "End": "439c32893a0a4182847efaae30635018",
+      "Id": "ff5fabe083cc4485ab6f9e78a7b4aa80",
       "IsHidden": "False"
     }
   ],
@@ -7971,34 +8033,14 @@
         "Y": -1790.5376399863148
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "14a71ea2dc2949afb7207efdedfbd42c",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 577.678363570346,
-        "Y": -1161.45475405871
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "8efc0f0f6b2d4f4c8ea84dbe89b12cb3",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 1033.21921017641,
-        "Y": -1113.51445932582
-      },
-      {
         "Name": "부재/WM 별 산식에 의한 최종 계산",
         "ShowGeometry": true,
         "Id": "0160cc09c3474815a65506ace3948e4f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 652.384087391084,
-        "Y": -1731.66452543656
+        "X": 814.02027869984147,
+        "Y": -1480.9072819860457
       },
       {
         "Name": "토공관련 wm들 물량산출 수식 임시처리구간",
@@ -8007,8 +8049,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 88.1590020792181,
-        "Y": -1635.6950105045
+        "X": 224.85830357068005,
+        "Y": -994.25982658302541
       },
       {
         "Name": "물량산출모드(입찰 / 실행)",
@@ -8017,8 +8059,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -245.386336377881,
-        "Y": -2033.12513350329
+        "X": -534.03770544978579,
+        "Y": -1720.4194836753929
       },
       {
         "Name": "lang_mode(영/한) select",
@@ -8027,8 +8069,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3964.34634486082,
-        "Y": -888.219962249814
+        "X": -4084.1351804006658,
+        "Y": -680.89313150777275
       },
       {
         "Name": "Code Block",
@@ -8037,8 +8079,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1215.46378701105,
-        "Y": -2301.82983775738
+        "X": 1528.1694368389471,
+        "Y": -1806.3116541839433
       },
       {
         "Name": "Code Block",
@@ -8197,8 +8239,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1696.56102216541,
-        "Y": -2172.49389276904
+        "X": 2009.266671993307,
+        "Y": -1676.9757091956033
       },
       {
         "Name": "Code Block",
@@ -8207,8 +8249,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 736.545127824651,
-        "Y": -2176.28946186049
+        "X": 1112.71917529774,
+        "Y": -2018.9777941913594
       },
       {
         "Name": "List.Transpose",
@@ -8217,8 +8259,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1981.74971524411,
-        "Y": -2173.3021294128
+        "X": 2294.4553650720072,
+        "Y": -1677.783945839363
       },
       {
         "Name": "Code Block",
@@ -8227,8 +8269,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1553.2149717435,
-        "Y": -2720.56022110383
+        "X": 1793.7577793034211,
+        "Y": -1315.7902249538929
       },
       {
         "Name": "Code Block",
@@ -8237,8 +8279,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2251.94104289985,
-        "Y": -2173.24744082952
+        "X": 2564.646692727747,
+        "Y": -1677.7292572560834
       },
       {
         "Name": "List.Count",
@@ -8247,8 +8289,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2508.61119396724,
-        "Y": -2055.21687621452
+        "X": 2821.3168437951372,
+        "Y": -1559.6986926410834
       },
       {
         "Name": "List.AddItemToFront",
@@ -8257,8 +8299,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2793.05374073788,
-        "Y": -2503.14231718223
+        "X": 2975.8662744834205,
+        "Y": -2296.2755026806981
       },
       {
         "Name": "Create HTML file and Open",
@@ -8267,8 +8309,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5553.39355174132,
-        "Y": -3387.02854344003
+        "X": 5592.7629462829891,
+        "Y": -3198.0554496400164
       },
       {
         "Name": "cssPart",
@@ -8277,8 +8319,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4524.23655648192,
-        "Y": -3851.14176280221
+        "X": 4563.6059510235891,
+        "Y": -3662.1686690021966
       },
       {
         "Name": "javascriptPart",
@@ -8287,8 +8329,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4521.51627361732,
-        "Y": -4044.38657150059
+        "X": 4560.8856681589887,
+        "Y": -3855.4134777005765
       },
       {
         "Name": "htmlPath",
@@ -8297,8 +8339,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5240.74547630432,
-        "Y": -3383.96671800297
+        "X": 5280.1148708459887,
+        "Y": -3194.9936242029567
       },
       {
         "Name": "make_htmlStr__",
@@ -8307,8 +8349,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4965.28264025562,
-        "Y": -3615.03975508909
+        "X": 5004.6520347972892,
+        "Y": -3426.0666612890764
       },
       {
         "Name": "Code Block",
@@ -8317,8 +8359,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5241.39355174132,
-        "Y": -3531.61479344003
+        "X": 5280.7629462829891,
+        "Y": -3342.6416996400167
       },
       {
         "Name": "navHTML_Part",
@@ -8327,8 +8369,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4388.77312272022,
-        "Y": -3661.26648455487
+        "X": 4428.1425172618892,
+        "Y": -3472.2933907548568
       },
       {
         "Name": "Create JS file",
@@ -8337,8 +8379,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5553.39355174132,
-        "Y": -3599.11479344003
+        "X": 5592.7629462829891,
+        "Y": -3410.1416996400167
       },
       {
         "Name": "start Webserver",
@@ -8347,8 +8389,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5553.39355174132,
-        "Y": -3169.46018348377
+        "X": 5592.7629462829891,
+        "Y": -2980.4870896837565
       },
       {
         "Name": "make_htmlStr",
@@ -8357,8 +8399,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5553.39355174132,
-        "Y": -3812.61479344003
+        "X": 5592.7629462829891,
+        "Y": -3623.6416996400167
       },
       {
         "Name": "serverFilePath",
@@ -8367,8 +8409,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4871.97394426712,
-        "Y": -3253.0647615244
+        "X": 4911.3433388087888,
+        "Y": -3064.0916677243868
       },
       {
         "Name": "Set Port Number: 기본값-8000 (작동 오류 없다면 변경 금지)",
@@ -8377,8 +8419,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4945.38975504412,
-        "Y": -3101.77609654008
+        "X": 4984.7591495857887,
+        "Y": -2912.8030027400664
       },
       {
         "Name": "List Create",
@@ -8387,8 +8429,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4057.37479928672,
-        "Y": -3400.92758299034
+        "X": 4096.7441938283891,
+        "Y": -3211.9544891903265
       },
       {
         "Name": "Categories",
@@ -8606,9 +8648,9 @@
         "Id": "64e84698210b495aba79d2c29e31b76d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 3462.15078501251,
-        "Y": -2720.20010711019
+        "Excluded": true,
+        "X": 2951.723815164265,
+        "Y": -2701.8457891999506
       },
       {
         "Name": "List.Flatten",
@@ -8617,8 +8659,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3108.73963909128,
-        "Y": -2502.97684625744
+        "X": 3291.5521728368203,
+        "Y": -2296.110031755908
       },
       {
         "Name": "Watch",
@@ -8627,8 +8669,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": true,
         "Excluded": false,
-        "X": 3274.14688101429,
-        "Y": -2138.19672137058
+        "X": 3497.4997366074203,
+        "Y": -1688.0879757835096
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -8657,8 +8699,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 380.08415350529117,
-        "Y": -750.708869132988
+        "X": -1891.2273174297673,
+        "Y": -1202.8680971432079
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -8667,8 +8709,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1147.8222722385083,
-        "Y": -892.11351132197194
+        "X": -1123.4891986965501,
+        "Y": -1344.272739332192
       },
       {
         "Name": "Code Block",
@@ -8677,8 +8719,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1439.1039709023682,
-        "Y": -824.206829157019
+        "X": -832.20750003269018,
+        "Y": -1276.366057167239
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -8687,8 +8729,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1844.7590664734184,
-        "Y": -826.46761244378
+        "X": -426.55240446164,
+        "Y": -1278.626840454
       },
       {
         "Name": "Code Block",
@@ -8697,8 +8739,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1658.3543191376882,
-        "Y": -705.382487828604
+        "X": -612.95715179737022,
+        "Y": -1157.5417158388241
       },
       {
         "Name": "Code Block",
@@ -8707,8 +8749,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 265.27508788842624,
-        "Y": -884.325630497866
+        "X": -2006.0363830466322,
+        "Y": -1336.4848585080858
       },
       {
         "Name": "Code Block",
@@ -8727,8 +8769,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2418.6750819267454,
-        "Y": -630.97448398954612
+        "X": -1040.27221969916,
+        "Y": 187.77608831105
       },
       {
         "Name": "List Create",
@@ -8799,6 +8841,36 @@
         "Excluded": false,
         "X": -2323.491475517772,
         "Y": 2656.4593303963065
+      },
+      {
+        "Name": "BOQbyElement_HTML_part",
+        "ShowGeometry": true,
+        "Id": "5cd2326afbd841d795a1f47d8f16fcf7",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3880.2757201814284,
+        "Y": -2074.5674134897931
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "f0c4c064f1d14a0187a00c98dff1b989",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 264.06822593336528,
+        "Y": -1879.6103692921461
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "13eefa5b48074c729c506ed79f1032d5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1089.6754395994587,
+        "Y": -1718.0780277387053
       }
     ],
     "Annotations": [
@@ -9093,12 +9165,12 @@
           "6295313e8a4a48bc83e02079e2a9eb8e"
         ],
         "HasNestedGroups": false,
-        "Left": 4047.37479928672,
-        "Top": -4160.38657150059,
+        "Left": 4086.7441938283891,
+        "Top": -3971.4134777005765,
         "Width": 1787.0187524546,
-        "Height": 1190.6104749605106,
+        "Height": 1190.6104749605101,
         "FontSize": 72.0,
-        "InitialTop": -4044.38657150059,
+        "InitialTop": -3855.4134777005765,
         "InitialHeight": 1087.6104749605101,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
@@ -9159,12 +9231,12 @@
           "d227374d0ad049e5a98d7dbef89c77e1"
         ],
         "HasNestedGroups": false,
-        "Left": 255.27508788842624,
-        "Top": -965.11351132197194,
+        "Left": -2016.0363830466322,
+        "Top": -1417.272739332192,
         "Width": 1945.4839785849922,
         "Height": 391.73102349336796,
         "FontSize": 36.0,
-        "InitialTop": -892.11351132197194,
+        "InitialTop": -1344.272739332192,
         "InitialHeight": 331.73102349336796,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -9180,12 +9252,12 @@
           "aafa11db569242df9f24261d2a4ec289"
         ],
         "HasNestedGroups": false,
-        "Left": -2428.6750819267454,
-        "Top": -1351.9744839895461,
+        "Left": -1050.27221969916,
+        "Top": -533.22391168895,
         "Width": 395.25333333333333,
         "Height": 953.0,
         "FontSize": 72.0,
-        "InitialTop": -630.97448398954612,
+        "InitialTop": 187.77608831105,
         "InitialHeight": 145.0,
         "TextblockHeight": 711.0,
         "Background": "#FFFF7BAC"
@@ -9229,8 +9301,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 16.498691592114881,
-    "Y": 1310.5881324605939,
-    "Zoom": 0.63048598041915993
+    "X": -204.36652853740463,
+    "Y": 1880.7239395484394,
+    "Zoom": 0.92761991560716051
   }
 }
