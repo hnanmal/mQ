@@ -36,7 +36,7 @@
       "Id": "1774378d3556407e91e9987e17052fa9",
       "Name": "Watch",
       "Type": "string",
-      "InitialValue": "C:\\Users\\HEC\\.dynTempServer",
+      "InitialValue": "C:\\Users\\desktop\\.dynTempServer",
       "Description": "Visualize the node's output"
     }
   ],
@@ -470,7 +470,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nslabEdges = IN[0]\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Railings,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def getRailElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType()\r\n        return res\r\n\r\n    res = map(getElems, bics)\r\n#    res = getRailElems(Autodesk.Revit.DB.BuiltInCategory.OST_RailingSystemRail)\r\n    return res\r\n\r\nresult = list(get_allElems(doc))\r\n\r\nOUT = [result[0]+slabEdges, *result[1:]]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nslabEdges = IN[0]\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Railings,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def getRailElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType()\r\n        return res\r\n\r\n    res = map(getElems, bics)\r\n#    res = getRailElems(Autodesk.Revit.DB.BuiltInCategory.OST_RailingSystemRail)\r\n    return res\r\n\r\nresult = list(get_allElems(doc))\r\n\r\nOUT = [result[0]+slabEdges, *result[1:]]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -6236,8 +6236,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11889.285930209933,
-        "Y": 4953.5045564232023
+        "X": 10408.03792676679,
+        "Y": 4711.6454550317694
       },
       {
         "Name": "cssPart",
@@ -6246,8 +6246,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10860.128934950471,
-        "Y": 4489.3913370610235
+        "X": 9413.3805435759823,
+        "Y": 4312.40251702082
       },
       {
         "Name": "tablePart_",
@@ -6256,8 +6256,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 10701.486563189719,
-        "Y": 3898.1359366163547
+        "X": 9220.2385597465764,
+        "Y": 3656.2768352249218
       },
       {
         "Name": "htmlPath",
@@ -6266,8 +6266,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11576.637854772878,
-        "Y": 4956.5663818602552
+        "X": 10095.389851329735,
+        "Y": 4714.7072804688223
       },
       {
         "Name": "javascriptPart",
@@ -6276,8 +6276,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10857.408652085862,
-        "Y": 4296.1465283626439
+        "X": 9392.737663036969,
+        "Y": 4054.2874269712111
       },
       {
         "Name": "Watch",
@@ -6286,8 +6286,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": true,
         "Excluded": false,
-        "X": 12336.351703953438,
-        "Y": 5195.85124385975
+        "X": 10960.233420044808,
+        "Y": 4529.42981357894
       },
       {
         "Name": "Create JS file",
@@ -6296,8 +6296,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11889.285930209933,
-        "Y": 4741.418306423202
+        "X": 10408.03792676679,
+        "Y": 4499.5592050317691
       },
       {
         "Name": "make_htmlStr__",
@@ -6306,8 +6306,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": 11010.483093634119,
-        "Y": 3851.2055819783645
+        "X": 9529.2350901909758,
+        "Y": 3609.3464805869316
       },
       {
         "Name": "Rooms By Status",
@@ -6316,8 +6316,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3118.8035725292248,
-        "Y": 6418.5058194402291
+        "X": 813.74426145498364,
+        "Y": 6812.227130338003
       },
       {
         "Name": "Code Block",
@@ -6326,8 +6326,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3418.8035725292248,
-        "Y": 6418.5058194402291
+        "X": 1113.7442614549836,
+        "Y": 6812.227130338003
       },
       {
         "Name": "All ElementsExceptRails",
@@ -6346,8 +6346,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11889.285930209933,
-        "Y": 4527.918306423202
+        "X": 10408.03792676679,
+        "Y": 4286.0592050317691
       },
       {
         "Name": "make_htmlStr__",
@@ -6356,8 +6356,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11301.175018724203,
-        "Y": 4725.4933447741423
+        "X": 9819.92701528106,
+        "Y": 4483.6342433827094
       },
       {
         "Name": "start Webserver",
@@ -6366,8 +6366,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11889.285930209933,
-        "Y": 5171.0729163794622
+        "X": 10408.03792676679,
+        "Y": 4929.2138149880293
       },
       {
         "Name": "Code Block",
@@ -6376,8 +6376,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11577.285930209933,
-        "Y": 4808.918306423202
+        "X": 10096.03792676679,
+        "Y": 4567.0592050317691
       },
       {
         "Name": "List.Join",
@@ -6486,8 +6486,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10724.665501188792,
-        "Y": 4679.2666153083628
+        "X": 9139.8624672154565,
+        "Y": 4447.7630169699487
       },
       {
         "Name": "Categories",
@@ -6496,8 +6496,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2103.14086146575,
-        "Y": 3194.52673298568
+        "X": 934.431746110829,
+        "Y": 3146.3325426617653
       },
       {
         "Name": "All Elements of Category",
@@ -6506,8 +6506,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2467.14086146575,
-        "Y": 3194.52673298568
+        "X": 1298.431746110829,
+        "Y": 3146.3325426617653
       },
       {
         "Name": "Element.Parameters",
@@ -6516,8 +6516,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3100.14086146575,
-        "Y": 3327.19048298568
+        "X": 1931.431746110829,
+        "Y": 3278.996292661765
       },
       {
         "Name": "Parameter.ParameterByName",
@@ -6526,8 +6526,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6347.14086146575,
-        "Y": 3061.86298298568
+        "X": 5178.4317461108294,
+        "Y": 3013.6687926617651
       },
       {
         "Name": "Code Block",
@@ -6536,8 +6536,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5995.8019999295111,
-        "Y": 2965.1063650484552
+        "X": 4827.09288457459,
+        "Y": 2916.9121747245404
       },
       {
         "Name": "Parameter.Value",
@@ -6546,8 +6546,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6741.14086146575,
-        "Y": 3076.86298298568
+        "X": 5572.4317461108294,
+        "Y": 3028.6687926617651
       },
       {
         "Name": "Parameter.Name",
@@ -6556,8 +6556,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4106.14086146575,
-        "Y": 3327.10423298568
+        "X": 2937.4317461108294,
+        "Y": 3278.9100426617651
       },
       {
         "Name": "Parameter.Value",
@@ -6566,8 +6566,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5086.14086146575,
-        "Y": 3310.19048298568
+        "X": 3917.4317461108294,
+        "Y": 3261.996292661765
       },
       {
         "Name": "Parameter.HasValue",
@@ -6576,8 +6576,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3447.14086146575,
-        "Y": 3344.19048298568
+        "X": 2278.431746110829,
+        "Y": 3295.996292661765
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -6586,8 +6586,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3771.14086146575,
-        "Y": 3310.19048298568
+        "X": 2602.431746110829,
+        "Y": 3261.996292661765
       },
       {
         "Name": "Code Block",
@@ -6596,8 +6596,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4431.14086146575,
-        "Y": 3327.10423298568
+        "X": 3262.4317461108294,
+        "Y": 3278.9100426617651
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -6606,8 +6606,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4751.14086146575,
-        "Y": 3293.27673298568
+        "X": 3582.4317461108294,
+        "Y": 3245.0825426617653
       },
       {
         "Name": "Parameter.Name",
@@ -6616,8 +6616,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6013.14086146575,
-        "Y": 3201.86298298568
+        "X": 4844.4317461108294,
+        "Y": 3153.6687926617651
       },
       {
         "Name": "Code Block",
@@ -6626,8 +6626,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5420.14086146575,
-        "Y": 3310.19048298568
+        "X": 4251.4317461108294,
+        "Y": 3261.996292661765
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -6636,8 +6636,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5678.14086146575,
-        "Y": 3276.36298298568
+        "X": 4509.4317461108294,
+        "Y": 3228.1687926617651
       },
       {
         "Name": "Parameter.Value",
@@ -6646,8 +6646,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6013.14086146575,
-        "Y": 3350.86298298568
+        "X": 4844.4317461108294,
+        "Y": 3302.6687926617651
       },
       {
         "Name": "Dictionary.ByKeysValues",
@@ -6656,8 +6656,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6347.14086146575,
-        "Y": 3238.86298298568
+        "X": 5178.4317461108294,
+        "Y": 3190.6687926617651
       },
       {
         "Name": "List.FirstItem",
@@ -6666,8 +6666,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2824.14086146575,
-        "Y": 3194.52673298568
+        "X": 1655.431746110829,
+        "Y": 3146.3325426617653
       },
       {
         "Name": "Data.StringifyJSON",
@@ -6676,8 +6676,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6741.14086146575,
-        "Y": 3223.86298298568
+        "X": 5572.4317461108294,
+        "Y": 3175.6687926617651
       },
       {
         "Name": "Building Name",
@@ -6686,8 +6686,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7238.99153700661,
-        "Y": 3075.24975460565
+        "X": 6879.1828014198618,
+        "Y": 3033.3302902654464
       },
       {
         "Name": "Code Block",
@@ -6696,8 +6696,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 8232.7364674514647,
-        "Y": 4407.5709037777469
+        "X": 7694.2708866399589,
+        "Y": 4441.9410472338
       },
       {
         "Name": "PjtInfo_HTML_part",
@@ -6706,8 +6706,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 8502.7364674514647,
-        "Y": 4407.7434037777475
+        "X": 7964.2708866399589,
+        "Y": 4442.113547233801
       },
       {
         "Name": "List Create",
@@ -6716,8 +6716,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6776.27253098171,
-        "Y": 3384.55596550665
+        "X": 5607.5634156267888,
+        "Y": 3336.3617751827351
       },
       {
         "Name": "Parameter.ParameterByName",
@@ -6816,8 +6816,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3829.8035725292248,
-        "Y": 6179.7483975652285
+        "X": 1524.7442614549836,
+        "Y": 6573.4697084630025
       },
       {
         "Name": "Parameter.Value",
@@ -6826,8 +6826,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4557.8035725292248,
-        "Y": 6281.7591788152286
+        "X": 2252.7442614549836,
+        "Y": 6675.4804897130025
       },
       {
         "Name": "Code Block",
@@ -6836,8 +6836,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3418.8035725292248,
-        "Y": 6130.5758975652288
+        "X": 1113.7442614549836,
+        "Y": 6524.2972084630028
       },
       {
         "Name": "List.SortByKey",
@@ -6846,8 +6846,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5003.8035725292248,
-        "Y": 6163.7376163152285
+        "X": 2698.7442614549836,
+        "Y": 6557.4589272130024
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -6856,8 +6856,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4223.8035725292248,
-        "Y": 6281.7591788152286
+        "X": 1918.7442614549836,
+        "Y": 6675.4804897130025
       },
       {
         "Name": "Code Block",
@@ -6866,8 +6866,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3829.8035725292248,
-        "Y": 6358.5866788152289
+        "X": 1524.7442614549836,
+        "Y": 6752.3079897130028
       },
       {
         "Name": "set Room Datas",
@@ -6876,8 +6876,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5370.8035725292248,
-        "Y": 6163.7376163152285
+        "X": 3065.7442614549836,
+        "Y": 6557.4589272130024
       },
       {
         "Name": "roomInfoPart_",
@@ -6886,8 +6886,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7880.5446910961755,
-        "Y": 6175.2438233685571
+        "X": 5575.4853800219344,
+        "Y": 6568.965134266331
       },
       {
         "Name": "Code Block",
@@ -6896,8 +6896,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 9111.1876469137515,
-        "Y": 5379.12898150324
+        "X": 7701.9994464743013,
+        "Y": 5515.5838458811895
       },
       {
         "Name": "Categories",
@@ -6906,8 +6906,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2648.8898475922779,
-        "Y": 7871.6636352764781
+        "X": -4712.77272438562,
+        "Y": 9148.8096788602052
       },
       {
         "Name": "All Elements of Category",
@@ -6916,8 +6916,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2984.8898475922779,
-        "Y": 7871.6636352764781
+        "X": -4376.77272438562,
+        "Y": 9148.8096788602052
       },
       {
         "Name": "All Elements of Category",
@@ -6926,8 +6926,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3737.9695137260478,
-        "Y": 8754.4230167933474
+        "X": -3623.69305825185,
+        "Y": 10031.569060377074
       },
       {
         "Name": "Categories",
@@ -6936,8 +6936,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3401.9695137260478,
-        "Y": 8754.4230167933474
+        "X": -3959.69305825185,
+        "Y": 10031.569060377074
       },
       {
         "Name": "Element.Parameters",
@@ -6946,8 +6946,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2739.099683202438,
-        "Y": 8113.4149217176973
+        "X": -4622.5628887754592,
+        "Y": 9390.5609653014253
       },
       {
         "Name": "Element.Parameters",
@@ -6956,8 +6956,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3463.3010485025779,
-        "Y": 9121.9810097553272
+        "X": -3898.3615234753197,
+        "Y": 10399.127053339054
       },
       {
         "Name": "List.Flatten",
@@ -6976,8 +6976,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 8214.5896540260474,
-        "Y": 3952.9117791261988
+        "X": 7676.1240732145416,
+        "Y": 3987.2819225822523
       },
       {
         "Name": "List Create",
@@ -6986,8 +6986,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10393.26717775533,
-        "Y": 4939.6055168728944
+        "X": 8912.0191743121868,
+        "Y": 4697.7464154814616
       },
       {
         "Name": "Code Block",
@@ -6996,8 +6996,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3412.1626425676282,
-        "Y": 6704.0491576680779
+        "X": 1107.103331493387,
+        "Y": 7097.7704685658518
       },
       {
         "Name": "serverFilePath",
@@ -7006,8 +7006,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11207.866322735747,
-        "Y": 5087.4683383388292
+        "X": 9726.6183192926037,
+        "Y": 4845.6092369473963
       },
       {
         "Name": "Set Port Number: 기본값-8000 (작동 오류 없다면 변경 금지)",
@@ -7016,8 +7016,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11281.282133512688,
-        "Y": 5238.7570033231459
+        "X": 9800.0341300695454,
+        "Y": 4996.897901931713
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -7026,8 +7026,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3391.5665065477879,
-        "Y": 7984.7682652065578
+        "X": -3970.09606543011,
+        "Y": 9261.9143087902848
       },
       {
         "Name": "Code Block",
@@ -7036,8 +7036,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3152.1188033682984,
-        "Y": 8076.4427341472874
+        "X": -4209.5437686095993,
+        "Y": 9353.5887777310145
       },
       {
         "Name": "List.SortByKey",
@@ -7046,8 +7046,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5365.0515291497877,
-        "Y": 7865.2513241175775
+        "X": -1996.61104282811,
+        "Y": 9142.3973677013055
       },
       {
         "Name": "List.GroupByKey",
@@ -7056,8 +7056,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4323.244163080818,
-        "Y": 7868.6689085139578
+        "X": -3038.4184088970796,
+        "Y": 9145.814952097684
       },
       {
         "Name": "String.Substring",
@@ -7066,8 +7066,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3979.3083239029784,
-        "Y": 8078.741937843688
+        "X": -3382.3542480749193,
+        "Y": 9355.8879814274151
       },
       {
         "Name": "Code Block",
@@ -7076,8 +7076,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3783.7473888075483,
-        "Y": 8142.3481230713078
+        "X": -3577.9151831703493,
+        "Y": 9419.4941666550349
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -7086,8 +7086,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4838.3319565497377,
-        "Y": 7973.7310283028273
+        "X": -2523.33061542816,
+        "Y": 9250.8770718865544
       },
       {
         "Name": "Code Block",
@@ -7096,8 +7096,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4614.1583822457078,
-        "Y": 8074.569974568818
+        "X": -2747.50418973219,
+        "Y": 9351.7160181525451
       },
       {
         "Name": "Code Block",
@@ -7106,8 +7106,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5760.3306569304277,
-        "Y": 7864.5997580963876
+        "X": -1601.33191504747,
+        "Y": 9141.7458016801138
       },
       {
         "Name": "Level.Elevation",
@@ -7116,8 +7116,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4086.6123497623475,
-        "Y": 8893.0602237759485
+        "X": -3275.05022221555,
+        "Y": 10170.206267359676
       },
       {
         "Name": "Math.Round",
@@ -7126,8 +7126,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4372.1547889443282,
-        "Y": 8892.7503427947668
+        "X": -2989.5077830335695,
+        "Y": 10169.896386378494
       },
       {
         "Name": "List.SortByKey",
@@ -7136,8 +7136,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4717.990971032058,
-        "Y": 8753.6677749780974
+        "X": -2643.6716009458396,
+        "Y": 10030.813818561825
       },
       {
         "Name": "Element.GetParameterValueByName",
@@ -7146,8 +7146,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5412.4285729379581,
-        "Y": 8753.4243053445571
+        "X": -1949.2339990399396,
+        "Y": 10030.570348928284
       },
       {
         "Name": "Code Block",
@@ -7156,8 +7156,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5172.9808697584676,
-        "Y": 8845.0987742852776
+        "X": -2188.68170221943,
+        "Y": 10122.244817869005
       },
       {
         "Name": "Level.Elevation",
@@ -7166,8 +7166,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5260.5749397736681,
-        "Y": 9164.9444718122177
+        "X": -2101.0876322042295,
+        "Y": 10442.090515395945
       },
       {
         "Name": "Math.Round",
@@ -7176,8 +7176,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5523.9811405354376,
-        "Y": 9165.8600705934477
+        "X": -1837.68143144246,
+        "Y": 10443.006114177175
       },
       {
         "Name": "Code Block",
@@ -7186,8 +7186,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5745.3988283762183,
-        "Y": 8290.835931215468
+        "X": -1616.2637436016794,
+        "Y": 9567.9819747991951
       },
       {
         "Name": "Categories",
@@ -7196,8 +7196,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 9918.9801981515775,
-        "Y": 8231.9531486406577
+        "X": 10701.602745779215,
+        "Y": 6526.4266533389218
       },
       {
         "Name": "All Elements of Category",
@@ -7206,8 +7206,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10254.980198151577,
-        "Y": 8231.9531486406577
+        "X": 11037.602745779215,
+        "Y": 6526.4266533389218
       },
       {
         "Name": "Code Block",
@@ -7216,8 +7216,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12188.980198151577,
-        "Y": 8198.1256486406583
+        "X": 12971.602745779215,
+        "Y": 6492.5991533389224
       },
       {
         "Name": "View.ExportAsImage",
@@ -7226,8 +7226,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 12763.873398655021,
-        "Y": 8140.62301910797
+        "X": 13546.495946282659,
+        "Y": 6435.0965238062345
       },
       {
         "Name": "Code Block",
@@ -7236,8 +7236,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11662.85489908851,
-        "Y": 7223.2662642280229
+        "X": 11738.936331707457,
+        "Y": 5465.7058526659184
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -7246,8 +7246,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10884.980198151577,
-        "Y": 8198.1256486406583
+        "X": 11667.602745779215,
+        "Y": 6492.5991533389224
       },
       {
         "Name": "Element.Parameters",
@@ -7256,8 +7256,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10896.508324722521,
-        "Y": 8642.295437170771
+        "X": 11679.130872350159,
+        "Y": 6936.7689418690352
       },
       {
         "Name": "Element.Name",
@@ -7266,8 +7266,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11223.210401978911,
-        "Y": 8322.09992278436
+        "X": 12005.832949606549,
+        "Y": 6616.5734274826245
       },
       {
         "Name": "Code Block",
@@ -7276,8 +7276,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10611.980198151577,
-        "Y": 8231.9531486406577
+        "X": 11394.602745779215,
+        "Y": 6526.4266533389218
       },
       {
         "Name": "List.FilterByBoolMask",
@@ -7286,8 +7286,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11853.980198151577,
-        "Y": 8198.1256486406583
+        "X": 12636.602745779215,
+        "Y": 6492.5991533389224
       },
       {
         "Name": "String.Contains",
@@ -7296,8 +7296,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11536.210401978911,
-        "Y": 8379.09992278436
+        "X": 12318.832949606549,
+        "Y": 6673.5734274826245
       },
       {
         "Name": "Code Block",
@@ -7306,8 +7306,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 11223.210401978911,
-        "Y": 8469.92742278436
+        "X": 12005.832949606549,
+        "Y": 6764.400927482624
       },
       {
         "Name": "Code Block",
@@ -7326,7 +7326,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 851.2256250154087,
+        "X": 999.51100907608793,
         "Y": 5647.7446950051562
       },
       {
@@ -7336,7 +7336,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2067.9039768561024,
+        "X": 2216.1893609167819,
         "Y": 5476.0546838735163
       },
       {
@@ -7446,8 +7446,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5983.8035725292248,
-        "Y": 6335.7807413152286
+        "X": 3678.7442614549836,
+        "Y": 6729.5020522130026
       },
       {
         "Name": "Parameter.ParameterByName",
@@ -7456,8 +7456,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3829.8035725292248,
-        "Y": 6519.608241315229
+        "X": 1524.7442614549836,
+        "Y": 6913.3295522130029
       },
       {
         "Name": "Parameter.Value",
@@ -7466,8 +7466,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4223.8035725292248,
-        "Y": 6519.608241315229
+        "X": 1918.7442614549836,
+        "Y": 6913.3295522130029
       },
       {
         "Name": "Code Block",
@@ -7476,8 +7476,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4223.8035725292248,
-        "Y": 6667.4357413152293
+        "X": 1918.7442614549836,
+        "Y": 7061.1570522130032
       },
       {
         "Name": "String.Join",
@@ -7486,8 +7486,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5003.8035725292248,
-        "Y": 6458.608241315229
+        "X": 2698.7442614549836,
+        "Y": 6852.3295522130029
       },
       {
         "Name": "Code Block",
@@ -7496,8 +7496,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4557.8035725292248,
-        "Y": 6429.4357413152293
+        "X": 2252.7442614549836,
+        "Y": 6823.1570522130032
       },
       {
         "Name": "List.SortByKey",
@@ -7506,8 +7506,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5660.8035725292248,
-        "Y": 6441.7807413152286
+        "X": 3355.7442614549836,
+        "Y": 6835.5020522130026
       },
       {
         "Name": "Code Block",
@@ -7516,8 +7516,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5370.8035725292248,
-        "Y": 6458.608241315229
+        "X": 3065.7442614549836,
+        "Y": 6852.3295522130029
       },
       {
         "Name": "Code Block",
@@ -7526,8 +7526,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6402.8035725292248,
-        "Y": 6386.6944913152283
+        "X": 4097.7442614549836,
+        "Y": 6780.4158022130023
       },
       {
         "Name": "Code Block",
@@ -7536,8 +7536,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7138.8035725292248,
-        "Y": 6125.6944913152283
+        "X": 4833.7442614549836,
+        "Y": 6519.4158022130023
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -7546,8 +7546,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5660.8035725292248,
-        "Y": 6263.7807413152286
+        "X": 3355.7442614549836,
+        "Y": 6657.5020522130026
       },
       {
         "Name": "Code Block",
@@ -7556,8 +7556,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5370.8035725292248,
-        "Y": 6311.608241315229
+        "X": 3065.7442614549836,
+        "Y": 6705.3295522130029
       },
       {
         "Name": "Code Block",
@@ -7566,8 +7566,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5983.8035725292248,
-        "Y": 6187.6944913152283
+        "X": 3678.7442614549836,
+        "Y": 6581.4158022130023
       },
       {
         "Name": "List.AddItemToFront",
@@ -7576,8 +7576,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6402.8035725292248,
-        "Y": 6208.866991315228
+        "X": 4097.7442614549836,
+        "Y": 6602.588302213002
       },
       {
         "Name": "List.AddItemToFront",
@@ -7586,8 +7586,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6727.8035725292248,
-        "Y": 6280.866991315228
+        "X": 4422.7442614549836,
+        "Y": 6674.588302213002
       },
       {
         "Name": "List.Flatten",
@@ -7596,8 +7596,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7138.8035725292248,
-        "Y": 6272.866991315228
+        "X": 4833.7442614549836,
+        "Y": 6666.588302213002
       },
       {
         "Name": "roomInfoPart_NumberName",
@@ -7606,8 +7606,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7863.8025918568919,
-        "Y": 6434.7510046578018
+        "X": 5558.7432807826508,
+        "Y": 6828.4723155555757
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -7616,8 +7616,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7502.7834045511654,
-        "Y": 6738.2519558736667
+        "X": 5197.7240934769243,
+        "Y": 7131.9732667714406
       },
       {
         "Name": "Code Block",
@@ -7626,8 +7626,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7124.5432460159273,
-        "Y": 6840.5913020492726
+        "X": 4819.4839349416861,
+        "Y": 7234.3126129470465
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -7636,8 +7636,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7490.1122674202343,
-        "Y": 6435.1588185306964
+        "X": 5185.0529563459932,
+        "Y": 6828.88012942847
       },
       {
         "Name": "Code Block",
@@ -7646,8 +7646,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 9088.103263742838,
-        "Y": 5713.8731393673852
+        "X": 7678.9150633033878,
+        "Y": 5850.3280037453351
       },
       {
         "Name": "Code Block",
@@ -7666,8 +7666,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 10041.380116490816,
-        "Y": 4265.0070234780278
+        "X": 8690.69563151516,
+        "Y": 3586.1931150872319
       },
       {
         "Name": "GetKeyName_room",
@@ -7676,8 +7676,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4632.8924891840315,
-        "Y": 6614.0582345775965
+        "X": 2327.8331781097904,
+        "Y": 7007.7795454753705
       },
       {
         "Name": "Str Column 그루핑_",
@@ -7706,7 +7706,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1745.9039768561022,
+        "X": 1894.1893609167814,
         "Y": 5476.0546838735163
       },
       {
@@ -7716,7 +7716,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1459.9039768561022,
+        "X": 1608.1893609167814,
         "Y": 5477.8471838735168
       },
       {
@@ -7726,8 +7726,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6185.6811599988823,
-        "Y": 4122.5097726833465
+        "X": 5927.4436347330911,
+        "Y": 4104.9026686879515
       },
       {
         "Name": "Math.Sum",
@@ -7736,8 +7736,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6452.6811599988823,
-        "Y": 4122.5097726833465
+        "X": 6194.4436347330911,
+        "Y": 4104.9026686879515
       }
     ],
     "Annotations": [
@@ -7764,12 +7764,12 @@
           "301d9b236e1241fc9e122bf84d6b5cdc"
         ],
         "HasNestedGroups": false,
-        "Left": 10383.26717775533,
-        "Top": 4180.1465283626439,
+        "Left": 8902.0191743121868,
+        "Top": 3938.2874269712111,
         "Width": 1787.0187524546036,
         "Height": 1190.610474960502,
         "FontSize": 72.0,
-        "InitialTop": 4296.1465283626439,
+        "InitialTop": 4054.2874269712111,
         "InitialHeight": 1087.610474960502,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
@@ -7838,12 +7838,12 @@
           "8ac2bc221e284f988d9dd94219ebb1fc"
         ],
         "HasNestedGroups": false,
-        "Left": 2093.14086146575,
-        "Top": 2849.1063650484552,
+        "Left": 924.431746110829,
+        "Top": 2800.9121747245404,
         "Width": 4892.0,
         "Height": 697.44960045819471,
         "FontSize": 72.0,
-        "InitialTop": 2965.1063650484552,
+        "InitialTop": 2916.9121747245404,
         "InitialHeight": 564.44960045819471,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -7916,12 +7916,12 @@
           "2a2f809e0b77428cbea88d43cf71dfa2"
         ],
         "HasNestedGroups": false,
-        "Left": 3108.8035725292248,
-        "Top": 6009.6944913152283,
+        "Left": 803.74426145498364,
+        "Top": 6403.4158022130023,
         "Width": 4235.0,
         "Height": 901.35466635284956,
         "FontSize": 72.0,
-        "InitialTop": 6125.6944913152283,
+        "InitialTop": 6519.4158022130023,
         "InitialHeight": 723.35466635284956,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -7946,12 +7946,12 @@
           "aa4c7fac881349e6a60c1b52283611ae"
         ],
         "HasNestedGroups": false,
-        "Left": 3391.9695137260478,
-        "Top": 8637.4243053445571,
+        "Left": -3969.69305825185,
+        "Top": 9914.5703489282841,
         "Width": 2376.4590592119102,
         "Height": 660.43576524889068,
         "FontSize": 72.0,
-        "InitialTop": 8753.4243053445571,
+        "InitialTop": 10030.570348928284,
         "InitialHeight": 557.43576524889068,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -7979,12 +7979,12 @@
           "c95a668653414ab9a68e348e4bab596c"
         ],
         "HasNestedGroups": false,
-        "Left": 2638.8898475922779,
-        "Top": 7748.5997580963876,
+        "Left": -4722.77272438562,
+        "Top": 9025.7458016801138,
         "Width": 3287.5089807839404,
-        "Height": 674.23617311908038,
+        "Height": 674.23617311908129,
         "FontSize": 72.0,
-        "InitialTop": 7864.5997580963876,
+        "InitialTop": 9141.7458016801138,
         "InitialHeight": 571.23617311908038,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
@@ -8009,12 +8009,12 @@
           "920e9c28d0b64c6dbc424f3e15e1b611"
         ],
         "HasNestedGroups": false,
-        "Left": 9908.9801981515775,
-        "Top": 8082.1256486406583,
+        "Left": 10691.602745779215,
+        "Top": 6376.5991533389224,
         "Width": 2444.0,
         "Height": 692.16978853011278,
         "FontSize": 72.0,
-        "InitialTop": 8198.1256486406583,
+        "InitialTop": 6492.5991533389224,
         "InitialHeight": 589.16978853011278,
         "TextblockHeight": 106.0,
         "Background": "#FFFFAA45"
@@ -8056,9 +8056,9 @@
           "6dc6a92cce924221b9329f930fdf603d"
         ],
         "HasNestedGroups": false,
-        "Left": 841.2256250154087,
+        "Left": 989.51100907608793,
         "Top": 5403.0546838735163,
-        "Width": 1431.6783518406937,
+        "Width": 1431.6783518406939,
         "Height": 484.69001113163995,
         "FontSize": 36.0,
         "InitialTop": 5476.0546838735163,
@@ -8102,19 +8102,19 @@
           "d403ce8e72bd47419185e2ebf2fe3bad"
         ],
         "HasNestedGroups": false,
-        "Left": 6175.6811599988823,
-        "Top": 4006.5097726833465,
+        "Left": 5917.4436347330911,
+        "Top": 3988.9026686879515,
         "Width": 496.0,
         "Height": 248.0,
         "FontSize": 36.0,
-        "InitialTop": 4122.5097726833465,
-        "InitialHeight": 164.19243917870153,
+        "InitialTop": 4104.9026686879515,
+        "InitialHeight": 145.0,
         "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       }
     ],
-    "X": -3623.7636100520831,
-    "Y": -1593.002951818944,
-    "Zoom": 0.44658853301007367
+    "X": 412.58172213505532,
+    "Y": -109.07685763779187,
+    "Zoom": 0.071253559627829283
   }
 }
