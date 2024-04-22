@@ -2,7 +2,7 @@
   "Uuid": "6dd683a2-424b-4af7-8e2f-902c210d0c3e",
   "IsCustomNode": false,
   "Description": "Summary of Revit File",
-  "Name": "공통(_)_RVT Summary_1.0.7",
+  "Name": "[H_PAB.RT.G1]_Revit RVT Summary_[3.0.0]",
   "ElementResolver": {
     "ResolutionMap": {
       "DesignScript.Builtin.Dictionary": {
@@ -38,6 +38,13 @@
       "Type": "string",
       "InitialValue": "C:\\Users\\HEC\\.dynTempServer",
       "Description": "Visualize the node's output"
+    },
+    {
+      "Id": "fb879d622abc4f73b40f651b112409f0",
+      "Name": "Warning about Rooms",
+      "Type": "unknown",
+      "InitialValue": "",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Nodes": [
@@ -4908,7 +4915,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e\\\r\n        .GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda nth: go\\\r\n    (\r\n        elems,\r\n        filter(lambda elem: propCodes[nth] in str(elem.GetParameterValueByName(\"Family and Type\"))),\r\n        list,\r\n    )\r\n    grpPerKind = list(map(lambda nth: list(findGroup(nth)), cnt))\r\n    \r\n    def findRC_colTypes(grp):\r\n        res = go(\r\n            grp,\r\n            map(findTypeName),\r\n            set, sorted, list,\r\n        )\r\n        return res\r\n    \r\n    def findSteel_colTypes(grp):\r\n        pretag = \"<strong style='font-size:100%'>\"\r\n        posttag = \"</strong>\"\r\n        res = {}\r\n        subGrpNames = [\"Heavy\", \"Medium\", \"Light\"]\r\n        for n in subGrpNames:\r\n            subs = go(\r\n                grp,\r\n                filter(lambda e: findTypeWeight(e) == n),\r\n                map(findTypeName),\r\n                set, sorted, list,\r\n            )\r\n            res[pretag +\"!! \" + n +\" !!\" + posttag] = [\"\", subs, \"\"]\r\n        \r\n        return res\r\n    \r\n    # RC, etc면 그냥 , Steel 이면 heavy, mediun, light 소그룹 형성\r\n    res = {}\r\n    for i in cnt:\r\n        codeName = propNames[i]\r\n        discName = propCodes[i]\r\n        grp = grpPerKind[i]\r\n        if \"RC\" in codeName or \"Etc\" in codeName:\r\n            res[codeName] = findRC_colTypes(grp)\r\n        else:\r\n            res[codeName] = findSteel_colTypes(grp)\r\n\r\n    return res\r\n\r\ngrpsDict = groupByProperties(allFrames, propCodes, propNames)\r\n\r\n\r\n\r\ndef cvtIntoHTML(grpsDict):\r\n    pre_strongTag = \"<strong style='font-size:120%'> [ \"\r\n    post_strongTag = \" ] </strong>\"\r\n    res = []\r\n    for k,v in grpsDict.items():\r\n        if isinstance(v,list):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20,*v,\"=\"*50,\" \"*10])\r\n        elif isinstance(v,dict):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20, list(chain(*v.items())),\"=\"*50,\" \"*10])\r\n        \r\n    return res\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = cvtIntoHTML(grpsDict)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e\\\r\n        .GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda nth: go\\\r\n    (\r\n        elems,\r\n        filter(lambda elem: propCodes[nth] in str(elem.GetParameterValueByName(\"Family and Type\"))),\r\n        list,\r\n    )\r\n    grpPerKind = list(map(lambda nth: list(findGroup(nth)), cnt))\r\n    grpEtc = [x for x in elems if x not in list(chain(*grpPerKind))]\r\n    grpPerKind[-1] = grpEtc\r\n    \r\n    def findRC_colTypes(grp):\r\n        res = go(\r\n            grp,\r\n            map(findTypeName),\r\n            set, sorted, list,\r\n        )\r\n        return res\r\n    \r\n    def findSteel_colTypes(grp):\r\n        pretag = \"<strong style='font-size:100%'>\"\r\n        posttag = \"</strong>\"\r\n        res = {}\r\n        subGrpNames = [\"Heavy\", \"Medium\", \"Light\"]\r\n        for n in subGrpNames:\r\n            subs = go(\r\n                grp,\r\n                filter(lambda e: findTypeWeight(e) == n),\r\n                map(findTypeName),\r\n                set, sorted, list,\r\n            )\r\n            res[pretag +\"!! \" + n +\" !!\" + posttag] = [\"\", subs, \"\"]\r\n        \r\n        return res\r\n    \r\n    # RC, etc면 그냥 , Steel 이면 heavy, mediun, light 소그룹 형성\r\n    res = {}\r\n    for i in cnt:\r\n        codeName = propNames[i]\r\n        discName = propCodes[i]\r\n        grp = grpPerKind[i]\r\n        if \"RC\" in codeName or \"Etc\" in codeName:\r\n            res[codeName] = findRC_colTypes(grp)\r\n        else:\r\n            res[codeName] = findSteel_colTypes(grp)\r\n\r\n    return res\r\n\r\ngrpsDict = groupByProperties(allFrames, propCodes, propNames)\r\n\r\n\r\n\r\ndef cvtIntoHTML(grpsDict):\r\n    pre_strongTag = \"<strong style='font-size:120%'> [ \"\r\n    post_strongTag = \" ] </strong>\"\r\n    res = []\r\n    for k,v in grpsDict.items():\r\n        if isinstance(v,list):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20,*v,\"=\"*50,\" \"*10])\r\n        elif isinstance(v,dict):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20, list(chain(*v.items())),\"=\"*50,\" \"*10])\r\n        \r\n    return res\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = cvtIntoHTML(grpsDict)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -4988,7 +4995,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e\\\r\n        .GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    findGroup = lambda nth: go\\\r\n    (\r\n        elems,\r\n        filter(lambda elem: propCodes[nth] in str(elem.GetParameterValueByName(\"Family and Type\"))),\r\n        list,\r\n    )\r\n    grpPerKind = list(map(lambda nth: list(findGroup(nth)), cnt))\r\n    \r\n    def findRC_colTypes(grp):\r\n        res = go(\r\n            grp,\r\n            map(findTypeName),\r\n            set, sorted, list,\r\n        )\r\n        return res\r\n    \r\n    def findSteel_colTypes(grp):\r\n        pretag = \"<strong style='font-size:100%'>\"\r\n        posttag = \"</strong>\"\r\n        res = {}\r\n        subGrpNames = [\"Heavy\", \"Medium\", \"Light\"]\r\n        for n in subGrpNames:\r\n            subs = go(\r\n                grp,\r\n                filter(lambda e: findTypeWeight(e) == n),\r\n                map(findTypeName),\r\n                set, sorted, list,\r\n            )\r\n            res[pretag +\"!! \" + n +\" !!\" + posttag] = [\"\", subs, \"\"]\r\n        \r\n        return res\r\n    \r\n    # RC, etc면 그냥 , Steel 이면 heavy, mediun, light 소그룹 형성\r\n    res = {}\r\n    for i in cnt:\r\n        codeName = propNames[i]\r\n        discName = propCodes[i]\r\n        grp = grpPerKind[i]\r\n        if \"RC\" in codeName or \"Etc\" in codeName:\r\n            res[codeName] = findRC_colTypes(grp)\r\n        else:\r\n            res[codeName] = findSteel_colTypes(grp)\r\n\r\n    return res\r\n\r\ngrpsDict = groupByProperties(allFrames, propCodes, propNames)\r\n\r\n\r\n\r\ndef cvtIntoHTML(grpsDict):\r\n    pre_strongTag = \"<strong style='font-size:120%'> [ \"\r\n    post_strongTag = \" ] </strong>\"\r\n    res = []\r\n    for k,v in grpsDict.items():\r\n        if isinstance(v,list):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20,*v,\"=\"*50,\" \"*10])\r\n        elif isinstance(v,dict):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20, list(chain(*v.items())),\"=\"*50,\" \"*10])\r\n        \r\n    return res\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = cvtIntoHTML(grpsDict)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallFrames = IN[0]\r\n#propNamesDict = IN[1]\r\n#propCodes = list(propNamesDict.keys())\r\n#propNames = list(propNamesDict.values())\r\npropCodes = IN[1]\r\npropNames = IN[2]\r\n# Place your code below this line\r\n\r\ndef findTypeName(e):\r\n    res = e\\\r\n        .GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Type Name\")\r\n    return res\r\n    \r\ndef findTypeWeight(e):\r\n    nomWeight = e.\\\r\n        GetParameterValueByName(\"Family and Type\").\\\r\n        GetParameterValueByName(\"Nominal Weight\")\r\n    if nomWeight >= 90:\r\n        res = \"Heavy\"\r\n    elif nomWeight < 30:\r\n        res = \"Light\"\r\n    else:\r\n        res = \"Medium\"\r\n    return res\r\n\r\ndef groupByProperties(elems, propCodes, propNames):\r\n    cnt = range(len(propCodes))\r\n    #keys = propCodes[:-1]\r\n    #etc = \r\n    findGroup = lambda nth: go(\r\n        elems,\r\n        filter(lambda elem: propCodes[nth] in str(elem.GetParameterValueByName(\"Family and Type\"))),\r\n        list,\r\n    )\r\n\r\n    grpPerKind = list(map(lambda nth: list(findGroup(nth)), cnt))\r\n    grpEtc = [x for x in elems if x not in list(chain(*grpPerKind))]\r\n    grpPerKind[-1] = grpEtc\r\n    \r\n    def findRC_colTypes(grp):\r\n        res = go(\r\n            grp,\r\n            map(findTypeName),\r\n            set, sorted, list,\r\n        )\r\n        return res\r\n    \r\n    def findSteel_colTypes(grp):\r\n        pretag = \"<strong style='font-size:100%'>\"\r\n        posttag = \"</strong>\"\r\n        res = {}\r\n        subGrpNames = [\"Heavy\", \"Medium\", \"Light\"]\r\n        for n in subGrpNames:\r\n            subs = go(\r\n                grp,\r\n                filter(lambda e: findTypeWeight(e) == n),\r\n                map(findTypeName),\r\n                set, sorted, list,\r\n            )\r\n            res[pretag +\"!! \" + n +\" !!\" + posttag] = [\"\", subs, \"\"]\r\n        return res\r\n    \r\n    # RC, etc면 그냥 , Steel 이면 heavy, mediun, light 소그룹 형성\r\n    res = {}\r\n    for i in cnt:\r\n        discName = propCodes[i]\r\n        codeName = propNames[i]\r\n        \r\n        grp = grpPerKind[i]\r\n        if \"RC\" in codeName or \"Etc\" in codeName:\r\n            res[codeName] = findRC_colTypes(grp)\r\n        else:\r\n            res[codeName] = findSteel_colTypes(grp)\r\n\r\n    return res\r\n\r\ngrpsDict = groupByProperties(allFrames, propCodes, propNames)\r\n\r\n\r\n\r\ndef cvtIntoHTML(grpsDict):\r\n    pre_strongTag = \"<strong style='font-size:120%'> [ \"\r\n    post_strongTag = \" ] </strong>\"\r\n    res = []\r\n    for k,v in grpsDict.items():\r\n        if isinstance(v,list):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20,*v,\"=\"*50,\" \"*10])\r\n        elif isinstance(v,dict):\r\n            res.append([pre_strongTag+ k +post_strongTag, \"-\"*20, list(chain(*v.items())),\"=\"*50,\" \"*10])\r\n        \r\n    return res\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = cvtIntoHTML(grpsDict)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -5039,23 +5046,23 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\"S16\",\n\"S02\",\n\"S03\",\n\"S04\",\n\"B03\",\n\"B04\"];\n[\"RC Beam\",\n\"Steel Beam\",\n\"HBrace\",\n\"VBrace\",\n\"Purlin\",\n\"Girth\"];",
+      "Code": "//propCodes\n[\"S16\",\n\"S02\",\n\"S03\",\n\"S04\",\n\"B03\",\n\"B04\",\n\"Etc\"];\n\n//propNames\n[\"RC Beam\",\n\"Steel Beam\",\n\"HBrace\",\n\"VBrace\",\n\"Purlin\",\n\"Girth\",\n\"Etc Framing\"];",
       "Id": "6dc6a92cce924221b9329f930fdf603d",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "d3f23cba5f504d06954992dfdf7108e3",
+          "Id": "86714b1b813c43338f0fffbc213f02b7",
           "Name": "",
-          "Description": "Value of expression at line 1",
+          "Description": "Value of expression at line 2",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "93c6d335154d42c98f989a1dde0980c4",
+          "Id": "76c6eb8c9abd474d8af94e7eb7f830eb",
           "Name": "",
-          "Description": "Value of expression at line 7",
+          "Description": "Value of expression at line 11",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -5124,6 +5131,39 @@
       ],
       "Replication": "Auto",
       "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nplacedRooms = IN[0]\r\n# Place your code below this line\r\n\r\ndef warnAbtRooms(placedRooms):\r\n    if len(placedRooms):\r\n        pass\r\n    else:\r\n        return \"There are no placed rooms !!!\"\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = warnAbtRooms(placedRooms)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "fb879d622abc4f73b40f651b112409f0",
+      "Inputs": [
+        {
+          "Id": "3466af5432944499bff0c6c5f95f0b78",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "10214c151efc4f188e1b542a06c56ecd",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -5203,6 +5243,12 @@
       "Start": "3461d5d635b446598905ff62100c0ef1",
       "End": "b476d5de05c14cceab1f40ce520d5450",
       "Id": "1f6506834eba420a914ed9def8a1028b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3461d5d635b446598905ff62100c0ef1",
+      "End": "3466af5432944499bff0c6c5f95f0b78",
+      "Id": "db09ab9b203d4531827e7587212abc03",
       "IsHidden": "False"
     },
     {
@@ -6148,15 +6194,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "d3f23cba5f504d06954992dfdf7108e3",
+      "Start": "86714b1b813c43338f0fffbc213f02b7",
       "End": "4a0ddc3e48b84be3bd27ed8f8b1af230",
-      "Id": "30bd683820194eb7b0fcce4fefe658f3",
+      "Id": "4b0a4cda2c7547bbb5178a7d47700834",
       "IsHidden": "False"
     },
     {
-      "Start": "93c6d335154d42c98f989a1dde0980c4",
+      "Start": "76c6eb8c9abd474d8af94e7eb7f830eb",
       "End": "e2d28fc05d724e428487f69d82a29cf0",
-      "Id": "ae72532a336a4b169106a32f3ece60b6",
+      "Id": "a7bc93c4ccaa4d5cbe604e2bee7838a3",
       "IsHidden": "False"
     },
     {
@@ -7738,6 +7784,16 @@
         "Excluded": false,
         "X": 6194.4436347330911,
         "Y": 4104.9026686879515
+      },
+      {
+        "Name": "Warning about Rooms",
+        "ShowGeometry": true,
+        "Id": "fb879d622abc4f73b40f651b112409f0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": true,
+        "Excluded": false,
+        "X": 1543.0424145411152,
+        "Y": 6162.10570047894
       }
     ],
     "Annotations": [
@@ -8113,8 +8169,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 439.31712783107082,
-    "Y": 97.835230503179048,
-    "Zoom": 0.063841955035373543
+    "X": 399.26722840281889,
+    "Y": -1133.1886229747313,
+    "Zoom": 0.281412722259888
   }
 }
