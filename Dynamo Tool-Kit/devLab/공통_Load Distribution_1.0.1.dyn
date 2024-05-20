@@ -1802,7 +1802,7 @@
       "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
       "NodeType": "NumberInputNode",
       "NumberType": "Integer",
-      "InputValue": 1,
+      "InputValue": 0,
       "MaximumValue": 7,
       "MinimumValue": 0,
       "StepValue": 1,
@@ -2506,69 +2506,9 @@
       "Description": "Runs an embedded Python script."
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[0];",
-      "Id": "3f4e06a916c64e059bd92a4a9045f41e",
-      "Inputs": [
-        {
-          "Id": "abdad754282a4bc09d9e1df49e72e880",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "c8f609b6a0a941bbaffc2b6306ef97df",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.StartPoint",
-      "Id": "b541f07a67d64e0f82bf3ca0675a69bf",
-      "Inputs": [
-        {
-          "Id": "b8062bb210d943e790775c33777af223",
-          "Name": "curve",
-          "Description": "Autodesk.DesignScript.Geometry.Curve",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "3809c9ad9ec34f4dae8204a033cd1904",
-          "Name": "Point",
-          "Description": "Point",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the start Point along the Curve\n\nCurve.StartPoint: Point"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nimport operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ngrids = IN[0]\r\ngridsX, gridsY = grids\r\n\r\n# Place your code below this line\r\n\r\n\r\ndata = go(\r\n    gridsX,\r\n    lambda x: sorted(x, key=lambda e: e.StartPoint.X),\r\n    lambda x: grpBy(x, key=lambda e: e.StartPoint.X)[0],\r\n    map(lambda x: sorted(x, key=lambda e: e.StartPoint.Y)),\r\n    #2개씩 1간격으로 서브리스트 생성\r\n    map(lambda x: map(lambda n: x[n:n+1+1], range(len(x))[:-1])),\r\n)\r\n\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = data",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.DesignScript.Geometry import Line\r\n\r\nfrom math import sqrt, hypot\r\nfrom itertools import combinations\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n\r\ndef concave_hull_(points, alpha):\r\n    points = UnwrapElement(points)\r\n    res = []\r\n    \r\n    pLen = len(points)\r\n    alpha2 = alpha * alpha\r\n    if pLen < 2:\r\n        raise Exception('AlphaShape needs at least 2 points')\r\n\r\n    for i, p in enumerate(points):\r\n        for j in range(i+1, pLen):\r\n            if p.IsAlmostEqualTo(points[j]):\r\n                raise Exception('AlphaShape needs pairwise distinct points')\r\n            dist = hypot(p.X - points[j].X, p.Y - points[j].Y)                    \r\n            #if (dist > 2 * alpha) : continue #circle fits between points ==> p_i, p_j can't be alpha-exposed                    \r\n    \r\n            x1, y1, x2, y2 = p.X, p.Y, points[j].X, points[j].Y\r\n            midX, midY = (x1 + x2) / 2, (y1 + y2) / 2\r\n    \r\n            #find two circles that contain p_i and p_j; note that center1 == center2 if dist == 2*alpha\r\n            alphaDist = sqrt(alpha2 - (dist / 2) ** 2)\r\n            #alphaDist = alpha2 - (dist / 2) ** 2\r\n            deltaX, deltaY = (x2 - x1) / dist, (y1 - y2) / dist\r\n            c1x, c1y = midX + alphaDist * deltaY, midY + alphaDist * deltaX\r\n            c2x, c2y = midX - alphaDist * deltaY, midY - alphaDist * deltaX\r\n            \r\n            #check if one of the circles is alpha-exposed, i.e. no other point lies in it\r\n            c1_empty = True \r\n            c2_empty = True\r\n            for k in range(pLen):                \r\n                if i == k or j == k: \r\n                    continue\r\n                if ((c1x - points[k].X) * (c1x - points[k].X) + (c1y - points[k].Y) * (c1y - points[k].Y) < alpha2):\r\n                    c1_empty = False\r\n                if ((c2x - points[k].X) * (c2x - points[k].X) + (c2y - points[k].Y) * (c2y - points[k].Y) < alpha2):\r\n                    c2_empty = False\r\n                if not c1_empty and not c2_empty:\r\n                    break\r\n            if c1_empty or c2_empty:\r\n                res.append(Line.ByStartPointEndPoint(p, points[j]))\r\n                #res.append(c1_empty)\r\n    return res\r\n    \r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n#concaveHullfunc = IN[0]\r\ngrids = IN[1]\r\ngridsX, gridsY = grids\r\n\r\n# Place your code below this line\r\n\r\n\r\ndataX = go(\r\n    gridsX,\r\n    lambda x: sorted(x, key=lambda e: e.StartPoint.X),\r\n    lambda x: grpBy(x, key=lambda e: e.StartPoint.X)[0],\r\n    map(lambda x: sorted(x, key=lambda e: e.StartPoint.Y)),\r\n    #2개씩 1간격으로 서브리스트 생성\r\n    map(lambda x: list(map(lambda n: x[n:n+1+1], range(len(x))[:-1]))),\r\n    list,\r\n)\r\ndataY = go(\r\n    gridsY,\r\n    lambda x: sorted(x, key=lambda e: e.StartPoint.X),\r\n    lambda x: grpBy(x, key=lambda e: e.StartPoint.X)[0],\r\n    map(lambda x: sorted(x, key=lambda e: e.StartPoint.Y)),list,\r\n    #2개씩 1간격으로 서브리스트 생성\r\n    lambda x: list(map(lambda n: x[n:n+1+1], range(len(x))[:-1])),\r\n    # 서브리스트 구조 Transpose\r\n    map(lambda x: list(zip(*chain(x)))),\r\n    list,\r\n)\r\n\r\nres = []\r\nfor i,j in list(zip(dataX,dataY)):\r\n    for eX in i:\r\n        for eY in j:\r\n            combinedSet = list(eX)+list(eY)\r\n            allIntsctPts = []\r\n            tmp = combinations(combinedSet, 2)\r\n            for f,n in tmp:\r\n                allIntsctPts.append(f.Intersect(n))\r\n            allIntsctPts = list(chain(*allIntsctPts))\r\n            try:\r\n                crvSet = concave_hull_(allIntsctPts, 100000)\r\n                polyCrv = PolyCurve.ByJoinedCurves(crvSet)\r\n                srf = Surface.ByPatch(polyCrv)\r\n                srfThick = srf.Thicken(10,False)\r\n                bdCube = BoundingBox.ByGeometry(srfThick).ToCuboid()\r\n                bdCubeSrfs = bdCube.Explode()\r\n                bdBelowSrf = go(\r\n                    bdCubeSrfs,\r\n                    filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1),\r\n                    list\r\n                )[0]\r\n                res.append(bdBelowSrf)\r\n            except:\r\n                pass\r\n                #res.append(\"\")\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2578,6 +2518,15 @@
           "Id": "d5f4106fb1724d04ad79361d2463dde0",
           "Name": "IN[0]",
           "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "311f8852204d414292c606fd3f52c1ff",
+          "Name": "IN[1]",
+          "Description": "Input #1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2601,13 +2550,22 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[0][0];",
+      "Code": "i[j];",
       "Id": "2808d7f3399b488fa8bc49ccae959785",
       "Inputs": [
         {
-          "Id": "6efb2f039c8140f6a5a434cee9c5fa80",
+          "Id": "060773cd65fc4a2481010d008e12abab",
           "Name": "i",
           "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "425c678ce811408ca9a998d6f646bc28",
+          "Name": "j",
+          "Description": "j",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2616,7 +2574,7 @@
       ],
       "Outputs": [
         {
-          "Id": "6e444bd00f5348ccaedec7cc9df0bee9",
+          "Id": "a0668cf785bb4ccd846bfecb60a84db0",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -2629,18 +2587,73 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\na = [1,2,3,4,5,6,7,8,9]\r\n# Assign your output to the OUT variable.\r\nOUT = a[:9:2]",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "f54c74b6aa4f48aeb119d5eb6cfbd35b",
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NodeType": "NumberInputNode",
+      "NumberType": "Integer",
+      "InputValue": 0,
+      "MaximumValue": 15,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "642479f75ecd45cda1c815800234a00c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "570837ee3aa04fd2be591253ee6129fa",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A slider that produces integer values."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.ColorPalette, CoreNodeModels",
+      "InputValue": {
+        "R": 255,
+        "G": 105,
+        "B": 180,
+        "A": 255
+      },
+      "NodeType": "ColorInputNode",
+      "Id": "fc11d8615603488faf8f5d8d3b3e7953",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d1d28337a0b345b18f4f5cede8188921",
+          "Name": "Color",
+          "Description": "Selected Color.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a Color from the palette"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Modifiers.GeometryColor.ByGeometryColor@Autodesk.DesignScript.Geometry.Geometry,DSCore.Color",
+      "Id": "d6915e6b808943a1b404808e2b47cf1a",
       "Inputs": [
         {
-          "Id": "e2f9e0d0f5be4ffab623ebb47a8e50b4",
-          "Name": "IN[0]",
-          "Description": "Input #0",
+          "Id": "71507c546a80452d82b68ff52d1fb370",
+          "Name": "geometry",
+          "Description": "The geometry to which you would like to apply color.\n\nGeometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7dd348b14c2f453f94abfdb25463d555",
+          "Name": "color",
+          "Description": "The color.\n\nColor",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2649,9 +2662,73 @@
       ],
       "Outputs": [
         {
-          "Id": "0739f857fcd74de8be3600a9e2f77b6f",
-          "Name": "OUT",
-          "Description": "Result of the python script",
+          "Id": "5269aa6a9cf94851aa77366870cdca5a",
+          "Name": "GeometryColor",
+          "Description": "A Display object.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Display geometry using a color.\n\nGeometryColor.ByGeometryColor (geometry: Geometry, color: Color): GeometryColor"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Modifiers.GeometryColor.ByGeometryColor@Autodesk.DesignScript.Geometry.Geometry,DSCore.Color",
+      "Id": "0f85cff152c14624939d2f026335fa00",
+      "Inputs": [
+        {
+          "Id": "85b9ea94aa3f483484161f1e0024ff51",
+          "Name": "geometry",
+          "Description": "The geometry to which you would like to apply color.\n\nGeometry",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "96c1c8189f9b427298240bb0dd218906",
+          "Name": "color",
+          "Description": "The color.\n\nColor",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "94a1d06558194cbe898e1906ee5cf94b",
+          "Name": "GeometryColor",
+          "Description": "A Display object.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Display geometry using a color.\n\nGeometryColor.ByGeometryColor (geometry: Geometry, color: Color): GeometryColor"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.ColorPalette, CoreNodeModels",
+      "InputValue": {
+        "R": 170,
+        "G": 193,
+        "B": 233,
+        "A": 154
+      },
+      "NodeType": "ColorInputNode",
+      "Id": "90f1981e767b4adf9ba82687de9ca4fc",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d2c836d909f64a9fb6f66bdb4634749d",
+          "Name": "Color",
+          "Description": "Selected Color.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2659,7 +2736,7 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
+      "Description": "Select a Color from the palette"
     }
   ],
   "Connectors": [
@@ -2839,14 +2916,8 @@
     },
     {
       "Start": "a1a6b4a79998464dbd135708ac3216ea",
-      "End": "b8062bb210d943e790775c33777af223",
-      "Id": "e884799b419f41b69862080a92d05437",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "a1a6b4a79998464dbd135708ac3216ea",
-      "End": "d5f4106fb1724d04ad79361d2463dde0",
-      "Id": "53405c87eea2432fb9880994f3c3d4d0",
+      "End": "311f8852204d414292c606fd3f52c1ff",
+      "Id": "6d942c1ffcb74165a4ea5eec2f1446b3",
       "IsHidden": "False"
     },
     {
@@ -3138,15 +3209,39 @@
       "IsHidden": "False"
     },
     {
-      "Start": "3809c9ad9ec34f4dae8204a033cd1904",
-      "End": "abdad754282a4bc09d9e1df49e72e880",
-      "Id": "0420ab74550140fbba6aeb2e7615381f",
+      "Start": "89b14e99db4c4f8f896328e2523f8b91",
+      "End": "060773cd65fc4a2481010d008e12abab",
+      "Id": "c0cec1c792b34ca09adfda178614a676",
       "IsHidden": "False"
     },
     {
       "Start": "89b14e99db4c4f8f896328e2523f8b91",
-      "End": "6efb2f039c8140f6a5a434cee9c5fa80",
-      "Id": "57bfc9246a7b4c04ab10606529886afa",
+      "End": "85b9ea94aa3f483484161f1e0024ff51",
+      "Id": "fe0f2d389d1e4099b5209e4a7d9b2e50",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a0668cf785bb4ccd846bfecb60a84db0",
+      "End": "71507c546a80452d82b68ff52d1fb370",
+      "Id": "6a7e6e7e8fdb4dde9ea8f46b955bbfcc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "570837ee3aa04fd2be591253ee6129fa",
+      "End": "425c678ce811408ca9a998d6f646bc28",
+      "Id": "3cd691d2cd154d2db34e134bdd3963aa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d1d28337a0b345b18f4f5cede8188921",
+      "End": "7dd348b14c2f453f94abfdb25463d555",
+      "Id": "498d9fb718a74baaa494bf6bf51a95f1",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d2c836d909f64a9fb6f66bdb4634749d",
+      "End": "96c1c8189f9b427298240bb0dd218906",
+      "Id": "8f380da0679b48b581301aa8b20d32d4",
       "IsHidden": "False"
     }
   ],
@@ -3187,15 +3282,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 49425.1171875,
-      "EyeY": 91970.84375,
-      "EyeZ": 23359.220703125,
-      "LookX": -22925.12109375,
-      "LookY": -88220.84375,
-      "LookZ": -35558.7421875,
-      "UpX": -0.42699116468429565,
-      "UpY": 0.61565661430358887,
-      "UpZ": -0.66230314970016479
+      "EyeX": 47919.45703125,
+      "EyeY": 30170.8125,
+      "EyeZ": 14835.177734375,
+      "LookX": -17163.296875,
+      "LookY": -31975.4140625,
+      "LookZ": -27138.9921875,
+      "UpX": -0.2871900200843811,
+      "UpY": 0.84338796138763428,
+      "UpZ": -0.45411312580108643
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -3616,8 +3711,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4562.3771281032032,
-        "Y": 122.87654218980009
+        "X": 4572.4290719728942,
+        "Y": 69.744838878575422
       },
       {
         "Name": "List.GroupByKey",
@@ -3636,8 +3731,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4821.1012853557631,
-        "Y": 121.71371621969911
+        "X": 4831.1532292254542,
+        "Y": 68.582012908474439
       },
       {
         "Name": "Code Block",
@@ -3915,7 +4010,7 @@
         "Id": "db0a60aaf203434fa0158243144559fc",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Excluded": false,
         "X": 9547.6502711173835,
         "Y": -242.697765240016
       },
@@ -3940,54 +4035,74 @@
         "Y": -883.96176439024089
       },
       {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "3f4e06a916c64e059bd92a4a9045f41e",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 3478.994351628864,
-        "Y": 1191.973364289641
-      },
-      {
-        "Name": "Curve.StartPoint",
-        "ShowGeometry": true,
-        "Id": "b541f07a67d64e0f82bf3ca0675a69bf",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 3097.0453171137442,
-        "Y": 703.60118623792152
-      },
-      {
-        "Name": "Python Script",
-        "ShowGeometry": true,
+        "Name": "Frame 사이 일괄 면 생성",
+        "ShowGeometry": false,
         "Id": "22d93db2c28b40c3a07ea07f52f2a375",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3005.1360877807051,
-        "Y": 279.1612076507646
+        "X": 3348.4321690648794,
+        "Y": -84.707121571067432
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "2808d7f3399b488fa8bc49ccae959785",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3303.0,
-        "Y": 238.0
+        "X": 3625.0617089484663,
+        "Y": -568.57662808559894
       },
       {
-        "Name": "Python Script",
+        "Name": "Integer Slider",
         "ShowGeometry": true,
-        "Id": "f54c74b6aa4f48aeb119d5eb6cfbd35b",
+        "Id": "642479f75ecd45cda1c815800234a00c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3553.7524409903049,
-        "Y": 356.52281203907887
+        "X": 2967.8671587322988,
+        "Y": -809.37965822462536
+      },
+      {
+        "Name": "Color Palette",
+        "ShowGeometry": true,
+        "Id": "fc11d8615603488faf8f5d8d3b3e7953",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3621.9386503734272,
+        "Y": -832.315510732285
+      },
+      {
+        "Name": "GeometryColor.ByGeometryColor",
+        "ShowGeometry": true,
+        "Id": "d6915e6b808943a1b404808e2b47cf1a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3978.987669279094,
+        "Y": -716.98818095014792
+      },
+      {
+        "Name": "GeometryColor.ByGeometryColor",
+        "ShowGeometry": true,
+        "Id": "0f85cff152c14624939d2f026335fa00",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3795.5423485290653,
+        "Y": -101.34350561390909
+      },
+      {
+        "Name": "Color Palette",
+        "ShowGeometry": true,
+        "Id": "90f1981e767b4adf9ba82687de9ca4fc",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3429.2571517432339,
+        "Y": -293.31006089949926
       }
     ],
     "Annotations": [
@@ -4044,8 +4159,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -3022.9504875953212,
-    "Y": 35.145850342591814,
-    "Zoom": 1.0568658869943619
+    "X": -1093.5869786088174,
+    "Y": 873.2353231999557,
+    "Zoom": 0.42038489057367
   }
 }
