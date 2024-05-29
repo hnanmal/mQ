@@ -15,7 +15,7 @@ def parallel_square(numbers):
 
 if __name__ == "__main__":
     # 큰 리스트 생성
-    numbers = list(range(1, 1000000))
+    numbers = list(range(1, 100000000))
 
     # 시작 시간 기록
     start_time = time.time()
@@ -27,4 +27,5 @@ if __name__ == "__main__":
     end_time = time.time()
 
     # 결과 출력 (처리 시간)
+    print(sum(results))
     print(f"Processing time: {end_time - start_time} seconds")
