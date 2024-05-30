@@ -17,7 +17,7 @@
       "Name": "Set Port Number: 기본값-8000 (작동 오류 없다면 변경 금지)",
       "Type": "string",
       "Type2": "string",
-      "Value": "8000",
+      "Value": "8001",
       "Description": "Creates a string.",
       "SelectedIndex": 0
     },
@@ -477,7 +477,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nslabEdges = IN[0]\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Railings,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def getRailElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType()\r\n        return res\r\n\r\n    res = map(getElems, bics)\r\n#    res = getRailElems(Autodesk.Revit.DB.BuiltInCategory.OST_RailingSystemRail)\r\n    return res\r\n\r\nresult = list(get_allElems(doc))\r\n\r\nOUT = [result[0]+slabEdges, *result[1:]]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nslabEdges = IN[0]\r\nroofGutters = IN[1]\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Railings,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def getElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def getRailElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType()\r\n        return res\r\n\r\n    res = map(getElems, bics)\r\n#    res = getRailElems(Autodesk.Revit.DB.BuiltInCategory.OST_RailingSystemRail)\r\n    return res\r\n\r\nresult = list(get_allElems(doc))\r\n\r\nOUT = [*result[:2], result[2]+roofGutters, *result[3:]]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -487,6 +487,15 @@
           "Id": "fa20a434ca1c43258d05c6009c9e2763",
           "Name": "IN[0]",
           "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f639b00400c04102b79dde210d3d1f9d",
+          "Name": "IN[1]",
+          "Description": "Input #1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2693,7 +2702,7 @@
     {
       "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
       "NodeType": "StringInputNode",
-      "InputValue": "8000",
+      "InputValue": "8001",
       "Id": "b1a706b77ffa428895450cbef4f104e8",
       "Inputs": [],
       "Outputs": [
@@ -5164,6 +5173,56 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
+      "SelectedIndex": 488,
+      "SelectedString": "OST_Gutter",
+      "NodeType": "ExtensionNode",
+      "Id": "18013b43d19a427aa3e488789bd02c8c",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9ea6bed6b057499f9d682edf3975cf3c",
+          "Name": "Category",
+          "Description": "The selected Category.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All built-in categories."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.ElementsOfCategory, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "Id": "86372463f72245ed8ce85a21cd0dbfe6",
+      "Inputs": [
+        {
+          "Id": "4e5c1c28da2c41f5a60f400478566db6",
+          "Name": "Category",
+          "Description": "The Category",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "38fb569492f94f90a9c2dc621bc92853",
+          "Name": "Elements",
+          "Description": "An element class.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Get all elements of the specified category from the model."
     }
   ],
   "Connectors": [
@@ -5290,7 +5349,7 @@
     {
       "Start": "7ec0c8e5bbf3483b82b1964baee3282a",
       "End": "3634eedec8094414bcf7c472fab72dec",
-      "Id": "0c3311e5f49043b5bdb653e0367312ae",
+      "Id": "61f61071775c422eab72b257bba70983",
       "IsHidden": "False"
     },
     {
@@ -5320,7 +5379,7 @@
     {
       "Start": "87a6f86bd883436c87f9705fecf332aa",
       "End": "0b2c78b3dc934143a17aaee931c747a7",
-      "Id": "90ea377c433c44419e6c337153a4f40d",
+      "Id": "a1daae3acc364b749918b7eff1f20530",
       "IsHidden": "False"
     },
     {
@@ -5338,7 +5397,7 @@
     {
       "Start": "e17f6b8490824afaa23e124878e9fbf9",
       "End": "4c8ecbe626374a9e907a1d0dc950a547",
-      "Id": "32ef6918a1ce47c78bed64b020d5ff66",
+      "Id": "1c4eb6b1bfd04091a20bfc0bcc2a4fa5",
       "IsHidden": "False"
     },
     {
@@ -5986,7 +6045,7 @@
     {
       "Start": "3b3a2b46be824342bacd34af5e130b6c",
       "End": "fa20a434ca1c43258d05c6009c9e2763",
-      "Id": "c0e696fde945491d82d9697ab919dc0e",
+      "Id": "6414505b847244349ae51b4f2f78da30",
       "IsHidden": "False"
     },
     {
@@ -6216,6 +6275,18 @@
       "End": "f7bc8e4693dd430eb70fbd17b3bd6ed6",
       "Id": "796d6ef5d613467b91842d72ebc1d40b",
       "IsHidden": "False"
+    },
+    {
+      "Start": "9ea6bed6b057499f9d682edf3975cf3c",
+      "End": "4e5c1c28da2c41f5a60f400478566db6",
+      "Id": "3a86beefdefe41fa9355e8c06027b11a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "38fb569492f94f90a9c2dc621bc92853",
+      "End": "f639b00400c04102b79dde210d3d1f9d",
+      "Id": "e7a6f755b8cb4aa3a913b8c452007aec",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -6382,8 +6453,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -991.958189759748,
-        "Y": 3923.51521532271
+        "X": -1077.6236315913593,
+        "Y": 3938.4224119763157
       },
       {
         "Name": "make_htmlStr",
@@ -6432,8 +6503,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -638.958189759748,
-        "Y": 4093.51521532271
+        "X": -629.63280356089058,
+        "Y": 4101.6370181134207
       },
       {
         "Name": "List Create",
@@ -6442,8 +6513,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -991.958189759748,
-        "Y": 4070.51521532271
+        "X": -986.63280356089058,
+        "Y": 4260.6370181134207
       },
       {
         "Name": "All Elements of Category",
@@ -6452,8 +6523,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1348.95818975975,
-        "Y": 4070.51521532271
+        "X": -1347.6328035608906,
+        "Y": 4260.6370181134207
       },
       {
         "Name": "Categories",
@@ -6462,8 +6533,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1709.95818975975,
-        "Y": 4070.51521532271
+        "X": -1704.6328035608906,
+        "Y": 4260.6370181134207
       },
       {
         "Name": "Categories",
@@ -6472,8 +6543,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1709.95818975975,
-        "Y": 4218.51521532271
+        "X": -1704.6328035608906,
+        "Y": 4407.6370181134207
       },
       {
         "Name": "All Elements of Category",
@@ -6482,8 +6553,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1348.95818975975,
-        "Y": 4218.51521532271
+        "X": -1347.6328035608906,
+        "Y": 4407.6370181134207
       },
       {
         "Name": "List Create",
@@ -6492,8 +6563,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -991.958189759748,
-        "Y": 4218.51521532271
+        "X": -986.63280356089058,
+        "Y": 4407.6370181134207
       },
       {
         "Name": "Categories",
@@ -6502,8 +6573,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2038.5000728198488,
-        "Y": 4362.0084243187775
+        "X": -2040.6328035608906,
+        "Y": 4554.6370181134207
       },
       {
         "Name": "All Elements of Category",
@@ -6512,8 +6583,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1726.5540896144983,
-        "Y": 4362.0084243187775
+        "X": -1704.6328035608906,
+        "Y": 4554.6370181134207
       },
       {
         "Name": "List Create",
@@ -6522,8 +6593,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -991.958189759748,
-        "Y": 4362.0084243187775
+        "X": -986.63280356089058,
+        "Y": 4554.6370181134207
       },
       {
         "Name": "navHTML_Part",
@@ -7442,8 +7513,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1709.95818975975,
-        "Y": 3923.51521532271
+        "X": -2000.1845511558811,
+        "Y": 3922.133568273754
       },
       {
         "Name": "All Elements of Category",
@@ -7452,8 +7523,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1348.95818975975,
-        "Y": 3923.51521532271
+        "X": -1639.1845511558811,
+        "Y": 3922.133568273754
       },
       {
         "Name": "filterNonDirectShape",
@@ -7462,8 +7533,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1348.95818975975,
-        "Y": 4362.0084243187775
+        "X": -1347.6328035608906,
+        "Y": 4554.6370181134207
       },
       {
         "Name": "List.AddItemToFront",
@@ -7794,6 +7865,26 @@
         "Excluded": false,
         "X": 1543.0424145411152,
         "Y": 6162.10570047894
+      },
+      {
+        "Name": "Categories",
+        "ShowGeometry": true,
+        "Id": "18013b43d19a427aa3e488789bd02c8c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2000.1845511558811,
+        "Y": 4069.1335682737563
+      },
+      {
+        "Name": "All Elements of Category",
+        "ShowGeometry": true,
+        "Id": "86372463f72245ed8ce85a21cd0dbfe6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1639.1845511558811,
+        "Y": 4069.1335682737563
       }
     ],
     "Annotations": [
@@ -7851,15 +7942,17 @@
           "095dd93f3edb4d968d6b8e7b0bda729c",
           "ec209862db8646ffa2216a2c75de4db6",
           "94e677e1c6184794ac2f170ca3252692",
-          "338a7fd399064275b6076c6920745c1b"
+          "338a7fd399064275b6076c6920745c1b",
+          "18013b43d19a427aa3e488789bd02c8c",
+          "86372463f72245ed8ce85a21cd0dbfe6"
         ],
         "HasNestedGroups": false,
-        "Left": -2048.5000728198488,
-        "Top": 3778.51521532271,
-        "Width": 1571.5418830601006,
-        "Height": 715.49320899606755,
+        "Left": -2050.6328035608904,
+        "Top": 3777.133568273754,
+        "Width": 1582.9999999999998,
+        "Height": 909.5034498396667,
         "FontSize": 96.0,
-        "InitialTop": 3923.51521532271,
+        "InitialTop": 3922.133568273754,
         "InitialHeight": 583.49320899606755,
         "TextblockHeight": 135.0,
         "Background": "#FFC1D676"
@@ -8169,8 +8262,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 399.26722840281889,
-    "Y": -1133.1886229747313,
-    "Zoom": 0.281412722259888
+    "X": 935.03388894829845,
+    "Y": -1319.76263051896,
+    "Zoom": 0.42936318743154761
   }
 }
