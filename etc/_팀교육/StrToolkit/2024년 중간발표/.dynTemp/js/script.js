@@ -1,3 +1,4 @@
+
 function setEventListener(target) {
     document.addEventListener('DOMContentLoaded', () => {
         const increaseButton = document.getElementById('increaseButton');
@@ -31,12 +32,11 @@ function setEventListener(target) {
     });
 }
 
+
 function download(filename, text) {
     var element = document.createElement('a');
-    element.href = 'D:/mk/mQ/etc/_???교육/StrToolkit2024?�� 중간발표/.dynTemp/' + filename
-    element.download = filename
-    // element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    // element.setAttribute('download', filename);
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
   
     element.style.display = 'none';
     document.body.appendChild(element);
@@ -46,7 +46,7 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
-download('test.txt', 'Hello world!')
+// download('test.txt', 'Hello world!');
 
 function get_DL_json() {
     const inputs = document.querySelectorAll('.DLinputGroup input');
@@ -56,7 +56,8 @@ function get_DL_json() {
         values.push({ id: index + 1, value: input.value });
     });
     console.log(values);
-    return values
+    const jsonStr = JSON.stringify(values);
+    return jsonStr;
 }
 
 function get_LL_json() {
@@ -67,10 +68,11 @@ function get_LL_json() {
         values.push({ id: index + 1, value: input.value });
     });
     console.log(values);
-    return values
+    const jsonStr = JSON.stringify(values);
+    return jsonStr;
 }
+
 function get_WindInfo_json() {
-    // const inputs = document.querySelectorAll('#wind-codeSelect');
     const labels_ = document.querySelectorAll('.form-group-wind label');
     
     const labels = [];
@@ -92,43 +94,48 @@ function get_WindInfo_json() {
     const resDict = {
         "wind_info": kvPairDict
     };
-
-    const boddy = document.querySelector('#wind-result');
-    console.log(resDict);
     const jsonStr = JSON.stringify(resDict);
-    // boddy.append(jsonStr);
-    // appendResultToBody(jsonStr)
-    return boddy;
+    console.log(jsonStr);
+    return jsonStr;
 }
 
-function saveLoadData_asJson() {
-    // alert("Save Completed!")
-    const selectElement = document.getElementById('riskCategory');
-    // alert(selectElement.value)
-    const selectedIndex = selectElement.selectedIndex;
-    console.log(selectedIndex)
+function get_SeismicInfo_json() {
+    const labels_ = document.querySelectorAll('.form-group-seismic label');
+    
+    const labels = [];
+    labels_.forEach((e) => {
+        labels.push(e.innerHTML)
+    });
+
+    var vals_ = document.querySelectorAll('.seismic_vals');
+    const vals = [];
+    vals_.forEach((e) => {
+        vals.push(e.value)
+    });
+
+    const kvPairDict = {};
+    for (let i = 0; i < labels.length; i++) {
+        kvPairDict[labels[i]] = vals[i];
+      };
+    
+    const resDict = {
+        "seismic_info": kvPairDict
+    };
+    const jsonStr = JSON.stringify(resDict);
+    console.log(jsonStr);
+    return jsonStr;
 }
 
-function calculateWindLoad() {
-    const height = parseFloat(document.getElementById('height').value);
-    const windSpeed = parseFloat(document.getElementById('windSpeed').value);
-    const exposureCategory = document.getElementById('exposureCategory').value;
+function saveLoadData_asJson(filename,jsonStr) {
+    
+    download(filename, jsonStr) 
+    alert("Save Completed!")
 
-    if (isNaN(height) || isNaN(windSpeed)) {
-        alert("Please enter valid numerical values for height and wind speed.");
-        return;
-    }
-
-    // Simplified wind load calculation (example)
-    const windPressure = 0.00256 * (windSpeed ** 2);
-    const exposureFactors = { "A": 0.8, "B": 1.0, "C": 1.2, "D": 1.6 };
-    const exposureFactor = exposureFactors[exposureCategory];
-    const windLoad = windPressure * height * exposureFactor;
-
-    document.getElementById('result').innerText = `Calculated Wind Load: ${windLoad.toFixed(2)} N/m²`;
 }
 
 
 
-setEventListener('DL')
-setEventListener('LL')
+
+setEventListener('DL');
+setEventListener('LL');
+	

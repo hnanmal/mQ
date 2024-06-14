@@ -20,6 +20,15 @@
       "Value": "입력모드",
       "Description": "A dropdown menu with customizable values.",
       "SelectedIndex": 0
+    },
+    {
+      "Id": "14eed113613e4654a80635709f99cb88",
+      "Name": "Set Port Number: 기본값-8000 (작동 오류 없다면 변경 금지)",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "8000",
+      "Description": "Creates a string.",
+      "SelectedIndex": 0
     }
   ],
   "Outputs": [],
@@ -1232,59 +1241,6 @@
       ],
       "Replication": "Disabled",
       "Description": "A dropdown menu with customizable values."
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport time\r\nimport subprocess\r\nimport os\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndynTempServerPath = IN[0]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = os.getenv(\"HomePath\")\r\n\r\nfolderPath = f\"{cwd}\\\\{dynTempServerPath}\"\r\nif not os.path.exists(folderPath):\r\n    os.makedirs(folderPath)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = \"C:\"+folderPath",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "26406ae42bcb4b309436e92bb6941220",
-      "Inputs": [
-        {
-          "Id": "67082223a9ca455e88b490bab96d47c1",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "da1d93ee6aa540159be43fba2136d693",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "\".dynTemp\";",
-      "Id": "9c0b7760c67e48adb51b9bb2a84794b7",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "15b5683ddfc543739a615e7ac87853d5",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
     },
     {
       "ConcreteType": "CoreNodeModels.Input.CustomSelection, CoreNodeModels",
@@ -3903,14 +3859,36 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "CoreNodeModels.WebRequest, CoreNodeModels",
-      "NodeType": "ExtensionNode",
-      "Id": "8c3a5dc818404937b390cb66a12272fb",
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n\r\n# Place your code below this line\r\njsPart = '''\r\nfunction setEventListener(target) {\r\n    document.addEventListener('DOMContentLoaded', () => {\r\n        const increaseButton = document.getElementById('increaseButton');\r\n        const decreaseButton = document.getElementById('decreaseButton');\r\n        const inputContainer = document.getElementById(target + 'inputContainer');\r\n        let inputCount = 0;\r\n\r\n        increaseButton.addEventListener('click', () => {\r\n            inputCount++;\r\n            const inputGroup = document.createElement('div');\r\n            inputGroup.className = target + 'inputGroup';\r\n\r\n            const label = document.createElement('label');\r\n            label.textContent = inputCount + '.';\r\n\r\n            const newInput = document.createElement('input');\r\n            newInput.type = 'number';\r\n            newInput.placeholder = 'Enter load in kN/m²';\r\n\r\n            inputGroup.appendChild(label);\r\n            inputGroup.appendChild(newInput);\r\n            inputContainer.appendChild(inputGroup);\r\n        });\r\n\r\n        decreaseButton.addEventListener('click', () => {\r\n            if (inputContainer.lastChild) {\r\n                inputContainer.removeChild(inputContainer.lastChild);\r\n                inputCount--;\r\n            }\r\n        });\r\n    });\r\n}\r\n\r\n\r\nfunction download(filename, text) {\r\n    var element = document.createElement('a');\r\n    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));\r\n    element.setAttribute('download', filename);\r\n  \r\n    element.style.display = 'none';\r\n    document.body.appendChild(element);\r\n  \r\n    element.click();\r\n  \r\n    document.body.removeChild(element);\r\n}\r\n\r\n// download('test.txt', 'Hello world!');\r\n\r\nfunction get_DL_json() {\r\n    const inputs = document.querySelectorAll('.DLinputGroup input');\r\n    const res = inputs.values()\r\n    const values = [];\r\n    inputs.forEach((input, index) => {\r\n        values.push({ id: index + 1, value: input.value });\r\n    });\r\n    console.log(values);\r\n    const jsonStr = JSON.stringify(values);\r\n    return jsonStr;\r\n}\r\n\r\nfunction get_LL_json() {\r\n    const inputs = document.querySelectorAll('.LLinputGroup input');\r\n    const res = inputs.values()\r\n    const values = [];\r\n    inputs.forEach((input, index) => {\r\n        values.push({ id: index + 1, value: input.value });\r\n    });\r\n    console.log(values);\r\n    const jsonStr = JSON.stringify(values);\r\n    return jsonStr;\r\n}\r\n\r\nfunction get_WindInfo_json() {\r\n    const labels_ = document.querySelectorAll('.form-group-wind label');\r\n    \r\n    const labels = [];\r\n    labels_.forEach((e) => {\r\n        labels.push(e.innerHTML)\r\n    });\r\n\r\n    var vals_ = document.querySelectorAll('.wind_vals');\r\n    const vals = [];\r\n    vals_.forEach((e) => {\r\n        vals.push(e.value)\r\n    });\r\n\r\n    const kvPairDict = {};\r\n    for (let i = 0; i < labels.length; i++) {\r\n        kvPairDict[labels[i]] = vals[i];\r\n      };\r\n    \r\n    const resDict = {\r\n        \"wind_info\": kvPairDict\r\n    };\r\n    const jsonStr = JSON.stringify(resDict);\r\n    console.log(jsonStr);\r\n    return jsonStr;\r\n}\r\n\r\nfunction get_SeismicInfo_json() {\r\n    const labels_ = document.querySelectorAll('.form-group-seismic label');\r\n    \r\n    const labels = [];\r\n    labels_.forEach((e) => {\r\n        labels.push(e.innerHTML)\r\n    });\r\n\r\n    var vals_ = document.querySelectorAll('.seismic_vals');\r\n    const vals = [];\r\n    vals_.forEach((e) => {\r\n        vals.push(e.value)\r\n    });\r\n\r\n    const kvPairDict = {};\r\n    for (let i = 0; i < labels.length; i++) {\r\n        kvPairDict[labels[i]] = vals[i];\r\n      };\r\n    \r\n    const resDict = {\r\n        \"seismic_info\": kvPairDict\r\n    };\r\n    const jsonStr = JSON.stringify(resDict);\r\n    console.log(jsonStr);\r\n    return jsonStr;\r\n}\r\n\r\nfunction saveLoadData_asJson(filename,jsonStr) {\r\n    \r\n    download(filename, jsonStr) \r\n    alert(\"Save Completed!\")\r\n\r\n}\r\n\r\n\r\n\r\n\r\nsetEventListener('DL');\r\nsetEventListener('LL');\r\n\t\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = jsPart",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "512a05c1bd764f3daa71c3bd3789bf09",
       "Inputs": [
         {
-          "Id": "7eb472cae59d45b7b0b9773c1be71089",
-          "Name": "url",
-          "Description": "The url for the web request as a string.",
+          "Id": "2def9c8ff5ae4bbdbc79656f6a83f9b8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "107fff5ab3bc4103849decbe95df4575",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "875d09def91541d1b9e58ea63e179b59",
+          "Name": "IN[2]",
+          "Description": "Input #2",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -3919,9 +3897,9 @@
       ],
       "Outputs": [
         {
-          "Id": "961065ce0a98475a8f47ef107633104d",
-          "Name": "string",
-          "Description": "Content of a web request as a string.",
+          "Id": "07df22f4ea1d459a9d5266728b3d95a8",
+          "Name": "OUT",
+          "Description": "Result of the python script",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -3929,17 +3907,709 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Make a web request given a url."
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\ncssPart = '''\r\n/* style.css */\r\n\r\nbody {\r\n    font-family: Arial, sans-serif;\r\n    /*display: flex;\r\n    justify-content: center;\r\n    align-items: center;*/\r\n    height: 100vh;\r\n    margin: 0;\r\n    background-color: #f0f0f0;\r\n}\r\n\r\n.header {\r\n    justify-content: center;\r\n    align-items: center;\r\n    text-align: center;\r\n    margin: 50px 20px 100px 20px;\r\n}\r\n\r\n.content {\r\n    font-family: Arial, sans-serif;\r\n    display: flex;\r\n    justify-content: center;\r\n    align-items: flex-start;\r\n    height: 100vh;\r\n    margin: 0;\r\n    background-color: #f0f0f0;\r\n}\r\n.container {\r\n    background: #fff;\r\n    padding: 20px;\r\n    margin: 5px 5px 5px 5px;\r\n    border-radius: 8px;\r\n    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\r\n    width: 350px;\r\n    text-align: center;\r\n    align-content: stretch;\r\n    /*align-items: flex-start;*/\r\n}\r\n\r\nh1 {\r\n    margin-bottom: 20px;\r\n}\r\n\r\n.form-group {\r\n    margin-bottom: 15px;\r\n    text-align: left;\r\n}\r\n.form-group-wind {\r\n    margin-bottom: 15px;\r\n    text-align: left;\r\n}\r\n.form-group-seismic {\r\n    margin-bottom: 15px;\r\n    text-align: left;\r\n}\r\n\r\nlabel {\r\n    display: block;\r\n    margin-bottom: 5px;\r\n}\r\n\r\ninput, select {\r\n    width: 100%;\r\n    padding: 8px;\r\n    box-sizing: border-box;\r\n}\r\n\r\nbutton {\r\n    padding: 10px 20px;\r\n    background: #007bff;\r\n    border: none;\r\n    color: #fff;\r\n    border-radius: 4px;\r\n    cursor: pointer;\r\n}\r\n\r\nbutton:hover {\r\n    background: #0056b3;\r\n}\r\n\r\n#result {\r\n    margin-top: 20px;\r\n    font-size: 18px;\r\n    font-weight: bold;\r\n}\r\n\r\n#increaseButton, #decreaseButton {\r\n    font-size: 2rem;\r\n    padding: 5px 5px;\r\n    margin: 5px;\r\n}\r\n\r\n#inputContainer {\r\n    display: flex;\r\n    flex-direction: column;\r\n    align-items: center;\r\n}\r\n\r\n.inputGroup {\r\n    display: flex;\r\n    align-items: center;\r\n    margin: 5px 0;\r\n}\r\n\r\n.inputGroup label {\r\n    margin-right: 10px;\r\n    font-size: 1rem;\r\n}\r\n\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = cssPart",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "964f79903b234e20b7310e1beebb01be",
+      "Inputs": [
+        {
+          "Id": "3b27fe862cab4a0ba984217e278fc85c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "67e02b17826b4ca8b4d7bba7ec9a3784",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6a4681144e6344b7954539985e27426f",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e87daa5787664fcaa13e59b422e1f84c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njsPart = IN[0]\r\ncssPart = IN[1]\r\nnavPart = IN[2]\r\n\r\n\r\n\r\n# Place your code below this line\r\n##folderPath_r = folderPath.replace('\\\\','\\\\\\\\')\r\n\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Load Information Input Window</title>\r\n</head>\r\n<style>\r\n{cssPart}\r\n</style>\r\n\r\n<body>\r\n\r\n<div class=\"header\">\r\n<h1>::: Load Information Input Center :::</h1>\r\n</div>\r\n\r\n<div class=\"content\">\r\n    <div class=\"container\">\r\n        <h2>Dead Load Information 입력기</h2>\r\n        <div class=\"form-group\">\r\n            <label for=\"DLinput\">층별 DL 입력 (kN/m²)</label>\r\n                <button id=\"increaseButton\">+</button>\r\n                <button id=\"decreaseButton\">-</button>\r\n                <div id=\"DLinputContainer\"></div>\r\n        </div>\r\n        <button onclick=\"saveLoadData_asJson('HSD_DL.json', get_DL_json())\">Save Data</button>\r\n        <div id=\"result\"></div>\r\n    </div>\r\n    \r\n    <div class=\"container\">\r\n        <h2>Live Load Information 입력기</h2>\r\n        <div class=\"form-group\">\r\n            <label for=\"LLinput\">층별 LL 입력 (kN/m²)</label>\r\n                <button id=\"increaseButton\">+</button>\r\n                <button id=\"decreaseButton\">-</button>\r\n                <div id=\"LLinputContainer\"></div>\r\n        </div>\r\n        <button onclick=\"saveLoadData_asJson('HSD_LL.json', get_LL_json())\">Save Data</button>\r\n        <div id=\"result\"></div>\r\n    </div>\r\n    \r\n    <div class=\"container\" id=\"wind-Pane\">\r\n        <h2>Wind Load Information 입력기</h2>\r\n        <div class=\"form-group-wind\">\r\n            <label for=\"wind-codeSelect\">코드선택</label>\r\n            <select class=\"wind_vals\" id=\"wind-codeSelect\">\r\n                <option value=\"NA\">None Application</option>\r\n                <option value=\"ASCE\">ASCE 7-22</option>\r\n                <option value=\"KDS\">KDS 41 12 00</option>\r\n                <option value=\"EN\">EN1991-1-1-4</option>\r\n            </select>\r\n        </div>\r\n        <div class=\"form-group-wind\">\r\n            <label for=\"BasicWindSpeed\">Basic Wind Speed (m/s)</label>\r\n            <input class=\"wind_vals\" type=\"number\" id=\"BasicWindSpeed\" placeholder=\"Enter wind speed in m/s\">\r\n        </div>\r\n        <div class=\"form-group-wind\">\r\n            <label for=\"exposureCategory\">Exposure Category</label>\r\n            <select class=\"wind_vals\" id=\"exposureCategory\">\r\n                <option value=\"A\">A</option>\r\n                <option value=\"B\">B</option>\r\n                <option value=\"C\">C</option>\r\n                <option value=\"D\">D</option>\r\n            </select>\r\n        </div>\r\n        <div class=\"form-group-wind\">\r\n            <label for=\"TopoFactor\">Topographic factor(Kzt)</label>\r\n            <input class=\"wind_vals\" type=\"number\" id=\"TopoFactor\" placeholder=\"Enter factor value\">\r\n        </div>\r\n        <div class=\"form-group-wind\">\r\n            <label for=\"enclosureClass\">Enclosure Classification</label>\r\n            <select class=\"wind_vals\" id=\"exposureCategory\">\r\n                <option value=\"A\">Shelter</option>\r\n                <option value=\"B\">Building - Enclosed</option>\r\n                <option value=\"C\">Building - Parially Enclosed</option>\r\n                <option value=\"D\">Building - Open</option>\r\n            </select>\r\n        </div>\r\n\r\n        <button onclick=\"saveLoadData_asJson('HSD_WL.json',get_WindInfo_json())\">Save Data</button>\r\n        <div id=\"wind-result\"></div>\r\n    </div>\r\n    \r\n    <div class=\"container\">\r\n        <h2>Seismic Load Information 입력기</h2>\r\n        <div class=\"form-group-seismic\">\r\n            <label for=\"codeSelect\">코드선택</label>\r\n            <select class=\"seismic_vals\" id=\"codeSelect\">\r\n                <option value=\"NA\">None Application</option>\r\n                <option value=\"ASCE\">ASCE 7-05</option>\r\n                <option value=\"KDS\">KDS 41 12 00</option>\r\n                <option value=\"EN\">EN1991-8</option>\r\n            </select>\r\n        </div>\r\n        <div class=\"form-group-seismic\">\r\n            <label for=\"siteClass\">Site Class</label>\r\n            <select class=\"seismic_vals\" id=\"siteClass\">\r\n                <option value=\"A\">A</option>\r\n                <option value=\"B\">B</option>\r\n                <option value=\"C\">C</option>\r\n                <option value=\"D\">D</option>\r\n                <option value=\"E\">E</option>\r\n                <option value=\"F\">F</option>\r\n            </select>\r\n        </div>\r\n        <div class=\"form-group-seismic\">\r\n            <label for=\"riskCategory\">Risk Category</label>\r\n            <select class=\"seismic_vals\" id=\"riskCategory\">\r\n                <option value=\"1\">Ⅰ</option>\r\n                <option value=\"2\">Ⅱ</option>\r\n                <option value=\"3\">Ⅲ</option>\r\n                <option value=\"4\">Ⅳ</option>\r\n            </select>\r\n        </div>\r\n        <div class=\"form-group\">\r\n            <label for=\"rmf\">Response modification factor</label>\r\n            <blockquote>\r\n            <div class=\"form-group-seismic\">\r\n                <label for=\"rmfLong\">Longitude Side (X-axis)</label>\r\n                <input class=\"seismic_vals\" type=\"number\" id=\"rmfLong\" placeholder=\"Enter factor value\">\r\n            </div>\r\n            <div class=\"form-group-seismic\">\r\n                <label for=\"rmfTrans\">Transverse Side (Y-axis)</label>\r\n                <input class=\"seismic_vals\" type=\"number\" id=\"rmfTrans\" placeholder=\"Enter factor value\">\r\n            </div>\r\n            </blockquote>\r\n        </div>\r\n        <div class=\"form-group\">\r\n            <label for=\"spectralAccelParam\">Spectral acceleration parameters</label>\r\n            <blockquote>\r\n            <div class=\"form-group-seismic\">\r\n                <label for=\"sapSds\">Sds</label>\r\n                <input class=\"seismic_vals\" type=\"number\" id=\"sapSds\" placeholder=\"Enter factor value\">\r\n            </div>\r\n            <div class=\"form-group-seismic\">\r\n                <label for=\"sapSd1\">Sd1</label>\r\n                <input class=\"seismic_vals\" type=\"number\" id=\"sapSd1\" placeholder=\"Enter factor value\">\r\n            </div>\r\n            </blockquote>\r\n        </div>\r\n        \r\n\r\n        <button onclick=\"saveLoadData_asJson('HSD_SL.json',get_SeismicInfo_json())\">Save Data</button>\r\n        <div id=\"seismic-result\"></div>\r\n    </div>\r\n</div>\r\n    \r\n    <script src=\"js/script.js\"></script>\r\n</body>\r\n</html>\r\n\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "1b441b8fa1b046d2bf46e40f5277bb87",
+      "Inputs": [
+        {
+          "Id": "0e33ab6b4b634454b4792c5ae6a587af",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "20bd2ffc97e74fc6ac5be844787c17b6",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b2249cb0df9245fea24dc067c7426721",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0303780df2be43a888cb232219cac354",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "da4345ec91794616a88b5b8b1ebb79c2",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "877afc6567254252a42a93efff65c7f4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "\"http://127.0.0.1:5500/\";",
-      "Id": "cc371d265aff406a9c4a51bad08728dd",
+      "Code": "htmlStr;",
+      "Id": "e21e75097cd24652ad27db98fd19aa73",
+      "Inputs": [
+        {
+          "Id": "74e066dfb4664b39951455dc0199445d",
+          "Name": "htmlStr",
+          "Description": "htmlStr",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1a59fa368c7848ea8d5112c8aa2dcb38",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\n# Place your code below this line\r\nnavPart = f'''\r\n\r\n<nav class=\"navbar\">\r\n\r\n  <ul class=\"navbar__menu\">\r\n    <li id=\"home\">Home</li>\r\n    <li id=\"info\">Project Information</li>\r\n    <li id=\"famType\">Used Family Types</li>\r\n    <li id=\"roomInfo\">Room Information_입력용</li>\r\n    <li id=\"roomInfo_chk\">Room Information_검토용</li>\r\n  </ul>\r\n\r\n</nav>\r\n\r\n'''\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = navPart",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "29f0a1fd5815420fae3a8fd2b1c493f5",
+      "Inputs": [
+        {
+          "Id": "57568141c4294815bf44f33c6afbd6f3",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "95a6a9302877408f9b8e1aed30e8751a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\nimport asyncio\r\nimport multiprocessing\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\ncwd = folderPath\r\nportNo = IN[2]\r\n#bdName = IN[2]\r\n# Place your code below this line\r\n\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"index.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\n\r\ndef execute_browser(cwd):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    #cmdStr = \"start chrome http:localhost:8000\"\r\n    cmdStr = f\"start msedge http:localhost:{portNo}\"\r\n    cmdList= cmdStr.split(' ')\r\n    #subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\n\r\nfileName = make_resultHTMLname(contents,\"test\",cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = execute_browser(cwd)#fileName.split('.')[0]",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "50f753964398423db6a489753b327d5f",
+      "Inputs": [
+        {
+          "Id": "cbfc937889bd4f31ac0d39ef319cee39",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1280bff07abb4627a613fbca4184bdcf",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "925f9ee8811f4a23ab7d6ff1ac2f51a3",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "db9d3617ec4b42bcbea1b4d504513f5a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport time\r\nimport subprocess\r\nimport os\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ndynTempServerPath = IN[0]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = os.getenv(\"HomePath\")\r\n\r\nfolderPath = f\"{cwd}\\\\{dynTempServerPath}\"\r\nif not os.path.exists(folderPath):\r\n    os.makedirs(folderPath)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = \"C:\"+folderPath",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "99d05c1797104dfe835db0c59ce18f83",
+      "Inputs": [
+        {
+          "Id": "9d81aa0b71994e2c8182808460d3b8cd",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "37dd4124dd7e4610818c589a828d9563",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\n#bdName = IN[2]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = folderPath\r\n\r\ndef make_resultHTMLname(jsStr,cwd):\r\n    #timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    jsPath = cwd + \"\\\\js\"\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    if not os.path.exists(jsPath):\r\n        os.makedirs(jsPath)\r\n    fileName = \"script.js\"\r\n    filePath = f\"{jsPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(jsStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef execute_file(fileName):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    \r\n\r\nfileName = make_resultHTMLname(contents,cwd)\r\n#fileName = \"Test1.html\"\r\n\r\n#execute_file(fileName)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = fileName",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a5eb0ff6135341a0b1114f3b143cd80b",
+      "Inputs": [
+        {
+          "Id": "15d7cd0b35494bad81ac4479a6f453fc",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "350b09ad74a04eeb8d21535f73f128de",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f4d74d6373fe4598bb3e36c31b6e81c0",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b6bacc06de2e4d36a740e198c8d942ec",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\njsPart = IN[0]\r\ncssPart = IN[1]\r\ntablePart = IN[2]\r\n\r\n# Place your code below this line\r\n##folderPath_r = folderPath.replace('\\\\','\\\\\\\\')\r\n\r\nhtmlStr = f'''\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>my first three.js app</title>\r\n    <style>\r\n        {cssPart}\r\n    </style>\r\n</head>\r\n\r\n<body>\r\n\r\n\r\n<div class=\"wrapper\">\r\n\r\n  <a data-fslightbox=\"gallery\" href=\"#custom-source\">\r\n    유튜브 라이트박스\r\n  </a>\r\n\r\n  <iframe id=\"custom-source\"\r\n          frameborder=\"0\"\r\n          width=\"1920px\"\r\n          height=\"1080px\"\r\n          allow=\"autoplay; fullscreen\"\r\n          src=\"https://www.youtube.com/embed/qgBSiRwsbNw?autoplay=1\">\r\n  </iframe>\r\n</div>\r\n\r\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/fslightbox/3.3.1/index.min.js\" integrity=\"sha512-EqNNJuepkw5P9vxCml8eBk7C4Ld+4kAnvzOD/jG21rkxWPILGoQa5EvD62UieiJF0u3xoQrcVnce4i83VnYj/Q==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\r\n\r\n</body>\r\n\r\n</html>\r\n'''\r\n# Assign your output to the OUT variable.\r\nOUT = htmlStr",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "109be601447847c29d5896ee787c7028",
+      "Inputs": [
+        {
+          "Id": "820754c62ba146f6917c04d2c4e462ce",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d9a33fef63db4cccae3c9d6a454aa4b1",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7609ac852cc942c9833e872b20ffb6d0",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1f6c2acc12de4fbba692e5598eb96b5c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.CreateList, CoreNodeModels",
+      "VariableInputPorts": true,
+      "NodeType": "ExtensionNode",
+      "Id": "1ae21a8ccba240838e5f62787415e708",
+      "Inputs": [
+        {
+          "Id": "79cc0bd4e1ee4547940ac6b8d3a55a72",
+          "Name": "item0",
+          "Description": "Item Index #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "dec89e00b00749e68506b9fb50fe7765",
+          "Name": "item1",
+          "Description": "Item Index #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0dd9aa0f3c374a62a3cfe546bee413ed",
+          "Name": "item2",
+          "Description": "Item Index #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7116454ad7c54ac2b92c4523351c4500",
+          "Name": "item3",
+          "Description": "Item Index #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a443ce63a5094241a5eae3be86a00b2b",
+          "Name": "item4",
+          "Description": "Item Index #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0410148b62cd44248ee8f53a966f2ce9",
+          "Name": "list",
+          "Description": "A list (type: var[]..[])",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Makes a new list out of the given inputs"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\".dynTempServer\";",
+      "Id": "7f9887d9a54f435da183c629e3111ae4",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "68d103925905463c99b130dd4f53437c",
+          "Id": "8b43b14e5d624aeaa9dd28d7fecdf68c",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport os\r\nimport asyncio\r\nimport multiprocessing\r\nimport subprocess\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncwd = IN[0]\r\nportNo = IN[1]\r\n# Place your code below this line\r\nbatStr = f\"\"\"\r\n@echo on\r\npython -m http.server {portNo}\r\ncmd /k\r\n\"\"\"\r\n##cmd /k\r\ntitle = \"localWebserver\"\r\n\r\ndef make_startSever_bat(batStr,title,cwd):\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"{title}.bat\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(batStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef startBat(fileName, cwd):\r\n    cmdStr = f\".\\\\{fileName}\"\r\n    cmdList= cmdStr.split(' ')\r\n    os.chdir(cwd)\r\n    \r\n    res = subprocess.Popen(args=cmdList, shell=True)\r\n    return res\r\n\r\nbatFileName = make_startSever_bat(batStr,title,cwd)\r\n#res = multiprocessing.Process(name=\"SubProcess\", target=startBat, args=(batFileName, cwd))\r\n# Assign your output to the OUT variable.\r\nOUT = startBat(batFileName, cwd)\r\n\r\n#startBat(fileName, cwd)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "7ee76eb91d8b46698f3daab5719e02a9",
+      "Inputs": [
+        {
+          "Id": "d2b6fbffd7cf490aa35a08da10ec88f2",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2a47dc0cf3444982949adc49f68ec2b4",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a045d03a6bb94e578f9886a292053774",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "NodeType": "StringInputNode",
+      "InputValue": "8000",
+      "Id": "14eed113613e4654a80635709f99cb88",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "87307234f91844d89128fc1c2c3347a7",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport time\r\nimport subprocess\r\nimport os\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsubPath = IN[0]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\n#cwd = os.getenv(\"HomePath\")\r\n#\r\n#folderPath = f\"{cwd}\\\\{dynTempServerPath}\"\r\n#if not os.path.exists(folderPath):\r\n#    os.makedirs(folderPath)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: find_cwd() + x, subPaths) \r\nOUT = find_cwd() + subPath",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "b8e0fd62cc554139b523111d18125627",
+      "Inputs": [
+        {
+          "Id": "c57e659500b6478e831f9ce8c257876e",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6bf9dec87a6c4522beeb6008745ff627",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"\\\\.dynTemp\\\\\";",
+      "Id": "4a28c401ee2f49c0a18dddb9d5448a0e",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "739b3b06df524a43810534755dcc658b",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n\"HSD_DL.json\",\n\"HSD_LL.json\",\n\"HSD_WL.json\",\n\"HSD_SL.json\"\n];",
+      "Id": "9adf50da7dd94afdb2d9d128eac421c5",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "92b87d2657824f4a9d259dcedefd7cc0",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport os\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfolderPath = IN[0]\r\njsonNames = IN[1]\r\nexeMode = IN[2]\r\n# Place your code below this line\r\n\r\ndef chk_folderPath(folderPath):\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n\r\ndef create_file(folderPath, jsonName, content):\r\n    chk_folderPath(folderPath)\r\n    \r\n    filePath = folderPath + jsonName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(content)\r\n    f.close()\r\n\r\nif exeMode == \"입력모드\":\r\n    list(map(lambda x: create_file(folderPath, x,\"\"), jsonNames))\r\n    res = list(map(lambda x: folderPath + x, jsonNames))\r\nelse:\r\n    res = 0\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "3de5120290f14cab8d201c690919b2cf",
+      "Inputs": [
+        {
+          "Id": "85f2ace9b692456a9c06c0365cb34d48",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5d456c07b90f45b395524640522abf60",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f2db9268979b4da49ac03c3058e0fe60",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4e9694d1ba4441eb97dd05af445c88fd",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "htmlPath;",
+      "Id": "3a7e5a49982d4a90a41cac98681f21fe",
+      "Inputs": [
+        {
+          "Id": "9dbb2df8fe2f4027a35eb3a669f19759",
+          "Name": "htmlPath",
+          "Description": "htmlPath",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cf924f913a3c45a9aff3c8cdfb852de9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.Directory, CoreNodeModels",
+      "HintPath": "C:\\Users\\HEC\\Downloads",
+      "InputValue": "C:\\Users\\HEC\\Downloads",
+      "NodeType": "ExtensionNode",
+      "Id": "284049a6f28f4c1bba8bfb5ef4cdfa1f",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ff030d6bd4cd4d32ab8d3514e223f5dc",
+          "Name": "",
+          "Description": "Directory path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows you to select a directory on the system to get its path"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "[\n\"HSD_DL\",\n\"HSD_LL\",\n\"HSD_WL\",\n\"HSD_SL\"\n];",
+      "Id": "ae8a0e95c44e4ac7b0f1c248fa6ffe37",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0cd8eace47814c71be31ce6ec0b55f27",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3954,31 +4624,31 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.String.Contains@string,string,bool",
-      "Id": "0e5db61859f148d6915e5e4afafb7cdb",
+      "FunctionSignature": "DSCore.IO.FileSystem.GetDirectoryContents@var,string,bool",
+      "Id": "5fb9c95c02bf4ab593a27008cb50eca0",
       "Inputs": [
         {
-          "Id": "4db023d687744b92b3d4ea258a470146",
-          "Name": "string",
-          "Description": "String to search in\n\nstring",
+          "Id": "89cbb494a451441bab04de521a630390",
+          "Name": "directory",
+          "Description": "Directory to get contents of\n\nvar",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "feb06b2efd1b48918b790efc2922f918",
-          "Name": "searchFor",
-          "Description": "Substring to search for\n\nstring",
-          "UsingDefaultValue": false,
+          "Id": "75cc376b1d094fc684adf6d61a99af2f",
+          "Name": "searchString",
+          "Description": "Search string used to filter results\n\nstring\nDefault value : \"*.*\"",
+          "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "cbe3ae85ea8a4b519dce72d2acf090dd",
-          "Name": "ignoreCase",
-          "Description": "Whether or not comparison takes case into account\n\nbool\nDefault value : false",
+          "Id": "e37ae81c05f143f09c0cdf3cfcd1a9db",
+          "Name": "includeSubdirectories",
+          "Description": "Set to true to include files and folders in subdirectories (recursive) or set to false to include results from top-level of given directory only.\n\nbool\nDefault value : false",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -3987,9 +4657,18 @@
       ],
       "Outputs": [
         {
-          "Id": "3f55e7a7aa3340d49e7c2385436c55d0",
-          "Name": "bool",
-          "Description": "Whether the string contains the substring",
+          "Id": "5da55e31499a4017aeb887ae464ab37b",
+          "Name": "files",
+          "Description": "Resulting files from query",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8cb58b9cd6e24dd58bcabcff5145b7ee",
+          "Name": "directories",
+          "Description": "Resulting directories from query",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -3997,19 +4676,28 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Determines if the given string contains the given substring.\n\nString.Contains (string: string, searchFor: string, ignoreCase: bool = false): bool"
+      "Description": "Will return a list of files and directories that are contained within a given directory. An optional searchString can be used to filter the results.\n\nFileSystem.GetDirectoryContents (directory: var, searchString: string = \"*.*\", includeSubdirectories: bool = false): var[]..[]"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "\"wind_info\";",
-      "Id": "407ee3a12e6f4f0cbac20cb479bd795a",
-      "Inputs": [],
+      "ConcreteType": "CoreNodeModels.Input.DirectoryObject, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "6c38437c7af844ecb656a68486ce296c",
+      "Inputs": [
+        {
+          "Id": "f43f7979705e4d02b5d4287ef4f947e8",
+          "Name": "path",
+          "Description": "Path to the directory (type: string)",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
       "Outputs": [
         {
-          "Id": "7036900bf7614e6197842f05f5781e7e",
-          "Name": "",
-          "Description": "Value of expression at line 1",
+          "Id": "94e20330d73443bc88d12efa055ca88c",
+          "Name": "directory",
+          "Description": "Directory object.",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4017,7 +4705,82 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
+      "Description": "Creates a directory object from a path"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nfileNames = IN[0]\r\nloadKinds = IN[1]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allHSD_loads(fileNames, loadKind):\r\n    allHSDs = go(\r\n        fileNames,\r\n        filter(lambda x: loadKind in x),\r\n        list,\r\n    )\r\n    return allHSDs\r\n    \r\ndef select_lastHSD(fileNames, loadKind):\r\n    allHSDs = find_allHSD_loads(fileNames, loadKind)\r\n    if len(allHSDs) == 1:\r\n        res = allHSDs[0]\r\n    elif len(allHSDs) > 2:\r\n        res = go(\r\n            allHSDs,\r\n            filter(lambda x: '(' in x),\r\n            sorted,\r\n            lambda x: x[-1],\r\n        )\r\n    return res\r\n\r\ndef chk_allLastHSDs(fileNames, loadKinds):\r\n    vals = []\r\n    for x in loadKinds:\r\n        try:\r\n            vals.append(select_lastHSD(fileNames, x))\r\n        except:\r\n            vals.append(0)\r\n            \r\n    \r\n    resDict = dict(zip(loadKinds, vals))\r\n    \r\n    return resDict\r\n\r\ndef read_allHSDsJson(loadDict):\r\n    resDict = {}\r\n    for k,v in loadDict.items():\r\n        if v == 0:\r\n            resDict[k] = \"noData\"\r\n        else:\r\n            with open(v, 'r', encoding='utf-8') as f:\r\n                resDict[k] = f.read()\r\n    return resDict\r\n    \r\nloadDict = chk_allLastHSDs(fileNames, loadKinds)\r\n# Assign your output to the OUT variable.\r\nOUT = read_allHSDsJson(loadDict)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d851a9e56caf48cb9719d6b17d4d4dc6",
+      "Inputs": [
+        {
+          "Id": "065a0961f59c41e7b038bb6e35d96d6c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "eecca253973d46a198881a244bbab9dc",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6b26523ab86043e0affe3ccb193d23f4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport json\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nloadDict = IN[0]\r\n# Place your code below this line\r\ndef del_noDataKey_inDict(loadDict):\r\n    resDict = {}\r\n    for k,v in loadDict.items():\r\n        if v == \"noData\":\r\n            pass\r\n        else:\r\n            resDict[k] = json.loads(v)\r\n    return resDict\r\n# Assign your output to the OUT variable.\r\nOUT = del_noDataKey_inDict(loadDict)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "1aa0152446c04939b2fd2f194d3b821b",
+      "Inputs": [
+        {
+          "Id": "057de3c3c8714183bb5cd46c40191258",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "15a877e843354c43bbc74b75f8c8b47b",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -4250,9 +5013,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "15b5683ddfc543739a615e7ac87853d5",
-      "End": "67082223a9ca455e88b490bab96d47c1",
-      "Id": "e6bc44e2a57b47d68c58031331cdef18",
+      "Start": "9dd1ef18eb494309a1549c7898dbdbf9",
+      "End": "f2db9268979b4da49ac03c3058e0fe60",
+      "Id": "921427522bf74e1c8b6f750a79b2785c",
       "IsHidden": "False"
     },
     {
@@ -4796,21 +5559,147 @@
       "IsHidden": "False"
     },
     {
-      "Start": "961065ce0a98475a8f47ef107633104d",
-      "End": "4db023d687744b92b3d4ea258a470146",
-      "Id": "8a3dd5d0640441798f81d57b180d2b1f",
+      "Start": "07df22f4ea1d459a9d5266728b3d95a8",
+      "End": "0e33ab6b4b634454b4792c5ae6a587af",
+      "Id": "1b743e357f9748478769f02b78c36e8b",
       "IsHidden": "False"
     },
     {
-      "Start": "68d103925905463c99b130dd4f53437c",
-      "End": "7eb472cae59d45b7b0b9773c1be71089",
-      "Id": "7a8cc8b2d67f478b905bdafb61987dfb",
+      "Start": "07df22f4ea1d459a9d5266728b3d95a8",
+      "End": "15d7cd0b35494bad81ac4479a6f453fc",
+      "Id": "946d5bba93cf4aea8e9d018fb55cde57",
       "IsHidden": "False"
     },
     {
-      "Start": "7036900bf7614e6197842f05f5781e7e",
-      "End": "feb06b2efd1b48918b790efc2922f918",
-      "Id": "f6a045f883b4422e9713b781ae3ebe58",
+      "Start": "07df22f4ea1d459a9d5266728b3d95a8",
+      "End": "820754c62ba146f6917c04d2c4e462ce",
+      "Id": "0e54ce7d78a041c9bee4e00ff7ea1360",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e87daa5787664fcaa13e59b422e1f84c",
+      "End": "20bd2ffc97e74fc6ac5be844787c17b6",
+      "Id": "b78888f7260b43acb41b5bd9feffcbe2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e87daa5787664fcaa13e59b422e1f84c",
+      "End": "d9a33fef63db4cccae3c9d6a454aa4b1",
+      "Id": "0929d93a293742d09694b20e4996e91e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "877afc6567254252a42a93efff65c7f4",
+      "End": "74e066dfb4664b39951455dc0199445d",
+      "Id": "bb69f553dd974492b8f3d86a7111e58d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1a59fa368c7848ea8d5112c8aa2dcb38",
+      "End": "cbfc937889bd4f31ac0d39ef319cee39",
+      "Id": "bf751427e7ac4fcdbcf535f2e2a2a06b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "95a6a9302877408f9b8e1aed30e8751a",
+      "End": "b2249cb0df9245fea24dc067c7426721",
+      "Id": "15f5deeb2aa54fd0a5852ce4d4d7d98f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0410148b62cd44248ee8f53a966f2ce9",
+      "End": "da4345ec91794616a88b5b8b1ebb79c2",
+      "Id": "6acd03aca62349b3b748d86e8953c166",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8b43b14e5d624aeaa9dd28d7fecdf68c",
+      "End": "9d81aa0b71994e2c8182808460d3b8cd",
+      "Id": "6a65f89e154a468cb48d056aaec5a991",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "87307234f91844d89128fc1c2c3347a7",
+      "End": "925f9ee8811f4a23ab7d6ff1ac2f51a3",
+      "Id": "151544bb7d46476fbeac287043f9cd82",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "87307234f91844d89128fc1c2c3347a7",
+      "End": "2a47dc0cf3444982949adc49f68ec2b4",
+      "Id": "7c94a37ea55541618e0cb55998ce413a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6bf9dec87a6c4522beeb6008745ff627",
+      "End": "85f2ace9b692456a9c06c0365cb34d48",
+      "Id": "b3587032064e445b96e8564dd08b6797",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6bf9dec87a6c4522beeb6008745ff627",
+      "End": "9dbb2df8fe2f4027a35eb3a669f19759",
+      "Id": "253fd70a31e4419e98b170c099077246",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "739b3b06df524a43810534755dcc658b",
+      "End": "c57e659500b6478e831f9ce8c257876e",
+      "Id": "b86e67a1d7ac427e8566f991e0681ace",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "92b87d2657824f4a9d259dcedefd7cc0",
+      "End": "5d456c07b90f45b395524640522abf60",
+      "Id": "bd6a71e9bab244738e49cdca44eacf6f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "cf924f913a3c45a9aff3c8cdfb852de9",
+      "End": "350b09ad74a04eeb8d21535f73f128de",
+      "Id": "2d5f439e32bc4939b72bbd6d08487c52",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "cf924f913a3c45a9aff3c8cdfb852de9",
+      "End": "1280bff07abb4627a613fbca4184bdcf",
+      "Id": "52e1d58c93224f009fb96b40ebd0b4b5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "cf924f913a3c45a9aff3c8cdfb852de9",
+      "End": "d2b6fbffd7cf490aa35a08da10ec88f2",
+      "Id": "0a849a0852c4487abf09dddab61f3240",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ff030d6bd4cd4d32ab8d3514e223f5dc",
+      "End": "f43f7979705e4d02b5d4287ef4f947e8",
+      "Id": "d113cf21204744c3bccd107d79af93bf",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0cd8eace47814c71be31ce6ec0b55f27",
+      "End": "eecca253973d46a198881a244bbab9dc",
+      "Id": "0856bdfb3e7e4d94898f9258a27ff0e2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5da55e31499a4017aeb887ae464ab37b",
+      "End": "065a0961f59c41e7b038bb6e35d96d6c",
+      "Id": "1223a28991e14a30b568d3bcb547b53d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "94e20330d73443bc88d12efa055ca88c",
+      "End": "89cbb494a451441bab04de521a630390",
+      "Id": "951e13b665a6445492add7ea73554257",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6b26523ab86043e0affe3ccb193d23f4",
+      "End": "057de3c3c8714183bb5cd46c40191258",
+      "Id": "72460335c7bf45488aa93f10d4e42249",
       "IsHidden": "False"
     }
   ],
@@ -5238,28 +6127,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5241.1609544984767,
-        "Y": 1553.9810531904445
-      },
-      {
-        "Name": "filePath",
-        "ShowGeometry": true,
-        "Id": "26406ae42bcb4b309436e92bb6941220",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -5792.3867891392447,
-        "Y": 1762.5264262218202
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "9c0b7760c67e48adb51b9bb2a84794b7",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -6011.9137792152942,
-        "Y": 1764.6911096293488
+        "X": -8612.6153696765978,
+        "Y": -242.07463719077487
       },
       {
         "Name": "4. a :: Seismic_Code 선택",
@@ -5368,8 +6237,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2144.8045990770447,
-        "Y": 1148.925538599603
+        "X": 2673.6666492483673,
+        "Y": -621.88686135256808
       },
       {
         "Name": "Code Block",
@@ -5828,8 +6697,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2083.4458868905913,
-        "Y": 455.44570129438682
+        "X": 2664.5426749302674,
+        "Y": -1069.1172201355496
       },
       {
         "Name": "List.Count",
@@ -6032,44 +6901,244 @@
         "Y": 1448.9739532372903
       },
       {
-        "Name": "Web Request",
+        "Name": "javascriptPart",
         "ShowGeometry": true,
-        "Id": "8c3a5dc818404937b390cb66a12272fb",
+        "Id": "512a05c1bd764f3daa71c3bd3789bf09",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5967.5536285371927,
-        "Y": 1017.9734946417116
+        "X": -6198.316365911428,
+        "Y": -1789.99843955319
+      },
+      {
+        "Name": "cssPart",
+        "ShowGeometry": true,
+        "Id": "964f79903b234e20b7310e1beebb01be",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6177.6734853724183,
+        "Y": -1531.8833495035806
+      },
+      {
+        "Name": "make_htmlStr__",
+        "ShowGeometry": true,
+        "Id": "1b441b8fa1b046d2bf46e40f5277bb87",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5771.1270136673384,
+        "Y": -1360.65162314169
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "cc371d265aff406a9c4a51bad08728dd",
+        "Id": "e21e75097cd24652ad27db98fd19aa73",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5495.0161021815993,
+        "Y": -1277.2266614926302
+      },
+      {
+        "Name": "navHTML_Part",
+        "ShowGeometry": true,
+        "Id": "29f0a1fd5815420fae3a8fd2b1c493f5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6451.1915617329387,
+        "Y": -1396.5228495544507
+      },
+      {
+        "Name": "Create HTML file and Open",
+        "ShowGeometry": true,
+        "Id": "50f753964398423db6a489753b327d5f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5183.0161021815993,
+        "Y": -1132.64041149263
+      },
+      {
+        "Name": "htmlPath",
+        "ShowGeometry": true,
+        "Id": "99d05c1797104dfe835db0c59ce18f83",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": -6347.817612162683,
-        "Y": 1010.1131475044231
+        "X": -6936.9308665362478,
+        "Y": -1651.8879386247884
       },
       {
-        "Name": "String.Contains",
+        "Name": "Create JS file",
         "ShowGeometry": true,
-        "Id": "0e5db61859f148d6915e5e4afafb7cdb",
+        "Id": "a5eb0ff6135341a0b1114f3b143cd80b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5335.955517437752,
-        "Y": 1068.3486078161536
+        "X": -5183.0161021815993,
+        "Y": -1344.7266614926302
+      },
+      {
+        "Name": "make_htmlStr",
+        "ShowGeometry": true,
+        "Id": "109be601447847c29d5896ee787c7028",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": -5183.0161021815993,
+        "Y": -1558.2266614926302
+      },
+      {
+        "Name": "List Create",
+        "ShowGeometry": true,
+        "Id": "1ae21a8ccba240838e5f62787415e708",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6679.0348546362084,
+        "Y": -1146.5394510429405
+      },
+      {
+        "Name": "serverFilePath",
+        "ShowGeometry": true,
+        "Id": "7f9887d9a54f435da183c629e3111ae4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -7196.0928062327757,
+        "Y": -1563.5863319228765
+      },
+      {
+        "Name": "start Webserver",
+        "ShowGeometry": true,
+        "Id": "7ee76eb91d8b46698f3daab5719e02a9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5183.0161021815993,
+        "Y": -915.07205153637
+      },
+      {
+        "Name": "Set Port Number: 기본값-8000 (작동 오류 없다면 변경 금지)",
+        "ShowGeometry": true,
+        "Id": "14eed113613e4654a80635709f99cb88",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5826.1723195066088,
+        "Y": -780.98894785136463
+      },
+      {
+        "Name": "folderPath",
+        "ShowGeometry": true,
+        "Id": "b8e0fd62cc554139b523111d18125627",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -8245.68505366297,
+        "Y": -793.593693385066
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "407ee3a12e6f4f0cbac20cb479bd795a",
+        "Id": "4a28c401ee2f49c0a18dddb9d5448a0e",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5631.9944513515347,
-        "Y": 1258.4598311850878
+        "X": -8589.6850536629718,
+        "Y": -793.76619338506612
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "9adf50da7dd94afdb2d9d128eac421c5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -8227.3816878927,
+        "Y": -552.12483472362192
+      },
+      {
+        "Name": "Create_JsonFile",
+        "ShowGeometry": true,
+        "Id": "3de5120290f14cab8d201c690919b2cf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": -7900.3771002815229,
+        "Y": -483.92035825234393
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "3a7e5a49982d4a90a41cac98681f21fe",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6085.4723738217735,
+        "Y": -1032.6205036350757
+      },
+      {
+        "Name": "Directory Path",
+        "ShowGeometry": true,
+        "Id": "284049a6f28f4c1bba8bfb5ef4cdfa1f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -7367.39923237707,
+        "Y": 79.3265092539503
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ae8a0e95c44e4ac7b0f1c248fa6ffe37",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6381.26936140732,
+        "Y": 252.76135600489
+      },
+      {
+        "Name": "FileSystem.GetDirectoryContents",
+        "ShowGeometry": true,
+        "Id": "5fb9c95c02bf4ab593a27008cb50eca0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6778.3347266379,
+        "Y": 122.443871613305
+      },
+      {
+        "Name": "Directory From Path",
+        "ShowGeometry": true,
+        "Id": "6c38437c7af844ecb656a68486ce296c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -7095.82094356957,
+        "Y": 132.882805348313
+      },
+      {
+        "Name": "filter the last HSD 파일",
+        "ShowGeometry": true,
+        "Id": "d851a9e56caf48cb9719d6b17d4d4dc6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6165.52754208457,
+        "Y": 133.080843257996
+      },
+      {
+        "Name": "값 있는 항목만 필터링",
+        "ShowGeometry": true,
+        "Id": "1aa0152446c04939b2fd2f194d3b821b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -5831.1712238577738,
+        "Y": 132.72015732568713
       }
     ],
     "Annotations": [
@@ -6096,6 +7165,88 @@
         "InitialTop": 3873.3783501100797,
         "InitialHeight": 322.82750000000033,
         "TextblockHeight": 63.0,
+        "Background": "#FFC1D676"
+      },
+      {
+        "Id": "f5eec8440e6345c1ba1754eae7207ca2",
+        "Title": "HTML Export",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "50f753964398423db6a489753b327d5f",
+          "964f79903b234e20b7310e1beebb01be",
+          "512a05c1bd764f3daa71c3bd3789bf09",
+          "a5eb0ff6135341a0b1114f3b143cd80b",
+          "109be601447847c29d5896ee787c7028",
+          "1b441b8fa1b046d2bf46e40f5277bb87",
+          "7ee76eb91d8b46698f3daab5719e02a9",
+          "e21e75097cd24652ad27db98fd19aa73",
+          "29f0a1fd5815420fae3a8fd2b1c493f5",
+          "1ae21a8ccba240838e5f62787415e708",
+          "14eed113613e4654a80635709f99cb88",
+          "3a7e5a49982d4a90a41cac98681f21fe"
+        ],
+        "HasNestedGroups": false,
+        "Left": -6689.0348546362084,
+        "Top": -1905.99843955319,
+        "Width": 1787.0187524546091,
+        "Height": 1257.0094917018255,
+        "FontSize": 72.0,
+        "InitialTop": -1789.99843955319,
+        "InitialHeight": 1087.6104749605001,
+        "TextblockHeight": 106.0,
+        "Background": "#FFFF7BAC"
+      },
+      {
+        "Id": "ac17c33d5b534171989017e692d31938",
+        "Title": "createJson_for Load Information Input",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "49a74bd5d45d48ed991b03fb724ae6e7",
+          "b8e0fd62cc554139b523111d18125627",
+          "4a28c401ee2f49c0a18dddb9d5448a0e",
+          "9adf50da7dd94afdb2d9d128eac421c5",
+          "3de5120290f14cab8d201c690919b2cf"
+        ],
+        "HasNestedGroups": false,
+        "Left": -8622.6153696765978,
+        "Top": -996.76619338506612,
+        "Width": 924.23826939507489,
+        "Height": 886.69155619429125,
+        "FontSize": 72.0,
+        "InitialTop": -793.76619338506612,
+        "InitialHeight": 713.69155619429125,
+        "TextblockHeight": 193.0,
+        "Background": "#FF848484"
+      },
+      {
+        "Id": "2c4ccbe4fa354d25a137d1dae2f016c5",
+        "Title": "Read Load Inform from Json",
+        "DescriptionText": "<Double click here to edit group description>",
+        "IsExpanded": true,
+        "WidthAdjustment": 0.0,
+        "HeightAdjustment": 0.0,
+        "Nodes": [
+          "284049a6f28f4c1bba8bfb5ef4cdfa1f",
+          "ae8a0e95c44e4ac7b0f1c248fa6ffe37",
+          "5fb9c95c02bf4ab593a27008cb50eca0",
+          "6c38437c7af844ecb656a68486ce296c",
+          "d851a9e56caf48cb9719d6b17d4d4dc6"
+        ],
+        "HasNestedGroups": false,
+        "Left": -7377.39923237707,
+        "Top": -36.673490746049694,
+        "Width": 1464.8716902924998,
+        "Height": 496.4348467509397,
+        "FontSize": 72.0,
+        "InitialTop": 79.3265092539503,
+        "InitialHeight": 487.5988571460307,
+        "TextblockHeight": 106.0,
         "Background": "#FFC1D676"
       },
       {
@@ -6137,8 +7288,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 1045.986826059737,
-    "Y": -155.50682216187511,
-    "Zoom": 0.11409685555266048
+    "X": 2798.7660542900421,
+    "Y": 545.19955570899549,
+    "Zoom": 0.36002922574496765
   }
 }
