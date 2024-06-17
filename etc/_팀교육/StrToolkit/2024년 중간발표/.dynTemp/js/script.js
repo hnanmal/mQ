@@ -36,7 +36,8 @@ function setEventListener(target) {
 function download(filename, text) {
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', filename);
+    const timeFilename = filename + Date.now().toString()
+    element.setAttribute('download', timeFilename);
   
     element.style.display = 'none';
     document.body.appendChild(element);
