@@ -1,4 +1,91 @@
 
+//import { OrbitControls} from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/examples/js/controls/OrbitControls.js"
+
+function hideAllPages() {
+  document.querySelector("#frame_MenuBtn").style.fontWeight = "normal";
+  document.querySelector("#framePage").style.display = "None";
+  document.querySelector("#material_MenuBtn").style.fontWeight = "normal";
+  document.querySelector("#materialPage").style.display = "None";
+  document.querySelector("#load_MenuBtn").style.fontWeight = "normal";
+  document.querySelector("#loadPage").style.display = "None";
+
+}
+
+
+// 페이지가 로드되면 실행될 함수
+window.addEventListener('load', init);
+
+
+function init() {
+  // canvas 엘리먼트 생성
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('id', 'framePage');
+  console.log(canvas)
+
+  // canvas 크기 설정
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  // HTML 문서의 body 요소에 canvas 추가
+  document.body.appendChild(canvas);
+ 
+  // WebGLRenderer 생성 및 설정
+  const renderer = new THREE.WebGLRenderer({ canvas });
+  renderer.setSize(canvas.width, canvas.height);
+  renderer.setClearColor(0xfdfdfd, 0.5);
+
+  // 씬(Scene) 생성
+  const scene = new THREE.Scene();
+
+  // 카메라(Camera) 생성 (원근 투영 카메라)
+  const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight,1,500);
+ 
+  // 카메라 위치 설정 (x, y, z 좌표)
+  //camera.position.z =5;
+  camera.position.set(50, 50, 100);
+  camera.lookAt(0, 0, 0)
+  
+  // 오빗컨트롤 설정
+  //new OrbitControls(camera, canvas);
+  
+  // 큐브(Geometry) 생성
+  //const geometry = new THREE.BoxGeometry();
+ 
+  // 재질(Material) 생성 (색상 지정)
+  //const material = new THREE.MeshBasicMaterial({ color:"red" });
+  const material = new THREE.LineBasicMaterial( { color: "black" } );
+ 
+  // 메쉬(Mesh) 생성 (큐브와 재질을 결합)
+  //const cube = new THREE.Mesh(geometry, material);
+  
+  // 선 생성
+  const points = [];
+  points.push( new THREE.Vector3( - 10, 0, 0 ) );
+  points.push( new THREE.Vector3( 0, 10, 0 ) );
+  points.push( new THREE.Vector3( 10, 0, 0 ) );
+  
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+  const line = new THREE.Line( geometry, material );
+ 
+  // 씬에 메쉬 추가 
+  //scene.add(cube);
+  scene.add(line);
+  renderer.render( scene, camera );
+
+  
+  function animate() {
+    requestAnimationFrame(animate); 
+    
+    cube.rotation.x +=0.01;
+    cube.rotation.y +=0.01;
+   
+    renderer.render(scene,camera); 
+  }
+  
+  //animate(); 
+}
+
+
 function setEventListener(target) {
     document.addEventListener('DOMContentLoaded', () => {
         const increaseButton = document.getElementById('increaseButton');
@@ -129,12 +216,28 @@ function get_SeismicInfo_json() {
 
 function saveLoadData_asJson(filename,jsonStr) {
     
-    download(filename, jsonStr) 
-    alert("Save Completed!")
+    download(filename, jsonStr);
+    alert("Save Completed!");
 
 }
 
+document.querySelector("#frame_MenuBtn").onclick = function() {
+  hideAllPages();
+  document.querySelector("#frame_MenuBtn").style.fontWeight = "bolder";
+  document.querySelector("#framePage").style.display = "inline";
+};
 
+document.querySelector("#material_MenuBtn").onclick = function() {
+  hideAllPages();
+  document.querySelector("#material_MenuBtn").style.fontWeight = "bolder";
+  document.querySelector("#materialPage").style.display = "inline";
+};
+
+document.querySelector("#load_MenuBtn").onclick = function() {
+  hideAllPages();
+  document.querySelector("#load_MenuBtn").style.fontWeight = "bolder";
+  document.querySelector("#loadPage").style.display = "inline";
+};
 
 
 setEventListener('DL');
