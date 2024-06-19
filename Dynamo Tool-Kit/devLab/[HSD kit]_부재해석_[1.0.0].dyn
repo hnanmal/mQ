@@ -2,7 +2,7 @@
   "Uuid": "85bcf151-2a93-40fc-b906-7644e4add275",
   "IsCustomNode": false,
   "Description": "",
-  "Name": "[HSD kit]_하중분배_[1.0.8]",
+  "Name": "[HSD kit]_부재해석_[1.0.0]",
   "ElementResolver": {
     "ResolutionMap": {
       "List": {
@@ -17,9 +17,9 @@
       "Name": "0. 실행모드",
       "Type": "selection",
       "Type2": "dropdownSelection",
-      "Value": "입력모드",
+      "Value": "부재해석모드",
       "Description": "A dropdown menu with customizable values.",
-      "SelectedIndex": 0
+      "SelectedIndex": 1
     },
     {
       "Id": "6ca49a2c991c431f80920fca235e81e1",
@@ -408,12 +408,12 @@
           "Item": "입력모드"
         },
         {
-          "Name": "하중분배모드",
-          "Item": "하중분배모드"
+          "Name": "부재해석모드",
+          "Item": "부재해석모드"
         }
       ],
-      "SelectedIndex": 0,
-      "SelectedString": "입력모드",
+      "SelectedIndex": 1,
+      "SelectedString": "부재해석모드",
       "NodeType": "ExtensionNode",
       "Id": "49a74bd5d45d48ed991b03fb724ae6e7",
       "Inputs": [],
@@ -1797,7 +1797,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\nimport asyncio\r\nimport multiprocessing\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\ncwd = folderPath\r\nportNo = IN[2]\r\nexecutionMode = IN[3]\r\n# Place your code below this line\r\n\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    #timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"index.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\n\r\ndef execute_browser(cwd):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    #cmdStr = \"start chrome http:localhost:8000\"\r\n    cmdStr = f\"start msedge http:localhost:{portNo}\"\r\n    cmdList= cmdStr.split(' ')\r\n    #subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\n\r\nfileName = make_resultHTMLname(contents,\"test\",cwd)\r\n\r\nif executionMode == \"하중분배모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = execute_browser(cwd)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res, fileName",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\nimport asyncio\r\nimport multiprocessing\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\ncwd = folderPath\r\nportNo = IN[2]\r\nexecutionMode = IN[3]\r\n# Place your code below this line\r\n\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\ndef make_resultHTMLname(htmlStr,title,cwd):\r\n    #timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"index.html\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(htmlStr)\r\n    f.close()\r\n    return fileName\r\n\r\n\r\ndef execute_browser(cwd):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    #cmdStr = \"start chrome http:localhost:8000\"\r\n    cmdStr = f\"start msedge http:localhost:{portNo}\"\r\n    cmdList= cmdStr.split(' ')\r\n    #subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    subprocess.run(args=cmdList, shell=True)\r\n    return cmdList\r\n\r\n\r\nfileName = make_resultHTMLname(contents,\"test\",cwd)\r\n\r\nif executionMode == \"부재해석모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = execute_browser(cwd)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res, fileName",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -1857,7 +1857,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\nexecutionMode = IN[2]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = folderPath\r\n\r\ndef make_resultHTMLname(jsStr,cwd):\r\n    #timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    jsPath = cwd + \"\\\\js\"\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    if not os.path.exists(jsPath):\r\n        os.makedirs(jsPath)\r\n    fileName = \"script.js\"\r\n    filePath = f\"{jsPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(jsStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef execute_file(fileName):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    \r\n\r\n#fileName = make_resultHTMLname(contents,cwd)\r\n\r\n\r\nif executionMode == \"하중분배모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = make_resultHTMLname(contents,cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport os\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nfrom Revit import Elements\r\n\r\nimport time\r\nimport subprocess\r\n\r\n#################################Module For Functional Programing#############################################\r\nfrom functools import reduce\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\n\r\ndef _take(length, iter):\r\n    res = []\r\n    for a in iter:\r\n        res.append(a)\r\n        if len(res) == length:\r\n            return res\r\n        \r\ntake = curry(_take)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n##############################################################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncontents = IN[0]\r\nfolderPath = IN[1]\r\nexecutionMode = IN[2]\r\n# Place your code below this line\r\ndef find_cwd():\r\n    doc = Revit.Application.Document.Current\r\n    filePath_string = doc.FilePath\r\n    folderPath = filePath_string.split('\\\\')\r\n    folderPath.pop(-1)\r\n    folderPath_str = '\\\\'.join(folderPath)\r\n    return folderPath_str\r\n\r\n#cwd = find_cwd()\r\ncwd = folderPath\r\n\r\ndef make_resultHTMLname(jsStr,cwd):\r\n    #timeStamp = time.strftime('%H_%M_%S', time.localtime(time.time()))\r\n    #folderPath = f\"{cwd}\\\\.dynLog\"\r\n    folderPath = cwd\r\n    jsPath = cwd + \"\\\\js\"\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    if not os.path.exists(jsPath):\r\n        os.makedirs(jsPath)\r\n    fileName = \"script.js\"\r\n    filePath = f\"{jsPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(jsStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef execute_file(fileName):\r\n    #cwd = find_cwd()\r\n    folderPath = cwd\r\n    os.chdir(folderPath)\r\n    subprocess.run(args=[fileName], shell=True)\r\n    #subprocess.run(args=['start','excel',fileName], shell=True)\r\n    \r\n\r\n#fileName = make_resultHTMLname(contents,cwd)\r\n\r\n\r\nif executionMode == \"부재해석모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = make_resultHTMLname(contents,cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2007,7 +2007,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport os\r\nimport asyncio\r\nimport multiprocessing\r\nimport subprocess\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncwd = IN[0]\r\nportNo = IN[1]\r\nexecutionMode = IN[2]\r\n# Place your code below this line\r\nbatStr = f\"\"\"\r\n@echo on\r\npython -m http.server {portNo}\r\ncmd /k\r\n\"\"\"\r\n##cmd /k\r\ntitle = \"localWebserver\"\r\n\r\ndef make_startSever_bat(batStr,title,cwd):\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"{title}.bat\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(batStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef startBat(fileName, cwd):\r\n    cmdStr = f\".\\\\{fileName}\"\r\n    cmdList= cmdStr.split(' ')\r\n    os.chdir(cwd)\r\n    \r\n    res = subprocess.Popen(args=cmdList, shell=True)\r\n    return res\r\n\r\nbatFileName = make_startSever_bat(batStr,title,cwd)\r\n\r\nif executionMode == \"하중분배모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = startBat(batFileName, cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res\r\n\r\n#startBat(fileName, cwd)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport os\r\nimport asyncio\r\nimport multiprocessing\r\nimport subprocess\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncwd = IN[0]\r\nportNo = IN[1]\r\nexecutionMode = IN[2]\r\n# Place your code below this line\r\nbatStr = f\"\"\"\r\n@echo on\r\npython -m http.server {portNo}\r\ncmd /k\r\n\"\"\"\r\n##cmd /k\r\ntitle = \"localWebserver\"\r\n\r\ndef make_startSever_bat(batStr,title,cwd):\r\n    folderPath = cwd\r\n    if not os.path.exists(folderPath):\r\n        os.makedirs(folderPath)\r\n    fileName = f\"{title}.bat\"\r\n    filePath = f\"{folderPath}\\\\\" + fileName\r\n    f = open(filePath, 'w', encoding='utf8')\r\n    f.write(batStr)\r\n    f.close()\r\n    return fileName\r\n\r\ndef startBat(fileName, cwd):\r\n    cmdStr = f\".\\\\{fileName}\"\r\n    cmdList= cmdStr.split(' ')\r\n    os.chdir(cwd)\r\n    \r\n    res = subprocess.Popen(args=cmdList, shell=True)\r\n    return res\r\n\r\nbatFileName = make_startSever_bat(batStr,title,cwd)\r\n\r\nif executionMode == \"부재해석모드\":\r\n    res = 0\r\nelif executionMode == \"입력모드\":\r\n    res = startBat(batFileName, cwd)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res\r\n\r\n#startBat(fileName, cwd)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3339,6 +3339,96 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\nimport os\r\nimport shutil\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nmoveResult = IN[0]\r\nloadKinds = IN[1]\r\ntmpPath = IN[2]\r\nsubPath = IN[3]\r\ntgtPath = tmpPath + subPath\r\n\r\n# Place your code below this line\r\ndef find_downloadPath():\r\n    download = os.path.join(os.path.expanduser('~'), 'downloads')\r\n    return download\r\n\r\ndef get_allSrcFromTemp(tmpPath):\r\n    fileNames = os.listdir(tmpPath)\r\n    res = list(map(lambda x: tmpPath + '\\\\' + x, fileNames))\r\n    return res\r\n\r\ndef find_allHSD_loads(fileNames, loadKind):\r\n    allHSDs = go(\r\n        fileNames,\r\n        filter(lambda x: loadKind in x),\r\n        list,\r\n    )\r\n    return allHSDs\r\n    \r\ndef select_lastHSD(fileNames, loadKind):\r\n    allHSDs = find_allHSD_loads(fileNames, loadKind)\r\n    allCreatedTimes = list(map(lambda x: os.path.getctime(x), fileNames))\r\n    if len(allHSDs) == 1:\r\n        res = allHSDs[0]\r\n    elif len(allHSDs) > 1:\r\n        res = go(\r\n            zip(allHSDs,allCreatedTimes),list,\r\n            lambda x: sorted(x, key=lambda x: x[1]),\r\n            lambda x: x[-1][0],\r\n        )\r\n    return res\r\n\r\ndef chk_allLastHSDs(fileNames, loadKinds):\r\n    vals = []\r\n    for x in loadKinds:\r\n        try:\r\n            vals.append(select_lastHSD(fileNames, x))\r\n        except:\r\n            vals.append(0)\r\n            \r\n    \r\n    resDict = dict(zip(loadKinds, vals))\r\n    \r\n    return resDict\r\n\r\ndef read_allHSDsJson(loadDict):\r\n    resDict = {}\r\n    for k,v in loadDict.items():\r\n        if v == 0:\r\n            resDict[k] = \"noData\"\r\n        else:\r\n            with open(v, 'r', encoding='utf-8') as f:\r\n                resDict[k] = f.read()\r\n    return resDict\r\n    \r\n    \r\nfileNames = get_allSrcFromTemp(tmpPath)\r\n\r\nframe_forceResult = go(\r\n    fileNames,\r\n    filter(lambda x: \"HSD_\" in x),\r\n    list,\r\n    lambda x: x[-1],\r\n)\r\n\r\nwith open(frame_forceResult, 'r', encoding='utf-8') as f:\r\n    res = f.read()\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "fac94b4483884c87865588cd4a8ec25b",
+      "Inputs": [
+        {
+          "Id": "a7cefc1c28a740218571e61a034a33c4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "375748ed62c041eab791d604178f9a62",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ab879c202eb642b2a4d2da1e4baf2ecd",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ebcbbdc9f66e445b8eee03a0e51e8bc6",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0d6f8672d3944f8cbd677059e795c997",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Data.ParseJSON@string",
+      "Id": "1c375651ab8a4ecb877380b74749b64c",
+      "Inputs": [
+        {
+          "Id": "668e962112674d0795f3fe039825a372",
+          "Name": "json",
+          "Description": "A JSON string\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c7d2fb8c5842496f9d556ed61c5e7dc2",
+          "Name": "result",
+          "Description": "The result type depends on the content of the input string. The result type can be a primitive value (e.g. string, boolean, double), a List, or a Dictionary.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Parse converts an arbitrary JSON string to a value. It is the opposite of JSON.Stringify.\n\nData.ParseJSON (json: string): var[]..[]"
     }
   ],
   "Connectors": [
@@ -3781,6 +3871,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "0cd8eace47814c71be31ce6ec0b55f27",
+      "End": "375748ed62c041eab791d604178f9a62",
+      "Id": "541f029704a549ddaccfcdda83c7a0dc",
+      "IsHidden": "False"
+    },
+    {
       "Start": "5da55e31499a4017aeb887ae464ab37b",
       "End": "065a0961f59c41e7b038bb6e35d96d6c",
       "Id": "1223a28991e14a30b568d3bcb547b53d",
@@ -3853,6 +3949,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "7e86a83b1eee4e8f8a0e3a94d6afa211",
+      "End": "ab879c202eb642b2a4d2da1e4baf2ecd",
+      "Id": "c4af5910aced451e826cb25094417bc1",
+      "IsHidden": "False"
+    },
+    {
       "Start": "73406de133d74b51b2d89a8dff0c1185",
       "End": "28914052c9644eb18632f7905a19ab53",
       "Id": "fbdcdf7e6f654c8fb4faf8e730743a96",
@@ -3868,6 +3970,12 @@
       "Start": "5c811fc5ad014d30b8783742009bc47f",
       "End": "2150ac211caf4f4b907313cfeb53a649",
       "Id": "796e973ed3494fc59a97159158d498d0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5c811fc5ad014d30b8783742009bc47f",
+      "End": "ebcbbdc9f66e445b8eee03a0e51e8bc6",
+      "Id": "e55ac19288d14c3fa673748d43618f9a",
       "IsHidden": "False"
     },
     {
@@ -4024,6 +4132,12 @@
       "Start": "319c2388664242cdb7adc51bbff35a85",
       "End": "dec89e00b00749e68506b9fb50fe7765",
       "Id": "1c8848b7e2244d7a87d4a19d80e417bc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0d6f8672d3944f8cbd677059e795c997",
+      "End": "668e962112674d0795f3fe039825a372",
+      "Id": "b854f23f23954c9cb9aabda1f75a1a51",
       "IsHidden": "False"
     }
   ],
@@ -4333,8 +4447,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -9852.4676842044446,
-        "Y": 1564.1519412247894
+        "X": -9907.5265996150683,
+        "Y": 1636.2981062456081
       },
       {
         "Name": "Code Block",
@@ -4652,7 +4766,7 @@
         "Id": "d851a9e56caf48cb9719d6b17d4d4dc6",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": -7267.0345312301242,
         "Y": 355.30172566625532
       },
@@ -4704,7 +4818,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": -6949.0345312301242,
-        "Y": 355.30172566625532
+        "Y": 353.5499020716303
       },
       {
         "Name": "Code Block",
@@ -4953,8 +5067,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -9858.4492611720179,
-        "Y": 1076.1497738493081
+        "X": -9910.6735571777135,
+        "Y": 1452.7350976566252
       },
       {
         "Name": "loadPart",
@@ -4985,6 +5099,26 @@
         "Excluded": false,
         "X": -8940.0740648555147,
         "Y": -1144.8816671255227
+      },
+      {
+        "Name": "filter the last HSD 파일",
+        "ShowGeometry": true,
+        "Id": "fac94b4483884c87865588cd4a8ec25b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6971.2886757566521,
+        "Y": 880.63597679188183
+      },
+      {
+        "Name": "Data.ParseJSON",
+        "ShowGeometry": true,
+        "Id": "1c375651ab8a4ecb877380b74749b64c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -6550.1307321881031,
+        "Y": 855.34724058295581
       }
     ],
     "Annotations": [
@@ -5159,8 +5293,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 7724.8992890149766,
-    "Y": 1260.8276183190521,
-    "Zoom": 0.81512126862526457
+    "X": 7900.5849163087341,
+    "Y": -812.79668957596164,
+    "Zoom": 1.1304349253191186
   }
 }
