@@ -649,7 +649,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallLvsDict = IN[1]\r\nallBeams = IN[0]\r\nframeNoDict = IN[2]\r\nshortAxisNoDict = IN[3]\r\nallCols = IN[4]\r\ninput_E = IN[5]\r\n# Place your code below this line\r\ndef chck_intsctWithCols(frame, allColsGeo):\r\n    frameLocation = frame\\\r\n                    .GetLocation()\\\r\n                    .ExtendStart(500)\\\r\n                    .ExtendEnd(500)\r\n    res = frameLocation.DoesIntersect(allColsGeo)\r\n    \r\n    return res\r\n\r\ndef filter_allGirders(allBeamsDicts, allCols):\r\n    allColsGeo = go(\r\n        allCols,\r\n        map(lambda x: x.Geometry()[0]),list,\r\n        Solid.ByUnion,\r\n    )\r\n    girders = go(\r\n        allBeamsDicts,list,\r\n        filter(lambda x: chck_intsctWithCols(x, allColsGeo)),\r\n        list,\r\n    )\r\n    beams = go(\r\n        allBeamsDicts,list,\r\n        filter(lambda x: not chck_intsctWithCols(x, allColsGeo)),\r\n        list,\r\n    )\r\n    \r\n    return girders, beams\r\n\r\n\r\n\r\ndef toDict_allGirders(allGirders, frameNoDict, allLvsDict, shortAxisNoDict, input_E):\r\n    \r\n    def find_Ix(elem):\r\n        _tw = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Web Thickness\") * 10\r\n        _tf = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Flange Thickness\") * 10\r\n        _h = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Height\") * 10\r\n        _bf = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Width\") * 10\r\n        \r\n        Ix = (2*(_bf*_tf**3/12+_bf*_tf*((_h-2*_tf)/2+_tf/2)**2)+_tw*(_h-2*_tf)**3/12)\r\n        Ix_revit = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Moment of Inertia strong axis\") * 10**4\r\n        return Ix_revit\r\n    \r\n    def find_numberNameByElem(elem, nameDict, axis):\r\n        tgtDict = {\r\n            \"X\": elem.GetLocation().StartPoint.X,\r\n            \"Y\": elem.GetLocation().StartPoint.Y,\r\n            \"Z\": elem.GetLocation().StartPoint.Z,\r\n        }\r\n        res = []\r\n        tgt = tgtDict[axis]\r\n        for k,v in list(nameDict.items()):\r\n            if v == tgt:\r\n                res.append(k)\r\n        return res\r\n\r\n    def find_numberNameByPt(pt, nameDict, axis):\r\n        tgtDict = {\r\n            \"X\": pt.X,\r\n            \"Y\": pt.Y,\r\n            \"Z\": pt.Z,\r\n        }\r\n        res = []\r\n        tgt = tgtDict[axis]\r\n        for k,v in list(nameDict.items()):\r\n            if v == tgt:\r\n                res.append(k)\r\n        return res\r\n\r\n    def find_nodeName(elem, frameNoDict, shortAxisNoDict, allLvsDict):\r\n        sttPt = elem.GetLocation().StartPoint\r\n        \r\n        endPt = elem.GetLocation().EndPoint\r\n        \r\n        name_stt_X = find_numberNameByPt(sttPt, frameNoDict, \"X\")[0]\r\n        name_stt_Y = find_numberNameByPt(sttPt, shortAxisNoDict, \"Y\")[0]\r\n        name_stt_Z = find_numberNameByPt(sttPt, allLvsDict, \"Z\")[0]\r\n        name_stt = \"1\" + name_stt_X + name_stt_Y + name_stt_Z\r\n        \r\n        sttNodeDict = dict([(\"name\",name_stt), (\"Y\",sttPt.Y), (\"Z\",sttPt.Z)])\r\n        \r\n        name_end_X = find_numberNameByPt(endPt, frameNoDict, \"X\")[0]\r\n        name_end_Y = find_numberNameByPt(endPt, shortAxisNoDict, \"Y\")[0]\r\n        name_end_Z = find_numberNameByPt(endPt, allLvsDict, \"Z\")[0]\r\n        name_end = \"1\" + name_end_X + name_end_Y + name_end_Z\r\n        \r\n        endNodeDict = dict([(\"name\",name_end), (\"Y\",endPt.Y), (\"Z\",endPt.Z)])\r\n        \r\n        return sttNodeDict, endNodeDict\r\n        \r\n    def find_elemDirection(line):\r\n        lineVector = line.Direction.Normalized()\r\n        if abs(lineVector.X) > 0:\r\n            res = \"longAxis\"\r\n        elif abs(lineVector.Y) > 0:\r\n            res = \"shortAxis\"\r\n        return res\r\n\r\n    def convertElementName(elem, replaceIDX, replaceChar):\r\n        element_name = list(find_nodeName(elem, frameNoDict, shortAxisNoDict, allLvsDict)[0][\"name\"])\r\n        element_name[replaceIDX] = replaceChar\r\n        element_name_modified = \"\".join(element_name)\r\n        return element_name_modified\r\n\r\n    resDict = go(\r\n        allGirders,\r\n        map( lambda x: {\r\n            \"elem\": x,\r\n            \"element_name\": convertElementName(x, 0, \"3\"),\r\n            \"sectionProp\":{\r\n                \"name\": x.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\"),\r\n                \"sectionRotating\": x.GetParameterValueByName(\"Cross-Section Rotation\"),\r\n                \"A\": x.GetParameterValueByName(\"Family and Type\")\\\r\n                .GetParameterValueByName(\"Section Area\") * 10**2,\r\n                \"I\": find_Ix(x),\r\n                \"E\": input_E,\r\n            },\r\n            \"GUID\": x.GetParameterValueByName(\"IfcGUID\"),\r\n            \"role\": \"Girders\",\r\n            \"location_line\": x.GetLocation(),\r\n            # 노드 추가\r\n            \"startNode\": find_nodeName(x, frameNoDict, shortAxisNoDict, allLvsDict)[0],\r\n            \"endNode\": find_nodeName(x, frameNoDict, shortAxisNoDict, allLvsDict)[1],\r\n            \"planeDirection\": find_elemDirection(x.GetLocation()),\r\n            \"length\": x.GetLocation().Length,\r\n            \"asgned_srfs\": [],\r\n            \"asgned_area\": 0,\r\n            \"frameNo\": find_numberNameByElem(x, frameNoDict, \"X\")[0],\r\n            \"lvBelong\": find_numberNameByElem(x, allLvsDict, \"Z\")[0],\r\n            \"sideBelong\": [] ,\r\n        } )\r\n    )\r\n    return resDict\r\n\r\n#allBeamsDicts = toDict_allBeams(allBeams, frameNoDict, allLvsDict)\r\nallGirders = filter_allGirders(allBeams, allCols)[0]\r\nallBeams = filter_allGirders(allBeams, allCols)[1]\r\n\r\nallGirdersDicts = toDict_allGirders(allGirders, frameNoDict, allLvsDict, shortAxisNoDict, input_E)\r\n\r\n#allGirdersDicts_X = list(filter(lambda x: x[\"planeDirection\"]==\"shortAxis\", allGirdersDicts))\r\n\r\nres = allGirdersDicts, allBeams\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallLvsDict = IN[1]\r\nallBeams = IN[0]\r\nframeNoDict = IN[2]\r\nshortAxisNoDict = IN[3]\r\nallCols = IN[4]\r\ninput_E = IN[5]\r\n# Place your code below this line\r\ndef chck_intsctWithCols(frame, allColsGeo):\r\n    frameLocation = frame\\\r\n                    .GetLocation()\\\r\n                    .ExtendStart(500)\\\r\n                    .ExtendEnd(500)\r\n    res = frameLocation.DoesIntersect(allColsGeo)\r\n    \r\n    return res\r\n\r\ndef filter_allGirders(allBeamsDicts, allCols):\r\n    allColsGeo = go(\r\n        allCols,\r\n        map(lambda x: x.Geometry()[0]),list,\r\n        Solid.ByUnion,\r\n    )\r\n    girders = go(\r\n        allBeamsDicts,list,\r\n        filter(lambda x: chck_intsctWithCols(x, allColsGeo)),\r\n        list,\r\n    )\r\n    beams = go(\r\n        allBeamsDicts,list,\r\n        filter(lambda x: not chck_intsctWithCols(x, allColsGeo)),\r\n        list,\r\n    )\r\n    \r\n    return girders, beams\r\n\r\n\r\n\r\ndef toDict_allGirders(allGirders, frameNoDict, allLvsDict, shortAxisNoDict, input_E):\r\n    \r\n    def find_Ix(elem):\r\n        _tw = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Web Thickness\") * 10\r\n        _tf = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Flange Thickness\") * 10\r\n        _h = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Height\") * 10\r\n        _bf = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Width\") * 10\r\n        \r\n        Ix = (2*(_bf*_tf**3/12+_bf*_tf*((_h-2*_tf)/2+_tf/2)**2)+_tw*(_h-2*_tf)**3/12)\r\n        Ix_revit = elem.GetParameterValueByName(\"Family and Type\")\\\r\n            .GetParameterValueByName(\"Moment of Inertia strong axis\") * 10**4\r\n        return Ix_revit\r\n    \r\n    def find_numberNameByElem(elem, nameDict, axis):\r\n        tgtDict = {\r\n            \"X\": elem.GetLocation().StartPoint.X,\r\n            \"Y\": elem.GetLocation().StartPoint.Y,\r\n            \"Z\": min(\r\n                [\r\n                elem.GetLocation().StartPoint.Z,\r\n                elem.GetLocation().EndPoint.Z\r\n                ]),\r\n                \r\n        }\r\n        res = []\r\n        tgt = tgtDict[axis]\r\n        for k,v in list(nameDict.items()):\r\n            if v == tgt:\r\n                res.append(k)\r\n        return res\r\n\r\n    def find_numberNameByPt(pt, nameDict, axis):\r\n        tgtDict = {\r\n            \"X\": pt.X,\r\n            \"Y\": pt.Y,\r\n            \"Z\": pt.Z,\r\n        }\r\n        res = []\r\n        tgt = tgtDict[axis]\r\n        for k,v in list(nameDict.items()):\r\n            if v == tgt:\r\n                res.append(k)\r\n        return res\r\n\r\n    def find_nodeName(elem, frameNoDict, shortAxisNoDict, allLvsDict):\r\n        sttPt = elem.GetLocation().StartPoint\r\n        \r\n        endPt = elem.GetLocation().EndPoint\r\n        \r\n        name_stt_X = find_numberNameByPt(sttPt, frameNoDict, \"X\")[0]\r\n        name_stt_Y = find_numberNameByPt(sttPt, shortAxisNoDict, \"Y\")[0]\r\n        name_stt_Z = find_numberNameByPt(sttPt, allLvsDict, \"Z\")[0]\r\n        name_stt = \"1\" + name_stt_X + name_stt_Y + name_stt_Z\r\n        \r\n        sttNodeDict = dict([(\"name\",name_stt), (\"Y\",sttPt.Y), (\"Z\",sttPt.Z)])\r\n        \r\n        name_end_X = find_numberNameByPt(endPt, frameNoDict, \"X\")[0]\r\n        name_end_Y = find_numberNameByPt(endPt, shortAxisNoDict, \"Y\")[0]\r\n        name_end_Z = find_numberNameByPt(endPt, allLvsDict, \"Z\")[0]\r\n        name_end = \"1\" + name_end_X + name_end_Y + name_end_Z\r\n        \r\n        endNodeDict = dict([(\"name\",name_end), (\"Y\",endPt.Y), (\"Z\",endPt.Z)])\r\n        \r\n        return sttNodeDict, endNodeDict\r\n        \r\n    def find_elemDirection(line):\r\n        lineVector = line.Direction.Normalized()\r\n        if abs(lineVector.X) > 0:\r\n            res = \"longAxis\"\r\n        elif abs(lineVector.Y) > 0:\r\n            res = \"shortAxis\"\r\n        return res\r\n\r\n    def convertElementName(elem, replaceIDX, replaceChar):\r\n        element_name = list(find_nodeName(elem, frameNoDict, shortAxisNoDict, allLvsDict)[0][\"name\"])\r\n        element_name[replaceIDX] = replaceChar\r\n        element_name_modified = \"\".join(element_name)\r\n        return element_name_modified\r\n\r\n    resDict = go(\r\n        allGirders,\r\n        map( lambda x: {\r\n            \"elem\": x,\r\n            \"element_name\": convertElementName(x, 0, \"3\"),\r\n            \"sectionProp\":{\r\n                \"name\": x.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\"),\r\n                \"sectionRotating\": x.GetParameterValueByName(\"Cross-Section Rotation\"),\r\n                \"A\": x.GetParameterValueByName(\"Family and Type\")\\\r\n                .GetParameterValueByName(\"Section Area\") * 10**2,\r\n                \"I\": find_Ix(x),\r\n                \"E\": input_E,\r\n            },\r\n            \"GUID\": x.GetParameterValueByName(\"IfcGUID\"),\r\n            \"role\": \"Girders\",\r\n            \"location_line\": x.GetLocation(),\r\n            # 노드 추가\r\n            \"startNode\": find_nodeName(x, frameNoDict, shortAxisNoDict, allLvsDict)[0],\r\n            \"endNode\": find_nodeName(x, frameNoDict, shortAxisNoDict, allLvsDict)[1],\r\n            \"planeDirection\": find_elemDirection(x.GetLocation()),\r\n            \"length\": x.GetLocation().Length,\r\n            \"asgned_srfs\": [],\r\n            \"asgned_area\": 0,\r\n            \"frameNo\": find_numberNameByElem(x, frameNoDict, \"X\")[0],\r\n            \"lvBelong\": find_numberNameByElem(x, allLvsDict, \"Z\")[0],\r\n            \"sideBelong\": [] ,\r\n        } )\r\n    )\r\n    return resDict\r\n\r\n#allBeamsDicts = toDict_allBeams(allBeams, frameNoDict, allLvsDict)\r\nallGirders = filter_allGirders(allBeams, allCols)[0]\r\nallBeams = filter_allGirders(allBeams, allCols)[1]\r\n\r\nallGirdersDicts = toDict_allGirders(allGirders, frameNoDict, allLvsDict, shortAxisNoDict, input_E)\r\n\r\n#allGirdersDicts_X = list(filter(lambda x: x[\"planeDirection\"]==\"shortAxis\", allGirdersDicts))\r\n\r\nres = allGirdersDicts, allBeams\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2812,12 +2812,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "\"하중분배결과\";",
+      "Code": "\"HSD_load distribution\";",
       "Id": "66d2c27e6c0241ca948462a9c0506bc1",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "6290dff3870b425dbaff931bfbcc6eed",
+          "Id": "7589e174ec474bceb8f335db25a5c93c",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -2982,7 +2982,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nframeDict_forAllLv = IN[0]\r\nallCols = IN[1]\r\nDL_forAllLv = IN[2]\r\n# Place your code below this line\r\nallLvsDict_DL = go(\r\n    frameDict_forAllLv,\r\n    map(lambda DictsPerLv: \r\n        set(map(lambda d: d[\"lvBelong\"], DictsPerLv))\r\n    ), list,\r\n    lambda x: chain(*x), list,sorted,\r\n    lambda x: dict(zip(x, DL_forAllLv)),\r\n)\r\n\r\ndef calcLoad(elemDict, loadKind, loadType, allLvsLoadDict):\r\n    elemLv = elemDict[\"lvBelong\"]\r\n    asgned_area = elemDict[\"asgned_area\"]\r\n    DL_unitValueforElem = allLvsLoadDict[elemLv]\r\n    calcRes = DL_unitValueforElem * asgned_area / (1000) \r\n    resDict = {\r\n        \"load_type\": loadType,\r\n        \"wx\": 0,\r\n        \"wy\": -calcRes,\r\n    }\r\n    \r\n    elemDict[\"load\"][loadKind] = resDict\r\n    \r\n    return elemDict\r\n\r\ndef calcLoadPerLv(elemDictsPerLv, loadKind, loadType, allLvsLoadDict):\r\n    return list(map(lambda x: calcLoad(x, loadKind, loadType, allLvsLoadDict), elemDictsPerLv))\r\n\r\ndef calcLoad_forAllLv(elemDicts_forAllLv, loadKind, loadType, allLvsLoadDict):\r\n    return list(map(lambda x: calcLoadPerLv(x, loadKind, loadType, allLvsLoadDict), elemDicts_forAllLv))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = calcLoad_forAllLv(frameDict_forAllLv, \"LL\", \"uniform\", allLvsDict_DL)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nframeDict_forAllLv = IN[0]\r\nallCols = IN[1]\r\nLL_forAllLv = IN[2]\r\n# Place your code below this line\r\nallLvsDict_LL = go(\r\n    frameDict_forAllLv,\r\n    map(lambda DictsPerLv: \r\n        set(map(lambda d: d[\"lvBelong\"], DictsPerLv))\r\n    ), list,\r\n    lambda x: chain(*x), list,sorted,\r\n    lambda x: dict(zip(x, LL_forAllLv)),\r\n)\r\n\r\ndef calcLoad(elemDict, loadKind, loadType, allLvsLoadDict):\r\n    elemLv = elemDict[\"lvBelong\"]\r\n    asgned_area = elemDict[\"asgned_area\"]\r\n    LL_unitValueforElem = allLvsLoadDict[elemLv]\r\n    calcRes = LL_unitValueforElem * asgned_area / (1000) \r\n    resDict = {\r\n        \"load_type\": loadType,\r\n        \"wx\": 0,\r\n        \"wy\": -calcRes,\r\n    }\r\n    \r\n    elemDict[\"load\"][loadKind] = resDict\r\n    \r\n    return elemDict\r\n\r\ndef calcLoadPerLv(elemDictsPerLv, loadKind, loadType, allLvsLoadDict):\r\n    return list(map(lambda x: calcLoad(x, loadKind, loadType, allLvsLoadDict), elemDictsPerLv))\r\n\r\ndef calcLoad_forAllLv(elemDicts_forAllLv, loadKind, loadType, allLvsLoadDict):\r\n    return list(map(lambda x: calcLoadPerLv(x, loadKind, loadType, allLvsLoadDict), elemDicts_forAllLv))\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = calcLoad_forAllLv(frameDict_forAllLv, \"LL\", \"uniform\", allLvsDict_LL)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3153,11 +3153,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[\"location_line\"];",
+      "Code": "i[\"asgned_srfs\"];",
       "Id": "2ea7dd46ca95432a8dc4f5e90a6ec274",
       "Inputs": [
         {
-          "Id": "fe5064de6bcc4cc29e24d482dc2a546b",
+          "Id": "07a802f25e064081aaecd5e2571c5583",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -3168,7 +3168,7 @@
       ],
       "Outputs": [
         {
-          "Id": "bb50849a0c84450da84d02aafa9a8bbd",
+          "Id": "19597a36517c4067b593b0ff1311e8cf",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3429,6 +3429,672 @@
       ],
       "Replication": "Auto",
       "Description": "Get an existing element's location\n\nElement.GetLocation ( ): Geometry"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "4e3206674a054bd493a86a047713f78a",
+      "Inputs": [
+        {
+          "Id": "b29311cc13124207bd75f40c4686897d",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6f04ba8c192b4769998aa76446734d68",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"element_name\"];",
+      "Id": "ef2dd3b5e2414ad8a0036a7c058ebc04",
+      "Inputs": [
+        {
+          "Id": "31f25e6a5c1d4b72a3c72e442de26311",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "03a658596b5046f5bf038889ba78eab9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"element_name\"];",
+      "Id": "26a867b589784f87936bf616bd524613",
+      "Inputs": [
+        {
+          "Id": "f894b459a84b4df78686b5086037fc9f",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d847387ed46247e68222259aab688f47",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.GroupByKey@var[]..[],var[]..[]",
+      "Id": "85e9c3560ba84b9f8675acf4b315050d",
+      "Inputs": [
+        {
+          "Id": "fc51fc3f03654cf782f10b2e796c708e",
+          "Name": "list",
+          "Description": "List of items to group as sublists\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "10cc323609d6405ca768ac9feca8f61c",
+          "Name": "keys",
+          "Description": "Key values, one per item in the input list, used for grouping the items\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d3e681d5f24c43adaa7211db4dc11f7e",
+          "Name": "groups",
+          "Description": "list of sublists, with items grouped by like key values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6145e9a30be64ce28c6e8058341664a4",
+          "Name": "uniqueKeys",
+          "Description": "key value corresponding to each group",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Group items into sub-lists based on their like key values\n\nList.GroupByKey (list: var[]..[], keys: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"frameNo\"];",
+      "Id": "8eae6cebb549424ba06d76dff9983fa5",
+      "Inputs": [
+        {
+          "Id": "0adc5dfebf224feb9c9724f9482b072a",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4dd39a9d1b94457c940f34cc892a401d",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"location_line\"];",
+      "Id": "a691dd34b6104ab1b2df5811c312d8ae",
+      "Inputs": [
+        {
+          "Id": "ad9e48c3c3a146de893ff2c87c0ff4e1",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "94f936235d61404c9ddff38bb68dfaec",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.FilterByBoolMask@var[]..[],var[]..[]",
+      "Id": "93e031a10903451da1a02754815d8de1",
+      "Inputs": [
+        {
+          "Id": "92a7587465ee46808f82264b84ab297e",
+          "Name": "list",
+          "Description": "List to filter.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b05103fb83d04578b708fa1699ad92c4",
+          "Name": "mask",
+          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "330d6326be1c4c36baa0061b555567cc",
+          "Name": "in",
+          "Description": "Items whose mask index is true.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e861010426ba47099d6c40d798ee80c8",
+          "Name": "out",
+          "Description": "Items whose mask index is false.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"role\"]==\"Girders\";",
+      "Id": "b668ef0df73b4916835e10874a0691f4",
+      "Inputs": [
+        {
+          "Id": "d21af779886e4737b96c96e67efbe381",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7471b6c07644480baae8ed8d0fdfc26e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[4];",
+      "Id": "4437e757224c40d2a6081ab7014d7669",
+      "Inputs": [
+        {
+          "Id": "d0618090f6194c19a679b606c24693b9",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9f77f72ee9fc42ff86c4b8dded9057aa",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[5];",
+      "Id": "22c8849972a54b359b1a98d94d66c0fa",
+      "Inputs": [
+        {
+          "Id": "defd7cc4585c4fde9aef7f50577b5e2d",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "53faf92710c7404d9ccd1aee75e3636a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[5];",
+      "Id": "5bf036b6676a46c982bbbc4bf7a0c66d",
+      "Inputs": [
+        {
+          "Id": "2cb1fc7896fd49808e5f183a3b13ae75",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b45d899af3174917b608ef99c64e1f3e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[4];",
+      "Id": "bfd1965cad5c4988b3ed716b973318f5",
+      "Inputs": [
+        {
+          "Id": "5683b7c333174daba7a26f179bce7d4b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d60d2333921b4c6caf3f05289bcf9bcd",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"load\"][\"DL\"];",
+      "Id": "d3cea1ffdfa740e48f3df9b235400c32",
+      "Inputs": [
+        {
+          "Id": "904a15b7f8ce4390bf2b10b42b3bc8d6",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a755b7cf58ba4802a92221579bad026e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"load\"][\"DL\"];",
+      "Id": "ddaf55f66107407790f017113181a039",
+      "Inputs": [
+        {
+          "Id": "be946254ff3b4377b94feeadd2993d63",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b582d5fa75354d908aa89151f356851b",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"lvBelong\"];",
+      "Id": "0a71d2376e924881ab45824c329527b3",
+      "Inputs": [
+        {
+          "Id": "0f77a95dba534c90ba65afdc25531f95",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "bb1ed3834ebe4f03b34a5d9fc11542b0",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"lvBelong\"];",
+      "Id": "057859739ffe4fed995a397af706e0b9",
+      "Inputs": [
+        {
+          "Id": "9a07e0b4efd648abbc6282543fb0af0a",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "739528790b164618bfcc1ed71f84e4d5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallBeamsLocations = IN[0]\r\nallGirdersDicts = IN[1]\r\n# Place your code below this line\r\ndef extendBeamLocations(loc_crv, gap):\r\n    return loc_crv.ExtendStart(gap).ExtendEnd(gap)\r\n\r\ndef find_segmentCnt(elemDict, allBeamsLocations):\r\n    elemLine = elemDict[\"location_line\"]\r\n    res = elemLine.IntersectAll(allBeamsLocations)\r\n    return res\r\n\r\nextended_allBeamsLocation = map(lambda x: extendBeamLocations(x,100), allBeamsLocations)\r\n\r\n#res = []\r\n#for elemDict in allGirdersDicts:\r\n#    eline = elemDict[\"location_line\"]\r\n#    res.append(eline.IntersectAll(extended_allBeamsLocation))\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = list(map(lambda x: find_segmentCnt(x, extended_allBeamsLocation), allGirdersDicts))",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "71f92ab554524c5b9a9bc1a7e139cc12",
+      "Inputs": [
+        {
+          "Id": "7f1bb52b9ca74d9babddc51f0bc1e50f",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8e90e1933de14d45b8c528dae2b42309",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4e8318b8ef1a434b8d22301e25815a09",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Geometry.IntersectAll@Autodesk.DesignScript.Geometry.Geometry[]",
+      "Id": "8063a9381413469e9fc6f896cfb77b58",
+      "Inputs": [
+        {
+          "Id": "7d5acec527c44d25b29f7b5529a87636",
+          "Name": "geometry",
+          "Description": "Autodesk.DesignScript.Geometry.Geometry",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "69180c7247514a2ebe210456a8e244f6",
+          "Name": "others",
+          "Description": "Geometry[]",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2a8a420dc1344fadbb8f260c78384dd4",
+          "Name": "Geometry[]",
+          "Description": "Geometry[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Shortest",
+      "Description": "Get the intersection of Geometry for this object and a collection of other Geometries. Finds common geometry of all participants.\n\nGeometry.IntersectAll (others: Geometry[]): Geometry[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"location_line\"];",
+      "Id": "a944554d698041768eb04fba8f04b724",
+      "Inputs": [
+        {
+          "Id": "1408a732d5434bf2b854e99e9dd8d2f7",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ee449202a2464e6dae8b0a96444d542d",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.ExtendStart@double",
+      "Id": "29e8b42ffa9241d49a9b5e87d9cf32d6",
+      "Inputs": [
+        {
+          "Id": "d821b42e519444d8be9db5bbb2cadd0f",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9fe10e9ee0c84e75a052a73ed2ab6aca",
+          "Name": "distance",
+          "Description": "Distance to extend\n\ndouble\nDefault value : 1",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2203bfafaaf5443faca9b189c8417451",
+          "Name": "Curve",
+          "Description": "The extended Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Extend a Curve by a given distance on its start side. Closed curves like Circles and Ellipses cannot be extended.\n\nCurve.ExtendStart (distance: double = 1): Curve"
     }
   ],
   "Connectors": [
@@ -3694,6 +4360,18 @@
       "Start": "7de3847a8b8d47cc912a19320c667a04",
       "End": "0aeac3b5f47c4fa5967eb501d1f3e954",
       "Id": "2c0f7073341640ff9fdd29487854a28a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7de3847a8b8d47cc912a19320c667a04",
+      "End": "fc51fc3f03654cf782f10b2e796c708e",
+      "Id": "c8e0e959c459466ab2923d3281482e28",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7de3847a8b8d47cc912a19320c667a04",
+      "End": "0adc5dfebf224feb9c9724f9482b072a",
+      "Id": "1f6b33fa4aa344dfae85fd4d67f930eb",
       "IsHidden": "False"
     },
     {
@@ -4033,9 +4711,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "6290dff3870b425dbaff931bfbcc6eed",
+      "Start": "7589e174ec474bceb8f335db25a5c93c",
       "End": "47be24d7755b4e8ebcaab2d9cd66a562",
-      "Id": "a84f16a0fbab458b8b11687a4acb872c",
+      "Id": "86b70379cb5b463cbcc65b0a58d0be3e",
       "IsHidden": "False"
     },
     {
@@ -4076,8 +4754,8 @@
     },
     {
       "Start": "7c504c5a37864d389ce62f903eb33ff8",
-      "End": "fe5064de6bcc4cc29e24d482dc2a546b",
-      "Id": "bc39c78638944ad0bfea59c2303dee19",
+      "End": "07a802f25e064081aaecd5e2571c5583",
+      "Id": "7aa24ffe62ff487a91105cfa9c45b592",
       "IsHidden": "False"
     },
     {
@@ -4129,9 +4807,135 @@
       "IsHidden": "False"
     },
     {
+      "Start": "f054f73462924867883312479fa27389",
+      "End": "8e90e1933de14d45b8c528dae2b42309",
+      "Id": "b8dcd0ef8e324824b48b6ebde4835dab",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f054f73462924867883312479fa27389",
+      "End": "1408a732d5434bf2b854e99e9dd8d2f7",
+      "Id": "8c4e1f42b4f24269ba2ca25259d8cdf6",
+      "IsHidden": "False"
+    },
+    {
       "Start": "ccd01688b5db4fa1a625631534d04eda",
       "End": "7dbaae0278494d20b22c2a772b5801f7",
-      "Id": "8b38b8f91e8b46aba2c9ba75c8c71fe3",
+      "Id": "124dd3e31b4440ec87fdef7795347ffa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e5a209c8022f45669b0aea0259352c1d",
+      "End": "7f1bb52b9ca74d9babddc51f0bc1e50f",
+      "Id": "cdff176d57c24df299d44675f3c66556",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e5a209c8022f45669b0aea0259352c1d",
+      "End": "69180c7247514a2ebe210456a8e244f6",
+      "Id": "1c5a644eff77431b948251ca3262cf69",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6f04ba8c192b4769998aa76446734d68",
+      "End": "31f25e6a5c1d4b72a3c72e442de26311",
+      "Id": "24389d2711694cd9b32d24e99b5afced",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6f04ba8c192b4769998aa76446734d68",
+      "End": "f894b459a84b4df78686b5086037fc9f",
+      "Id": "aa6938c426c345388be4b2154d2c1b2f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6f04ba8c192b4769998aa76446734d68",
+      "End": "92a7587465ee46808f82264b84ab297e",
+      "Id": "467f3c3a151c4878b64a443780c1e764",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6f04ba8c192b4769998aa76446734d68",
+      "End": "d21af779886e4737b96c96e67efbe381",
+      "Id": "10eef0adceaf40358dd7d80dc4e099be",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d3e681d5f24c43adaa7211db4dc11f7e",
+      "End": "b29311cc13124207bd75f40c4686897d",
+      "Id": "1c37f92cc0dd44edbeca599dccaab9c1",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "4dd39a9d1b94457c940f34cc892a401d",
+      "End": "10cc323609d6405ca768ac9feca8f61c",
+      "Id": "080b9c9eb28143ccbe17bcb3d55400c8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "94f936235d61404c9ddff38bb68dfaec",
+      "End": "d0618090f6194c19a679b606c24693b9",
+      "Id": "623765b8460d410ca2230531788934f5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "94f936235d61404c9ddff38bb68dfaec",
+      "End": "defd7cc4585c4fde9aef7f50577b5e2d",
+      "Id": "e039da8e638347eea94bac6a51b37c93",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "330d6326be1c4c36baa0061b555567cc",
+      "End": "ad9e48c3c3a146de893ff2c87c0ff4e1",
+      "Id": "6b0eec24fd9a43abb9cfb433997a1136",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "330d6326be1c4c36baa0061b555567cc",
+      "End": "5683b7c333174daba7a26f179bce7d4b",
+      "Id": "38a256c59059417c8585ca5807c9ce7c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "330d6326be1c4c36baa0061b555567cc",
+      "End": "2cb1fc7896fd49808e5f183a3b13ae75",
+      "Id": "4b1a8e013c1d44b4bff855c5a7f89a48",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7471b6c07644480baae8ed8d0fdfc26e",
+      "End": "b05103fb83d04578b708fa1699ad92c4",
+      "Id": "e815fe7072d64cf499a4bbced9fe683b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b45d899af3174917b608ef99c64e1f3e",
+      "End": "be946254ff3b4377b94feeadd2993d63",
+      "Id": "fc85950d92b64151823c345d6a4b8e65",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b45d899af3174917b608ef99c64e1f3e",
+      "End": "9a07e0b4efd648abbc6282543fb0af0a",
+      "Id": "1c619e0ca6f84925ae9c685eb9360122",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d60d2333921b4c6caf3f05289bcf9bcd",
+      "End": "904a15b7f8ce4390bf2b10b42b3bc8d6",
+      "Id": "7e5997682b594746bc9eeddb6481007e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d60d2333921b4c6caf3f05289bcf9bcd",
+      "End": "0f77a95dba534c90ba65afdc25531f95",
+      "Id": "de03f81436ca4f1f9ca74afde0a5ec5a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ee449202a2464e6dae8b0a96444d542d",
+      "End": "7d5acec527c44d25b29f7b5529a87636",
+      "Id": "8095a6b7f0f94632b9b6d7fa309e52c8",
       "IsHidden": "False"
     }
   ],
@@ -4172,15 +4976,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 16188.158203125,
-      "EyeY": 25406.171875,
-      "EyeZ": 17865.45703125,
-      "LookX": -25679.16796875,
-      "LookY": -44455.41796875,
-      "LookZ": -33696.34375,
-      "UpX": -0.33894699811935425,
-      "UpY": 0.8290325403213501,
-      "UpZ": -0.44476965069770813
+      "EyeX": -19877.7841796875,
+      "EyeY": 23095.03125,
+      "EyeZ": 12024.09765625,
+      "LookX": 23374.880859375,
+      "LookY": -36005.375,
+      "LookZ": -34408.16015625,
+      "UpX": 0.26813837885856628,
+      "UpY": 0.87881267070770264,
+      "UpZ": -0.39470243453979492
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -4191,8 +4995,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4091.9847336709581,
-        "Y": -1017.2315043651117
+        "X": -5123.2555045559384,
+        "Y": -1108.2259841490807
       },
       {
         "Name": "Categories",
@@ -4201,8 +5005,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4448.9847336709572,
-        "Y": -1017.2315043651117
+        "X": -5480.2555045559375,
+        "Y": -1108.2259841490807
       },
       {
         "Name": "Rooms By Status",
@@ -4311,8 +5115,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4165.9074966715079,
-        "Y": -423.75229833403364
+        "X": -5197.1782675564882,
+        "Y": -514.74677811800257
       },
       {
         "Name": "Categories",
@@ -4321,8 +5125,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4488.9390866688427,
-        "Y": -421.96448728126165
+        "X": -5520.209857553823,
+        "Y": -512.95896706523058
       },
       {
         "Name": "allCols",
@@ -4331,8 +5135,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3349.3333326333577,
-        "Y": -368.33646162075911
+        "X": -4380.604103518338,
+        "Y": -459.33094140472804
       },
       {
         "Name": "toDict_allCols",
@@ -4341,8 +5145,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1626.5328440469052,
-        "Y": -212.60287439297758
+        "X": -2657.8036149318855,
+        "Y": -303.59735417694651
       },
       {
         "Name": "getLevelsDict",
@@ -4351,8 +5155,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2437.0727731613533,
-        "Y": -841.59545098531657
+        "X": -3468.3435440463336,
+        "Y": -932.5899307692855
       },
       {
         "Name": "toDict_allBeams",
@@ -4361,8 +5165,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1638.666230690048,
-        "Y": -817.71743926742647
+        "X": -2669.9370015750283,
+        "Y": -908.7119190513954
       },
       {
         "Name": "get_frameNoDict(장축방향)",
@@ -4371,8 +5175,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2510.3271067403111,
-        "Y": -555.44994174770818
+        "X": -3541.5978776252914,
+        "Y": -646.44442153167711
       },
       {
         "Name": "find_longitudinalAxis(건물의 장축방향 벡터)",
@@ -4381,8 +5185,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2982.4539321834854,
-        "Y": -534.31477536134344
+        "X": -4013.7247030684657,
+        "Y": -625.30925514531236
       },
       {
         "Name": "longAxis",
@@ -4391,8 +5195,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2164.9759377252522,
-        "Y": -640.54828123666061
+        "X": -3196.2467086102324,
+        "Y": -731.54276102062954
       },
       {
         "Name": "shortAxis",
@@ -4401,8 +5205,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2160.8138946880763,
-        "Y": -478.66382662551268
+        "X": -3192.0846655730566,
+        "Y": -569.65830640948161
       },
       {
         "Name": "Code Block",
@@ -4411,8 +5215,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2461.1236022619132,
-        "Y": -1030.8685165164006
+        "X": -3492.3943731468935,
+        "Y": -1121.8629963003696
       },
       {
         "Name": "allCols",
@@ -4421,8 +5225,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2304.8420422174995,
-        "Y": -172.325806807851
+        "X": -3336.11281310248,
+        "Y": -263.32028659181992
       },
       {
         "Name": "탄성계수",
@@ -4431,8 +5235,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2353.3437604117494,
-        "Y": 125.38655176216184
+        "X": -3384.6145312967296,
+        "Y": 34.392071978192917
       },
       {
         "Name": "콘크리트 강도 선택 (MPa)",
@@ -4471,8 +5275,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 161.07309108284329,
-        "Y": -843.242400808623
+        "X": 127.65242153896651,
+        "Y": -792.49249520495823
       },
       {
         "Name": "DL 하중 값 계산",
@@ -4911,8 +5715,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6334.5448258154811,
-        "Y": -1144.9937800743999
+        "X": 5883.8008201839,
+        "Y": -1555.4927852031612
       },
       {
         "Name": "하중분배결과파일 이름 생성",
@@ -4931,8 +5735,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 6401.9107154109361,
-        "Y": -960.93181721530209
+        "X": 6023.3545494916516,
+        "Y": -1143.785833585752
       },
       {
         "Name": "Code Block",
@@ -5011,8 +5815,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 118.07612405033876,
-        "Y": -386.56487964486917
+        "X": 119.31392662603787,
+        "Y": -369.23564358508133
       },
       {
         "Name": "Code Block",
@@ -5101,8 +5905,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1357.5393070389175,
-        "Y": -746.93752343409665
+        "X": -2394.6060683510291,
+        "Y": -759.52219105298559
       },
       {
         "Name": "all Beams",
@@ -5111,8 +5915,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1718.0221724561286,
-        "Y": -1413.4010801752083
+        "X": -2363.4532104857522,
+        "Y": -1392.9405439143814
       },
       {
         "Name": "Element.GetLocation",
@@ -5121,8 +5925,208 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1354.8391021067052,
-        "Y": -1350.5530850891687
+        "X": -2309.6813414954117,
+        "Y": -1206.3504236888684
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "4e3206674a054bd493a86a047713f78a",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4800.8971465840877,
+        "Y": 433.38067570829429
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ef2dd3b5e2414ad8a0036a7c058ebc04",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5176.1225446053568,
+        "Y": 133.04153867563463
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "26a867b589784f87936bf616bd524613",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5179.42134522675,
+        "Y": 598.00434304818327
+      },
+      {
+        "Name": "List.GroupByKey",
+        "ShowGeometry": true,
+        "Id": "85e9c3560ba84b9f8675acf4b315050d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4257.8791939530129,
+        "Y": 424.32725909110968
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "8eae6cebb549424ba06d76dff9983fa5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 3945.8791939530129,
+        "Y": 458.15475909110967
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "a691dd34b6104ab1b2df5811c312d8ae",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6224.5605737685728,
+        "Y": 907.82307197705654
+      },
+      {
+        "Name": "List.FilterByBoolMask",
+        "ShowGeometry": true,
+        "Id": "93e031a10903451da1a02754815d8de1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5795.2223474757893,
+        "Y": 797.48878840320879
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "b668ef0df73b4916835e10874a0691f4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 5478.4262854582794,
+        "Y": 887.64018840569781
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "4437e757224c40d2a6081ab7014d7669",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6697.8995177492752,
+        "Y": 837.705237913092
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "22c8849972a54b359b1a98d94d66c0fa",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6736.6371269839556,
+        "Y": 1028.7378120745
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "5bf036b6676a46c982bbbc4bf7a0c66d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6291.0277766092122,
+        "Y": 1690.0068991134744
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "bfd1965cad5c4988b3ed716b973318f5",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6286.3146722446691,
+        "Y": 1259.8378227608273
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "d3cea1ffdfa740e48f3df9b235400c32",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6589.3404064024071,
+        "Y": 1374.5898404551126
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ddaf55f66107407790f017113181a039",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6583.3197161682865,
+        "Y": 1834.4276901176693
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "0a71d2376e924881ab45824c329527b3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6588.9980221734668,
+        "Y": 1200.8045926482241
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "057859739ffe4fed995a397af706e0b9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 6589.7105339084692,
+        "Y": 1657.5718468280961
+      },
+      {
+        "Name": "add_divSegment_Info",
+        "ShowGeometry": true,
+        "Id": "71f92ab554524c5b9a9bc1a7e139cc12",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1947.9485579655627,
+        "Y": -876.98784612887721
+      },
+      {
+        "Name": "Geometry.IntersectAll",
+        "ShowGeometry": true,
+        "Id": "8063a9381413469e9fc6f896cfb77b58",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1602.2864711719269,
+        "Y": -1514.9540771827096
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "a944554d698041768eb04fba8f04b724",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1957.696818367695,
+        "Y": -1107.7779263235166
+      },
+      {
+        "Name": "Curve.ExtendStart",
+        "ShowGeometry": true,
+        "Id": "29e8b42ffa9241d49a9b5e87d9cf32d6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1586.0426915034413,
+        "Y": -972.41146546327491
       }
     ],
     "Annotations": [
@@ -5267,8 +6271,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -1887.7164854573271,
-        "Top": 371.1852375571907,
+        "Left": -2918.9872563423073,
+        "Top": 280.19075777322178,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -5297,8 +6301,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 1166.4244753515391,
-    "Y": 724.74313842879121,
-    "Zoom": 0.24877315400515121
+    "X": 2287.2719016214328,
+    "Y": 1356.73605744565,
+    "Zoom": 1.015368338839187
   }
 }
