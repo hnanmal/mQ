@@ -1,5 +1,4 @@
 
-//import { OrbitControls} from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/examples/js/controls/OrbitControls.js"
 
 function hideAllPages() {
   document.querySelector("#frame_MenuBtn").style.fontWeight = "normal";
@@ -85,12 +84,34 @@ function init() {
   //animate(); 
 }
 
+function getCheckboxValue() {
+    const query = 'input[name="isSlab"]'//:checked'
+    const selectedEls = document.querySelectorAll(query);
+    console.log(selectedEls[0]);
+    
+    //let result = '';
+    let result = [];
+    selectedEls.forEach((el) => {
+        //result += el.value + ' ';
+        if (el.checked) {
+            result.push(el.value);
+        } else {
+            result.push('off');
+        }
+        
+    });
+    
+    const resElem = document.getElementById('DL-result');
+    resElem.setAttribute('data-result', result);
+}
 
 function setEventListener(target) {
     document.addEventListener('DOMContentLoaded', () => {
         const increaseButton = document.getElementById('increaseButton');
         const decreaseButton = document.getElementById('decreaseButton');
         const inputContainer = document.getElementById(target + 'inputContainer');
+        console.log(target=='DL');
+        console.log(target=='LL');
         let inputCount = 0;
 
         increaseButton.addEventListener('click', () => {
@@ -103,10 +124,35 @@ function setEventListener(target) {
 
             const newInput = document.createElement('input');
             newInput.type = 'number';
+            newInput.setAttribute('display', 'inline');
             newInput.placeholder = 'Enter load in kN/m²';
-
+            
+            const new_chkBoxLabel = document.createElement('label');
+            const newInput_chkBox = document.createElement('input');
+            
+            if ( target == 'DL' ) {
+                new_chkBoxLabel.textContent = "slab 여부 - "
+                new_chkBoxLabel.setAttribute('display', 'inline');
+                
+                newInput_chkBox.type = 'checkbox';
+                newInput_chkBox.setAttribute('name', 'isSlab');
+                newInput_chkBox.setAttribute('onclick', 'getCheckboxValue()');
+                newInput_chkBox.setAttribute('checked', 'checked');
+                newInput_chkBox.setAttribute('display', 'inline');
+            } else if ( target == 'LL' ) {
+                new_chkBoxLabel.textContent = "slab 여부 - "
+                new_chkBoxLabel.setAttribute('display', 'inline');
+                new_chkBoxLabel.setAttribute('style', 'color:white');
+                newInput_chkBox.type = 'checkbox';
+                newInput_chkBox.setAttribute('name', 'noUse');
+                newInput_chkBox.setAttribute('disabled', 'true');
+            }
+            
+            
             inputGroup.appendChild(label);
             inputGroup.appendChild(newInput);
+            inputGroup.appendChild(new_chkBoxLabel);
+            inputGroup.appendChild(newInput_chkBox);
             inputContainer.appendChild(inputGroup);
         });
 
@@ -138,13 +184,29 @@ function download(filename, text) {
 
 function get_DL_json() {
     const inputs = document.querySelectorAll('.DLinputGroup input');
+    let isSlab = document.getElementById('DL-result').getAttribute('data-result');
+    console.log(isSlab);
     const res = inputs.values()
-    const values = [];
+    const load_values = [];
     inputs.forEach((input, index) => {
-        values.push({ id: index + 1, value: input.value });
+        if (input.value != 'on') {
+            load_values.push({ id: index + 1, value: input.value });
+        }
+        
     });
-    console.log(values);
-    const jsonStr = JSON.stringify(values);
+    if ( isSlab == null ) {
+        isSlab = [];
+        for (let i=0; i<load_values.length; i++){
+            isSlab.push('on');
+        };
+    };
+    console.log(load_values);
+    
+    const final = {
+      "DL_info": load_values,
+      "isSlab": isSlab
+    };
+    const jsonStr = JSON.stringify(final);
     return jsonStr;
 }
 
@@ -153,7 +215,9 @@ function get_LL_json() {
     const res = inputs.values()
     const values = [];
     inputs.forEach((input, index) => {
-        values.push({ id: index + 1, value: input.value });
+        if (input.value != 'on') {
+            values.push({ id: index + 1, value: input.value });
+        }
     });
     console.log(values);
     const jsonStr = JSON.stringify(values);
