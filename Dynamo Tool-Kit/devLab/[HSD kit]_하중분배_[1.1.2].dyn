@@ -62,7 +62,7 @@
       "Id": "03655d38fc55463ca6c1516d9a800ba9",
       "Name": "하중분배결과파일 이름 생성",
       "Type": "string",
-      "InitialValue": "D:\\mk\\mQ\\etc\\_팀교육\\StrToolkit\\2024년 중간발표\\.dynTemp\\.\\loadDist\\HSD_load distribution_2024-07-01_18_51.txt",
+      "InitialValue": "C:\\MK\\mQ\\etc\\_팀교육\\StrToolkit\\2024년 중간발표\\.dynTemp\\.\\loadDist\\HSD_load distribution_2024-07-01_23_22.txt",
       "Description": "Runs an embedded Python script."
     }
   ],
@@ -5116,6 +5116,90 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\nfrom DSCore import List\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallElemsDicts = IN[0]\r\n# Place your code below this line\r\ndef add_sectionPropsToDict(elemDict):\r\n    elem = elemDict[\"elem\"]\r\n    sectionID = elemDict[\"sectionProp\"][\"name\"]#.split('_')[-1]\r\n    Area = elemDict[\"sectionProp\"][\"A\"]\r\n    SW = Area*77.22/10**6 * (10**2)\r\n    \r\n    tw = elem.GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Web Thickness\") * 10\r\n    tf = elem.GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Flange Thickness\") * 10\r\n    D = elem.GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Height\") * 10\r\n    W = elem.GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Width\") * 10\r\n    radi = elem.GetParameterValueByName(\"Family and Type\")\\\r\n        .GetParameterValueByName(\"Web Fillet\") * 10\r\n        \r\n    Iyy = \\\r\n        (2*(W*tf**3/12+W*tf*((D-2*tf)/2+tf/2)**2)+tw*(D-2*tf)**3/12)\r\n    Izz = \\\r\n        2*(tf*(W)**3/12)+(D-2*tf)*(tw)**3/12\r\n    Syy = Iyy/(D/2)\r\n    Szz = Izz/(W/2)\r\n    Zyy = W*tf*(D-tf)+0.25*(D-2*tf)**2*tw\r\n    Zzz = 0.5*(W)**2*tf+0.25*(D-2*tf)*(tw)**2\r\n    \r\n    J = (2*W*tf**3+(D-tf)*tw**3)/3\r\n    \r\n    Cwp = (D-tf)**2*W**3*tf/24\r\n    \r\n    ry = (Iyy/Area)**0.5\r\n    rz = (Izz/Area)**0.5\r\n    rts = ((Izz*Cwp)**0.5/Syy)**0.5\r\n    \r\n    secDict = {\r\n        \"sectionID\": sectionID,\r\n        \"sectionRotating\": elem.GetParameterValueByName(\"Cross-Section Rotation\"),\r\n        \"Area\": Area,\r\n        \"SW\": SW,\r\n        \"tw\": tw,\r\n        \"tf\": tf,\r\n        \"D\": D,\r\n        \"W\": W,\r\n        \"radi\": radi,\r\n        \"Iyy\": Iyy,\r\n        \"Izz\": Izz,\r\n        \"Syy\": Syy,\r\n        \"Szz\": Szz,\r\n        \"Zyy\": Zyy,\r\n        \"Zzz\": Zzz,\r\n        \"J\": J,\r\n        \"Cwp\": Cwp,\r\n        \"ry\": ry,\r\n        \"rz\": rz,\r\n        \"rts\": rts,\r\n    }\r\n    \r\n    elemDict[\"secDict\"] = secDict\r\n    return elemDict\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = add_sectionPropsToDict(allElemsDicts[0])\r\nOUT = map(add_sectionPropsToDict, allElemsDicts)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "4ee5593128894da3856130cb041551ed",
+      "Inputs": [
+        {
+          "Id": "e6294a82e04a4333a499c9592c00e669",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ed54f5e66b484ddda66e0d4a7f84c334",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce; from itertools import chain\r\nfrom itertools import groupby; import operator\r\nfrom copy import deepcopy\r\nfrom DSCore import List\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n\r\ndef grpBy(iter, key):\r\n    f,keys,grps = key,[],[]\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_,key=f):\r\n        keys.append(key); grps.append(list(grp_data))\r\n    return grps,keys\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n#allBeamsLocations = IN[0]\r\nallColsDicts = IN[0]\r\n#allBeamsLocations = list(map(lambda x: x[\"location_line\"], allBeamsDicts))\r\n#allGirdersDicts = IN[1]\r\n#lv_slab_info = IN[2]\r\n# Place your code below this line\r\ndef extendBeamLocations(loc_crv, gap):\r\n    extLine = loc_crv.ExtendStart(gap).ExtendEnd(gap)\r\n    upSrf = extLine.Extrude(Vector.ByCoordinates(0,0,1), 100)\r\n    blSrf = extLine.Extrude(Vector.ByCoordinates(0,0,-1), 100)\r\n    res = PolySurface.ByJoinedSurfaces([upSrf, blSrf])\r\n    return res\r\n\r\ndef find_segmentCnt(elemDict, allBeamsLocations):\r\n    elemLine = elemDict[\"location_line\"]\r\n    res = []\r\n    for beam in allBeamsLocations:\r\n        intsct = elemLine.Intersect(beam)\r\n        res.append( intsct )\r\n    flattenRes = list(chain(*res))\r\n    def find_coordiStr(pt):\r\n        #res = \",\".join([str(pt.X), str(pt.Y), str(pt.Z)])\r\n        res = [pt.X, pt.Y, pt.Z]\r\n        return res\r\n        \r\n    def find_uniqCoordiStrInPts(pts):\r\n        allStrs = list(map(find_coordiStr, pts))\r\n        return list(set(allStrs))\r\n    \r\n    segmentCnt = len( List.UniqueItems(flattenRes) ) + 1\r\n    \r\n    return segmentCnt\r\n\r\n#extended_allBeamsLocation = list(map(lambda x: extendBeamLocations(x,300), allBeamsLocations))\r\n\r\ndef add_divSegment_toDict(elemDict):\r\n#    segmentCnt = find_segmentCnt(elemDict, allBeamsLocations)\r\n#    lvBelong = elemDict[\"lvBelong\"]\r\n#    if lv_slab_info[lvBelong] == \"on\": # slab인 경우\r\n#        #elemDict[\"unbr_segment\"] = 0\r\n#        elemDict[\"unbr_segment\"] = 1\r\n#    elif lv_slab_info[lvBelong] == \"off\": # slab 아닌 경우\r\n#        elemDict[\"unbr_segment\"] = segmentCnt\r\n    elemDict[\"unbr_segment\"] = 1\r\n    return elemDict\r\n    \r\n# Assign your output to the OUT variable.\r\nOUT = list(map(lambda x: add_divSegment_toDict(x), allColsDicts))",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a5b74dec8e964fe8aaafcd783c6738dc",
+      "Inputs": [
+        {
+          "Id": "f90a7d9853f5467c8c8a62777a68747e",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e9b89492a2a642c69e2ef8fdb391bea2",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "3b8a075f0d66479495ba4cb662c8fe69",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a3cde42477e84f27a2736dad26a265e5",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -5241,8 +5325,8 @@
     },
     {
       "Start": "aad53e0099054fa68cf49e2d4fb67f92",
-      "End": "b1cdd31faeae4764afe5c19f448120a2",
-      "Id": "db5a53f27d4240cab9afa816a56c2116",
+      "End": "f90a7d9853f5467c8c8a62777a68747e",
+      "Id": "e4cbb7697ce84231ad0e5e20755f36cd",
       "IsHidden": "False"
     },
     {
@@ -6186,12 +6270,24 @@
       "End": "43b015ce3c0446d28b277b79fd621002",
       "Id": "d0ff7b7fc9244c01901f39862a6c02e1",
       "IsHidden": "False"
+    },
+    {
+      "Start": "ed54f5e66b484ddda66e0d4a7f84c334",
+      "End": "b1cdd31faeae4764afe5c19f448120a2",
+      "Id": "be4bd87b4580441b876f339099e93a70",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a3cde42477e84f27a2736dad26a265e5",
+      "End": "e6294a82e04a4333a499c9592c00e669",
+      "Id": "5652a2c7661848c7be6ad15e4a9dd8ee",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [
     {
-      "Name": "HSD_load distribution_2024-07-01_18_51.txt",
+      "Name": "HSD_load distribution_2024-07-01_23_22.txt",
       "ReferenceType": "External",
       "Nodes": [
         "03655d38fc55463ca6c1516d9a800ba9"
@@ -6252,8 +6348,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -6001.1960977825847,
-        "Y": -1123.9846367983253
+        "X": -6007.7785474659995,
+        "Y": -1172.9776313444561
       },
       {
         "Name": "Categories",
@@ -6262,8 +6358,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -6299.8014747074449,
-        "Y": -1123.9846367983253
+        "X": -6364.7785474659995,
+        "Y": -1172.9776313444563
       },
       {
         "Name": "Rooms By Status",
@@ -6372,8 +6468,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -6016.7242377079956,
-        "Y": -530.50543076724716
+        "X": -5997.7400327066625,
+        "Y": -489.95205423812854
       },
       {
         "Name": "Categories",
@@ -6382,8 +6478,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -6339.75582770533,
-        "Y": -528.71761971447518
+        "X": -6358.7400327066625,
+        "Y": -489.95205423812854
       },
       {
         "Name": "allCols",
@@ -7694,6 +7790,26 @@
         "Excluded": false,
         "X": -4937.4815694287927,
         "Y": -1674.5664761643502
+      },
+      {
+        "Name": "add_sectionProperties",
+        "ShowGeometry": true,
+        "Id": "4ee5593128894da3856130cb041551ed",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2369.8794987369479,
+        "Y": -249.81873248411512
+      },
+      {
+        "Name": "add_divSegment_Info_columns",
+        "ShowGeometry": true,
+        "Id": "a5b74dec8e964fe8aaafcd783c6738dc",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -3151.5858348985225,
+        "Y": -253.11188682098634
       }
     ],
     "Annotations": [
@@ -7934,8 +8050,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": -2936.4484557726282,
-        "Top": -50.585135311703539,
+        "Left": -1773.8585867161628,
+        "Top": 90.04484653552629,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -7964,8 +8080,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 3608.7239246199892,
-    "Y": 999.80435659810166,
-    "Zoom": 1.0117082962274655
+    "X": 2951.2000681881923,
+    "Y": 511.43793356163314,
+    "Zoom": 1.1059235890378467
   }
 }
