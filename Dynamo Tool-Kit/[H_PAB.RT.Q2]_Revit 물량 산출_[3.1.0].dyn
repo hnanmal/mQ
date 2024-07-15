@@ -7547,7 +7547,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n    \r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        list\r\n    )\r\n    return res\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        lambda x: x[0],\r\n    )\r\n    return res\r\n\r\ndef find_eartworkGrp(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        \r\n    )\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \\\r\n            \"S17_SOG\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in d[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda d: d[\"Elem\"].Geometry() ),\r\n        list\r\n    )\r\n    return res\r\n    \r\ndef find_ExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    \r\n    return excaShape\r\n\r\ndef find_UnionExcaShape(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_ExcaShape),\r\n        Solid.ByUnion,\r\n    )\r\n    return res\r\n    \r\nearthTargets = filter_EarthworkCalcTarget(elemDicts)\r\nbelowSrfTargets = filter_targetForBelowSrfs(earthTargets)\r\nallElems = list(map(lambda x: x[\"Elem\"], earthTargets))\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: find_belowSrf(x), allElems), allElems\r\nOUT = find_UnionExcaShape(belowSrfTargets)#, allElems",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n    \r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        list\r\n    )\r\n    return res\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        lambda x: x[0],\r\n    )\r\n    return res\r\n\r\ndef find_eartworkGrp(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        \r\n    )\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \\\r\n            \"S17_SOG\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in d[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in d[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda d: d[\"Elem\"].Geometry() ),\r\n        list\r\n    )\r\n    return res\r\n    \r\ndef find_ExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    excaVolume = excaShape.Volume\r\n    \r\n    res = {\r\n        \"pre_excaShape\": excaShape,\r\n        \"pre_excaVolume\": excaVolume,\r\n        \"toGLvolume\": abs(belowSrf.Area * btm_GL_Z)\r\n    }\r\n    \r\n    return res\r\n\r\ndef find_allElem_earthInfo(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_ExcaShape),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_UnionExcaShape(elemEarthDicts):\r\n    res = go(\r\n        elemEarthDicts,\r\n        map(lambda x: x[\"pre_excaShape\"]),\r\n        Solid.ByUnion,\r\n    )\r\n    return res\r\n#def find_toGL_volume(elemDict):\r\n    \r\n\r\n\r\nearthTargets = filter_EarthworkCalcTarget(elemDicts)\r\nbelowSrfTargets = filter_targetForBelowSrfs(earthTargets)\r\nallElems = list(map(lambda x: x[\"Elem\"], earthTargets))\r\n\r\nallTgtDicts_withEarthInfo = find_allElem_earthInfo(belowSrfTargets)\r\n\r\nwholeExcaShape = find_UnionExcaShape(allTgtDicts_withEarthInfo)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: find_belowSrf(x), allElems), allElems\r\nOUT = allTgtDicts_withEarthInfo, wholeExcaShape",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7696,6 +7696,174 @@
       ],
       "Replication": "Auto",
       "Description": "Returns the minimum value from a list.\n\nList.MinimumItem (list: var[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[1].Volume;",
+      "Id": "1d80483a90e04fb4999ba51bd2132a38",
+      "Inputs": [
+        {
+          "Id": "b8e8761de8c040cb8383de84057b0c4b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7d20b8aa2240418f813ff966cc526080",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0][\"pre_excaVolume\"];",
+      "Id": "ea2a7240906c4e56bcd926c7b3d9c7f4",
+      "Inputs": [
+        {
+          "Id": "45615d41daa540f8b9b015bc452d4b53",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4792c63587274e428faa199a9771f8fb",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "ed6cff70ff6942ddbff3f1879fd5ba87",
+      "Inputs": [
+        {
+          "Id": "4d6e9e0d00704a3f813a6b45c36a134f",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6346d4780a1b43a6b05f9909a47266b9",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "-@var[]..[],var[]..[]",
+      "Id": "9e84af1b98b44343bd4e8db0dab4307d",
+      "Inputs": [
+        {
+          "Id": "5e96c4b0bd2e42debce3d3c8687ae32a",
+          "Name": "x",
+          "Description": "Integer or double value\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f7550002ba324c00aedd76ffe1d2ed2a",
+          "Name": "y",
+          "Description": "Integer or double value\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2334617bb1e5466cbb00860883ffbde7",
+          "Name": "number",
+          "Description": "Result of the y input subtracted from the x input",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns subtraction of x minus y\n\n- (x: var[]..[], y: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i/j * 100;",
+      "Id": "9cc0a9944fa8423cae81405112aa3f4f",
+      "Inputs": [
+        {
+          "Id": "e8e723769b874423892f76792162b1f8",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9b7f5ae742254d53911aeff706ec1925",
+          "Name": "j",
+          "Description": "j",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "06250f729c9a41c980e978ac656e93d4",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -9306,6 +9474,48 @@
       "End": "6d23d8e1f2db4bdda1b0059f66e72a46",
       "Id": "be6eeebd416d4a3fb02322c7c029add6",
       "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "b8e8761de8c040cb8383de84057b0c4b",
+      "Id": "ebc804b0169e4e3c96539793f825cbb0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "45615d41daa540f8b9b015bc452d4b53",
+      "Id": "57e0d546f61a46e0a57d163c26ae63b0",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7d20b8aa2240418f813ff966cc526080",
+      "End": "f7550002ba324c00aedd76ffe1d2ed2a",
+      "Id": "54a4cea17ae24238b39cf716ef4f73af",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "7d20b8aa2240418f813ff966cc526080",
+      "End": "9b7f5ae742254d53911aeff706ec1925",
+      "Id": "bdb091a020f54765b6778bbcabc22425",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "4792c63587274e428faa199a9771f8fb",
+      "End": "4d6e9e0d00704a3f813a6b45c36a134f",
+      "Id": "98a241efb2f74a9397f295aaba5a0a31",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "6346d4780a1b43a6b05f9909a47266b9",
+      "End": "5e96c4b0bd2e42debce3d3c8687ae32a",
+      "Id": "96fc46b0720540b197e0b037102adb1a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2334617bb1e5466cbb00860883ffbde7",
+      "End": "e8e723769b874423892f76792162b1f8",
+      "Id": "2f6b7cdf36b24c0b9ad01fe576e2f255",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
@@ -9330,7 +9540,7 @@
       ]
     },
     {
-      "Name": "Total BOQ_blank_0710-063157.xlsx",
+      "Name": "Total BOQ_blank_0715-110452.xlsx",
       "ReferenceType": "External",
       "Nodes": [
         "11184f601ab1440f92b47f1dcda08f3f"
@@ -9379,9 +9589,9 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 83489.1640625,
-      "EyeY": 37581.078125,
-      "EyeZ": -105907.40625,
+      "EyeX": 120124.4921875,
+      "EyeY": 36447.5546875,
+      "EyeZ": -96769.7421875,
       "LookX": -28292.64453125,
       "LookY": -102386.0546875,
       "LookZ": 100731.984375,
@@ -11628,8 +11838,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1341.6333385077596,
-        "Y": -2886.4298759543476
+        "X": -1052.2991267987866,
+        "Y": -3181.5124494853535
       },
       {
         "Name": "Code Block",
@@ -11670,6 +11880,56 @@
         "Excluded": false,
         "X": -264.66957192052791,
         "Y": -2875.9245175457272
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "1d80483a90e04fb4999ba51bd2132a38",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -706.48190420220817,
+        "Y": -3516.2426234427139
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ea2a7240906c4e56bcd926c7b3d9c7f4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -762.0,
+        "Y": -3067.0
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "ed6cff70ff6942ddbff3f1879fd5ba87",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -418.37991474442765,
+        "Y": -3153.1734045795588
+      },
+      {
+        "Name": "-",
+        "ShowGeometry": true,
+        "Id": "9e84af1b98b44343bd4e8db0dab4307d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -149.97612164111592,
+        "Y": -3399.7836704362558
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "9cc0a9944fa8423cae81405112aa3f4f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 99.755756002744874,
+        "Y": -3246.3370313900286
       }
     ],
     "Annotations": [
@@ -12022,7 +12282,7 @@
         "Height": 551.32427175424618,
         "FontSize": 72.0,
         "InitialTop": -2030.4387753660044,
-        "InitialHeight": 449.39490903946012,
+        "InitialHeight": 448.32427175424618,
         "TextblockHeight": 106.0,
         "Background": "#FF48B9FF"
       },
@@ -12283,8 +12543,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 656.11753590873923,
-    "Y": 1614.90297075431,
-    "Zoom": 0.40297516341309725
+    "X": 532.7413334775747,
+    "Y": 2186.4288874688,
+    "Zoom": 0.57358239613665718
   }
 }
