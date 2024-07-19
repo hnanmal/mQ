@@ -17,7 +17,7 @@
       "Name": "1. Family List 경로 입력",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
+      "Value": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -53,7 +53,7 @@
       "Name": "4. Total BOQ sheet 경로 입력",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
+      "Value": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -370,8 +370,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
-      "InputValue": "..\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
+      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
+      "InputValue": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
       "Inputs": [],
@@ -5094,7 +5094,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\"\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\nimport re\r\nfrom functools import partial\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlang_mode = IN[0]\r\nwholeDatas = IN[1]\r\ndb = wholeDatas[1:]\r\nallCatSheetsNames = IN[2][2:]\r\nallCatSheetsNames_noRoom = allCatSheetsNames[1:]\r\n\r\ncalcStdSheet = db[0] ##산출기준 시트\r\nallCatSheets = db[1:]\r\n\r\nallElemsNames = IN[3][0]\r\nallElems = IN[3][1]\r\nallElemsSet = list(zip(allElemsNames, allElems))\r\n\r\n\r\n#wmspec_headers = [\r\n#    \"Work Master Code\" ,\"GaugeCode\" ,\"Unit\" ,\"Work Category-L1\"\r\n#    ,\"Work Category-L2\" ,\"Work Category-L3\" ,\"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n#    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n#    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n#    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n#    ,\"Work Master Code /w Description\", \"Description\" ,\"입찰_물량산출식\" ,\"실행_물량산출식\" ,\"rIDX\"\r\n#]\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, string):\r\n    if target == None or string == None:\r\n        pass\r\n    else:\r\n        res = str(target) in str(string)\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idx에 해당하는 데이터만 추출)\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    target_RowNumber = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,target_RowNumber))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb] ## 각 구간별 마지막 행 번호\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,target_RowNumber))\r\n    rangeEndIdxs = endidxs\r\n    result = list(zip(rangeSttIdxs, rangeEndIdxs))\r\n    return result\r\n\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = list(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1]))))\r\n    \r\n    return dict(headers_sheet)\r\n    #return list(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdxDict, trgt_hdr, trgt_str):\r\n    #hdrs_withIdxDict = dict(hdrs_withIdx)\r\n    return find_range_by_columnItem(sheet, hdrs_withIdxDict[trgt_hdr], trgt_str)\r\n\r\n\r\ndef get_DataOnGrpsAtSheet(sheet:list, discrHDRStr, discrRowStr):\r\n    \"\"\"\r\n    판별기준 Header문자열(discrHDRStr)이 들어있는 열에서,\r\n    판별기준 행 문자열(discrRowStr)이 들어있는 행번호 기준으로 구역을 나누어 데이터 리스트 반환\r\n    \"\"\"\r\n    hdrs_withIdxDict = find_headersAtSheet(sheet)\r\n\r\n    # 시트별 그룹 구분 (시작 행번호, 끝 행 번호 추출)\r\n    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdxDict, discrHDRStr, discrRowStr)\r\n    \r\n    # 시트 각행에 rIDX 데이터 주입하는 구간 - (시작) >>>>>>>\r\n    ## 헤더의 칼럼 인덱스 중 가장 큰 것 추출\r\n    hdrs_maxCol_idx = max(list(hdrs_withIdxDict.values()))\r\n    ## 마지막 헤더위치보다 한칸 옆을 행인덱스번호(\"rIDX\") 정보 보관 위치로 설정\r\n    hdrs_withIdxDict[\"rIDX\"] = hdrs_maxCol_idx+1\r\n    ## 시트의 각 행을 번호와 함께 pair 형태로 추출\r\n    sheetWith_rIDX = list(enumerate(sheet))\r\n    ## rIDX 보관된 시트 데이터 저장을 위한 빈 리스트 선언\r\n    sheet_rIDX = []\r\n    ## pair 형태의 각 행에서, 마지막 헤더의 한칸 우측위치에 rIDX 데이터 주입\r\n    ## 시트의 각 행마다 x 라는 이름으로 순회하며,\r\n    for x in sheetWith_rIDX:\r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치보다 클때,\r\n        if len(x)<hdrs_maxCol_idx:\r\n            #### 마지막 헤더의 우측 칸 위치를 rIDX 데이터로 치환\r\n            x[1][hdrs_maxCol_idx+1] = x[0]\r\n            sheet_rIDX.append(x[1])\r\n            \r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치와 같을때,\r\n        else:\r\n            #### 마지막 헤더의 우측칸이 없으므로 append로 rIDX 데이터 추가\r\n            x[1].append(x[0])\r\n            sheet_rIDX.append(x[1])\r\n    # <<<<< 시트 각행에 rIDX 데이터 주입하는 구간 - (끝)\r\n    \r\n    rowsGrps_perType_withNone = list(map(lambda x: sheet_rIDX[x[0]-1:x[1]], rowAreasAtSheet))\r\n    # None 데이터 치환 구간\r\n    rowsListGrps_perType = go(#>\r\n        rowsGrps_perType_withNone, list,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서\r\n        map(lambda rowGrp: \\\r\n        ## 한 행씩 골라서\r\n        list(map(lambda row: \\\r\n        ## 행을 구성하는 셀 값 중 None이 있으면 빈문자열로 치환\r\n        list(map(lambda cell: \"\" if cell==None else cell, row)), rowGrp)) ),\r\n        ## 맵 객체가 반환되므로 리스트 변환\r\n        list,\r\n    )#<\r\n    \r\n    return (rowsListGrps_perType, hdrs_withIdxDict)\r\n\r\ndef cvt_rowsListGrps_toDictGrps(rowsListGrps_perType, hdrs_withIdxDict, sheetName):\r\n    \"\"\"\r\n    헤더 행과 다수의 컨텐츠 행으로 이루어진 rowListGrps를,\r\n    모든 행을 헤더와 결합된 딕셔너리화 해서 rowDictGrps를 만드는 함수\r\n    \"\"\"\r\n    eff_hdrs_idx = hdrs_withIdxDict.values()\r\n    eff_hdrs_name = hdrs_withIdxDict.keys()\r\n    \r\n    rowsDictGrps_perType = go(#>\r\n        rowsListGrps_perType,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서 한 행 씩 조작하는 함수들을 구상 후\r\n        ## 맵 함수 내에서 go로 합성하여 반복시켜 사용\r\n        map(lambda rowGrp: go(#>>\r\n            ### 그룹 전체 가져와서\r\n            rowGrp,\r\n            ### 각 행을 리스트 타입으로 변환\r\n            map(list), list,\r\n            ### 헤더에 해당하는 행 값을 추출--\r\n            map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,\r\n            ### 헤더이름과 행 내부의 값을 2개씩 짝지어 줌\r\n            map(lambda row: list(zip(eff_hdrs_name, row))), list,\r\n            ### 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬\r\n            map(lambda x: dict(x)),\r\n            ### 딕셔너리 마다 카테고리 정보 추가\r\n            map(lambda x: dictUpdate(x,{\"Family Category\":sheetName})),\r\n            list,\r\n            )#<<\r\n        ), list,\r\n    )#<\r\n    return rowsDictGrps_perType\r\n\r\n# 행딕셔너리 별 입력한 규칙에 따라 참거짓 여부를 반환하는 함수\r\ndef findRow_AppliedType(rowDict, tgtHDRname, rule=None):\r\n    p = re.compile('[0-9]{3,5}')\r\n    target = str(rowDict[tgtHDRname])\r\n    ## 함수 호출시 구분자(rule) 없이 호출한 경우\r\n    ## -Room Category 시트 용 이며 \"Standard Type\" 항목의 값이 000형태의 숫자인지를 판별\r\n    ## -Room Category 중 \"Standard Type\" 칼럼에 룸 넘버, \"Family Type Name\" 칼럼에 룸 이름 입력하게 되어있음\r\n    if rule==None:\r\n        p = re.compile('[0-9]{3,5}')\r\n        m = p.match(target)\r\n        stdCase = target ==\"Room No\"\r\n        res = all([m or stdCase])\r\n    ## 구분자(rule)가 정규표현식 객체로 들어온 경우\r\n    elif isinstance(rule, re.Pattern):\r\n        m = p.match(target)\r\n        res = all([m])\r\n    ## 구분자(rule)가 문자열로 들어온 경우\r\n    else:\r\n        res = rule in target\r\n    return res\r\n\r\n\r\n\r\ndef form_TypeDict(rowsDictGrps,titleKeyName,sttIdx):\r\n    \"\"\"\r\n    rowsDictGrps_perType을 받아서 각 그룹의 이름을 키로 하는\r\n    새로운 중첩구조의 Dictionary를 만들어서,\r\n    바깥에서 타입이름으로 딕셔너리에 접근하면 \r\n    바로 해당 구성내용을 반환해주는 데이터 구조를 만드는 함수\r\n    \"\"\"\r\n    typeDict = go(#>\r\n        rowsDictGrps, list,\r\n        filter(lambda x: x!=[]),\r\n        map(lambda rowsDictGrp: \\\r\n            ### 그룹 전체 첫행 중 타이틀키값과 나머지 row 들 dict를 짝지어 새로운 딕셔너리로 형성\r\n            [list(rowsDictGrp)[0][titleKeyName],go(#>>\r\n                list(rowsDictGrp)[sttIdx:],\r\n                #### 모두 빈칸인 값일때 제외 필터링\r\n                filter(lambda row: any(list(map(lambda cell: cell!=\"\", list(row.values()))))),\r\n                list,\r\n            )]#<<\r\n        ),list,\r\n        dict,\r\n    )#<\r\n    \r\n    return typeDict\r\n\r\ndef updateDict_symValPair(calcTypeDict):\r\n    \"\"\"\r\n    calcTypeDict를 입력으로 받아서\r\n    필요한 \"약자-대응 항목\" 의 구조를 갖는 딕셔너리 형태로\r\n    구성된 새로운 Dictionary를 반환하는 함수\r\n    \"\"\"\r\n    # 모든 산출타입 이름 추출\r\n    allCalcTypeNames = list(calcTypeDict.keys())\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 산출타입태그 이름 각각에 대해,\r\n    for x in allCalcTypeNames:\r\n        ## 타입별 약자 - 산출 대상 값 을 매칭하기위한 빈 딕셔너리 선언\r\n        type = {}\r\n        ## 산출기준 시트의 각 행을 딕셔너리화 한 rD마다 값을 들여다보며\r\n        for rD in calcTypeDict[x]:\r\n            ### 행 딕셔너리의 \"수동 입력값\" 항목의 값이 유효한 값이고,\r\n            ###\"산출수식 약자\" 항목에도 유효한 값이 있다면\r\n            if rD[\"수동 입력값\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                #### 신규 딕셔너리인 type에 키를 산축수식 약자로 하고,\r\n                #### 값을 수동입력값이나 Parameter 항목 값으로 하는 딕셔너리 형성\r\n                type[rD[\"산출수식 약자\"]] = rD[\"수동 입력값\"]\r\n            elif rD[\"Parameter\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                type[rD[\"산출수식 약자\"]] = rD[\"Parameter\"]\r\n        ## 전체를 담을 빈딕셔너리인 res에 \r\n        ## 키를 산축수식 약자로 하고, 값을 아까 마련한 type 딕셔너리로 하는 딕셔너리로 만듬\r\n        res[x] = type\r\n    # 최종결과 반환\r\n    return res\r\n   \r\n\r\ndef find_stdWMdicts_inGrp(rowsDictGrp):\r\n    res = go(\r\n        rowsDictGrp, list,\r\n        ## 엑셀 \"물량산출식\", \"Work Master Code\" 열에 값이 없는 행 제외\r\n        filter(lambda rD: rD[\"입찰_물량산출식\"] != \"\" and rD[\"실행_물량산출식\"] != \"\"),\r\n        filter(lambda rD: rD[\"Work Master Code\"] != \"\"),\r\n        ## Family Type Name에 \"H_\" 문자열 포함된 경우 제외\r\n        filter(lambda rD: not findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n        ## 행 딕셔너리의 NO, Standard Type 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictGrp[0][\"NO\"], \"Standard Type\":rowsDictGrp[0][\"Standard Type\"]})),\r\n        ## Q'ty Cal Type Tag 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n        list,\r\n    )\r\n    return res\r\n\r\n\r\ndef find_stdWMdicts_forCat(rowsDictsGrps):\r\n    res = go(#>\r\n        rowsDictsGrps, list,\r\n        map(find_stdWMdicts_inGrp),\r\n        #filter(lambda x: x!=[]),\r\n        list,\r\n    )#<\r\n    return res\r\n\r\ndef find_appliedTypeDicts_forCat(rowsDictsGrps):\r\n    catName = rowsDictsGrps[0][0][\"Family Category\"]\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    #stdWMsDicts = find_stdWMdicts_forCat(rowsDictGrps)\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Family Type Name에 \"H_\" 문자열 포함된 경우만 필터링\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictsGrp[0][\"NO\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            ## 각 딕셔너리마다 카테고리 명 입력\r\n            #map(lambda rD: dictUpdate(rD, {\"Family Category\":catName})),\r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef find_appliedTypeDicts_forRoom(rowsDictsGrps):\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Standard Type 에 \"H_\" 문자열 포함된 경우만 필터링(only for room)\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Standard Type\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rD[\"Standard Type\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            \r\n            ## Room 의 경우는 \"No\"와 \"Family Type Name\"을 합쳐서 \"Family Type Name\"에 입력\r\n            map(lambda rD: dictUpdate(rD,{\"Family Type Name\":str(rD[\"NO\"]).split('.')[0]+\"_\"+rD[\"Family Type Name\"]})),\r\n            \r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef merge_sameFamType_wmSpecs(appliedTypeDicts):\r\n    def merge_inGrp(appliedTypeDicts_perGrp):\r\n        \"\"\"\r\n        엑셀 타입별 행그룹 내에서 실 적용 패일리명이 들어있는\r\n        행들만 추출하고, 그 중 이름이 같은 것들의 wm 정보는 합쳐서\r\n        하나의 이름에 하나의 딕셔너리 객체만 존재하도록 수정\r\n        \"\"\"\r\n        ## 그룹 내 실 적용 패밀리 타입 명 추출(중복 불허)\r\n        keysPerGrp = go(#>\r\n            appliedTypeDicts_perGrp,\r\n            ## 개별 행딕셔너리의 패밀리 타입 항목 값 추출\r\n            map(lambda rD: rD[\"Family Type Name\"]),\r\n            ## 문자열 내 \"H_\"가 포함되어있는 지 검사\r\n            filter(lambda x: \"H_\" in x),\r\n            ## 중복 Family Type Name 단일화\r\n            set, list,\r\n        )#<\r\n        ## 패밀리 타입 명을 k라는 변수명으로 하나씩 순회\r\n        for k in keysPerGrp:\r\n            ### k라는 패밀리 타입 명에 해당하는 딕셔너리 모두 검색\r\n            sameNameDicts = list(filter(lambda x: x[\"Family Type Name\"] == k, appliedTypeDicts_perGrp))\r\n            ### 하나의 타입명에 복수 객체인지를 검사하여\r\n            ### 2개 이상인 경우\r\n            if len(sameNameDicts)>=2:\r\n                ### 동일 이름의 딕셔너리들 중 첫번째 항목의 \"wmSpecs\"에\r\n                ### 나머지 항목의 wmSpecs 항목을 몰아준다\r\n                for i,rD in enumerate(sameNameDicts[1:]):\r\n                    if rD[\"wmSpecs\"]:\r\n                        sameNameDicts[0][\"wmSpecs\"].append(*rD[\"wmSpecs\"])\r\n                    else: pass\r\n                ### 몰아주기가 끝나면, 첫번째를 제외한 나머지 딕셔너리는\r\n                ### 불필요해지므로 삭제\r\n                appliedTypeDicts_perGrp.remove(sameNameDicts[i+1])\r\n            else:                \r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDicts_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return map(merge_inGrp, appliedTypeDicts)\r\n\r\n\r\n\r\ndef inject_stdWMtoAppliedTypeDicts(appliedTypeDicts, allCat_stdWMdicts_stdTypeName):\r\n    def inject_inGrp(appliedTypeDict_perGrp):\r\n        \"\"\"\r\n        타입 그룹 별 공통 WM 딕셔너리 항목들을\r\n        실적용패밀리 딕셔너리에 주입하는 함수\r\n        \"\"\"\r\n        ## 실적용패밀리 딕셔너리 리스트의 구성 원소 각각을\r\n        ## rD(rowDictionary) 라는 이름으로 순회\r\n        for rD in appliedTypeDict_perGrp:\r\n            ### rD의 \"Standard Type\" 항목 값이\r\n            ### 입력받은 타입별 공통 WM항목 딕셔너리의 키값중에\r\n            ### 포함되었는지 검사후 있으면,\r\n            if rD[\"Standard Type\"] in list(allCat_stdWMdicts_stdTypeName.keys()):\r\n                #### rD의 \"wmSpecs\" 항목에 공통 WM항목을 추가하여 재할당\r\n                rD[\"wmSpecs\"] = rD[\"wmSpecs\"] + allCat_stdWMdicts_stdTypeName[rD[\"Standard Type\"]]\r\n            else:\r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDict_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return list(map(inject_inGrp, appliedTypeDicts))\r\n    \r\ndef updateFamTypeDicts_symValPair(total_appliedTypeDicts, calcTypeDict_symValPair):\r\n    \"\"\"\r\n    실적용패밀리타입명 별 딕셔너리에\r\n    \"Q'ty Cal Type Tag\" 항목 값 이름과 일치하는\r\n    물량산출 매개변수 꾸러미 추가하는 함수\r\n    \"\"\"\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 전체 실적용 패밀리 딕셔너리들 중 구성원소 각각을 d라는 이름으로 순회\r\n    for d in total_appliedTypeDicts:\r\n        ## 딕셔너리의 \"Q'ty Cal Type Tag\"항목의 값이 빈문자열이 아니라면,\r\n        if d[\"Q'ty Cal Type Tag\"]!=\"\":\r\n            ### 딕셔너리에 \"Sym_Val Dict\"라는 키를 추가하고\r\n            ### calcTypeDict 중 일치하는 값을 골라 키의 값으로 할당\r\n            symValPair = calcTypeDict_symValPair[d[\"Q'ty Cal Type Tag\"]]\r\n            d[\"Sym_Val Dict\"] = symValPair\r\n        ## 전체용 빈 딕셔너리에 패밀리 타입명을 키로 추가하고\r\n        ## 방금 수정한 단위 딕셔너리를 키의 값으로 할당\r\n        res[d[\"Family Type Name\"]] = d    \r\n    return res\r\n    \r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    \"\"\"\r\n    레빗객체와 패밀리리스트 딕셔너리의 정보를 하나로 결합해주는 용도의 함수\r\n    패밀리리스트 데이터는 패밀리 타입명을 키값으로 하는 하나의 딕셔너리로 정리되어있어야 한다\r\n    revit객체는 패밀리리스트 상 존재하는 타입만 필터링해서 입력해야 함\r\n    \"\"\"\r\n    # 수행결과를 모을 빈 리스트 선언\r\n    res = []\r\n    # 모든 레빗 객체들을 하나씩 순회 \r\n    for i in revitElems:\r\n        ## revit 객체들과 revit 타입별 Family List 딕셔너리를 결합하기 위한 빈 딕셔너리 선언\r\n        combD = {}\r\n        ## 패밀리 타입명 추출 - Room 객체인 경우와 아닌 경우 분기\r\n        if \"Room\" in str(type(i)):\r\n            famTypeName = i.GetParameterValueByName(\"Number\") + \"_\" + i.GetParameterValueByName(\"Name\")\r\n        else:\r\n            famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        ## 결합용 딕셔너리의 \"Elem\" 이라는 키에 순회 중인 i (revit객체)를 할당\r\n        combD[\"Elem\"] = i\r\n        combD[\"GUID\"] = i.GetParameterValueByName(\"IfcGUID\")\r\n        ## 결합용 딕셔너리의 \"wms\" 이라는 키에 \r\n        ## 순회 중인 i (revit객체) 패밀리 타입 명과 일치하는 famlist_dictionary의 값을 할당\r\n        combD[\"wms\"] = deepcopy(famlist_dic[famTypeName])\r\n        ##결합된 딕셔너리를 res에 저장\r\n        res.append(combD)\r\n    # 전체 수행 결과 반환\r\n    return res\r\n\r\ndef update_sym_valDict(matched_elemDicts):\r\n    def update_sym_valDict_single(d):\r\n        \"\"\"\r\n        딕셔너리별로 포함된 [\"wms\"][\"Sym_Val Dict\"]항목 내에\r\n        아직 계산되지 않은 매개변수 값들을 계산하여\r\n        \"Post_Sym_Val Dict\"라는 새로운 키의 값으로 할당하는 함수\r\n        \"\"\"\r\n        e = d[\"Elem\"]\r\n        newSymValDict = {}\r\n        keys = d[\"wms\"][\"Sym_Val Dict\"].keys()\r\n        vals = d[\"wms\"][\"Sym_Val Dict\"].values()\r\n        for s,v in zip(keys, vals):\r\n            ## Vals 항목이 사용자 입력값이 아닌 revit 매개변수인 경우\r\n            if isinstance(v,str):\r\n                if v not in list(map(lambda x: x.Name, e.Parameters)):\r\n                    calc_v = e.ElementType.GetParameterValueByName(v)\r\n                else:\r\n                    calc_v = e.GetParameterValueByName(v)\r\n                calc_vv= calc_v if isinstance(calc_v, str) else round(calc_v, 3)\r\n                newSymValDict[s] = calc_vv\r\n            ## Vals 항목이 사용자 입력값인 경우는 그대로 입력된 숫자 사용\r\n            else:\r\n                newSymValDict[s] = v\r\n        d[\"wms\"][\"Post_Sym_Val Dict\"] = newSymValDict\r\n        \r\n        return d\r\n    return list(map(update_sym_valDict_single, matched_elemDicts))\r\n\r\n\r\n\r\n    \r\ncalcSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(calcStdSheet, \"구간판별\", \"#\")\r\ncalcSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*calcSheet_rowsListGrps_perType,\"\")\r\ncalcTypeDict = form_TypeDict(calcSheet_rowsDictGrps_perType,\"Q'ty Cal Type Tag\",sttIdx=1)\r\ncalcTypeDict_symValPair = updateDict_symValPair(calcTypeDict)\r\n\r\nroomSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(allCatSheets[0], \"Standard Type\", \"H_\")\r\nroomSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*roomSheet_rowsListGrps_perType,\"0.Room\")\r\nroom_stdWMdicts = find_stdWMdicts_forCat(deepcopy(roomSheet_rowsDictGrps_perType))\r\nroom_stdWMdicts_stdTypeName = form_TypeDict(room_stdWMdicts, \"Standard Type\",sttIdx=0)\r\n\r\nroom_appliedTypeDicts = find_appliedTypeDicts_forRoom(roomSheet_rowsDictGrps_perType)\r\nroom_appliedTypeDicts_noDupl = merge_sameFamType_wmSpecs(room_appliedTypeDicts)\r\n\r\nroom_appliedTypeDicts_withStdWm = list(chain(*inject_stdWMtoAppliedTypeDicts(room_appliedTypeDicts_noDupl, room_stdWMdicts_stdTypeName)))\r\n\r\n# 룸 제외 모든 카테고리 시트 처리\r\nallCatSheet_rowsListGrps = map( lambda x: get_DataOnGrpsAtSheet(x, \"Standard Type\", \"H_\"), allCatSheets[1:] )\r\nallCatSheet_rowsListGrps_namesPair = list(zip(allCatSheet_rowsListGrps, allCatSheetsNames_noRoom))\r\nallCatSheet_rowsDictGrps = map( lambda x: cvt_rowsListGrps_toDictGrps(*x[0],x[1]), allCatSheet_rowsListGrps_namesPair )\r\n\r\n# \"Standard Type\" 별 wm 공통항목 찾기\r\nallCat_stdWMdicts = list(map( lambda x: find_stdWMdicts_forCat(x), deepcopy(allCatSheet_rowsDictGrps) ))\r\n# \"Standard Type\" 명으로 검색할 수 있는, 전 카테고리 \"Standard Type\" 별 공통 WM항목 사전 만들기\r\nallCat_stdWMdicts_stdTypeName = dictsMerge(list(map(lambda x: form_TypeDict(x, \"Standard Type\",sttIdx=0), allCat_stdWMdicts)))\r\n\r\nallCat_appliedTypeDicts = map( lambda x: find_appliedTypeDicts_forCat(x), allCatSheet_rowsDictGrps )\r\nallCat_appliedTypeDicts_noDupl = map( lambda x: merge_sameFamType_wmSpecs(x), allCat_appliedTypeDicts )\r\n\r\nallCat_appliedTypeDicts_withStdWm = list(chain(*chain(*map( lambda x: inject_stdWMtoAppliedTypeDicts(x,allCat_stdWMdicts_stdTypeName), allCat_appliedTypeDicts_noDupl ))))\r\n\r\ntotal_appliedTypeDicts = room_appliedTypeDicts_withStdWm + allCat_appliedTypeDicts_withStdWm\r\nFamTypeDicts_symValPair = updateFamTypeDicts_symValPair(total_appliedTypeDicts,calcTypeDict_symValPair)\r\n\r\nallUsedFamTypeNames_Excel = FamTypeDicts_symValPair.keys()\r\nallElemsFiltered_byExcel = list(map(lambda y: y[1], list(filter(lambda x: x[0] in allUsedFamTypeNames_Excel , allElemsSet))))\r\n\r\nallElemsDict = update_sym_valDict(matchWith_Elem_Dict(FamTypeDicts_symValPair, allElemsFiltered_byExcel))\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = allElemsDict, FamTypeDicts_symValPair",
+      "Code": "# Load the Python Standard and DesignScript Libraries\"\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\nimport re\r\nfrom functools import partial\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlang_mode = IN[0]\r\nwholeDatas = IN[1]\r\ndb = wholeDatas[1:]\r\nallCatSheetsNames = IN[2][2:]\r\nallCatSheetsNames_noRoom = allCatSheetsNames[1:]\r\n\r\ncalcStdSheet = db[0] ##산출기준 시트\r\nallCatSheets = db[1:]\r\n\r\nallElemsNames = IN[3][0]\r\nallElems = IN[3][1]\r\nallElemsSet = list(zip(allElemsNames, allElems))\r\n\r\n\r\n#wmspec_headers = [\r\n#    \"Work Master Code\" ,\"GaugeCode\" ,\"Unit\" ,\"Work Category-L1\"\r\n#    ,\"Work Category-L2\" ,\"Work Category-L3\" ,\"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n#    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n#    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n#    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n#    ,\"Work Master Code /w Description\", \"Description\" ,\"입찰_물량산출식\" ,\"실행_물량산출식\" ,\"rIDX\"\r\n#]\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, string):\r\n    if target == None or string == None:\r\n        pass\r\n    else:\r\n        res = str(target) in str(string)\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idx에 해당하는 데이터만 추출)\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    target_RowNumber = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,target_RowNumber))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb] ## 각 구간별 마지막 행 번호\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,target_RowNumber))\r\n    rangeEndIdxs = endidxs\r\n    result = list(zip(rangeSttIdxs, rangeEndIdxs))\r\n    return result\r\n\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = list(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1]))))\r\n    \r\n    return dict(headers_sheet)\r\n    #return list(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdxDict, trgt_hdr, trgt_str):\r\n    #hdrs_withIdxDict = dict(hdrs_withIdx)\r\n    return find_range_by_columnItem(sheet, hdrs_withIdxDict[trgt_hdr], trgt_str)\r\n\r\n\r\ndef get_DataOnGrpsAtSheet(sheet:list, discrHDRStr, discrRowStr):\r\n    \"\"\"\r\n    판별기준 Header문자열(discrHDRStr)이 들어있는 열에서,\r\n    판별기준 행 문자열(discrRowStr)이 들어있는 행번호 기준으로 구역을 나누어 데이터 리스트 반환\r\n    \"\"\"\r\n    hdrs_withIdxDict = find_headersAtSheet(sheet)\r\n\r\n    # 시트별 그룹 구분 (시작 행번호, 끝 행 번호 추출)\r\n    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdxDict, discrHDRStr, discrRowStr)\r\n    \r\n    # 시트 각행에 rIDX 데이터 주입하는 구간 - (시작) >>>>>>>\r\n    ## 헤더의 칼럼 인덱스 중 가장 큰 것 추출\r\n    hdrs_maxCol_idx = max(list(hdrs_withIdxDict.values()))\r\n    ## 마지막 헤더위치보다 한칸 옆을 행인덱스번호(\"rIDX\") 정보 보관 위치로 설정\r\n    hdrs_withIdxDict[\"rIDX\"] = hdrs_maxCol_idx+1\r\n    ## 시트의 각 행을 번호와 함께 pair 형태로 추출\r\n    sheetWith_rIDX = list(enumerate(sheet))\r\n    ## rIDX 보관된 시트 데이터 저장을 위한 빈 리스트 선언\r\n    sheet_rIDX = []\r\n    ## pair 형태의 각 행에서, 마지막 헤더의 한칸 우측위치에 rIDX 데이터 주입\r\n    ## 시트의 각 행마다 x 라는 이름으로 순회하며,\r\n    for x in sheetWith_rIDX:\r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치보다 클때,\r\n        if len(x)<hdrs_maxCol_idx:\r\n            #### 마지막 헤더의 우측 칸 위치를 rIDX 데이터로 치환\r\n            x[1][hdrs_maxCol_idx+1] = x[0]\r\n            sheet_rIDX.append(x[1])\r\n            \r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치와 같을때,\r\n        else:\r\n            #### 마지막 헤더의 우측칸이 없으므로 append로 rIDX 데이터 추가\r\n            x[1].append(x[0])\r\n            sheet_rIDX.append(x[1])\r\n    # <<<<< 시트 각행에 rIDX 데이터 주입하는 구간 - (끝)\r\n    \r\n    rowsGrps_perType_withNone = list(map(lambda x: sheet_rIDX[x[0]-1:x[1]], rowAreasAtSheet))\r\n    # None 데이터 치환 구간\r\n    rowsListGrps_perType = go(#>\r\n        rowsGrps_perType_withNone, list,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서\r\n        map(lambda rowGrp: \\\r\n        ## 한 행씩 골라서\r\n        list(map(lambda row: \\\r\n        ## 행을 구성하는 셀 값 중 None이 있으면 빈문자열로 치환\r\n        list(map(lambda cell: \"\" if cell==None else cell, row)), rowGrp)) ),\r\n        ## 맵 객체가 반환되므로 리스트 변환\r\n        list,\r\n    )#<\r\n    \r\n    return (rowsListGrps_perType, hdrs_withIdxDict)\r\n\r\ndef cvt_rowsListGrps_toDictGrps(rowsListGrps_perType, hdrs_withIdxDict, sheetName):\r\n    \"\"\"\r\n    헤더 행과 다수의 컨텐츠 행으로 이루어진 rowListGrps를,\r\n    모든 행을 헤더와 결합된 딕셔너리화 해서 rowDictGrps를 만드는 함수\r\n    \"\"\"\r\n    eff_hdrs_idx = hdrs_withIdxDict.values()\r\n    eff_hdrs_name = hdrs_withIdxDict.keys()\r\n    \r\n    rowsDictGrps_perType = go(#>\r\n        rowsListGrps_perType,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서 한 행 씩 조작하는 함수들을 구상 후\r\n        ## 맵 함수 내에서 go로 합성하여 반복시켜 사용\r\n        map(lambda rowGrp: go(#>>\r\n            ### 그룹 전체 가져와서\r\n            rowGrp,\r\n            ### 각 행을 리스트 타입으로 변환\r\n            map(list), list,\r\n            ### 헤더에 해당하는 행 값을 추출--\r\n            map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,\r\n            ### 헤더이름과 행 내부의 값을 2개씩 짝지어 줌\r\n            map(lambda row: list(zip(eff_hdrs_name, row))), list,\r\n            ### 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬\r\n            map(lambda x: dict(x)),\r\n            ### 딕셔너리 마다 카테고리 정보 추가\r\n            map(lambda x: dictUpdate(x,{\"Family Category\":sheetName})),\r\n            list,\r\n            )#<<\r\n        ), list,\r\n    )#<\r\n    return rowsDictGrps_perType\r\n\r\n# 행딕셔너리 별 입력한 규칙에 따라 참거짓 여부를 반환하는 함수\r\ndef findRow_AppliedType(rowDict, tgtHDRname, rule=None):\r\n    p = re.compile('[0-9]{3,5}')\r\n    target = str(rowDict[tgtHDRname])\r\n    ## 함수 호출시 구분자(rule) 없이 호출한 경우\r\n    ## -Room Category 시트 용 이며 \"Standard Type\" 항목의 값이 000형태의 숫자인지를 판별\r\n    ## -Room Category 중 \"Standard Type\" 칼럼에 룸 넘버, \"Family Type Name\" 칼럼에 룸 이름 입력하게 되어있음\r\n    if rule==None:\r\n        p = re.compile('[0-9]{3,5}')\r\n        m = p.match(target)\r\n        stdCase = target ==\"Room No\"\r\n        res = all([m or stdCase])\r\n    ## 구분자(rule)가 정규표현식 객체로 들어온 경우\r\n    elif isinstance(rule, re.Pattern):\r\n        m = p.match(target)\r\n        res = all([m])\r\n    ## 구분자(rule)가 문자열로 들어온 경우\r\n    else:\r\n        res = rule in target\r\n    return res\r\n\r\n\r\n\r\ndef form_TypeDict(rowsDictGrps,titleKeyName,sttIdx):\r\n    \"\"\"\r\n    rowsDictGrps_perType을 받아서 각 그룹의 이름을 키로 하는\r\n    새로운 중첩구조의 Dictionary를 만들어서,\r\n    바깥에서 타입이름으로 딕셔너리에 접근하면 \r\n    바로 해당 구성내용을 반환해주는 데이터 구조를 만드는 함수\r\n    \"\"\"\r\n    typeDict = go(#>\r\n        rowsDictGrps, list,\r\n        filter(lambda x: x!=[]),\r\n        map(lambda rowsDictGrp: \\\r\n            ### 그룹 전체 첫행 중 타이틀키값과 나머지 row 들 dict를 짝지어 새로운 딕셔너리로 형성\r\n            [list(rowsDictGrp)[0][titleKeyName],go(#>>\r\n                list(rowsDictGrp)[sttIdx:],\r\n                #### 모두 빈칸인 값일때 제외 필터링\r\n                filter(lambda row: any(list(map(lambda cell: cell!=\"\", list(row.values()))))),\r\n                list,\r\n            )]#<<\r\n        ),list,\r\n        dict,\r\n    )#<\r\n    \r\n    return typeDict\r\n\r\ndef updateDict_symValPair(calcTypeDict):\r\n    \"\"\"\r\n    calcTypeDict를 입력으로 받아서\r\n    필요한 \"약자-대응 항목\" 의 구조를 갖는 딕셔너리 형태로\r\n    구성된 새로운 Dictionary를 반환하는 함수\r\n    \"\"\"\r\n    # 모든 산출타입 이름 추출\r\n    allCalcTypeNames = list(calcTypeDict.keys())\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 산출타입태그 이름 각각에 대해,\r\n    for x in allCalcTypeNames:\r\n        ## 타입별 약자 - 산출 대상 값 을 매칭하기위한 빈 딕셔너리 선언\r\n        type = {}\r\n        ## 산출기준 시트의 각 행을 딕셔너리화 한 rD마다 값을 들여다보며\r\n        for rD in calcTypeDict[x]:\r\n            ### 행 딕셔너리의 \"수동 입력값\" 항목의 값이 유효한 값이고,\r\n            ###\"산출수식 약자\" 항목에도 유효한 값이 있다면\r\n            if rD[\"수동 입력값\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                #### 신규 딕셔너리인 type에 키를 산축수식 약자로 하고,\r\n                #### 값을 수동입력값이나 Parameter 항목 값으로 하는 딕셔너리 형성\r\n                type[rD[\"산출수식 약자\"]] = rD[\"수동 입력값\"]\r\n            elif rD[\"Parameter\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                type[rD[\"산출수식 약자\"]] = rD[\"Parameter\"]\r\n        ## 전체를 담을 빈딕셔너리인 res에 \r\n        ## 키를 산축수식 약자로 하고, 값을 아까 마련한 type 딕셔너리로 하는 딕셔너리로 만듬\r\n        res[x] = type\r\n    # 최종결과 반환\r\n    return res\r\n   \r\n\r\ndef find_stdWMdicts_inGrp(rowsDictGrp):\r\n    res = go(\r\n        rowsDictGrp, list,\r\n        ## 엑셀 \"물량산출식\", \"Work Master Code\" 열에 값이 없는 행 제외\r\n        filter(lambda rD: rD[\"입찰_물량산출식\"] != \"\" and rD[\"실행_물량산출식\"] != \"\"),\r\n        filter(lambda rD: rD[\"Work Master Code\"] != \"\"),\r\n        filter(lambda rD: isinstance(rD[\"Work Master Code\"], str)), ### 7/18 오류제보 반영\r\n        ## Family Type Name에 \"H_\" 문자열 포함된 경우 제외\r\n        filter(lambda rD: not findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n        ## 행 딕셔너리의 NO, Standard Type 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictGrp[0][\"NO\"], \"Standard Type\":rowsDictGrp[0][\"Standard Type\"]})),\r\n        ## Q'ty Cal Type Tag 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n        list,\r\n    )\r\n    return res\r\n\r\n\r\ndef find_stdWMdicts_forCat(rowsDictsGrps):\r\n    res = go(#>\r\n        rowsDictsGrps, list,\r\n        map(find_stdWMdicts_inGrp),\r\n        #filter(lambda x: x!=[]),\r\n        list,\r\n    )#<\r\n    return res\r\n\r\ndef find_appliedTypeDicts_forCat(rowsDictsGrps):\r\n    catName = rowsDictsGrps[0][0][\"Family Category\"]\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    #stdWMsDicts = find_stdWMdicts_forCat(rowsDictGrps)\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Family Type Name에 \"H_\" 문자열 포함된 경우만 필터링\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictsGrp[0][\"NO\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            ## 각 딕셔너리마다 카테고리 명 입력\r\n            #map(lambda rD: dictUpdate(rD, {\"Family Category\":catName})),\r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef find_appliedTypeDicts_forRoom(rowsDictsGrps):\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Standard Type 에 \"H_\" 문자열 포함된 경우만 필터링(only for room)\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Standard Type\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rD[\"Standard Type\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            \r\n            ## Room 의 경우는 \"No\"와 \"Family Type Name\"을 합쳐서 \"Family Type Name\"에 입력\r\n            map(lambda rD: dictUpdate(rD,{\"Family Type Name\":str(rD[\"NO\"]).split('.')[0]+\"_\"+rD[\"Family Type Name\"]})),\r\n            \r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef merge_sameFamType_wmSpecs(appliedTypeDicts):\r\n    def merge_inGrp(appliedTypeDicts_perGrp):\r\n        \"\"\"\r\n        엑셀 타입별 행그룹 내에서 실 적용 패일리명이 들어있는\r\n        행들만 추출하고, 그 중 이름이 같은 것들의 wm 정보는 합쳐서\r\n        하나의 이름에 하나의 딕셔너리 객체만 존재하도록 수정\r\n        \"\"\"\r\n        ## 그룹 내 실 적용 패밀리 타입 명 추출(중복 불허)\r\n        keysPerGrp = go(#>\r\n            appliedTypeDicts_perGrp,\r\n            ## 개별 행딕셔너리의 패밀리 타입 항목 값 추출\r\n            map(lambda rD: rD[\"Family Type Name\"]),\r\n            ## 문자열 내 \"H_\"가 포함되어있는 지 검사\r\n            filter(lambda x: \"H_\" in x),\r\n            ## 중복 Family Type Name 단일화\r\n            set, list,\r\n        )#<\r\n        ## 패밀리 타입 명을 k라는 변수명으로 하나씩 순회\r\n        for k in keysPerGrp:\r\n            ### k라는 패밀리 타입 명에 해당하는 딕셔너리 모두 검색\r\n            sameNameDicts = list(filter(lambda x: x[\"Family Type Name\"] == k, appliedTypeDicts_perGrp))\r\n            ### 하나의 타입명에 복수 객체인지를 검사하여\r\n            ### 2개 이상인 경우\r\n            if len(sameNameDicts)>=2:\r\n                ### 동일 이름의 딕셔너리들 중 첫번째 항목의 \"wmSpecs\"에\r\n                ### 나머지 항목의 wmSpecs 항목을 몰아준다\r\n                for i,rD in enumerate(sameNameDicts[1:]):\r\n                    if rD[\"wmSpecs\"]:\r\n                        sameNameDicts[0][\"wmSpecs\"].append(*rD[\"wmSpecs\"])\r\n                    else: pass\r\n                ### 몰아주기가 끝나면, 첫번째를 제외한 나머지 딕셔너리는\r\n                ### 불필요해지므로 삭제\r\n                appliedTypeDicts_perGrp.remove(sameNameDicts[i+1])\r\n            else:                \r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDicts_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return map(merge_inGrp, appliedTypeDicts)\r\n\r\n\r\n\r\ndef inject_stdWMtoAppliedTypeDicts(appliedTypeDicts, allCat_stdWMdicts_stdTypeName):\r\n    def inject_inGrp(appliedTypeDict_perGrp):\r\n        \"\"\"\r\n        타입 그룹 별 공통 WM 딕셔너리 항목들을\r\n        실적용패밀리 딕셔너리에 주입하는 함수\r\n        \"\"\"\r\n        ## 실적용패밀리 딕셔너리 리스트의 구성 원소 각각을\r\n        ## rD(rowDictionary) 라는 이름으로 순회\r\n        for rD in appliedTypeDict_perGrp:\r\n            ### rD의 \"Standard Type\" 항목 값이\r\n            ### 입력받은 타입별 공통 WM항목 딕셔너리의 키값중에\r\n            ### 포함되었는지 검사후 있으면,\r\n            if rD[\"Standard Type\"] in list(allCat_stdWMdicts_stdTypeName.keys()):\r\n                #### rD의 \"wmSpecs\" 항목에 공통 WM항목을 추가하여 재할당\r\n                rD[\"wmSpecs\"] = rD[\"wmSpecs\"] + allCat_stdWMdicts_stdTypeName[rD[\"Standard Type\"]]\r\n            else:\r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDict_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return list(map(inject_inGrp, appliedTypeDicts))\r\n    \r\ndef updateFamTypeDicts_symValPair(total_appliedTypeDicts, calcTypeDict_symValPair):\r\n    \"\"\"\r\n    실적용패밀리타입명 별 딕셔너리에\r\n    \"Q'ty Cal Type Tag\" 항목 값 이름과 일치하는\r\n    물량산출 매개변수 꾸러미 추가하는 함수\r\n    \"\"\"\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 전체 실적용 패밀리 딕셔너리들 중 구성원소 각각을 d라는 이름으로 순회\r\n    for d in total_appliedTypeDicts:\r\n        ## 딕셔너리의 \"Q'ty Cal Type Tag\"항목의 값이 빈문자열이 아니라면,\r\n        if d[\"Q'ty Cal Type Tag\"]!=\"\":\r\n            ### 딕셔너리에 \"Sym_Val Dict\"라는 키를 추가하고\r\n            ### calcTypeDict 중 일치하는 값을 골라 키의 값으로 할당\r\n            symValPair = calcTypeDict_symValPair[d[\"Q'ty Cal Type Tag\"]]\r\n            d[\"Sym_Val Dict\"] = symValPair\r\n        ## 전체용 빈 딕셔너리에 패밀리 타입명을 키로 추가하고\r\n        ## 방금 수정한 단위 딕셔너리를 키의 값으로 할당\r\n        res[d[\"Family Type Name\"]] = d    \r\n    return res\r\n    \r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    \"\"\"\r\n    레빗객체와 패밀리리스트 딕셔너리의 정보를 하나로 결합해주는 용도의 함수\r\n    패밀리리스트 데이터는 패밀리 타입명을 키값으로 하는 하나의 딕셔너리로 정리되어있어야 한다\r\n    revit객체는 패밀리리스트 상 존재하는 타입만 필터링해서 입력해야 함\r\n    \"\"\"\r\n    # 수행결과를 모을 빈 리스트 선언\r\n    res = []\r\n    # 모든 레빗 객체들을 하나씩 순회 \r\n    for i in revitElems:\r\n        ## revit 객체들과 revit 타입별 Family List 딕셔너리를 결합하기 위한 빈 딕셔너리 선언\r\n        combD = {}\r\n        ## 패밀리 타입명 추출 - Room 객체인 경우와 아닌 경우 분기\r\n        if \"Room\" in str(type(i)):\r\n            famTypeName = i.GetParameterValueByName(\"Number\") + \"_\" + i.GetParameterValueByName(\"Name\")\r\n        else:\r\n            famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        ## 결합용 딕셔너리의 \"Elem\" 이라는 키에 순회 중인 i (revit객체)를 할당\r\n        combD[\"Elem\"] = i\r\n        combD[\"GUID\"] = i.GetParameterValueByName(\"IfcGUID\")\r\n        ## 결합용 딕셔너리의 \"wms\" 이라는 키에 \r\n        ## 순회 중인 i (revit객체) 패밀리 타입 명과 일치하는 famlist_dictionary의 값을 할당\r\n        combD[\"wms\"] = deepcopy(famlist_dic[famTypeName])\r\n        ##결합된 딕셔너리를 res에 저장\r\n        res.append(combD)\r\n    # 전체 수행 결과 반환\r\n    return res\r\n\r\ndef update_sym_valDict(matched_elemDicts):\r\n    def update_sym_valDict_single(d):\r\n        \"\"\"\r\n        딕셔너리별로 포함된 [\"wms\"][\"Sym_Val Dict\"]항목 내에\r\n        아직 계산되지 않은 매개변수 값들을 계산하여\r\n        \"Post_Sym_Val Dict\"라는 새로운 키의 값으로 할당하는 함수\r\n        \"\"\"\r\n        e = d[\"Elem\"]\r\n        newSymValDict = {}\r\n        keys = d[\"wms\"][\"Sym_Val Dict\"].keys()\r\n        vals = d[\"wms\"][\"Sym_Val Dict\"].values()\r\n        for s,v in zip(keys, vals):\r\n            ## Vals 항목이 사용자 입력값이 아닌 revit 매개변수인 경우\r\n            if isinstance(v,str):\r\n                if v not in list(map(lambda x: x.Name, e.Parameters)):\r\n                    calc_v = e.ElementType.GetParameterValueByName(v)\r\n                else:\r\n                    calc_v = e.GetParameterValueByName(v)\r\n                calc_vv= calc_v if isinstance(calc_v, str) else round(calc_v, 3)\r\n                newSymValDict[s] = calc_vv\r\n            ## Vals 항목이 사용자 입력값인 경우는 그대로 입력된 숫자 사용\r\n            else:\r\n                newSymValDict[s] = v\r\n        d[\"wms\"][\"Post_Sym_Val Dict\"] = newSymValDict\r\n        \r\n        return d\r\n    return list(map(update_sym_valDict_single, matched_elemDicts))\r\n\r\n\r\n\r\n    \r\ncalcSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(calcStdSheet, \"구간판별\", \"#\")\r\ncalcSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*calcSheet_rowsListGrps_perType,\"\")\r\ncalcTypeDict = form_TypeDict(calcSheet_rowsDictGrps_perType,\"Q'ty Cal Type Tag\",sttIdx=1)\r\ncalcTypeDict_symValPair = updateDict_symValPair(calcTypeDict)\r\n\r\nroomSheet_rowsListGrps_perType = get_DataOnGrpsAtSheet(allCatSheets[0], \"Standard Type\", \"H_\")\r\nroomSheet_rowsDictGrps_perType = cvt_rowsListGrps_toDictGrps(*roomSheet_rowsListGrps_perType,\"0.Room\")\r\nroom_stdWMdicts = find_stdWMdicts_forCat(deepcopy(roomSheet_rowsDictGrps_perType))\r\nroom_stdWMdicts_stdTypeName = form_TypeDict(room_stdWMdicts, \"Standard Type\",sttIdx=0)\r\n\r\nroom_appliedTypeDicts = find_appliedTypeDicts_forRoom(roomSheet_rowsDictGrps_perType)\r\nroom_appliedTypeDicts_noDupl = merge_sameFamType_wmSpecs(room_appliedTypeDicts)\r\n\r\nroom_appliedTypeDicts_withStdWm = list(chain(*inject_stdWMtoAppliedTypeDicts(room_appliedTypeDicts_noDupl, room_stdWMdicts_stdTypeName)))\r\n\r\n# 룸 제외 모든 카테고리 시트 처리\r\nallCatSheet_rowsListGrps = map( lambda x: get_DataOnGrpsAtSheet(x, \"Standard Type\", \"H_\"), allCatSheets[1:] )\r\nallCatSheet_rowsListGrps_namesPair = list(zip(allCatSheet_rowsListGrps, allCatSheetsNames_noRoom))\r\nallCatSheet_rowsDictGrps = map( lambda x: cvt_rowsListGrps_toDictGrps(*x[0],x[1]), allCatSheet_rowsListGrps_namesPair )\r\n\r\n# \"Standard Type\" 별 wm 공통항목 찾기\r\nallCat_stdWMdicts = list(map( lambda x: find_stdWMdicts_forCat(x), deepcopy(allCatSheet_rowsDictGrps) ))\r\n# \"Standard Type\" 명으로 검색할 수 있는, 전 카테고리 \"Standard Type\" 별 공통 WM항목 사전 만들기\r\nallCat_stdWMdicts_stdTypeName = dictsMerge(list(map(lambda x: form_TypeDict(x, \"Standard Type\",sttIdx=0), allCat_stdWMdicts)))\r\n\r\nallCat_appliedTypeDicts = map( lambda x: find_appliedTypeDicts_forCat(x), allCatSheet_rowsDictGrps )\r\nallCat_appliedTypeDicts_noDupl = map( lambda x: merge_sameFamType_wmSpecs(x), allCat_appliedTypeDicts )\r\n\r\nallCat_appliedTypeDicts_withStdWm = list(chain(*chain(*map( lambda x: inject_stdWMtoAppliedTypeDicts(x,allCat_stdWMdicts_stdTypeName), allCat_appliedTypeDicts_noDupl ))))\r\n\r\ntotal_appliedTypeDicts = room_appliedTypeDicts_withStdWm + allCat_appliedTypeDicts_withStdWm\r\nFamTypeDicts_symValPair = updateFamTypeDicts_symValPair(total_appliedTypeDicts,calcTypeDict_symValPair)\r\n\r\nallUsedFamTypeNames_Excel = FamTypeDicts_symValPair.keys()\r\nallElemsFiltered_byExcel = list(map(lambda y: y[1], list(filter(lambda x: x[0] in allUsedFamTypeNames_Excel , allElemsSet))))\r\n\r\nallElemsDict = update_sym_valDict(matchWith_Elem_Dict(FamTypeDicts_symValPair, allElemsFiltered_byExcel))\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = allElemsDict, FamTypeDicts_symValPair",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7454,8 +7454,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
-      "InputValue": "..\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
+      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
+      "InputValue": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
       "Inputs": [],
@@ -7556,7 +7556,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n\r\ndef add_toGLvolumeInfo_toElemDict(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    belowSrf = find_belowSrf(elem)\r\n    if elem.GetParameterValueByName(\"Elevation at Bottom\"):\r\n        btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\") ## wall, ped 같은 부재들은 \"Elevation at Bottom\" 파라미터가 없으므로 별도 처리 로직 구성 필요\r\n    else:\r\n        try:\r\n            centerPt = belowSrf.NormalAtParameter(0.5, 0.5)\r\n            btm_Z_FL = centerPt.Z\r\n        except:\r\n            btm_Z_FL = 0\r\n        \r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n\r\n    Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    \r\n    res = {\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        #map(add_toGLvolumeInfo_toElemDict),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        lambda x: x[0],\r\n    )\r\n    return res\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    \"\"\"\r\n    터파기 형상을 만들 기준 객체들만 필터링\r\n    \"\"\"\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: \r\n            \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Trench\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda x: x[\"Elem\"].Geometry() ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef find_preExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    GWL = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    excaVolume = excaShape.Volume\r\n    \r\n    if (GWL - btm_GL_Z) <= 0:\r\n        GWL_toGL_volume = \"NA\"\r\n        Btm_toGWL_volume = 0\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    elif (GWL - btm_GL_Z) > 0:\r\n        GWL_toGL_volume = abs(belowSrf.Area * GWL)\r\n        Btm_toGWL_volume = abs( belowSrf.Area * (btm_GL_Z - GWL) )\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    \r\n    \r\n    res = {\r\n        \"pre_excaShape\": excaShape,\r\n        \"pre_excaVolume\": excaVolume,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\n\r\ndef find_allElem_earthInfo(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_preExcaShape),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_UnionExcaShape(elemEarthDicts):\r\n    GWL = elemEarthDicts[0][\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    shape = go(\r\n        elemEarthDicts,\r\n        map(lambda x: x[\"earthInfo\"][\"pre_excaShape\"]),\r\n        Solid.ByUnion,\r\n    )\r\n    res = {\r\n        \"excaShape\": shape,\r\n        \"GWL\": GWL\r\n    }\r\n    return res\r\n\r\ndef find_UnionDisposalShape(allUG_RCelemDicts, whole_excaShape):\r\n    unionShapes = go(\r\n        allUG_RCelemDicts,\r\n        map(lambda x: x[\"Elem\"].Geometry()),\r\n        lambda x: list(chain(*x)),\r\n        Solid.ByUnion,\r\n    )\r\n    \r\n    res = unionShapes.Intersect(whole_excaShape)[0]\r\n    \r\n    return res\r\n    \r\ndef add_disposalAndbackfil_qty_toElemDicts(earthTargets, whole_disposalShape, whole_backfillShape):\r\n    whole_disposalShape_volume = whole_disposalShape.Volume\r\n    whole_backfillShape_volume = whole_backfillShape.Volume\r\n    \r\n    total_toGLvolume = go(\r\n        earthTargets,\r\n        \r\n    )\r\n\r\nallUG_RC_elemDicts = go(\r\n    elemDicts,\r\n    filter(lambda x: \r\n        \"UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"H_SF_\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Mat\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Lean\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Trench\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Stoop\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Ramp\" in x[\"wms\"][\"Family Type Name\"]\r\n    ),\r\n    list,    \r\n)\r\nearthCalcTargets = filter_EarthworkCalcTarget(elemDicts)\r\nexcaTargets = filter_targetForBelowSrfs(earthCalcTargets)\r\n#allElems = list(map(lambda x: x[\"Elem\"], earthTargets))\r\nallTgtDicts_withEarthInfo = find_allElem_earthInfo(excaTargets)\r\n\r\nGWL = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"GWL\"]\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\nwhole_excaShape = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"excaShape\"]\r\nwhole_disposalShape = find_UnionDisposalShape(allUG_RC_elemDicts, whole_excaShape)\r\nwhole_backfillShape = whole_excaShape.Split(whole_disposalShape)[0]\r\nsplited_excaShape =  whole_excaShape.Split(GWLplane)\r\nabove_whole_excaShape = splited_excaShape[0]\r\nbelow_whole_excaShape = splited_excaShape[1]\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = map(lambda x: find_belowSrf(x), allElems), allElems\r\nOUT = earthCalcTargets, below_whole_excaShape, above_whole_excaShape",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        map(add_toGLvolumeInfo_toElemDict),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_toGLvolumeInfo_toElemDict(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    belowSrf = find_belowSrf(elem)\r\n    if elem.GetParameterValueByName(\"Elevation at Bottom\"):\r\n        btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\") ## wall, ped 같은 부재들은 \"Elevation at Bottom\" 파라미터가 없으므로 별도 처리 로직 구성 필요\r\n    else:\r\n        try:\r\n            centerPt = belowSrf.NormalAtParameter(0.5, 0.5)\r\n            btm_Z_FL = centerPt.Z\r\n        except:\r\n            btm_Z_FL = 0\r\n        \r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    if belowSrf:\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    else:\r\n        Btm_toGL_volume = 0\r\n    \r\n    res = {\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        #lambda x: x[0],\r\n    )\r\n    if res:\r\n        return res[0]\r\n    \r\n    #return res\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    \"\"\"\r\n    터파기 형상을 만들 기준 객체들만 필터링\r\n    \"\"\"\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: \r\n            \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Trench\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"_exca\" in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda x: x[\"Elem\"].Geometry() ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef find_preExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    GWL = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    excaVolume = excaShape.Volume\r\n    \r\n    if GWL <= btm_GL_Z:\r\n        GWL_toGL_volume = 0 #\"N/A\"\r\n        Btm_toGWL_volume = 0\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    elif GWL > btm_GL_Z:\r\n        GWL_toGL_volume = abs(belowSrf.Area * GWL)\r\n        Btm_toGWL_volume = abs( belowSrf.Area * (btm_GL_Z - GWL) )\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    \r\n    \r\n    res = {\r\n        \"btm_GL_Z\": btm_GL_Z,\r\n        \"pre_excaShape\": excaShape,\r\n        \"pre_excaVolume\": excaVolume,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\n\r\ndef find_allElem_earthInfo(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_preExcaShape),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_UnionExcaShape(elemEarthDicts):\r\n    GWL = elemEarthDicts[0][\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    shape = go(\r\n        elemEarthDicts,\r\n        map(lambda x: x[\"earthInfo\"][\"pre_excaShape\"]),\r\n        Solid.ByUnion,\r\n    )\r\n    res = {\r\n        \"excaShape\": shape,\r\n        \"GWL\": GWL\r\n    }\r\n    return res\r\n\r\ndef find_UnionDisposalShape(allUG_RCelemDicts, whole_excaShape):\r\n    unionShapes = go(\r\n        allUG_RCelemDicts,\r\n        map(lambda x: x[\"Elem\"].Geometry()),\r\n        lambda x: list(chain(*x)),\r\n        Solid.ByUnion,\r\n    )\r\n    \r\n    res = unionShapes.Intersect(whole_excaShape)[0]\r\n    \r\n    return res\r\n    \r\ndef add_disposalAndbackfil_qty_toElemDicts(earthTargets, whole_disposalShape, whole_backfillShape):\r\n    whole_disposalShape_volume = whole_disposalShape.Volume\r\n    whole_backfillShape_volume = whole_backfillShape.Volume\r\n    \r\n    total_toGLvolume = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    def find_asignedQty_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGL_volume\"] / total_toGLvolume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        return res\r\n    \r\n    res = go(\r\n        earthTargets,\r\n        map( lambda x: \r\n            dict( x, **{\"earthQty\": {\r\n                                        \"disposal\": find_asignedQty_elemDict(x, whole_disposalShape_volume),\r\n                                        \"backfill\": find_asignedQty_elemDict(x, whole_backfillShape_volume),\r\n                                    }} ) \r\n        ),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_excavation_qty_toElemDicts(earthTargets, GWLplane, whole_excaShape):\r\n   \r\n    total_GWL_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"GWL_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGWL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    \r\n    def find_asignedQty_aboveGWL_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"GWL_toGL_volume\"] / total_GWL_toGL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_aboveGWL\"] = res\r\n        return d\r\n        \r\n    def find_asignedQty_belowGWL_elemDict(d, wholeVolume):       \r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGWL_volume\"] / total_Btm_toGWL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_belowGWL\"] = res\r\n        return d\r\n        \r\n    above_whole_excaShape = whole_excaShape.Split(GWLplane)[0]\r\n    above_whole_excaShape_volume = above_whole_excaShape.Volume\r\n    \r\n    if whole_excaShape.Split(GWLplane)[1]:\r\n        below_whole_excaShape = whole_excaShape.Split(GWLplane)[1]\r\n        below_whole_excaShape_volume = below_whole_excaShape.Volume\r\n    else:\r\n        below_whole_excaShape = \"NA\"\r\n        below_whole_excaShape_volume = 0\r\n    assign_above = map(lambda x: find_asignedQty_aboveGWL_elemDict(x, above_whole_excaShape_volume), earthTargets)\r\n    assign_below = map(lambda x: find_asignedQty_belowGWL_elemDict(x, below_whole_excaShape_volume), assign_above)\r\n    \r\n    return assign_below\r\n\r\nallUG_RC_elemDicts = go(\r\n    elemDicts,\r\n    filter(lambda x: \r\n        \"UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"H_SF_\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Mat\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Lean\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Trench\" in x[\"wms\"][\"Family Type Name\"] or ## 트렌치 처럼 공동 있는 부분 바운딩 처리 추가 필요\r\n        \"SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Stoop\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Ramp\" in x[\"wms\"][\"Family Type Name\"]\r\n    ),\r\n    list,    \r\n)\r\n\r\nearthCalcTargets = filter_EarthworkCalcTarget(elemDicts)\r\nexcaTargets = filter_targetForBelowSrfs(earthCalcTargets)\r\nallTgtDicts_withEarthInfo = find_allElem_earthInfo(excaTargets)\r\n\r\nGWL = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"GWL\"]\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\n\r\nwhole_excaShape = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"excaShape\"]\r\nwhole_disposalShape = find_UnionDisposalShape(allUG_RC_elemDicts, whole_excaShape)\r\nwhole_backfillShape = whole_excaShape.Split(whole_disposalShape)[0]\r\n\r\nsplited_excaShape =  whole_excaShape.Split(GWLplane)\r\nabove_whole_excaShape = splited_excaShape[0]\r\nbelow_whole_excaShape = splited_excaShape[1]\r\n\r\ndisposalBackfillDicts = add_disposalAndbackfil_qty_toElemDicts(excaTargets, whole_disposalShape, whole_backfillShape)\r\n\r\nres = add_excavation_qty_toElemDicts(disposalBackfillDicts, GWLplane, whole_excaShape)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = earthCalcTargets\r\nOUT = res, above_whole_excaShape, below_whole_excaShape, whole_disposalShape, whole_backfillShape",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7840,7 +7840,7 @@
       "Id": "ffdfd3c51390401f887fca2a529b1613",
       "Inputs": [
         {
-          "Id": "8cd3d809279e4d0bb6393eedd61856b9",
+          "Id": "b8cca281226a4491b0dd18dca0098d58",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -7851,7 +7851,7 @@
       ],
       "Outputs": [
         {
-          "Id": "ad6d52c64043458db81d2e1f43734046",
+          "Id": "82d3518b01bf4fffa0bdb76964e42bf5",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -7862,39 +7862,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallElemsDicts = IN[0]\r\n# Place your code below this line\r\nallElems = go(\r\n    allElemsDicts,\r\n    map(lambda x: x[\"Elem\"]),\r\n    list,\r\n)\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        #lambda x: x[0],\r\n    )\r\n    return res\r\n# Assign your output to the OUT variable.\r\nOUT = map(find_belowSrf, allElems)",
-      "Engine": "CPython3",
-      "EngineName": "CPython3",
-      "VariableInputPorts": true,
-      "Id": "c1ae3a9db2344907a291040bd5b26e2d",
-      "Inputs": [
-        {
-          "Id": "3cee1d0cc34f4f8bb52ee5af3b06f347",
-          "Name": "IN[0]",
-          "Description": "Input #0",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "8b8a0976bee34f1187a2c6484f24f59f",
-          "Name": "OUT",
-          "Description": "Result of the python script",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -7925,6 +7892,474 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0][\"earthInfo\"];",
+      "Id": "b0d31aa4c39a42ae8e52bc8fb58ff31b",
+      "Inputs": [
+        {
+          "Id": "02b4834351bc431ba0cc7b5db13d82ab",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a35564c57ce14d2ea3f6b7cad560fea4",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0][\"earthQty\"];",
+      "Id": "a5a019aa9f9a44ac966121efa3cec085",
+      "Inputs": [
+        {
+          "Id": "46c1a84f2c254a6894cfcd5ff1d16f05",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a7e38b963c3842eab7f36706467bae88",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "3419fce7a001481f877656c8baff2197",
+      "Inputs": [
+        {
+          "Id": "e9538352c0c6494ab82f9a6b756535c8",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e9f6ba6ff5d445e29b50dc633e8ddc77",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[1].Volume / 1000000000;",
+      "Id": "c92ee3383c0a4f85b4b958d6f33bead3",
+      "Inputs": [
+        {
+          "Id": "5de00e42cad14c76a5a95b0bac2c54be",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e7dbe01929f64dc685203891ba66c190",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[2].Volume / 1000000000;",
+      "Id": "d7d41f1ecc634152bbd900cb78728d28",
+      "Inputs": [
+        {
+          "Id": "08456cee2ffd4fa588a95ea9a9cde0bb",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b9449ec766354152bb784909e0c42922",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Surface.PointAtParameter@double,double",
+      "Id": "3ea5b320e6824f009f779bc1f48b28ce",
+      "Inputs": [
+        {
+          "Id": "70003250d9b844fe94e2e08a13fb690d",
+          "Name": "surface",
+          "Description": "Autodesk.DesignScript.Geometry.Surface",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7157f8eccc3e4142ac84682de305dc8b",
+          "Name": "u",
+          "Description": "double\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c30b6b5ebb404a9596c91a2b1f20ca03",
+          "Name": "v",
+          "Description": "double\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e5f6a8f946de492997fd75eabe3de1b7",
+          "Name": "Point",
+          "Description": "Point",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Return the Point at specified U and V parameters.\n\nSurface.PointAtParameter (u: double = 0, v: double = 0): Point"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"exca_belowGWL\"];",
+      "Id": "044338f88a6949c191e6878521704ff6",
+      "Inputs": [
+        {
+          "Id": "b72f6b2999ca4638aaa7d1c5feae96f9",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f5af95dd212b4d118a4158ba8640b16e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"exca_aboveGWL\"];",
+      "Id": "66a3c3d8bd9c478ea1d184edc1736ea8",
+      "Inputs": [
+        {
+          "Id": "794fa58225964ee89d2b63711a8710db",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1f0cff33fe374658aa5ac61095154558",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "1a261d55cb4a4793b1136225ea9807f4",
+      "Inputs": [
+        {
+          "Id": "c1d9e439f0a04d72a16253f9799cb161",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5fa50c51183547bda1153dbc10620524",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[3].Volume / 1000000000;",
+      "Id": "f3edd7adfbd24ae5b84686928b1019ff",
+      "Inputs": [
+        {
+          "Id": "1077e8e2e18641d39d37d42ff7960daf",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1991e143f67b40af8c7b8ad18de433f7",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[4].Volume / 1000000000;",
+      "Id": "c37d860c62ed456ebcbedc80e8c4e488",
+      "Inputs": [
+        {
+          "Id": "5f51bd349799448ea9a5c436975bdd63",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "de22eb48f4ec4c2ea905465260b2a107",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "2bc4398fb8d74394acda37c84e57056b",
+      "Inputs": [
+        {
+          "Id": "bd9e960a215b40189ccc09995ddb5439",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "667f8f3e838e4e29a9c7e0cef2d4703c",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"backfill\"];",
+      "Id": "8f95998569b545bc94e21424a7d28fea",
+      "Inputs": [
+        {
+          "Id": "b4ac3d654f294430b03a0a5868f5d4ac",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "02708fdd77804f6a82322ba906501594",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"disposal\"];",
+      "Id": "a7b3133676d34f498ba12d04caa17558",
+      "Inputs": [
+        {
+          "Id": "83d94dea18794aefad33ed896088ae18",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "9879a6833b4649569fab82666137ad66",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "8584fcae151f4d33ac2e107b546e74d9",
+      "Inputs": [
+        {
+          "Id": "59cfbb4460c94b809c649cc70d72ecb9",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "adeafdeb9c9b40cfbe16633fa0777255",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
     }
   ],
   "Connectors": [
@@ -9544,14 +9979,50 @@
     },
     {
       "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
-      "End": "8cd3d809279e4d0bb6393eedd61856b9",
-      "Id": "5fd80d32490b475b9a96a9e0b9723fbf",
+      "End": "c64f3163b7de493b9f79b3a7fcd3502b",
+      "Id": "2908b9bdaa28458b86f1b9dd875895c5",
       "IsHidden": "False"
     },
     {
       "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
-      "End": "c64f3163b7de493b9f79b3a7fcd3502b",
-      "Id": "2908b9bdaa28458b86f1b9dd875895c5",
+      "End": "02b4834351bc431ba0cc7b5db13d82ab",
+      "Id": "517a0c3cf21a477287a684e958622c70",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "b8cca281226a4491b0dd18dca0098d58",
+      "Id": "61886d6d2bc04f2a9a9fe712c459a8dc",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "5de00e42cad14c76a5a95b0bac2c54be",
+      "Id": "a8cb6fce963e4c7a9f50a29d37e3f1aa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "08456cee2ffd4fa588a95ea9a9cde0bb",
+      "Id": "6b04528b43104ad790cf5f6a28d19380",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "46c1a84f2c254a6894cfcd5ff1d16f05",
+      "Id": "920ad61a819d4e64bd405c9924512e71",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "1077e8e2e18641d39d37d42ff7960daf",
+      "Id": "e578b9a51785441ca62b39b51d4b69aa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "5f51bd349799448ea9a5c436975bdd63",
+      "Id": "40b15b739724451bbc506b0937016c61",
       "IsHidden": "False"
     },
     {
@@ -9579,16 +10050,58 @@
       "IsHidden": "False"
     },
     {
-      "Start": "73ac88ffe10e4b8db8b1e206ce8fbdb4",
-      "End": "3cee1d0cc34f4f8bb52ee5af3b06f347",
-      "Id": "eb9e044469304d48a668905273c00560",
+      "Start": "a7e38b963c3842eab7f36706467bae88",
+      "End": "b72f6b2999ca4638aaa7d1c5feae96f9",
+      "Id": "a0bd09f130884e158e80d97a3df6da95",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a7e38b963c3842eab7f36706467bae88",
+      "End": "794fa58225964ee89d2b63711a8710db",
+      "Id": "8245f6c8a43f4195b724f3f33211aae8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a7e38b963c3842eab7f36706467bae88",
+      "End": "83d94dea18794aefad33ed896088ae18",
+      "Id": "0899151d85844e0d931fd832b0d22f8e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a7e38b963c3842eab7f36706467bae88",
+      "End": "b4ac3d654f294430b03a0a5868f5d4ac",
+      "Id": "aa8c7f01cde14e55a1a43feae1802d8c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f5af95dd212b4d118a4158ba8640b16e",
+      "End": "e9538352c0c6494ab82f9a6b756535c8",
+      "Id": "c19cbce390b14765bba5f22c11121202",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1f0cff33fe374658aa5ac61095154558",
+      "End": "c1d9e439f0a04d72a16253f9799cb161",
+      "Id": "e321b7c586ac4feba7b2142c55bc3a5c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "02708fdd77804f6a82322ba906501594",
+      "End": "bd9e960a215b40189ccc09995ddb5439",
+      "Id": "73f057e080e24a26abc6b47e01990a2b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "9879a6833b4649569fab82666137ad66",
+      "End": "59cfbb4460c94b809c649cc70d72ecb9",
+      "Id": "3761c6d93f374c90b2fb7d783829cca3",
       "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [
     {
-      "Name": "(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
+      "Name": "A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
       "ReferenceType": "External",
       "Nodes": [
         "51b4738620874fe885b1b5ecce1e49b7",
@@ -9607,7 +10120,7 @@
       ]
     },
     {
-      "Name": "Total BOQ_blank_0716-053049.xlsx",
+      "Name": "Total BOQ_blank_0719-053218.xlsx",
       "ReferenceType": "External",
       "Nodes": [
         "11184f601ab1440f92b47f1dcda08f3f"
@@ -9656,15 +10169,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": -4903.470703125,
-      "EyeY": 18429.05859375,
-      "EyeZ": -79642.65625,
-      "LookX": 36693.02734375,
-      "LookY": -53559.99609375,
-      "LookZ": 62763.6171875,
-      "UpX": 0.2052789181470871,
+      "EyeX": 1858.1171875,
+      "EyeY": 18429.06640625,
+      "EyeZ": -83134.28125,
+      "LookX": 29931.439453125,
+      "LookY": -53560.00390625,
+      "LookZ": 66255.2421875,
+      "UpX": 0.16745027899742126,
       "UpY": 0.913543701171875,
-      "UpZ": 0.3511391282081604
+      "UpZ": 0.37067291140556335
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -11894,7 +12407,7 @@
         "Id": "faae1f09bb244b47a3d4e09678bed5a6",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Excluded": false,
         "X": 3278.7973643464011,
         "Y": -2031.0196145567406
       },
@@ -11985,18 +12498,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -784.74615283652543,
-        "Y": -3123.4687866381314
-      },
-      {
-        "Name": "Python Script",
-        "ShowGeometry": true,
-        "Id": "c1ae3a9db2344907a291040bd5b26e2d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -370.59906230275078,
-        "Y": -3349.1491863349856
+        "X": -781.13707712467283,
+        "Y": -3187.2291242141951
       },
       {
         "Name": "Code Block",
@@ -12007,6 +12510,156 @@
         "Excluded": false,
         "X": -740.73851531620551,
         "Y": -3344.9729520423662
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "b0d31aa4c39a42ae8e52bc8fb58ff31b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -705.72616690444022,
+        "Y": -2757.0425307192472
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "a5a019aa9f9a44ac966121efa3cec085",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -325.03473862351109,
+        "Y": -3046.1302710691534
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "3419fce7a001481f877656c8baff2197",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 660.46786592980425,
+        "Y": -2761.6299719886624
+      },
+      {
+        "Name": "above_exca",
+        "ShowGeometry": true,
+        "Id": "c92ee3383c0a4f85b4b958d6f33bead3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 540.96789042930618,
+        "Y": -3402.4589740211823
+      },
+      {
+        "Name": "below_exca",
+        "ShowGeometry": true,
+        "Id": "d7d41f1ecc634152bbd900cb78728d28",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 539.54273231876221,
+        "Y": -3206.1437128289481
+      },
+      {
+        "Name": "Surface.PointAtParameter",
+        "ShowGeometry": true,
+        "Id": "3ea5b320e6824f009f779bc1f48b28ce",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -387.69969541650767,
+        "Y": -2413.548483087307
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "044338f88a6949c191e6878521704ff6",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 301.66364904086674,
+        "Y": -2768.7447530791633
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "66a3c3d8bd9c478ea1d184edc1736ea8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 311.72044586640243,
+        "Y": -2992.224075020793
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "1a261d55cb4a4793b1136225ea9807f4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 658.17773748512445,
+        "Y": -2999.8361486173521
+      },
+      {
+        "Name": "disposal",
+        "ShowGeometry": true,
+        "Id": "f3edd7adfbd24ae5b84686928b1019ff",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 567.68004810776608,
+        "Y": -4360.8055632349615
+      },
+      {
+        "Name": "backfill",
+        "ShowGeometry": true,
+        "Id": "c37d860c62ed456ebcbedc80e8c4e488",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 573.24774074643153,
+        "Y": -4188.0588064548647
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "2bc4398fb8d74394acda37c84e57056b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 651.33999758272057,
+        "Y": -3737.164942493645
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "8f95998569b545bc94e21424a7d28fea",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 292.53578069378295,
+        "Y": -3744.2797235841449
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "a7b3133676d34f498ba12d04caa17558",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 302.59257751931864,
+        "Y": -3967.759045525775
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "8584fcae151f4d33ac2e107b546e74d9",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 649.04986913804078,
+        "Y": -3975.3711191223347
       }
     ],
     "Annotations": [
@@ -12485,7 +13138,7 @@
         "Left": 4248.0158528790907,
         "Top": -3477.6798325797508,
         "Width": 3373.9113750481292,
-        "Height": 1097.7213463208823,
+        "Height": 1187.4893721395879,
         "FontSize": 72.0,
         "InitialTop": -3361.6798325797508,
         "InitialHeight": 994.72134632088228,
@@ -12620,8 +13273,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 763.15260439831059,
-    "Y": 4342.9099793958758,
-    "Zoom": 1.2530684404904548
+    "X": 1865.9156755504091,
+    "Y": 18.193835599260581,
+    "Zoom": 1.3100884480193085
   }
 }
