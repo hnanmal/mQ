@@ -17,7 +17,7 @@
       "Name": "1. Family List 경로 입력",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
+      "Value": "..\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -370,8 +370,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
-      "InputValue": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
+      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
+      "InputValue": "..\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
       "Inputs": [],
@@ -7556,7 +7556,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        map(add_toGLvolumeInfo_toElemDict),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_toGLvolumeInfo_toElemDict(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    belowSrf = find_belowSrf(elem)\r\n    if elem.GetParameterValueByName(\"Elevation at Bottom\"):\r\n        btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\") ## wall, ped 같은 부재들은 \"Elevation at Bottom\" 파라미터가 없으므로 별도 처리 로직 구성 필요\r\n    else:\r\n        try:\r\n            centerPt = belowSrf.NormalAtParameter(0.5, 0.5)\r\n            btm_Z_FL = centerPt.Z\r\n        except:\r\n            btm_Z_FL = 0\r\n        \r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    if belowSrf:\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    else:\r\n        Btm_toGL_volume = 0\r\n    \r\n    res = {\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        #lambda x: x[0],\r\n    )\r\n    if res:\r\n        return res[0]\r\n    \r\n    #return res\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    \"\"\"\r\n    터파기 형상을 만들 기준 객체들만 필터링\r\n    \"\"\"\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: \r\n            \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Trench\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"_exca\" in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda x: x[\"Elem\"].Geometry() ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef find_preExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    GWL = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    excaVolume = excaShape.Volume\r\n    \r\n    if GWL <= btm_GL_Z:\r\n        GWL_toGL_volume = 0 #\"N/A\"\r\n        Btm_toGWL_volume = 0\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    elif GWL > btm_GL_Z:\r\n        GWL_toGL_volume = abs(belowSrf.Area * GWL)\r\n        Btm_toGWL_volume = abs( belowSrf.Area * (btm_GL_Z - GWL) )\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    \r\n    \r\n    res = {\r\n        \"btm_GL_Z\": btm_GL_Z,\r\n        \"pre_excaShape\": excaShape,\r\n        \"pre_excaVolume\": excaVolume,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\n\r\ndef find_allElem_earthInfo(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_preExcaShape),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_UnionExcaShape(elemEarthDicts):\r\n    GWL = elemEarthDicts[0][\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    shape = go(\r\n        elemEarthDicts,\r\n        map(lambda x: x[\"earthInfo\"][\"pre_excaShape\"]),\r\n        Solid.ByUnion,\r\n    )\r\n    res = {\r\n        \"excaShape\": shape,\r\n        \"GWL\": GWL\r\n    }\r\n    return res\r\n\r\ndef find_UnionDisposalShape(allUG_RCelemDicts, whole_excaShape):\r\n    unionShapes = go(\r\n        allUG_RCelemDicts,\r\n        map(lambda x: x[\"Elem\"].Geometry()),\r\n        lambda x: list(chain(*x)),\r\n        Solid.ByUnion,\r\n    )\r\n    \r\n    res = unionShapes.Intersect(whole_excaShape)[0]\r\n    \r\n    return res\r\n    \r\ndef add_disposalAndbackfil_qty_toElemDicts(earthTargets, whole_disposalShape, whole_backfillShape):\r\n    whole_disposalShape_volume = whole_disposalShape.Volume\r\n    whole_backfillShape_volume = whole_backfillShape.Volume\r\n    \r\n    total_toGLvolume = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    def find_asignedQty_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGL_volume\"] / total_toGLvolume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        return res\r\n    \r\n    res = go(\r\n        earthTargets,\r\n        map( lambda x: \r\n            dict( x, **{\"earthQty\": {\r\n                                        \"disposal\": find_asignedQty_elemDict(x, whole_disposalShape_volume),\r\n                                        \"backfill\": find_asignedQty_elemDict(x, whole_backfillShape_volume),\r\n                                    }} ) \r\n        ),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_excavation_qty_toElemDicts(earthTargets, GWLplane, whole_excaShape):\r\n   \r\n    total_GWL_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"GWL_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGWL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    \r\n    def find_asignedQty_aboveGWL_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"GWL_toGL_volume\"] / total_GWL_toGL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_aboveGWL\"] = res\r\n        return d\r\n        \r\n    def find_asignedQty_belowGWL_elemDict(d, wholeVolume):       \r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGWL_volume\"] / total_Btm_toGWL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_belowGWL\"] = res\r\n        return d\r\n        \r\n    above_whole_excaShape = whole_excaShape.Split(GWLplane)[0]\r\n    above_whole_excaShape_volume = above_whole_excaShape.Volume\r\n    \r\n    if whole_excaShape.Split(GWLplane)[1]:\r\n        below_whole_excaShape = whole_excaShape.Split(GWLplane)[1]\r\n        below_whole_excaShape_volume = below_whole_excaShape.Volume\r\n    else:\r\n        below_whole_excaShape = \"NA\"\r\n        below_whole_excaShape_volume = 0\r\n    assign_above = map(lambda x: find_asignedQty_aboveGWL_elemDict(x, above_whole_excaShape_volume), earthTargets)\r\n    assign_below = map(lambda x: find_asignedQty_belowGWL_elemDict(x, below_whole_excaShape_volume), assign_above)\r\n    \r\n    return assign_below\r\n\r\nallUG_RC_elemDicts = go(\r\n    elemDicts,\r\n    filter(lambda x: \r\n        \"UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"H_SF_\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Mat\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Lean\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Trench\" in x[\"wms\"][\"Family Type Name\"] or ## 트렌치 처럼 공동 있는 부분 바운딩 처리 추가 필요\r\n        \"SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Stoop\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Ramp\" in x[\"wms\"][\"Family Type Name\"]\r\n    ),\r\n    list,    \r\n)\r\n\r\nearthCalcTargets = filter_EarthworkCalcTarget(elemDicts)\r\nexcaTargets = filter_targetForBelowSrfs(earthCalcTargets)\r\nallTgtDicts_withEarthInfo = find_allElem_earthInfo(excaTargets)\r\n\r\nGWL = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"GWL\"]\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\n\r\nwhole_excaShape = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"excaShape\"]\r\nwhole_disposalShape = find_UnionDisposalShape(allUG_RC_elemDicts, whole_excaShape)\r\nwhole_backfillShape = whole_excaShape.Split(whole_disposalShape)[0]\r\n\r\nsplited_excaShape =  whole_excaShape.Split(GWLplane)\r\nabove_whole_excaShape = splited_excaShape[0]\r\nbelow_whole_excaShape = splited_excaShape[1]\r\n\r\ndisposalBackfillDicts = add_disposalAndbackfil_qty_toElemDicts(excaTargets, whole_disposalShape, whole_backfillShape)\r\n\r\nres = add_excavation_qty_toElemDicts(disposalBackfillDicts, GWLplane, whole_excaShape)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = earthCalcTargets\r\nOUT = res, above_whole_excaShape, below_whole_excaShape, whole_disposalShape, whole_backfillShape",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef find_allWms_workCatL1(elemDict):\r\n    res = go(\r\n        elemDict[\"wms\"][\"wmSpecs\"],\r\n        map(lambda d: d[\"Work Category-L1\"]),\r\n        #list\r\n    )\r\n    return res\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda d: \"Earth Work\" in find_allWms_workCatL1(d)),\r\n        map(add_toGLvolumeInfo_toElemDict),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_toGLvolumeInfo_toElemDict(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    belowSrf = find_belowSrf(elem)\r\n    if elem.GetParameterValueByName(\"Elevation at Bottom\"):\r\n        btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\") ## wall, ped 같은 부재들은 \"Elevation at Bottom\" 파라미터가 없으므로 별도 처리 로직 구성 필요\r\n    else:\r\n        try:\r\n            centerPt = belowSrf.NormalAtParameter(0.5, 0.5)\r\n            btm_Z_FL = centerPt.Z\r\n        except:\r\n            btm_Z_FL = 0\r\n        \r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    if belowSrf:\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    else:\r\n        Btm_toGL_volume = 0\r\n    \r\n    res = {\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\ndef find_belowSrf(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n        #lambda x: x[0],\r\n    )\r\n    if res:\r\n        return res[0]\r\n    \r\n    #return res\r\n\r\ndef filter_targetForBelowSrfs(elemDicts):\r\n    \"\"\"\r\n    터파기 형상을 만들 기준 객체들만 필터링\r\n    \"\"\"\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: \r\n            \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S16_UG_B\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"H_SF\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"Trench\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"MAT\" in x[\"wms\"][\"Family Type Name\"] or\r\n            \"_exca\" in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        filter( lambda x: x[\"Elem\"].Geometry() ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef find_preExcaShape(elemDict):\r\n    elem = elemDict[\"Elem\"]\r\n    GWL = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    btm_Z_FL = elem.GetParameterValueByName(\"Elevation at Bottom\")\r\n    GL_FL_gap = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"LD\"] * 1000\r\n    btm_GL_Z = btm_Z_FL + GL_FL_gap\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    extraThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    \r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    belowSrf = find_belowSrf(elem)\r\n    belowRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    upperRef = go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    excaShape = Solid.ByLoft([belowRef, upperRef])\r\n    excaVolume = excaShape.Volume\r\n    \r\n    if GWL <= btm_GL_Z:\r\n        GWL_toGL_volume = 0 #\"N/A\"\r\n        Btm_toGWL_volume = 0\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    elif GWL > btm_GL_Z:\r\n        GWL_toGL_volume = abs(belowSrf.Area * GWL)\r\n        Btm_toGWL_volume = abs( belowSrf.Area * (btm_GL_Z - GWL) )\r\n        Btm_toGL_volume = abs(belowSrf.Area * btm_GL_Z)\r\n    \r\n    \r\n    res = {\r\n        \"btm_GL_Z\": btm_GL_Z,\r\n        \"pre_excaShape\": excaShape,\r\n        \"pre_excaVolume\": excaVolume,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume,\r\n    }\r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    \r\n    return elemDict\r\n\r\n\r\ndef find_allElem_earthInfo(elemDicts):\r\n    res = go(\r\n        elemDicts,\r\n        map(find_preExcaShape),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef find_UnionExcaShape(elemEarthDicts):\r\n    GWL = elemEarthDicts[0][\"wms\"][\"Post_Sym_Val Dict\"][\"GWL\"] * 1000\r\n    shape = go(\r\n        elemEarthDicts,\r\n        map(lambda x: x[\"earthInfo\"][\"pre_excaShape\"]),\r\n        Solid.ByUnion,\r\n    )\r\n    res = {\r\n        \"excaShape\": shape,\r\n        \"GWL\": GWL\r\n    }\r\n    return res\r\n\r\ndef find_UnionDisposalShape(allUG_RCelemDicts, whole_excaShape):\r\n    unionShapes = go(\r\n        allUG_RCelemDicts,\r\n        map(lambda x: x[\"Elem\"].Geometry()),\r\n        lambda x: list(chain(*x)),\r\n        Solid.ByUnion,\r\n    )\r\n    \r\n    res = unionShapes.Intersect(whole_excaShape)[0]\r\n    \r\n    return res\r\n    \r\ndef add_disposalAndbackfil_qty_toElemDicts(earthTargets, whole_disposalShape, whole_backfillShape):\r\n    whole_disposalShape_volume = whole_disposalShape.Volume\r\n    whole_backfillShape_volume = whole_backfillShape.Volume\r\n    \r\n    total_toGLvolume = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    def find_asignedQty_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGL_volume\"] / total_toGLvolume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        return res\r\n    \r\n    res = go(\r\n        earthTargets,\r\n        map( lambda x: \r\n            dict( x, **{\"earthQty\": {\r\n                                        \"disposal\": find_asignedQty_elemDict(x, whole_disposalShape_volume),\r\n                                        \"backfill\": find_asignedQty_elemDict(x, whole_backfillShape_volume),\r\n                                    }} ) \r\n        ),\r\n        list,\r\n    )\r\n    return res\r\n\r\ndef add_excavation_qty_toElemDicts(earthTargets, GWLplane, whole_excaShape):\r\n   \r\n    total_GWL_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"GWL_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGWL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"]),\r\n        sum,\r\n    )\r\n    total_Btm_toGL_volume  = go(\r\n        earthTargets,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    \r\n    def find_asignedQty_aboveGWL_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"GWL_toGL_volume\"] / total_GWL_toGL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_aboveGWL\"] = res\r\n        return d\r\n        \r\n    def find_asignedQty_belowGWL_elemDict(d, wholeVolume):       \r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGWL_volume\"] / total_Btm_toGWL_volume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        d[\"earthQty\"][\"exca_belowGWL\"] = res\r\n        return d\r\n        \r\n    above_whole_excaShape = whole_excaShape.Split(GWLplane)[0]\r\n    above_whole_excaShape_volume = above_whole_excaShape.Volume\r\n    \r\n    if whole_excaShape.Split(GWLplane)[1]:\r\n        below_whole_excaShape = whole_excaShape.Split(GWLplane)[1]\r\n        below_whole_excaShape_volume = below_whole_excaShape.Volume\r\n    else:\r\n        below_whole_excaShape = \"NA\"\r\n        below_whole_excaShape_volume = 0\r\n    assign_above = map(lambda x: find_asignedQty_aboveGWL_elemDict(x, above_whole_excaShape_volume), earthTargets)\r\n    assign_below = map(lambda x: find_asignedQty_belowGWL_elemDict(x, below_whole_excaShape_volume), assign_above)\r\n    \r\n    return assign_below\r\n\r\nallUG_RC_elemDicts = go(\r\n    elemDicts,\r\n    filter(lambda x: \r\n        \"UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"H_SF_\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Mat\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S18\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"_S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Lean\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Pit\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Trench\" in x[\"wms\"][\"Family Type Name\"] or ## 트렌치 처럼 공동 있는 부분 바운딩 처리 추가 필요\r\n        \"SOG\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Stoop\" in x[\"wms\"][\"Family Type Name\"] or\r\n        \"Ramp\" in x[\"wms\"][\"Family Type Name\"]\r\n    ),\r\n    list,    \r\n)\r\n\r\nearthCalcTargets = filter_EarthworkCalcTarget(elemDicts)\r\nexcaTargets = filter_targetForBelowSrfs(earthCalcTargets)\r\nallTgtDicts_withEarthInfo = find_allElem_earthInfo(excaTargets)\r\n\r\nGWL = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"GWL\"]\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\n\r\nwhole_excaShape = find_UnionExcaShape(allTgtDicts_withEarthInfo)[\"excaShape\"]\r\nwhole_disposalShape = find_UnionDisposalShape(allUG_RC_elemDicts, whole_excaShape)\r\nwhole_backfillShape = whole_excaShape.Split(whole_disposalShape)[0]\r\n\r\nsplited_excaShape =  whole_excaShape.Split(GWLplane)\r\nabove_whole_excaShape = splited_excaShape[0]\r\nbelow_whole_excaShape = splited_excaShape[1]\r\n\r\ndisposalBackfillDicts = add_disposalAndbackfil_qty_toElemDicts(excaTargets, whole_disposalShape, whole_backfillShape)\r\n\r\nres = add_excavation_qty_toElemDicts(disposalBackfillDicts, GWLplane, whole_excaShape)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = earthCalcTargets\r\nOUT = res, above_whole_excaShape, below_whole_excaShape, whole_disposalShape, whole_backfillShape",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7866,11 +7866,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[0];",
+      "Code": "i[0][14];",
       "Id": "50bfd9d4e7b64f319c7bce1ccc78935f",
       "Inputs": [
         {
-          "Id": "c64f3163b7de493b9f79b3a7fcd3502b",
+          "Id": "06904e90b9a347f989b5eaafb2409d1a",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -7881,7 +7881,7 @@
       ],
       "Outputs": [
         {
-          "Id": "73ac88ffe10e4b8db8b1e206ce8fbdb4",
+          "Id": "dd30a55d36ca43ac86015ced79404741",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -8360,6 +8360,66 @@
       ],
       "Replication": "Auto",
       "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Elem\"];",
+      "Id": "58ba84ab758a4535891b75ca1ef38aec",
+      "Inputs": [
+        {
+          "Id": "b99d6d5e51d94e70acc79ba1f4dac3eb",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "04206af3348143da85fabc6c1e08c897",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Parameters",
+      "Id": "f2ebc3803179404fb8577a327b39a4a0",
+      "Inputs": [
+        {
+          "Id": "254008cce25441baaf8d84b78e6f4073",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "39ef3e2cf30f41d99b803c5d3810c23c",
+          "Name": "Parameter[]",
+          "Description": "Parameter[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
     }
   ],
   "Connectors": [
@@ -9979,12 +10039,6 @@
     },
     {
       "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
-      "End": "c64f3163b7de493b9f79b3a7fcd3502b",
-      "Id": "2908b9bdaa28458b86f1b9dd875895c5",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
       "End": "02b4834351bc431ba0cc7b5db13d82ab",
       "Id": "517a0c3cf21a477287a684e958622c70",
       "IsHidden": "False"
@@ -10026,6 +10080,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "5986ac15029c4e3aac4e1723b3fefbe2",
+      "End": "06904e90b9a347f989b5eaafb2409d1a",
+      "Id": "1489f9dba40a4e83bb715fbc764758f1",
+      "IsHidden": "False"
+    },
+    {
       "Start": "bd778548e22144dba5a844332d757987",
       "End": "a9076efdd9634126a15a0b837f9a97c3",
       "Id": "1e9428d4f49242779c750d1285a4c150",
@@ -10047,6 +10107,12 @@
       "Start": "deff8fc117cb4aac8dba229131a1b081",
       "End": "f1c46350845d4f259315fdcc788bf1ff",
       "Id": "b16e582fec10496894c854d8ee4f5be8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "dd30a55d36ca43ac86015ced79404741",
+      "End": "b99d6d5e51d94e70acc79ba1f4dac3eb",
+      "Id": "ceb9cf23c8554077babd77d95073337b",
       "IsHidden": "False"
     },
     {
@@ -10096,12 +10162,18 @@
       "End": "59cfbb4460c94b809c649cc70d72ecb9",
       "Id": "3761c6d93f374c90b2fb7d783829cca3",
       "IsHidden": "False"
+    },
+    {
+      "Start": "04206af3348143da85fabc6c1e08c897",
+      "End": "254008cce25441baaf8d84b78e6f4073",
+      "Id": "dbf4314252324e9ea76111a6e598a6a9",
+      "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [
     {
-      "Name": "A.2_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.4_2024.07.12_FGSS.xlsx",
+      "Name": "(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
       "ReferenceType": "External",
       "Nodes": [
         "51b4738620874fe885b1b5ecce1e49b7",
@@ -10117,13 +10189,6 @@
         "29337ae8d2c94d488ebdc03de0a16ad6",
         "ecccb4f11a2543e29cb666423f4f697e",
         "058c5ecec7114c5da3425da4080ff1b1"
-      ]
-    },
-    {
-      "Name": "Total BOQ_blank_0719-053218.xlsx",
-      "ReferenceType": "External",
-      "Nodes": [
-        "11184f601ab1440f92b47f1dcda08f3f"
       ]
     },
     {
@@ -10169,15 +10234,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 1858.1171875,
-      "EyeY": 18429.06640625,
-      "EyeZ": -83134.28125,
-      "LookX": 29931.439453125,
-      "LookY": -53560.00390625,
-      "LookZ": 66255.2421875,
-      "UpX": 0.16745027899742126,
-      "UpY": 0.913543701171875,
-      "UpZ": 0.37067291140556335
+      "EyeX": -19876.16796875,
+      "EyeY": 23890.74609375,
+      "EyeZ": -44718.00390625,
+      "LookX": 26176.234375,
+      "LookY": -54597.18359375,
+      "LookZ": 39831.9453125,
+      "UpX": 0.32666966319084167,
+      "UpY": 0.80385416746139526,
+      "UpZ": 0.49709692597389221
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -10777,7 +10842,7 @@
         "Id": "11184f601ab1440f92b47f1dcda08f3f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": 16478.85253056468,
         "Y": 2277.7882221735044
       },
@@ -12508,8 +12573,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -740.73851531620551,
-        "Y": -3344.9729520423662
+        "X": -784.95012781654964,
+        "Y": -3635.0142943088331
       },
       {
         "Name": "Code Block",
@@ -12660,6 +12725,26 @@
         "Excluded": false,
         "X": 649.04986913804078,
         "Y": -3975.3711191223347
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "58ba84ab758a4535891b75ca1ef38aec",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -536.54731824264536,
+        "Y": -3634.6253522327197
+      },
+      {
+        "Name": "Element.Parameters",
+        "ShowGeometry": true,
+        "Id": "f2ebc3803179404fb8577a327b39a4a0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -272.29175684714596,
+        "Y": -3645.5954703114062
       }
     ],
     "Annotations": [
@@ -13273,8 +13358,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 1865.9156755504091,
-    "Y": 18.193835599260581,
-    "Zoom": 1.3100884480193085
+    "X": 626.257475676161,
+    "Y": 3736.9469806904463,
+    "Zoom": 0.98587737776389051
   }
 }
