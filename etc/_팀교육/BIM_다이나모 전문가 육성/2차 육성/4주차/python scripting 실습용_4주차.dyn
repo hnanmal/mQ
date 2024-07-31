@@ -2126,7 +2126,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallUG_Elems = IN[0]\r\nallUG_Fdns, allUG_Cols, allUG_Frames = allUG_Elems\r\n\r\ndownThk = IN[1]\r\nG = IN[2]\r\n# Place your code below this line\r\n\r\n# 단일객체 기준 코드\r\nsample = allUG_Fdns[0]\r\nsampleGeo = sample.Geometry()[0]\r\nbdboxCube = BoundingBox.ByGeometry(sampleGeo).ToCuboid()\r\n\r\n# 단일객체 기준 함수\r\ndef makeBdCube(e):\r\n    eGeo = e.Geometry()[0]\r\n    eBdboxCube = BoundingBox.ByGeometry(eGeo).ToCuboid()\r\n    return eBdboxCube\r\n\r\nallFdnsBds = []\r\nfor fdn in allUG_Fdns:\r\n    allFdnsBds.append( makeBdCube(fdn) )\r\n    \r\nunionBdCube_allFdns = BoundingBox.ByGeometry(allFdnsBds).ToCuboid()\r\n\r\ndef find_belowRef(unionBdCube_allFdns):\r\n    srfs = unionBdCube_allFdns.Explode()\r\n    belowSrf = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1, srfs))[0]\r\n    \r\n    return belowSrf\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = find_belowRef(unionBdCube_allFdns)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom itertools import chain\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallUG_Elems = IN[0]\r\nallUG_Fdns, allUG_Cols, allUG_Frames = allUG_Elems\r\n\r\ndownThk = IN[1]\r\nG = IN[2]\r\noffset = IN[3]\r\n# Place your code below this line\r\n\r\n# 단일객체 기준 코드\r\nsample = allUG_Fdns[0]\r\nsampleGeo = sample.Geometry()[0]\r\nbdboxCube = BoundingBox.ByGeometry(sampleGeo).ToCuboid()\r\n\r\n# 단일객체 기준 함수\r\ndef makeBdCube(e):\r\n    eGeo = e.Geometry()[0]\r\n    eBdboxCube = BoundingBox.ByGeometry(eGeo).ToCuboid()\r\n    return eBdboxCube\r\n\r\ndef find_elemsGeo(allUG_Elems):\r\n    flattenElems = list(chain(*allUG_Elems))\r\n    allGeo = []\r\n    for x in flattenElems:\r\n        try:\r\n            allGeo.append(makeBdCube(x))\r\n        except:\r\n            pass\r\n    return allGeo\r\n\r\ndef find_disposalShape(allUG_Elems):\r\n    return Solid.ByUnion(find_elemsGeo(allUG_Elems))\r\n\r\ndef findWholeBdBox(allUG_Elems):\r\n    allGeo = find_elemsGeo(allUG_Elems)\r\n    unionBdCube_allUGs = BoundingBox.ByGeometry(allGeo).ToCuboid()\r\n    return unionBdCube_allUGs\r\n    \r\ndef find_belowRef(unionBdCube_allUGs, downThk, offset):\r\n    srfs = unionBdCube_allUGs.Explode()\r\n    belowSrf = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1, srfs))[0]\r\n    belowPerimeter = PolyCurve.ByJoinedCurves( belowSrf.PerimeterCurves() ).Translate(0,0,downThk)\r\n    offsetPerimeter = belowPerimeter.OffsetMany(offset, False, Vector.ZAxis())[0]\r\n    belowRef = offsetPerimeter.Translate(0,0,downThk)\r\n    \r\n    return belowRef, belowSrf\r\n\r\ndef find_aboveRef(belowSrf, G):\r\n    H = -1 * belowSrf.PointAtParameter(0.5,0.5).Z\r\n    abovePerimeter = PolyCurve.ByJoinedCurves( belowSrf.PerimeterCurves() ).Translate(0,0,H)\r\n    offsetPerimeter = abovePerimeter.OffsetMany(-G*H, False, Vector.ZAxis())[0]\r\n    aboveRef = offsetPerimeter.Translate(0,0,downThk)\r\n    \r\n    return aboveRef\r\n    \r\nunionBdCube_allUGs = findWholeBdBox(allUG_Elems)\r\nbelowRef, belowSrf = find_belowRef(unionBdCube_allUGs, downThk, offset)\r\naboveRef = find_aboveRef(belowSrf, G)\r\nwholeExca = Solid.ByLoft([belowRef, aboveRef])\r\nwholeDisposal = find_disposalShape(allUG_Elems)\r\n# Assign your output to the OUT variable.\r\nOUT = wholeExca.Split(wholeDisposal)[0]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2154,6 +2154,15 @@
           "Id": "e76797c4245d4f18b3a0c81facd5badf",
           "Name": "IN[2]",
           "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "819f30d86ab64413a5ae01dc3ab351a8",
+          "Name": "IN[3]",
+          "Description": "Input #3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -2222,6 +2231,104 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "offset = (0.1 + 0.2)*1000;\noffset * -1;\nfalse;",
+      "Id": "27575752f1ee4e13962672dbe421fb23",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "6ecf6da66e6c4c1e90f996898325c2b5",
+          "Name": "",
+          "Description": "offset",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "2f9d87f791064ec0b29ada34a8a9fb96",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "83fed4fb59024d0ea4cb86f898f0355e",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallUG_Elems = IN[0]\r\ndownThk = IN[1]\r\nG = IN[2]\r\noffset = IN[3]\r\n\r\n# Place your code below this line\r\n\r\nsample = allUG_Elems[0][0]\r\nsampleGeo = sample.Geometry()[0]\r\nbdboxCube = BoundingBox.ByGeometry(sampleGeo).ToCuboid()\r\n\r\ndef makeBdCube(e):\r\n    eGeo = e.Geometry()[0]\r\n    eBdBoxCube = BoundingBox.ByGeometry(eGeo).ToCuboid()\r\n    return eBdBoxCube\r\n\r\ndef find_elemsGeo(allUG_Elems):\r\n    flatten_Elems = list(chain(*allUG_Elems))\r\n    allGeo = []\r\n    for e in flatten_Elems:\r\n        try:\r\n            allGeo.append(makeBdCube(e))\r\n        except:\r\n            pass\r\n    return allGeo\r\n\r\ndef find_disposalShape(allUG_Elems):\r\n    return Solid.ByUnion(find_elemsGeo(allUG_Elems))\r\n\r\ndef findWholeBdBox(allUG_Elems):\r\n    allGeo = find_elemsGeo(allUG_Elems)\r\n    unionBdCube = BoundingBox.ByGeometry(allGeo).ToCuboid()\r\n    return unionBdCube\r\n    \r\ndef find_belowRef(unionBdCube, downThk, offset):\r\n    srfs = unionBdCube.Explode()\r\n    belowSrf = list(filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == -1 , srfs))[0]\r\n    belowPerimeter = PolyCurve.ByJoinedCurves( belowSrf.PerimeterCurves() )\r\n    offsetPerimeter = belowPerimeter.OffsetMany(offset, False, Vector.ZAxis())[0]\r\n    belowRef = offsetPerimeter.Translate(0, 0, downThk)\r\n    return belowRef, belowSrf\r\n\r\ndef find_aboveRef(belowSrf, G):\r\n    H = belowSrf.PointAtParameter(0.5,0.5).Z * -1\r\n    abovePerimeter = PolyCurve.ByJoinedCurves( belowSrf.PerimeterCurves() ).Translate(0, 0, H)\r\n    aboveRef = abovePerimeter.OffsetMany(-G*H, False, Vector.ZAxis())[0]\r\n    \r\n    return aboveRef\r\n    \r\nunionBdCube = findWholeBdBox(allUG_Elems)\r\nbelowRef, belowSrf = find_belowRef(unionBdCube, downThk, offset)\r\naboveRef = find_aboveRef(belowSrf, G)\r\nwholeExca = Solid.ByLoft( [belowRef, aboveRef] )\r\nwholeDisposal = find_disposalShape(allUG_Elems)\r\n# Assign your output to the OUT variable.\r\nOUT = wholeExca.Split(wholeDisposal)[1]",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "3b4648fd92344ec9953145b7f1aebc48",
+      "Inputs": [
+        {
+          "Id": "7a8a516a5e0a4b52a47fc233a28ad3e4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7f4f7cd36df64ee484540c21cc7a8af1",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "276300f47db34e90a1de489754a97f5b",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8be6fddaa5744078aed28ccda0903d0d",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1ff5143ba8a4457c87c03c3370cfd2f1",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     }
   ],
   "Connectors": [
@@ -2367,6 +2474,12 @@
       "Start": "cc51b5e164d749bc8e1304b6c1a93605",
       "End": "392405dcc8a24bbba9fc0c00952a5aeb",
       "Id": "dc4a7b8c313b4b6faedd96921d28dd40",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "cc51b5e164d749bc8e1304b6c1a93605",
+      "End": "7a8a516a5e0a4b52a47fc233a28ad3e4",
+      "Id": "8396a4c20a46475293aa2bf94d24a45e",
       "IsHidden": "False"
     },
     {
@@ -2652,9 +2765,33 @@
       "IsHidden": "False"
     },
     {
+      "Start": "478780f8e4d74b47a0b520f9d4514151",
+      "End": "7f4f7cd36df64ee484540c21cc7a8af1",
+      "Id": "c63d63da3b9a4889b2c15d7fced1e8d7",
+      "IsHidden": "False"
+    },
+    {
       "Start": "779291cbd61e4d4081e078fecf70b11e",
       "End": "e76797c4245d4f18b3a0c81facd5badf",
       "Id": "6788c73f6eda41dabc2e7e48e07581b9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "779291cbd61e4d4081e078fecf70b11e",
+      "End": "276300f47db34e90a1de489754a97f5b",
+      "Id": "f9471845effe4e719b77f4ffe1822aeb",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2f9d87f791064ec0b29ada34a8a9fb96",
+      "End": "819f30d86ab64413a5ae01dc3ab351a8",
+      "Id": "86cc837c204545d2b9b7752d0235c9c3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2f9d87f791064ec0b29ada34a8a9fb96",
+      "End": "8be6fddaa5744078aed28ccda0903d0d",
+      "Id": "b3fb65806b1f40d7975afb517f1880db",
       "IsHidden": "False"
     }
   ],
@@ -2686,7 +2823,7 @@
   "Bindings": [],
   "View": {
     "Dynamo": {
-      "ScaleFactor": 1.0,
+      "ScaleFactor": 100.0,
       "HasRunWithoutCrash": true,
       "IsVisibleInDynamoLibrary": true,
       "Version": "2.16.1.2727",
@@ -2695,15 +2832,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 102507.578125,
-      "EyeY": 57452.57421875,
-      "EyeZ": 101177.625,
-      "LookX": -71348.703125,
-      "LookY": -122388.3203125,
-      "LookZ": -87138.2578125,
-      "UpX": -0.36337476968765259,
-      "UpY": 0.81915110349655151,
-      "UpZ": -0.44379094243049622
+      "EyeX": 86403.734375,
+      "EyeY": 28165.0390625,
+      "EyeZ": 35341.5703125,
+      "LookX": -35370.015625,
+      "LookY": -52323.84765625,
+      "LookZ": -38856.71484375,
+      "UpX": -0.36168357729911804,
+      "UpY": 0.84339046478271484,
+      "UpZ": -0.39733818173408508
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -2894,8 +3031,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3385.9389945930129,
-        "Y": -492.2000429116938
+        "X": 6667.4680812371835,
+        "Y": -484.34955312158672
       },
       {
         "Name": "Element.Parameters",
@@ -3168,7 +3305,7 @@
         "Y": 802.231434809471
       },
       {
-        "Name": "터파기형상 전체",
+        "Name": "Solid.ByLoft",
         "ShowGeometry": false,
         "Id": "549f50fde15e4409b5e35912047dcc9e",
         "IsSetAsInput": false,
@@ -3255,7 +3392,7 @@
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": 4909.84346576951,
-        "Y": 430.38619487719052
+        "Y": 430.38619487719006
       },
       {
         "Name": "Code Block",
@@ -3329,13 +3466,13 @@
       },
       {
         "Name": "토공실습 - B part",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "3e158600c609444e87b04fab80bfc2b2",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 8183.8607717950326,
-        "Y": -218.26018359470129
+        "X": 8102.8149990522579,
+        "Y": -757.93082197254307
       },
       {
         "Name": "lean 두께 +base + subbase 두께",
@@ -3344,8 +3481,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7687.48304298167,
-        "Y": -73.783309288582586
+        "X": 7690.1165205576081,
+        "Y": -371.36627536954603
       },
       {
         "Name": "Code Block",
@@ -3354,8 +3491,28 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 7839.6710170989218,
-        "Y": 67.77987240912995
+        "X": 7842.30449467486,
+        "Y": -229.80309367183349
+      },
+      {
+        "Name": "lean 돌출길이 + 터파기 여유폭",
+        "ShowGeometry": false,
+        "Id": "27575752f1ee4e13962672dbe421fb23",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 7740.6807048649434,
+        "Y": -74.282155788568957
+      },
+      {
+        "Name": "bpart 실습",
+        "ShowGeometry": true,
+        "Id": "3b4648fd92344ec9953145b7f1aebc48",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 9792.1103582987689,
+        "Y": -47.971891033456018
       }
     ],
     "Annotations": [
@@ -3488,8 +3645,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -4340.2609906518683,
-    "Y": 141.5830694078663,
-    "Zoom": 0.660932195062518
+    "X": -45.537210363391125,
+    "Y": 699.35035006163548,
+    "Zoom": 0.047299310828768884
   }
 }
