@@ -53,7 +53,7 @@
       "Name": "4. Total BOQ sheet 경로 입력",
       "Type": "string",
       "Type2": "string",
-      "Value": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
+      "Value": "..\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -370,7 +370,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
+      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
       "InputValue": "..\\etc\\물량산출테스트용\\Earthwork Dev\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4(24.06.01)_HGEN PCB_240617_mk.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -963,7 +963,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\nspecKeys = [\r\n    \"Work Category-L1\", \"Work Category-L2\" ,\"Work Category-L3\",\r\n    \"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n]\r\n\r\ndef extractCalcResult(elemDicts, specKeys):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"][\"wmSpecs\"]\r\n        for wm in wms:\r\n            #keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            keys = [\"rIDX\", \"Work Master Code\", \"GaugeCode\", \"Quantity\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res_d = dict(k_v)\r\n            if \"Description\" in wm.Keys:\r\n                res_d[\"Description\"] = wm[\"Description\"]\r\n            else:\r\n                res_d[\"Description\"] = \"\"\r\n            res_d[\"wmcANDgauge\"] = \"\".join([wm[\"Work Master Code\"],wm[\"GaugeCode\"]])\r\n            res_d[\"UoM\"] = wm[\"Unit\"]\r\n            res_d[\"wmSpecs\"] = list(map(lambda x: wm[x], specKeys))\r\n            res.append(res_d)\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts, specKeys):\r\n    extractedDicts = extractCalcResult(elemDicts, specKeys)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    \r\n    res = []\r\n    for k, g in grpDicts_WMC: \r\n        wmCode = k\r\n        gg = copy.deepcopy(list(g))\r\n        #res.append(gg)\r\n        qtts = map(lambda x: x[\"Quantity\"] if isinstance(x[\"Quantity\"],float) else 0, gg)\r\n        calcSum = round(sum(qtts),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n        catStr = \"_\".join([wmSpecs[0],wmSpecs[1]])        \r\n        \r\n        specOnly = list(filter(lambda x: x!=0, wmSpecs))[3:]\r\n        addSpec = gg[0][\"Description\"]\r\n        dict_res = {\r\n            \"catStr\": catStr,\r\n            \"Work Master Code\": wmCode,\r\n            \"Gauge Code\": gg[0][\"GaugeCode\"],\r\n            \"Description\": wmSpecs[2],\r\n            \"Spec.\": \"\\n\".join(specOnly),\r\n            \"Additional Spec.\": addSpec,\r\n            \"calcVal\": calcSum,\r\n            \"UoM\": gg[0][\"UoM\"]\r\n            }\r\n        res.append(dict_res)\r\n    \r\n    \r\n    return res\r\n\r\n#extDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts, specKeys)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport operator\r\nfrom itertools import groupby\r\nimport copy\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n# Place your code below this line\r\nspecKeys = [\r\n    \"Work Category-L1\", \"Work Category-L2\" ,\"Work Category-L3\",\r\n    \"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n]\r\n\r\ndef extractCalcResult(elemDicts, specKeys):\r\n    res = []\r\n    for d in elemDicts:\r\n        wms = d[\"wms\"][\"wmSpecs\"]\r\n        for wm in wms:\r\n            #keys = [\"SheetName\", \"rIDX\", \"Work Master Code\", \"Gauge Code\", \"wmSpecs\", \"Family Type Name\", \"calcResult\"]\r\n            keys = [\"rIDX\", \"Work Master Code\", \"GaugeCode\", \"Quantity\"]\r\n            vals = list(map(lambda x: wm[x],keys))\r\n            k_v = list(zip(keys, vals))\r\n            res_d = dict(k_v)\r\n            if \"Description\" in wm.Keys:\r\n                res_d[\"Description\"] = wm[\"Description\"]\r\n            else:\r\n                res_d[\"Description\"] = \"\"\r\n            res_d[\"wmcANDgauge\"] = \"\".join([wm[\"Work Master Code\"],wm[\"GaugeCode\"]])\r\n            res_d[\"UoM\"] = wm[\"Unit\"]\r\n            res_d[\"wmSpecs\"] = list(map(lambda x: wm[x], specKeys))\r\n            res.append(res_d)\r\n        \r\n    return res\r\n\r\ndef make_dict_groupBy_WM(elemDicts, specKeys):\r\n    extractedDicts = extractCalcResult(elemDicts, specKeys)\r\n    sortedDicts_WMC = sorted(extractedDicts, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    grpDicts_WMC = groupby(sortedDicts_WMC, key=operator.itemgetter(\"wmcANDgauge\"))\r\n    \r\n    res = []\r\n    for k, g in grpDicts_WMC: \r\n        wmCode = k\r\n        gg = copy.deepcopy(list(g))\r\n        #res.append(gg)\r\n        qtts = map(lambda x: x[\"Quantity\"] if isinstance(x[\"Quantity\"],float) or isinstance(x[\"Quantity\"], int) else 0, gg)\r\n        calcSum = round(sum(qtts),3)\r\n        wmSpecs = gg[0][\"wmSpecs\"]\r\n        catStr = \"_\".join([wmSpecs[0],wmSpecs[1]])        \r\n        \r\n        specOnly = list(filter(lambda x: x!=0, wmSpecs))[3:]\r\n        addSpec = gg[0][\"Description\"]\r\n        dict_res = {\r\n            \"catStr\": catStr,\r\n            \"Work Master Code\": wmCode,\r\n            \"Gauge Code\": gg[0][\"GaugeCode\"],\r\n            \"Description\": wmSpecs[2],\r\n            \"Spec.\": \"\\n\".join(specOnly),\r\n            \"Additional Spec.\": addSpec,\r\n            \"calcVal\": calcSum,\r\n            \"UoM\": gg[0][\"UoM\"]\r\n            }\r\n        res.append(dict_res)\r\n    \r\n    \r\n    return res\r\n\r\n#extDicts = extractCalcResult(elemDicts)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_dict_groupBy_WM(elemDicts, specKeys)\r\n#OUT = sorted(set(map(lambda x: x[\"Work Master Code\"], extDicts)))",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2271,7 +2271,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ncalcMode = IN[0]\r\nelemDicts = IN[1]\r\n\r\n\r\n# Place your code below this line\r\n\r\ndef calcFormula_each_WmSpecs(elemDicts, calcMode):\r\n    calc_key = \"실행_물량산출식\" if calcMode==\"실행\" else \"입찰_물량산출식\"\r\n    \r\n    def calcFormula_dict(d):\r\n        e = d[\"Elem\"]\r\n        postSymValDict = d[\"wms\"][\"Post_Sym_Val Dict\"]\r\n        Sym_Vals = list(zip(postSymValDict.Keys, list(map(str, postSymValDict.Values))))\r\n        sortedSym_Vals = sorted(Sym_Vals, key=lambda x: len(x[0]), reverse=True)\r\n        wmSpecss = d[\"wms\"][\"wmSpecs\"]\r\n        for i in wmSpecss:\r\n            applyFormula = str( i[calc_key] )\r\n            if not applyFormula.startswith('_'):\r\n                substFormula = applyFormula\r\n                for x in sortedSym_Vals:\r\n                    substFormula = substFormula.replace(*x)\r\n                i[\"applyFormula\"] = \"'\"+ applyFormula\r\n                i[\"substFormula\"] = \"'\"+ substFormula\r\n                try:\r\n                    i[\"Quantity\"] = round(eval(substFormula.strip('=')),3)\r\n                except:\r\n                    i[\"Quantity\"] = \"'\"+ substFormula\r\n            else:\r\n                i[\"applyFormula\"] = \"'\"+ applyFormula\r\n                i[\"substFormula\"] = \"'\"+ applyFormula\r\n                i[\"Quantity\"] = \"\"\r\n        return d\r\n    \r\n    res = []\r\n    for d in elemDicts:\r\n        res.append(calcFormula_dict(d))\r\n    \r\n    return res\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = calcFormula_each_WmSpecs(elemDicts, calcMode)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nuiapp = DocumentManager.Instance.CurrentUIApplication\r\napp = uiapp.Application\r\n#collector1 = FilteredElementCollector(doc)\r\n\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n\r\ncalcMode = IN[0]\r\nelemDicts = IN[1]\r\n\r\n\r\n# Place your code below this line\r\n\r\ndef calcFormula_each_WmSpecs(elemDicts, calcMode):\r\n    calc_key = \"실행_물량산출식\" if calcMode==\"실행\" else \"입찰_물량산출식\"\r\n    \r\n    def calcFormula_dict(d):\r\n        e = d[\"Elem\"]\r\n        wmSpecss = d[\"wms\"][\"wmSpecs\"]\r\n        if \"Post_Sym_Val Dict\" in d[\"wms\"].Keys:\r\n            postSymValDict = d[\"wms\"][\"Post_Sym_Val Dict\"]\r\n            Sym_Vals = list(zip(postSymValDict.Keys, list(map(str, postSymValDict.Values))))\r\n            sortedSym_Vals = sorted(Sym_Vals, key=lambda x: len(x[0]), reverse=True)\r\n            for i in wmSpecss:\r\n                applyFormula = str( i[calc_key] )\r\n                if not applyFormula.startswith('_'):\r\n                    substFormula = applyFormula\r\n                    for x in sortedSym_Vals:\r\n                        substFormula = substFormula.replace(*x)\r\n                    i[\"applyFormula\"] = \"'\"+ applyFormula\r\n                    i[\"substFormula\"] = \"'\"+ substFormula\r\n                    try:\r\n                        i[\"Quantity\"] = round(eval(substFormula.strip('=')),3)\r\n                    except:\r\n                        i[\"Quantity\"] = \"'\"+ substFormula\r\n                else:\r\n                    i[\"applyFormula\"] = \"'\"+ applyFormula\r\n                    i[\"substFormula\"] = \"'\"+ applyFormula\r\n                    i[\"Quantity\"] = \"\"\r\n        else:\r\n            for i in wmSpecss:\r\n                applyFormula = str( i[calc_key] )\r\n                substFormula = applyFormula\r\n                i[\"applyFormula\"] = \"'\"+ applyFormula\r\n                i[\"substFormula\"] = \"'\"+ substFormula\r\n                i[\"Quantity\"] = round(eval(substFormula.strip('=')),3)\r\n        return d\r\n    res = []\r\n    for d in elemDicts:\r\n        res.append(calcFormula_dict(d))\r\n    \r\n    return res\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = calcFormula_each_WmSpecs(elemDicts, calcMode)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -6534,12 +6534,12 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\"0.Room\"\n,\"1.Floors\"\n,\"2.Roofs\"\n,\"3.Walls_Ext\"\n,\"3.Walls_Int\"\n,\"4.St_Fdn\"\n,\"5.St_Col\"\n,\"6.St_Framing\"\n,\"7.Ceilings\"\n,\"8.Doors\"\n,\"9.Windows\"\n,\"10.Stairs\"\n,\"11.Railings\"\n,\"12.Generic\"];",
+      "Code": "[\"0.Room\"\n,\"1.Floors\"\n,\"2.Roofs\"\n,\"3.Walls_Ext\"\n,\"3.Walls_Int\"\n,\"4.St_Fdn\"\n,\"5.St_Col\"\n,\"6.St_Framing\"\n,\"7.Ceilings\"\n,\"8.Doors\"\n,\"9.Windows\"\n,\"10.Stairs\"\n,\"11.Railings\"\n,\"12.Generic\"\n,\"13.Manual_Input\"];",
       "Id": "4bd1d89ea5cc4ddeb9c768daec1f29ec",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "7adb019a6d824c91ba10a922c2d27146",
+          "Id": "b6866d244bf74f90993bb73027ec60d1",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -6884,203 +6884,6 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.IO.FileSystem.WriteText@string,string",
-      "Id": "b5d5577f371b410890a58a2d1157cd9d",
-      "Inputs": [
-        {
-          "Id": "68d8b781dc5c4da5880a898c2ffefa9f",
-          "Name": "filePath",
-          "Description": "Path to write to\n\nstring",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "60425cb10993413e9350e1a0f4cdfd96",
-          "Name": "text",
-          "Description": "Text content\n\nstring",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "b88dec478ab34def861f305aa2c9eb8b",
-          "Name": "void",
-          "Description": "No output",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Write the text content to a file specified by the path\n\nFileSystem.WriteText (filePath: string, text: string): void"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.Data.StringifyJSON@var[]..[]",
-      "Id": "e90f0f35f4134e43960f3a623adfaeed",
-      "Inputs": [
-        {
-          "Id": "80ed215687b64bd4b3cc3be91366cae8",
-          "Name": "values",
-          "Description": "A List of values\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "5309e23f514849ff80f7bc17b1f075d1",
-          "Name": "json",
-          "Description": "A JSON string where primitive types (e.g. double, int, boolean), Lists, and Dictionary's will be turned into the associated JSON type.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Stringify converts an arbitrary value or a list of arbitrary values to JSON. Replication can be used to apply the operation over a list, producing a list of JSON strings.\n\nData.StringifyJSON (values: var[]..[]): string"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "res;",
-      "Id": "d906f426720146678be9bdfcd3ac2bab",
-      "Inputs": [
-        {
-          "Id": "50db89db7d8a4dd7b4648afeee2b0589",
-          "Name": "res",
-          "Description": "res",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "c51a75ef7b834dc9ab665e2ad4d752bf",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DesignScript.Builtin.Dictionary.SetValueAtKeys@string[],var[]..[]",
-      "Id": "718307cbda504e979f31c3e46a887037",
-      "Inputs": [
-        {
-          "Id": "c6462a083d3242c7ad82a1e48cda1f96",
-          "Name": "dictionary",
-          "Description": "DesignScript.Builtin.Dictionary",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "20c6528adab94789b0a73b9fcaf5bebc",
-          "Name": "keys",
-          "Description": "The keys in the Dictionary to set. If the same key already exists, the value at that key will be modified.\n\nstring[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "64eb819e36cd4d5799e41f18fa00be74",
-          "Name": "values",
-          "Description": "The corresponding values to insert.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "afb9926052324cc497329ae063681030",
-          "Name": "dictionary",
-          "Description": "New dictionary with the entries inserted",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Produce a new Dictionary with a list of keys set to the new values, possibly overwriting existing key-value pairs. These two lists are expected to be of the same length. If not, the shorter of the two bounds the number of insertions.\n\nDictionary.SetValueAtKeys (keys: string[], values: var[]..[]): Dictionary"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "\"Elem\";\n\"\";",
-      "Id": "1b0c7a5ec4634ebaab18e554f17b9706",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "9ee3774be28b40ef888d70c76d078511",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "6f1e850a16914a139836ab949c25f578",
-          "Name": "",
-          "Description": "Value of expression at line 2",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\etc\\_팀교육\\BIM_다이나모 전문가 육성\\8주차\\sample_json.txt",
-      "InputValue": "..\\etc\\_팀교육\\BIM_다이나모 전문가 육성\\8주차\\sample_json.txt",
-      "NodeType": "ExtensionNode",
-      "Id": "c91dd77cda5f4801ac15acb997b90c5d",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "4754eda3697e4bfcae301412b3240fd4",
-          "Name": "",
-          "Description": "File Path",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows you to select a file on the system to get its file path."
-    },
-    {
       "ConcreteType": "DSRevitNodesUI.Categories, DSRevitNodesUI",
       "SelectedIndex": 488,
       "SelectedString": "OST_Gutter",
@@ -7395,8 +7198,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "C:\\MK\\mQ\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
-      "InputValue": "..\\etc\\물량산출테스트용\\debug\\20240718_khh\\Total BOQ_blank.xlsx",
+      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
+      "InputValue": "..\\etc\\물량산출테스트용\\Earthwork Dev\\Total BOQ_blank.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
       "Inputs": [],
@@ -7618,7 +7421,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\nearth_CommonInfoDict = IN[3]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\nLD = earth_CommonInfoDict[\"LD\"]\r\nGL = Revit.Elements.Coordinates.BasePoint().Z - LD * 1000\r\n\r\nGWL = earth_CommonInfoDict[\"GWL\"] * 1000\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\n\r\ndef find_belowSrf_simple(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n    )\r\n    if res:\r\n        return res\r\n\r\ndef find_belowSrf_complex(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        #map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n    )\r\n    if res:\r\n        return res\r\n        \r\ndef find_aboveSrf_simple(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == 1),list,\r\n    )\r\n    if res:\r\n        return res\r\n        \r\ndef add_defaultEarthInfo(elemDict, GWL, GL):\r\n    elem = elemDict[\"Elem\"]\r\n    if \"_ExcaTgt\" in elemDict[\"wms\"][\"Family Type Name\"]:\r\n        btmSrfs = find_belowSrf_complex(elem)\r\n        btmSrfs = btmSrfs if btmSrfs else []\r\n    else:\r\n        btmSrfs = find_belowSrf_simple(elem)\r\n        btmSrfs = btmSrfs if btmSrfs else []\r\n    uprSrfs = find_aboveSrf_simple(elem)\r\n    uprSrfs = uprSrfs if uprSrfs else []\r\n    \r\n    btmZ = min( list(map(lambda x: x.PointAtParameter(0.5,0.5).Z, btmSrfs))\\\r\n                        if btmSrfs else [0] )\r\n    uprZ = max( list(map(lambda x: x.PointAtParameter(0.5,0.5).Z, uprSrfs))\\\r\n                        if uprSrfs else [0] )\r\n    \r\n    btmArea = sum(list(map(lambda x: x.Area, btmSrfs)))\r\n    elem_Volume = btmArea * abs(uprZ - btmZ)\r\n    Btm_toGWL_volume = btmArea * ( GWL - btmZ ) / 1000000000\r\n    GWL_toGL_volume = btmArea * ( GL - GWL ) / 1000000000\r\n    Btm_toGL_volume = btmArea * ( GL - btmZ ) / 1000000000\r\n    \r\n    res = {\r\n        \"isExca\": False,\r\n        \"btmSrfs\": btmSrfs,\r\n        \"uprSrfs\": uprSrfs,\r\n        \"btmArea\": btmArea,\r\n        \"btmZ\": btmZ,\r\n        \"uprZ\": uprZ,\r\n        \"elem_Volume\": elem_Volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume\\\r\n                            if Btm_toGWL_volume > 0 else 0 ,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume\\\r\n                            if GWL_toGL_volume > 0 else 0 ,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume\\\r\n                            if Btm_toGL_volume > 0 else 0 ,\r\n    }\r\n    \r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    return elemDict\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts, GWL, GL):\r\n    ruleCondition = lambda x:\\\r\n        \"H1_\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_W\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_MAT\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_Wall\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B01\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_UG RC Slab\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Ext Wall_RC_UG_Pit\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S16_UG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S16_TG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_EQ-Pad\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_Edge\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_Suspend\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Stoop\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Ramp\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"_ExcaTgt\" in x[\"wms\"][\"Family Type Name\"]\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: ruleCondition(x)),\r\n        map( lambda x: add_defaultEarthInfo(x, GWL, GL) ),\r\n        list,\r\n    )\r\n    remain = go(\r\n        elemDicts,\r\n        filter(lambda x: not ruleCondition(x)),\r\n        list,\r\n    )\r\n    return res, remain\r\n\r\n\r\ndef filter_ExcaTarget(earthworkCalcTargets):\r\n    res = go(\r\n        earthworkCalcTargets,\r\n        filter(lambda x:\r\n            \"B08_Ext Wall\" not in x[\"wms\"][\"Family Type Name\"] and\r\n            \"S15_UG\" not in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        list,\r\n    )\r\n    for x in res:\r\n        x[\"earthInfo\"][\"isExca\"] = True\r\n    return res\r\n\r\ndef find_eachExcaShape(elemDict, GWL, GL, LD):\r\n    belowSrfs = elemDict[\"earthInfo\"][\"btmSrfs\"]\r\n    btm_GL_Z = elemDict[\"earthInfo\"][\"btmZ\"]\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    GL_FL_gap = LD\r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    extraThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    find_belowRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    \r\n    find_upperRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    \r\n    belowRefs = list(map(find_belowRef, belowSrfs))\r\n    upperRefs = list(map(find_upperRef, belowSrfs))\r\n    exca_RefGroups = list(zip(belowRefs,upperRefs))\r\n    exca_Shape = Solid.ByUnion( map(Solid.ByLoft, exca_RefGroups) )\r\n    \r\n    return exca_Shape\r\n\r\ndef find_unionExcaShape(excaTargets, GWL, GL, LD):\r\n    excaSolids = []\r\n    for elemDict in excaTargets:\r\n        try:\r\n            excaSolids.append( find_eachExcaShape(elemDict, GWL, GL, LD) )\r\n        except:\r\n            pass\r\n    return Solid.ByUnion(excaSolids)\r\n    \r\ndef find_disposalShape(elemDict):\r\n    elemDisposal_shape = Solid.ByUnion(list(elemDict[\"Elem\"].Geometry()))\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    extraThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    \r\n    belowSrfs = elemDict[\"earthInfo\"][\"btmSrfs\"]\r\n    offset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"]*1000\\\r\n                + (elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"]/2) *1000\r\n    \r\n    find_nonElemDisposal_belowRefs = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-offset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    find_nonElemDisposal_upperRefs = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-offset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n\r\n    nonElemDisposal_belowRefs = list(map(find_nonElemDisposal_belowRefs, belowSrfs))\r\n    nonElemDisposal_upperRefs = list(map(find_nonElemDisposal_upperRefs, belowSrfs))\r\n    nonElemDisposal_RefGroups = list(zip(nonElemDisposal_belowRefs,nonElemDisposal_upperRefs))\r\n    nonElemDisposal_Shape = Solid.ByUnion( map(Solid.ByLoft, nonElemDisposal_RefGroups) )\r\n    disposal_shape = Solid.ByUnion( [elemDisposal_shape, nonElemDisposal_Shape] )\r\n    \r\n    return disposal_shape\r\n\r\ndef find_unionDisposalShape(earthCalcTargets):\r\n    disposal_Solids = []\r\n    for elemDict in earthCalcTargets:\r\n        try:\r\n            disposal_Solids.append( find_disposalShape(elemDict) )\r\n        except:\r\n            pass\r\n    return Solid.ByUnion(disposal_Solids)\r\n    \r\ndef add_dispoAndbackfill_qty_toElemDicts(earthCalcTargets, unionDisposalShape, unionBackfillShape):\r\n    whole_disposalShape_volume = unionDisposalShape.Volume\r\n    whole_backfillShape_volume = unionBackfillShape.Volume\r\n    target = earthCalcTargets\r\n    \r\n    total_toGLvolume = go(\r\n        target,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    def find_asignedQty_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGL_volume\"] / total_toGLvolume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        return res\r\n     \r\n    res = go(\r\n        target,\r\n        map( lambda x: \r\n            dict( x, **{\"earthQty\": {\r\n                                        \"disposal\": find_asignedQty_elemDict(x, whole_disposalShape_volume),\r\n                                        \"backfill\": find_asignedQty_elemDict(x, whole_backfillShape_volume),\r\n                                    }} ) \r\n        ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef add_above_excavation_qty_toElemDicts(elemDicts, above_GWL_excaShape, below_GWL_excaShape):\r\n    cond_inter_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] != 0 and \\\r\n                    x[\"earthInfo\"][\"Btm_toGWL_volume\"] < x[\"earthInfo\"][\"elem_Volume\"]\r\n    cond_above_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] == 0\r\n    \r\n    total_Btm_toGL_volume  = go(\r\n        elemDicts,\r\n        filter( lambda elemDict: cond_above_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_GWL_toGL_volume  = go(\r\n        elemDicts,\r\n        filter( lambda elemDict: cond_inter_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"GWL_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_ref_volume = total_Btm_toGL_volume + total_GWL_toGL_volume\r\n    exca_above_total_volume = above_GWL_excaShape.Volume\r\n    exca_below_total_volume = below_GWL_excaShape.Volume\r\n    \r\n    def find_asignedQty_elemDict(elemDict):\r\n        if elemDict[\"earthInfo\"][\"isExca\"] and cond_inter_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_above\"] = exca_above_total_volume/1000000000 * (elemDict[\"earthInfo\"][\"GWL_toGL_volume\"] / total_ref_volume)\r\n            elemDict[\"earthQty\"][\"exca_below\"] = 0\r\n        elif elemDict[\"earthInfo\"][\"isExca\"] and cond_above_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_above\"] = exca_above_total_volume/1000000000 * (elemDict[\"earthInfo\"][\"Btm_toGL_volume\"] / total_ref_volume)\r\n            elemDict[\"earthQty\"][\"exca_below\"] = 0\r\n        return elemDict\r\n        \r\n    return list(map( lambda x: find_asignedQty_elemDict(x), elemDicts ))\r\n\r\ndef add_below_excavation_qty_toElemDicts(elemDicts, above_GWL_excaShape, below_GWL_excaShape):\r\n    cond_belowOrInter_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] != 0\r\n    \r\n    total_Btm_toGWL_volume  = go(\r\n        elemDicts,\r\n        filter( lambda elemDict: cond_belowOrInter_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"Btm_toGWL_volume\"]),\r\n        sum,\r\n    )\r\n    total_ref_volume = total_Btm_toGWL_volume\r\n    exca_above_total_volume = above_GWL_excaShape.Volume\r\n    exca_below_total_volume = below_GWL_excaShape.Volume\r\n    \r\n    def find_asignedQty_elemDict(elemDict):\r\n        if elemDict[\"earthInfo\"][\"isExca\"] and cond_belowOrInter_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_below\"] = exca_below_total_volume/1000000000 * (elemDict[\"earthInfo\"][\"Btm_toGWL_volume\"] / total_ref_volume)\r\n        return elemDict\r\n        \r\n    return list(map( lambda x: find_asignedQty_elemDict(x), elemDicts ))\r\n\r\n\r\nearthCalcTargets, remainElemDicts = filter_EarthworkCalcTarget(elemDicts, GWL, GL)\r\nexcaTargets = filter_ExcaTarget(earthCalcTargets)\r\nunionExcaShape = find_unionExcaShape(excaTargets, GWL, GL, LD)\r\nunionDisposalShape = find_unionDisposalShape(earthCalcTargets)\r\nunionBackfillShape = unionExcaShape.Split(unionDisposalShape)[0]\r\nabove_GWL_excaShape, below_GWL_excaShape = unionExcaShape.Split(GWLplane)\r\n\r\nearthCalcTargets_dispoAndbackfill = add_dispoAndbackfill_qty_toElemDicts(earthCalcTargets, unionDisposalShape, unionBackfillShape)\r\n\r\nearthCalcTargets_aboveExca = add_above_excavation_qty_toElemDicts(earthCalcTargets_dispoAndbackfill, above_GWL_excaShape, below_GWL_excaShape)\r\nearthCalcTargets_calcFinshed = add_below_excavation_qty_toElemDicts(earthCalcTargets_aboveExca, above_GWL_excaShape, below_GWL_excaShape)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = earthCalcTargets\r\n#OUT = unionDisposalShape\r\n#OUT = earthCalcTargets_dispoAndbackfill, earthCalcTargets\r\nOUT = earthCalcTargets_calcFinshed + remainElemDicts",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\ncalcMode = IN[0]\r\nexcaMode = IN[1]\r\nelemDicts = IN[2]\r\nearth_CommonInfoDict = IN[3]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\nLD = earth_CommonInfoDict[\"LD\"]\r\nGL = Revit.Elements.Coordinates.BasePoint().Z - LD * 1000\r\n\r\nGWL = earth_CommonInfoDict[\"GWL\"] * 1000\r\nGWLplane = Plane.ByOriginNormal(Point.ByCoordinates(0,0,GWL), Vector.ByCoordinates(0,0,1))\r\n\r\ndef find_belowSrf_simple(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n    )\r\n    if res:\r\n        return res\r\n\r\ndef find_belowSrf_complex(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        #map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n    )\r\n    if res:\r\n        return res\r\n        \r\ndef find_aboveSrf_simple(elem):\r\n    res = go(\r\n        elem.Geometry(),\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z == 1),list,\r\n    )\r\n    if res:\r\n        return res\r\n        \r\ndef add_defaultEarthInfo(elemDict, GWL, GL):\r\n    elem = elemDict[\"Elem\"]\r\n    if \"_ExcaTgt\" in elemDict[\"wms\"][\"Family Type Name\"]:\r\n        btmSrfs = find_belowSrf_complex(elem)\r\n        btmSrfs = btmSrfs if btmSrfs else []\r\n    else:\r\n        btmSrfs = find_belowSrf_simple(elem)\r\n        btmSrfs = btmSrfs if btmSrfs else []\r\n    uprSrfs = find_aboveSrf_simple(elem)\r\n    uprSrfs = uprSrfs if uprSrfs else []\r\n    \r\n    btmZ = min( list(map(lambda x: x.PointAtParameter(0.5,0.5).Z, btmSrfs))\\\r\n                        if btmSrfs else [0] )\r\n    uprZ = max( list(map(lambda x: x.PointAtParameter(0.5,0.5).Z, uprSrfs))\\\r\n                        if uprSrfs else [0] )\r\n    \r\n    btmArea = sum(list(map(lambda x: x.Area, btmSrfs)))\r\n    elem_Volume = btmArea * abs(uprZ - btmZ)\r\n    Btm_toGWL_volume = btmArea * ( GWL - btmZ ) / 1000000000\r\n    GWL_toGL_volume = btmArea * ( GL - GWL ) / 1000000000\r\n    Btm_toGL_volume = btmArea * ( GL - btmZ ) / 1000000000\r\n    \r\n    res = {\r\n        \"isExca\": False,\r\n        \"btmSrfs\": btmSrfs,\r\n        \"uprSrfs\": uprSrfs,\r\n        \"btmArea\": btmArea,\r\n        \"btmZ\": btmZ,\r\n        \"uprZ\": uprZ,\r\n        \"elem_Volume\": elem_Volume,\r\n        \"Btm_toGWL_volume\": Btm_toGWL_volume\\\r\n                            if Btm_toGWL_volume > 0 else 0 ,\r\n        \"GWL_toGL_volume\": GWL_toGL_volume\\\r\n                            if GWL_toGL_volume > 0 else 0 ,\r\n        \"Btm_toGL_volume\": Btm_toGL_volume\\\r\n                            if Btm_toGL_volume > 0 else 0 ,\r\n    }\r\n    \r\n    \r\n    elemDict[\"earthInfo\"] = res\r\n    return elemDict\r\n\r\ndef filter_EarthworkCalcTarget(elemDicts, GWL, GL):\r\n    ruleCondition = lambda x:\\\r\n        \"H1_\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_W\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_MAT\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S18_Wall\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B01\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_UG RC Slab\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Ext Wall_RC_UG_Pit\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S16_UG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S16_TG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_SOG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_EQ-Pad\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_Edge\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S17_Suspend\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"S15_UG\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Stoop\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"B08_Ramp\" in x[\"wms\"][\"Family Type Name\"] or\\\r\n        \"_ExcaTgt\" in x[\"wms\"][\"Family Type Name\"]\r\n    res = go(\r\n        elemDicts,\r\n        filter(lambda x: ruleCondition(x)),\r\n        map( lambda x: add_defaultEarthInfo(x, GWL, GL) ),\r\n        list,\r\n    )\r\n    remain = go(\r\n        elemDicts,\r\n        filter(lambda x: not ruleCondition(x)),\r\n        list,\r\n    )\r\n    return res, remain\r\n\r\n\r\ndef filter_ExcaTarget(earthworkCalcTargets):\r\n    res = go(\r\n        earthworkCalcTargets,\r\n        filter(lambda x:\r\n            \"B08_Ext Wall\" not in x[\"wms\"][\"Family Type Name\"] and\r\n            \"S15_UG\" not in x[\"wms\"][\"Family Type Name\"]\r\n        ),\r\n        list,\r\n    )\r\n    for x in res:\r\n        x[\"earthInfo\"][\"isExca\"] = True\r\n    return res\r\n\r\n\r\ndef find_eachExcaShape(elemDict, GWL, GL, LD):\r\n    belowSrfs = elemDict[\"earthInfo\"][\"btmSrfs\"]\r\n    btm_GL_Z = elemDict[\"earthInfo\"][\"btmZ\"]\r\n    G = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"G\"]\r\n    GL_FL_gap = LD\r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    extraThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    leanOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"] * 1000\r\n    excaOffset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n    \r\n    find_belowRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    \r\n    find_upperRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    \r\n    belowRefs = list(map(find_belowRef, belowSrfs))\r\n    upperRefs = list(map(find_upperRef, belowSrfs))\r\n    exca_RefGroups = list(zip(belowRefs,upperRefs))\r\n    exca_Shape = Solid.ByUnion( map(Solid.ByLoft, exca_RefGroups) )\r\n    \r\n    return exca_Shape\r\n\r\ndef find_unionExcaShape(excaTargets, GWL, GL, LD):\r\n    excaSolids = []\r\n    for elemDict in excaTargets:\r\n        try:\r\n            excaSolids.append( find_eachExcaShape(elemDict, GWL, GL, LD) )\r\n        except:\r\n            pass\r\n    return Solid.ByUnion(excaSolids)\r\n    \r\ndef find_unionExcaShape_whole(excaTargets, GWL, GL, LD, earth_CommonInfoDict):\r\n    #belowSrfs = elemDict[\"earthInfo\"][\"btmSrfs\"]\r\n    #btm_GL_Z = elemDict[\"earthInfo\"][\"btmZ\"]\r\n    \r\n    allElems = list(map(lambda x: x[\"Elem\"], excaTargets))\r\n    def makeBdCube(e):\r\n        eGeo = e.Geometry()[0]\r\n        eBdBoxCube = BoundingBox.ByGeometry(eGeo).ToCuboid()\r\n        return eBdBoxCube\r\n    \r\n    def find_elemsGeo(allElems):\r\n        #flatten_Elems = list(chain(*excaTargets))\r\n        allGeo = []\r\n        for e in allElems:\r\n            try:\r\n                allGeo.append(makeBdCube(e))\r\n            except:\r\n                pass\r\n        return allGeo\r\n        \r\n    def findWholeBdBox(allElems):\r\n        allGeo = find_elemsGeo(allElems)\r\n        unionBdCube = BoundingBox.ByGeometry(allGeo).ToCuboid()\r\n        return unionBdCube\r\n    \r\n    find_belowRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-belowOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    \r\n    find_upperRef = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -btm_GL_Z),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-upperOffset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n\r\n    unionBdCube = findWholeBdBox(allElems)\r\n    belowSrfs = go(\r\n        [unionBdCube],\r\n        map(BoundingBox.ByGeometry), map(BoundingBox.ToCuboid),\r\n        map(lambda x: x.Explode()),\r\n        lambda x: list(chain(*x)),\r\n        filter(lambda x: x.NormalAtParameter(0.5,0.5).Z < -0.1),list,\r\n    )\r\n    \r\n    btm_GL_Z = min( list(map(lambda x: x.PointAtParameter(0.5,0.5).Z, belowSrfs))\\\r\n                        if belowSrfs else [0] )\r\n\r\n    G = earth_CommonInfoDict[\"G\"]\r\n    GL_FL_gap = LD\r\n    leanThk = earth_CommonInfoDict[\"C1\"] * 1000\r\n    baseThk = earth_CommonInfoDict[\"C2\"] * 1000\r\n    subBaseThk = earth_CommonInfoDict[\"C3\"] * 1000\r\n    extraThk = earth_CommonInfoDict[\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    excaHeight = -btm_GL_Z + base_downHeight\r\n    leanOffset = earth_CommonInfoDict[\"D1\"] * 1000\r\n    excaOffset = earth_CommonInfoDict[\"D2\"] * 1000\r\n    belowOffset = leanOffset + excaOffset\r\n    upperOffset = G * excaHeight\r\n\r\n    belowRefs = list(map(find_belowRef, belowSrfs))\r\n    upperRefs = list(map(find_upperRef, belowSrfs))\r\n    exca_RefGroups = list(zip(belowRefs,upperRefs))\r\n    exca_Shape = Solid.ByUnion( map(Solid.ByLoft, exca_RefGroups) )\r\n    \r\n    return exca_Shape\r\n    \r\ndef find_disposalShape(elemDict):\r\n    elemDisposal_shape = Solid.ByUnion(list(elemDict[\"Elem\"].Geometry()))\r\n    \r\n    leanThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C1\"] * 1000\r\n    baseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C2\"] * 1000\r\n    subBaseThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C3\"] * 1000\r\n    extraThk = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"C4\"] * 1000\r\n    base_downHeight = leanThk + baseThk + subBaseThk + extraThk\r\n    \r\n    belowSrfs = elemDict[\"earthInfo\"][\"btmSrfs\"]\r\n    offset = elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D1\"]*1000\\\r\n                + (elemDict[\"wms\"][\"Post_Sym_Val Dict\"][\"D2\"]/2) *1000\r\n    \r\n    find_nonElemDisposal_belowRefs = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.Translate(0, 0, -base_downHeight),\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-offset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n    find_nonElemDisposal_upperRefs = lambda belowSrf: go(\r\n        belowSrf,\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n        lambda x: x.OffsetMany(-offset, False, Vector.ZAxis()),\r\n        lambda x: x[0],\r\n        Surface.ByPatch,\r\n        BoundingBox.ByGeometry,\r\n        lambda x: [x.MinPoint, x.MaxPoint],\r\n        lambda x: Cuboid.ByCorners(*x),\r\n        lambda x: x.Explode()[0],\r\n        lambda x: x.PerimeterCurves(),\r\n        PolyCurve.ByJoinedCurves,\r\n    )\r\n\r\n    nonElemDisposal_belowRefs = list(map(find_nonElemDisposal_belowRefs, belowSrfs))\r\n    nonElemDisposal_upperRefs = list(map(find_nonElemDisposal_upperRefs, belowSrfs))\r\n    nonElemDisposal_RefGroups = list(zip(nonElemDisposal_belowRefs,nonElemDisposal_upperRefs))\r\n    nonElemDisposal_Shape = Solid.ByUnion( map(Solid.ByLoft, nonElemDisposal_RefGroups) )\r\n    disposal_shape = Solid.ByUnion( [elemDisposal_shape, nonElemDisposal_Shape] )\r\n    \r\n    return disposal_shape\r\n\r\ndef find_unionDisposalShape(earthCalcTargets):\r\n    disposal_Solids = []\r\n    for elemDict in earthCalcTargets:\r\n        try:\r\n            disposal_Solids.append( find_disposalShape(elemDict) )\r\n        except:\r\n            pass\r\n    return Solid.ByUnion(disposal_Solids)\r\n    \r\ndef add_dispoAndbackfill_qty_toElemDicts(earthCalcTargets, unionDisposalShape, unionBackfillShape):\r\n    whole_disposalShape_volume = unionDisposalShape.Volume\r\n    whole_backfillShape_volume = unionBackfillShape.Volume\r\n    target = earthCalcTargets\r\n    \r\n    total_toGLvolume = go(\r\n        target,\r\n        map(lambda x: x[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    \r\n    def find_asignedQty_elemDict(d, wholeVolume):\r\n        res = go(\r\n            d,\r\n            lambda x: (x[\"earthInfo\"][\"Btm_toGL_volume\"] / total_toGLvolume) * wholeVolume,\r\n            lambda x: x / 1000000000,\r\n        )\r\n        return res\r\n     \r\n    res = go(\r\n        target,\r\n        map( lambda x: \r\n            dict( x, **{\"earthQty\": {\r\n                                        \"disposal\": find_asignedQty_elemDict(x, whole_disposalShape_volume),\r\n                                        \"backfill\": find_asignedQty_elemDict(x, whole_backfillShape_volume),\r\n                                    }} ) \r\n        ),\r\n        list,\r\n    )\r\n    return res\r\n    \r\ndef add_above_excavation_qty_toElemDicts(elemDicts, above_GWL_excaShape, below_GWL_excaShape):\r\n    cond_inter_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] != 0 and \\\r\n                    x[\"earthInfo\"][\"Btm_toGWL_volume\"] < x[\"earthInfo\"][\"elem_Volume\"]\r\n    cond_above_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] == 0\r\n    cond_below_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] != 0 and \\\r\n                    x[\"earthInfo\"][\"Btm_toGWL_volume\"] >= x[\"earthInfo\"][\"elem_Volume\"]\r\n    \r\n    total_Btm_toGL_volume  = go(\r\n        elemDicts,\r\n        filter(lambda elemDict: elemDict[\"earthInfo\"][\"isExca\"]),\r\n        filter( lambda elemDict: cond_above_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"Btm_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_GWL_toGL_volume  = go(\r\n        elemDicts,\r\n        filter(lambda elemDict: elemDict[\"earthInfo\"][\"isExca\"]),\r\n        filter( lambda elemDict: cond_inter_GWL(elemDict) or cond_below_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"GWL_toGL_volume\"]),\r\n        sum,\r\n    )\r\n    total_ref_volume = total_Btm_toGL_volume + total_GWL_toGL_volume\r\n    exca_above_total_volume = above_GWL_excaShape.Volume\r\n    exca_below_total_volume = below_GWL_excaShape.Volume\r\n    \r\n    def find_asignedQty_elemDict(elemDict):\r\n        if elemDict[\"earthInfo\"][\"isExca\"] and cond_inter_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_above\"] = ( exca_above_total_volume * (elemDict[\"earthInfo\"][\"GWL_toGL_volume\"] / total_ref_volume) ) / 1000000000\r\n        elif elemDict[\"earthInfo\"][\"isExca\"] and cond_above_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_above\"] = ( exca_above_total_volume * (elemDict[\"earthInfo\"][\"Btm_toGL_volume\"] / total_ref_volume) ) / 1000000000\r\n        else:\r\n            elemDict[\"earthQty\"][\"exca_above\"] = 0.0\r\n        return elemDict\r\n    res = list(map( lambda x: find_asignedQty_elemDict(x), elemDicts ))\r\n    return res\r\n\r\ndef add_below_excavation_qty_toElemDicts(elemDicts, above_GWL_excaShape, below_GWL_excaShape):\r\n    cond_belowOrInter_GWL = lambda x: x[\"earthInfo\"][\"Btm_toGWL_volume\"] != 0\r\n    \r\n    total_Btm_toGWL_volume  = go(\r\n        elemDicts,\r\n        filter(lambda elemDict: elemDict[\"earthInfo\"][\"isExca\"]),\r\n        filter( lambda elemDict: cond_belowOrInter_GWL(elemDict) ),\r\n        map(lambda elemDict: elemDict[\"earthInfo\"][\"Btm_toGWL_volume\"]),\r\n        sum,\r\n    )\r\n    total_ref_volume = total_Btm_toGWL_volume\r\n    exca_above_total_volume = above_GWL_excaShape.Volume\r\n    exca_below_total_volume = below_GWL_excaShape.Volume\r\n    \r\n    def find_asignedQty_elemDict(elemDict):\r\n        if elemDict[\"earthInfo\"][\"isExca\"] and cond_belowOrInter_GWL(elemDict):\r\n            elemDict[\"earthQty\"][\"exca_below\"] = exca_below_total_volume/1000000000 * (elemDict[\"earthInfo\"][\"Btm_toGWL_volume\"] / total_ref_volume)\r\n        else:\r\n            elemDict[\"earthQty\"][\"exca_below\"] = 0.0\r\n        return elemDict\r\n    res = list(map( lambda x: find_asignedQty_elemDict(x), elemDicts ))\r\n    return res\r\n\r\n\r\nearthCalcTargets, remainElemDicts = filter_EarthworkCalcTarget(elemDicts, GWL, GL)\r\nexcaTargets = filter_ExcaTarget(earthCalcTargets)\r\n\r\nif excaMode == \"개별터파기\":\r\n    unionExcaShape = find_unionExcaShape(excaTargets, GWL, GL, LD)\r\n    unionPreDisposalShape = find_unionDisposalShape(earthCalcTargets)\r\n    unionBackfillShape = unionExcaShape.Split(unionPreDisposalShape)[0]\r\n    unionBackfillShape_volume = unionBackfillShape.Volume\r\n    unionDisposalShape = unionExcaShape.Split(unionPreDisposalShape)[1]\r\n    unionDisposalShape_volume = unionDisposalShape.Volume\r\n    above_GWL_excaShape, below_GWL_excaShape = unionExcaShape.Split(GWLplane)\r\n    \r\n    earthCalcTargets_dispoAndbackfill = add_dispoAndbackfill_qty_toElemDicts(earthCalcTargets, unionDisposalShape, unionBackfillShape)\r\n    \r\n    earthCalcTargets_aboveExca = add_above_excavation_qty_toElemDicts(earthCalcTargets_dispoAndbackfill, above_GWL_excaShape, below_GWL_excaShape)\r\n    earthCalcTargets_calcFinshed = add_below_excavation_qty_toElemDicts(earthCalcTargets_aboveExca, above_GWL_excaShape, below_GWL_excaShape)\r\n    \r\n    OUT = earthCalcTargets_calcFinshed + remainElemDicts\r\n    \r\nelif excaMode == \"온통터파기\":\r\n    unionExcaShape = find_unionExcaShape_whole(excaTargets, GWL, GL, LD, earth_CommonInfoDict)\r\n    unionPreDisposalShape = find_unionDisposalShape(earthCalcTargets)\r\n    unionBackfillShape = unionExcaShape.Split(unionPreDisposalShape)[0]\r\n    unionBackfillShape_volume = unionBackfillShape.Volume\r\n    unionDisposalShape = unionExcaShape.Split(unionPreDisposalShape)[1]\r\n    unionDisposalShape_volume = unionDisposalShape.Volume\r\n    above_GWL_excaShape, below_GWL_excaShape = unionExcaShape.Split(GWLplane)\r\n    \r\n    earthCalcTargets_dispoAndbackfill = add_dispoAndbackfill_qty_toElemDicts(earthCalcTargets, unionDisposalShape, unionBackfillShape)\r\n    \r\n    earthCalcTargets_aboveExca = add_above_excavation_qty_toElemDicts(earthCalcTargets_dispoAndbackfill, above_GWL_excaShape, below_GWL_excaShape)\r\n    earthCalcTargets_calcFinshed = add_below_excavation_qty_toElemDicts(earthCalcTargets_aboveExca, above_GWL_excaShape, below_GWL_excaShape)\r\n    \r\n    OUT = earthCalcTargets_calcFinshed + remainElemDicts\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = earthCalcTargets\r\n#OUT = unionExcaShape.Volume/1000000000\r\n#OUT = above_GWL_excaShape.Volume/1000000000, below_GWL_excaShape.Volume/1000000000\r\n#OUT = above_GWL_excaShape, below_GWL_excaShape\r\n#OUT = unionDisposalShape_volume/1000000000, unionBackfillShape_volume/1000000000\r\n#OUT = earthCalcTargets_calcFinshed, []\r\n#OUT = earthCalcTargets_calcFinshed + remainElemDicts",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7674,36 +7477,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs an embedded Python script."
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.Count@var[]..[]",
-      "Id": "1d6248a3f9434f0e81a1f65cdfd6e5f5",
-      "Inputs": [
-        {
-          "Id": "6250b4efec8e497ea40cf4f8431d30ec",
-          "Name": "list",
-          "Description": "List to get the item count of.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "05dcbb1a410e43428fcf5fb1d8d9ed2d",
-          "Name": "int",
-          "Description": "List length.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Returns the number of items stored in the given list.\n\nList.Count (list: var[]..[]): int"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
@@ -7768,11 +7541,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[0][\"earthQty\"];",
+      "Code": "i[\"earthQty\"]?i[\"earthQty\"]:{};",
       "Id": "bcf627f5b71e4ce792739ad3cd781867",
       "Inputs": [
         {
-          "Id": "1c5d0d4d29144a729df859c241270947",
+          "Id": "45492cd0be624d11a102612a6c3864dc",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -7783,7 +7556,7 @@
       ],
       "Outputs": [
         {
-          "Id": "7c41d73338d84e0dac320bb47cfd7bb0",
+          "Id": "5895056825b2449e8ea957be26d5da71",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -7798,161 +7571,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[1];",
-      "Id": "ef6f74c74f50416d87f1c3c71454bb16",
-      "Inputs": [
-        {
-          "Id": "f4eaef34b29141f0b76e7df941d5bfe3",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "bcf7ff8937574d7b92ea03d5b41f3985",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[0][\"earthInfo\"];",
-      "Id": "50510a038e40410f86c948ed768a9d1f",
-      "Inputs": [
-        {
-          "Id": "1b7a2c013c384b53b1cfab11e16a6b40",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "6eeee73f35e14b72b14bf2abe4023376",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"isExca\"];",
-      "Id": "8abd8789ff744000b4a2dee501b1879b",
-      "Inputs": [
-        {
-          "Id": "39cbe8e240ee40379cc8f7683352a747",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "453542a64a96413fa2ee65706a63508a",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[0];",
-      "Id": "68b1363a73b6404b95712e3c7f42edac",
-      "Inputs": [
-        {
-          "Id": "b20a95d125e54bc2bdd2280a99f5d2b0",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "29088e12283c4547b624546163bb24f1",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"exca_above\"] + i[\"exca_below\"];",
-      "Id": "4966396c04c64f1ea931071242ac442b",
-      "Inputs": [
-        {
-          "Id": "74bd677c9eec4123b4e6bcaf3d29d9ad",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "a49388a58aa34592a7aae176eacafc5f",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"disposal\"];",
+      "Code": "i[\"disposal\"]?i[\"disposal\"]:0;",
       "Id": "b8af07649c694c899eed4fc4718c9d50",
       "Inputs": [
         {
-          "Id": "4641dab298b946b0a01bf20e3fc42020",
+          "Id": "b9e78cbb3b4e4f6db22fa1bf9ef12a9b",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -7963,7 +7586,7 @@
       ],
       "Outputs": [
         {
-          "Id": "d0307ec5853c44e2976c09c35afb338b",
+          "Id": "26eb491ecf0c40469ed0b5f25bf381a4",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -7978,11 +7601,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[\"backfill\"];",
+      "Code": "i[\"backfill\"]?i[\"backfill\"]:0;",
       "Id": "f3f97e8077a3432aa09e3ad0d5ae5717",
       "Inputs": [
         {
-          "Id": "6accb4c2ae584e04983d9158164d413d",
+          "Id": "e1c148da325145808a0ff3f4c0f9e120",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -7993,46 +7616,7 @@
       ],
       "Outputs": [
         {
-          "Id": "5ddad4b344914519a022712073db1cab",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "a+b;",
-      "Id": "7905e66e496b4b6b9ca58ac45a217924",
-      "Inputs": [
-        {
-          "Id": "afc4ce53e36147a5acbfb71d27945740",
-          "Name": "a",
-          "Description": "a",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "4b758107ad2b4aebac6a40d102983ff1",
-          "Name": "b",
-          "Description": "b",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "dd86fc58b6884a8b9306cdb38706158b",
+          "Id": "7d81bcf80bef42b9b691e3725ab6b5b3",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -8077,11 +7661,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[2..15];",
+      "Code": "i[2..16];",
       "Id": "c03a0584b9e44b6b9ac103682ccacdb7",
       "Inputs": [
         {
-          "Id": "25377a63988d44bfa18a78b8a8806050",
+          "Id": "e010345f3973402c89afdfbb3d58471d",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -8092,7 +7676,7 @@
       ],
       "Outputs": [
         {
-          "Id": "86966f258ed64ec98feb9d5d691828d4",
+          "Id": "7d25fc8a232b48bf91d08ad3e080c6c0",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -8137,7 +7721,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\"\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\nimport re\r\nfrom functools import partial\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlang_mode = IN[0]\r\n#wholeDatas = IN[1]\r\nmanualSheet = IN[1]\r\n\r\n\r\n#wmspec_headers = [\r\n#    \"Work Master Code\" ,\"GaugeCode\" ,\"Unit\" ,\"Work Category-L1\"\r\n#    ,\"Work Category-L2\" ,\"Work Category-L3\" ,\"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n#    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n#    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n#    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n#    ,\"Work Master Code /w Description\", \"Description\" ,\"입찰_물량산출식\" ,\"실행_물량산출식\" ,\"rIDX\"\r\n#]\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, string):\r\n    if target == None or string == None:\r\n        pass\r\n    else:\r\n        res = str(target) in str(string)\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idx에 해당하는 데이터만 추출)\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    target_RowNumber = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,target_RowNumber))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb] ## 각 구간별 마지막 행 번호\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,target_RowNumber))\r\n    rangeEndIdxs = endidxs\r\n    result = list(zip(rangeSttIdxs, rangeEndIdxs))\r\n    return result\r\n\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = list(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1]))))\r\n    \r\n    return dict(headers_sheet)\r\n    #return list(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdxDict, trgt_hdr, trgt_str):\r\n    #hdrs_withIdxDict = dict(hdrs_withIdx)\r\n    return find_range_by_columnItem(sheet, hdrs_withIdxDict[trgt_hdr], trgt_str)\r\n\r\n\r\ndef get_DataOnGrpsAtSheet(sheet:list, discrHDRStr, discrRowStr):\r\n    \"\"\"\r\n    판별기준 Header문자열(discrHDRStr)이 들어있는 열에서,\r\n    판별기준 행 문자열(discrRowStr)이 들어있는 행번호 기준으로 구역을 나누어 데이터 리스트 반환\r\n    \"\"\"\r\n    hdrs_withIdxDict = find_headersAtSheet(sheet)\r\n\r\n    # 시트별 그룹 구분 (시작 행번호, 끝 행 번호 추출)\r\n    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdxDict, discrHDRStr, discrRowStr)\r\n    \r\n    # 시트 각행에 rIDX 데이터 주입하는 구간 - (시작) >>>>>>>\r\n    ## 헤더의 칼럼 인덱스 중 가장 큰 것 추출\r\n    hdrs_maxCol_idx = max(list(hdrs_withIdxDict.values()))\r\n    ## 마지막 헤더위치보다 한칸 옆을 행인덱스번호(\"rIDX\") 정보 보관 위치로 설정\r\n    hdrs_withIdxDict[\"rIDX\"] = hdrs_maxCol_idx+1\r\n    ## 시트의 각 행을 번호와 함께 pair 형태로 추출\r\n    sheetWith_rIDX = list(enumerate(sheet))\r\n    ## rIDX 보관된 시트 데이터 저장을 위한 빈 리스트 선언\r\n    sheet_rIDX = []\r\n    ## pair 형태의 각 행에서, 마지막 헤더의 한칸 우측위치에 rIDX 데이터 주입\r\n    ## 시트의 각 행마다 x 라는 이름으로 순회하며,\r\n    for x in sheetWith_rIDX:\r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치보다 클때,\r\n        if len(x[1])-1>hdrs_maxCol_idx:\r\n            #### 마지막 헤더의 우측 칸 위치를 rIDX 데이터로 치환\r\n            x[1][hdrs_maxCol_idx+1] = x[0]\r\n            sheet_rIDX.append(x[1])\r\n            \r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치와 같을때,\r\n        else:\r\n            #### 마지막 헤더의 우측칸이 없으므로 append로 rIDX 데이터 추가\r\n            x[1].append(x[0])\r\n            sheet_rIDX.append(x[1])\r\n    # <<<<< 시트 각행에 rIDX 데이터 주입하는 구간 - (끝)\r\n    \r\n    rowsGrps_perType_withNone = list(map(lambda x: sheet_rIDX[x[0]-1:x[1]], rowAreasAtSheet))\r\n    # None 데이터 치환 구간\r\n    rowsListGrps_perType = go(#>\r\n        rowsGrps_perType_withNone, list,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서\r\n        map(lambda rowGrp: \\\r\n        ## 한 행씩 골라서\r\n        list(map(lambda row: \\\r\n        ## 행을 구성하는 셀 값 중 None이 있으면 빈문자열로 치환\r\n        list(map(lambda cell: \"\" if cell==None else cell, row)), rowGrp)) ),\r\n        ## 맵 객체가 반환되므로 리스트 변환\r\n        list,\r\n    )#<\r\n    \r\n    return (rowsListGrps_perType, hdrs_withIdxDict)\r\n\r\ndef cvt_rowsListGrps_toDictGrps(rowsListGrps_perType, hdrs_withIdxDict, sheetName):\r\n    \"\"\"\r\n    헤더 행과 다수의 컨텐츠 행으로 이루어진 rowListGrps를,\r\n    모든 행을 헤더와 결합된 딕셔너리화 해서 rowDictGrps를 만드는 함수\r\n    \"\"\"\r\n    eff_hdrs_idx = hdrs_withIdxDict.values()\r\n    eff_hdrs_name = hdrs_withIdxDict.keys()\r\n    \r\n    rowsDictGrps_perType = go(#>\r\n        rowsListGrps_perType,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서 한 행 씩 조작하는 함수들을 구상 후\r\n        ## 맵 함수 내에서 go로 합성하여 반복시켜 사용\r\n        map(lambda rowGrp: go(#>>\r\n            ### 그룹 전체 가져와서\r\n            rowGrp,\r\n            ### 각 행을 리스트 타입으로 변환\r\n            map(list), list,\r\n            ### 헤더에 해당하는 행 값을 추출--\r\n            map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,\r\n            ### 헤더이름과 행 내부의 값을 2개씩 짝지어 줌\r\n            map(lambda row: list(zip(eff_hdrs_name, row))), list,\r\n            ### 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬\r\n            map(lambda x: dict(x)),\r\n            ### 딕셔너리 마다 카테고리 정보 추가\r\n            map(lambda x: dictUpdate(x,{\"Family Category\":sheetName})),\r\n            list,\r\n            )#<<\r\n        ), list,\r\n    )#<\r\n    return rowsDictGrps_perType\r\n\r\n# 행딕셔너리 별 입력한 규칙에 따라 참거짓 여부를 반환하는 함수\r\ndef findRow_AppliedType(rowDict, tgtHDRname, rule=None):\r\n    p = re.compile('[0-9]{3,5}')\r\n    target = str(rowDict[tgtHDRname])\r\n    ## 함수 호출시 구분자(rule) 없이 호출한 경우\r\n    ## -Room Category 시트 용 이며 \"Standard Type\" 항목의 값이 000형태의 숫자인지를 판별\r\n    ## -Room Category 중 \"Standard Type\" 칼럼에 룸 넘버, \"Family Type Name\" 칼럼에 룸 이름 입력하게 되어있음\r\n    if rule==None:\r\n        p = re.compile('[0-9]{3,5}')\r\n        m = p.match(target)\r\n        stdCase = target ==\"Room No\"\r\n        res = all([m or stdCase])\r\n    ## 구분자(rule)가 정규표현식 객체로 들어온 경우\r\n    elif isinstance(rule, re.Pattern):\r\n        m = p.match(target)\r\n        res = all([m])\r\n    ## 구분자(rule)가 문자열로 들어온 경우\r\n    else:\r\n        res = rule in target\r\n    return res\r\n\r\n\r\n\r\ndef form_TypeDict(rowsDictGrps,titleKeyName,sttIdx):\r\n    \"\"\"\r\n    rowsDictGrps_perType을 받아서 각 그룹의 이름을 키로 하는\r\n    새로운 중첩구조의 Dictionary를 만들어서,\r\n    바깥에서 타입이름으로 딕셔너리에 접근하면 \r\n    바로 해당 구성내용을 반환해주는 데이터 구조를 만드는 함수\r\n    \"\"\"\r\n    typeDict = go(#>\r\n        rowsDictGrps, list,\r\n        filter(lambda x: x!=[]),\r\n        map(lambda rowsDictGrp: \\\r\n            ### 그룹 전체 첫행 중 타이틀키값과 나머지 row 들 dict를 짝지어 새로운 딕셔너리로 형성\r\n            [list(rowsDictGrp)[0][titleKeyName],go(#>>\r\n                list(rowsDictGrp)[sttIdx:],\r\n                #### 모두 빈칸인 값일때 제외 필터링\r\n                filter(lambda row: any(list(map(lambda cell: cell!=\"\", list(row.values()))))),\r\n                list,\r\n            )]#<<\r\n        ),list,\r\n        dict,\r\n    )#<\r\n    \r\n    return typeDict\r\n\r\ndef updateDict_symValPair(calcTypeDict):\r\n    \"\"\"\r\n    calcTypeDict를 입력으로 받아서\r\n    필요한 \"약자-대응 항목\" 의 구조를 갖는 딕셔너리 형태로\r\n    구성된 새로운 Dictionary를 반환하는 함수\r\n    \"\"\"\r\n    # 모든 산출타입 이름 추출\r\n    allCalcTypeNames = list(calcTypeDict.keys())\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 산출타입태그 이름 각각에 대해,\r\n    for x in allCalcTypeNames:\r\n        ## 타입별 약자 - 산출 대상 값 을 매칭하기위한 빈 딕셔너리 선언\r\n        type = {}\r\n        ## 산출기준 시트의 각 행을 딕셔너리화 한 rD마다 값을 들여다보며\r\n        for rD in calcTypeDict[x]:\r\n            ### 행 딕셔너리의 \"수동 입력값\" 항목의 값이 유효한 값이고,\r\n            ###\"산출수식 약자\" 항목에도 유효한 값이 있다면\r\n            if rD[\"수동 입력값\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                #### 신규 딕셔너리인 type에 키를 산축수식 약자로 하고,\r\n                #### 값을 수동입력값이나 Parameter 항목 값으로 하는 딕셔너리 형성\r\n                type[rD[\"산출수식 약자\"]] = rD[\"수동 입력값\"]\r\n            elif rD[\"Parameter\"]!=\"\" and rD[\"산출수식 약자\"]!=\"\":\r\n                type[rD[\"산출수식 약자\"]] = rD[\"Parameter\"]\r\n        ## 전체를 담을 빈딕셔너리인 res에 \r\n        ## 키를 산축수식 약자로 하고, 값을 아까 마련한 type 딕셔너리로 하는 딕셔너리로 만듬\r\n        res[x] = type\r\n    # 최종결과 반환\r\n    return res\r\n   \r\n\r\ndef find_stdWMdicts_inGrp(rowsDictGrp):\r\n    res = go(\r\n        rowsDictGrp, list,\r\n        ## 엑셀 \"물량산출식\", \"Work Master Code\" 열에 값이 없는 행 제외\r\n        filter(lambda rD: rD[\"입찰_물량산출식\"] != \"\" and rD[\"실행_물량산출식\"] != \"\"),\r\n        filter(lambda rD: rD[\"Work Master Code\"] != \"\"),\r\n        filter(lambda rD: isinstance(rD[\"Work Master Code\"], str)), ### 7/18 오류제보 반영\r\n        ## Family Type Name에 \"H_\" 문자열 포함된 경우 제외\r\n        filter(lambda rD: not findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n        ## 행 딕셔너리의 NO, Standard Type 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictGrp[0][\"NO\"], \"Standard Type\":rowsDictGrp[0][\"Standard Type\"]})),\r\n        ## Q'ty Cal Type Tag 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n        list,\r\n    )\r\n    return res\r\n\r\n\r\ndef find_stdWMdicts_forCat(rowsDictsGrps):\r\n    res = go(#>\r\n        rowsDictsGrps, list,\r\n        map(find_stdWMdicts_inGrp),\r\n        #filter(lambda x: x!=[]),\r\n        list,\r\n    )#<\r\n    return res\r\n\r\ndef find_appliedTypeDicts_forCat(rowsDictsGrps):\r\n    catName = rowsDictsGrps[0][0][\"Family Category\"]\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    #stdWMsDicts = find_stdWMdicts_forCat(rowsDictGrps)\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Family Type Name에 \"H_\" 문자열 포함된 경우만 필터링\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictsGrp[0][\"NO\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            ## 각 딕셔너리마다 카테고리 명 입력\r\n            #map(lambda rD: dictUpdate(rD, {\"Family Category\":catName})),\r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef merge_sameFamType_wmSpecs(appliedTypeDicts):\r\n    def merge_inGrp(appliedTypeDicts_perGrp):\r\n        \"\"\"\r\n        엑셀 타입별 행그룹 내에서 실 적용 패일리명이 들어있는\r\n        행들만 추출하고, 그 중 이름이 같은 것들의 wm 정보는 합쳐서\r\n        하나의 이름에 하나의 딕셔너리 객체만 존재하도록 수정\r\n        \"\"\"\r\n        ## 그룹 내 실 적용 패밀리 타입 명 추출(중복 불허)\r\n        keysPerGrp = go(#>\r\n            appliedTypeDicts_perGrp,\r\n            ## 개별 행딕셔너리의 패밀리 타입 항목 값 추출\r\n            map(lambda rD: rD[\"Family Type Name\"]),\r\n            ## 문자열 내 \"H_\"가 포함되어있는 지 검사\r\n            filter(lambda x: \"H_\" in x),\r\n            ## 중복 Family Type Name 단일화\r\n            set, list,\r\n        )#<\r\n        ## 패밀리 타입 명을 k라는 변수명으로 하나씩 순회\r\n        for k in keysPerGrp:\r\n            ### k라는 패밀리 타입 명에 해당하는 딕셔너리 모두 검색\r\n            sameNameDicts = list(filter(lambda x: x[\"Family Type Name\"] == k, appliedTypeDicts_perGrp))\r\n            ### 하나의 타입명에 복수 객체인지를 검사하여\r\n            ### 2개 이상인 경우\r\n            if len(sameNameDicts)>=2:\r\n                ### 동일 이름의 딕셔너리들 중 첫번째 항목의 \"wmSpecs\"에\r\n                ### 나머지 항목의 wmSpecs 항목을 몰아준다\r\n                for i,rD in enumerate(sameNameDicts[1:]):\r\n                    if rD[\"wmSpecs\"]:\r\n                        sameNameDicts[0][\"wmSpecs\"].append(*rD[\"wmSpecs\"])\r\n                    else: pass\r\n                ### 몰아주기가 끝나면, 첫번째를 제외한 나머지 딕셔너리는\r\n                ### 불필요해지므로 삭제\r\n                appliedTypeDicts_perGrp.remove(sameNameDicts[i+1])\r\n            else:                \r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDicts_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return map(merge_inGrp, appliedTypeDicts)\r\n\r\n\r\n\r\ndef inject_stdWMtoAppliedTypeDicts(appliedTypeDicts, allCat_stdWMdicts_stdTypeName):\r\n    def inject_inGrp(appliedTypeDict_perGrp):\r\n        \"\"\"\r\n        타입 그룹 별 공통 WM 딕셔너리 항목들을\r\n        실적용패밀리 딕셔너리에 주입하는 함수\r\n        \"\"\"\r\n        ## 실적용패밀리 딕셔너리 리스트의 구성 원소 각각을\r\n        ## rD(rowDictionary) 라는 이름으로 순회\r\n        for rD in appliedTypeDict_perGrp:\r\n            ### rD의 \"Standard Type\" 항목 값이\r\n            ### 입력받은 타입별 공통 WM항목 딕셔너리의 키값중에\r\n            ### 포함되었는지 검사후 있으면,\r\n            if rD[\"Standard Type\"] in list(allCat_stdWMdicts_stdTypeName.keys()):\r\n                #### rD의 \"wmSpecs\" 항목에 공통 WM항목을 추가하여 재할당\r\n                rD[\"wmSpecs\"] = rD[\"wmSpecs\"] + allCat_stdWMdicts_stdTypeName[rD[\"Standard Type\"]]\r\n            else:\r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDict_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return list(map(inject_inGrp, appliedTypeDicts))\r\n    \r\ndef updateFamTypeDicts_symValPair(total_appliedTypeDicts, calcTypeDict_symValPair):\r\n    \"\"\"\r\n    실적용패밀리타입명 별 딕셔너리에\r\n    \"Q'ty Cal Type Tag\" 항목 값 이름과 일치하는\r\n    물량산출 매개변수 꾸러미 추가하는 함수\r\n    \"\"\"\r\n    # 전체 결과물 담을 빈 딕셔너리 선언\r\n    res = {}\r\n    # 전체 실적용 패밀리 딕셔너리들 중 구성원소 각각을 d라는 이름으로 순회\r\n    for d in total_appliedTypeDicts:\r\n        ## 딕셔너리의 \"Q'ty Cal Type Tag\"항목의 값이 빈문자열이 아니라면,\r\n        if d[\"Q'ty Cal Type Tag\"]!=\"\":\r\n            ### 딕셔너리에 \"Sym_Val Dict\"라는 키를 추가하고\r\n            ### calcTypeDict 중 일치하는 값을 골라 키의 값으로 할당\r\n            symValPair = calcTypeDict_symValPair[d[\"Q'ty Cal Type Tag\"]]\r\n            d[\"Sym_Val Dict\"] = symValPair\r\n        ## 전체용 빈 딕셔너리에 패밀리 타입명을 키로 추가하고\r\n        ## 방금 수정한 단위 딕셔너리를 키의 값으로 할당\r\n        res[d[\"Family Type Name\"]] = d    \r\n    return res\r\n    \r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    \"\"\"\r\n    레빗객체와 패밀리리스트 딕셔너리의 정보를 하나로 결합해주는 용도의 함수\r\n    패밀리리스트 데이터는 패밀리 타입명을 키값으로 하는 하나의 딕셔너리로 정리되어있어야 한다\r\n    revit객체는 패밀리리스트 상 존재하는 타입만 필터링해서 입력해야 함\r\n    \"\"\"\r\n    # 수행결과를 모을 빈 리스트 선언\r\n    res = []\r\n    # 모든 레빗 객체들을 하나씩 순회 \r\n    for i in revitElems:\r\n        ## revit 객체들과 revit 타입별 Family List 딕셔너리를 결합하기 위한 빈 딕셔너리 선언\r\n        combD = {}\r\n        ## 패밀리 타입명 추출 - Room 객체인 경우와 아닌 경우 분기\r\n        if \"Room\" in str(type(i)):\r\n            famTypeName = i.GetParameterValueByName(\"Number\") + \"_\" + i.GetParameterValueByName(\"Name\")\r\n        else:\r\n            famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        ## 결합용 딕셔너리의 \"Elem\" 이라는 키에 순회 중인 i (revit객체)를 할당\r\n        combD[\"Elem\"] = i\r\n        combD[\"GUID\"] = i.GetParameterValueByName(\"IfcGUID\")\r\n        ## 결합용 딕셔너리의 \"wms\" 이라는 키에 \r\n        ## 순회 중인 i (revit객체) 패밀리 타입 명과 일치하는 famlist_dictionary의 값을 할당\r\n        combD[\"wms\"] = deepcopy(famlist_dic[famTypeName])\r\n        ##결합된 딕셔너리를 res에 저장\r\n        res.append(combD)\r\n    # 전체 수행 결과 반환\r\n    return res\r\n\r\ndef update_sym_valDict(matched_elemDicts):\r\n    def update_sym_valDict_single(d):\r\n        \"\"\"\r\n        딕셔너리별로 포함된 [\"wms\"][\"Sym_Val Dict\"]항목 내에\r\n        아직 계산되지 않은 매개변수 값들을 계산하여\r\n        \"Post_Sym_Val Dict\"라는 새로운 키의 값으로 할당하는 함수\r\n        \"\"\"\r\n        e = d[\"Elem\"]\r\n        newSymValDict = {}\r\n        keys = d[\"wms\"][\"Sym_Val Dict\"].keys()\r\n        vals = d[\"wms\"][\"Sym_Val Dict\"].values()\r\n        for s,v in zip(keys, vals):\r\n            ## Vals 항목이 사용자 입력값이 아닌 revit 매개변수인 경우\r\n            if isinstance(v,str):\r\n                if v not in list(map(lambda x: x.Name, e.Parameters)):\r\n                    calc_v = e.ElementType.GetParameterValueByName(v)\r\n                else:\r\n                    calc_v = e.GetParameterValueByName(v)\r\n                calc_vv= calc_v if isinstance(calc_v, str) else round(calc_v, 3)\r\n                newSymValDict[s] = calc_vv\r\n            ## Vals 항목이 사용자 입력값인 경우는 그대로 입력된 숫자 사용\r\n            else:\r\n                newSymValDict[s] = v\r\n        d[\"wms\"][\"Post_Sym_Val Dict\"] = newSymValDict\r\n        \r\n        return d\r\n    return list(map(update_sym_valDict_single, matched_elemDicts))\r\n\r\nmanualSheet_rowsListGrps = get_DataOnGrpsAtSheet(manualSheet, \"Standard Type\", \"H_\")\r\nmanualSheet_rowsDictGrps = cvt_rowsListGrps_toDictGrps(*manualSheet_rowsListGrps, \"13.Manual_Input\")\r\n#manualSheet_stdWMdicts = find_stdWMdicts_forCat(deepcopy(manualSheet_rowsDictGrps))\r\n#manualSheet_stdWMdicts_stdTypeName = \r\nmanualSheet_appliedTypeDicts = find_appliedTypeDicts_forCat(manualSheet_rowsDictGrps)\r\nmanualSheet_appliedTypeDicts_noDupl = merge_sameFamType_wmSpecs(manualSheet_appliedTypeDicts)\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = manualSheet_appliedTypeDicts_noDupl",
+      "Code": "# Load the Python Standard and DesignScript Libraries\"\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n\r\nimport re\r\nfrom functools import partial\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nlang_mode = IN[0]\r\n\r\nmanualSheet = IN[1]\r\n\r\n\r\n#wmspec_headers = [\r\n#    \"Work Master Code\" ,\"GaugeCode\" ,\"Unit\" ,\"Work Category-L1\"\r\n#    ,\"Work Category-L2\" ,\"Work Category-L3\" ,\"Spec. 1- L4\" ,\"Spec. 2- L5\"\r\n#    ,\"Spec. 3- L6\" ,\"Spec. 4- L7\" ,\"Spec. 5- L8\" ,\"Spec. 6- L9\"\r\n#    ,\"Spec. 7- L10\" ,\"Spec. 8- L11\" ,\"BOQ Spec1\" ,\"BOQ Spec2\" ,\"BOQ Spec3\"\r\n#    ,\"BOQ Spec4\" ,\"BOQ Spec5\" ,\"BOQ Spec6\" ,\"BOQ Spec7\" ,\"BOQ Spec8\" ,\"BOQ Spec9\"\r\n#    ,\"Work Master Code /w Description\", \"Description\" ,\"입찰_물량산출식\" ,\"실행_물량산출식\" ,\"rIDX\"\r\n#]\r\n# Place your code below this line\r\n\r\ndef find_IsInStr(target, string):\r\n    if target == None or string == None:\r\n        pass\r\n    else:\r\n        res = str(target) in str(string)\r\n        return res\r\n\r\ndef find_range_by_columnItem(db, col_idx, sep_rule):\r\n    tdb = list(map(lambda x: x[col_idx], db)) ##targetTransposedDB (col_idx에 해당하는 데이터만 추출)\r\n    last_idx_tdb = len(tdb)-1\r\n    tdb_enum = enumerate(tdb)\r\n    target_RowNumber = list(filter(lambda x: find_IsInStr(sep_rule, x[1]), tdb_enum))\r\n    endidxs_tmp= list(map(lambda x: x[0]-1,target_RowNumber))\r\n    endidxs_tmp.pop(0)\r\n    endidxs = endidxs_tmp + [last_idx_tdb] ## 각 구간별 마지막 행 번호\r\n    rangeSttIdxs = list(map(lambda x: x[0]+1,target_RowNumber))\r\n    rangeEndIdxs = endidxs\r\n    result = list(zip(rangeSttIdxs, rangeEndIdxs))\r\n    return result\r\n\r\n    \r\ndef find_headersAtSheet(sheet):\r\n    headers_sheet = list(map(lambda x: [x[1].replace(\"\\n\",\"\"),x[0]], filter(lambda x: x[1] != None, enumerate(sheet[1]))))\r\n    \r\n    return dict(headers_sheet)\r\n    #return list(headers_sheet)\r\n\r\ndef find_rangesAtSheet(sheet, hdrs_withIdxDict, trgt_hdr, trgt_str):\r\n    #hdrs_withIdxDict = dict(hdrs_withIdx)\r\n    return find_range_by_columnItem(sheet, hdrs_withIdxDict[trgt_hdr], trgt_str)\r\n\r\n\r\ndef get_DataOnGrpsAtSheet(sheet:list, discrHDRStr, discrRowStr):\r\n    \"\"\"\r\n    판별기준 Header문자열(discrHDRStr)이 들어있는 열에서,\r\n    판별기준 행 문자열(discrRowStr)이 들어있는 행번호 기준으로 구역을 나누어 데이터 리스트 반환\r\n    \"\"\"\r\n    hdrs_withIdxDict = find_headersAtSheet(sheet)\r\n\r\n    # 시트별 그룹 구분 (시작 행번호, 끝 행 번호 추출)\r\n    rowAreasAtSheet = find_rangesAtSheet(sheet, hdrs_withIdxDict, discrHDRStr, discrRowStr)\r\n    \r\n    # 시트 각행에 rIDX 데이터 주입하는 구간 - (시작) >>>>>>>\r\n    ## 헤더의 칼럼 인덱스 중 가장 큰 것 추출\r\n    hdrs_maxCol_idx = max(list(hdrs_withIdxDict.values()))\r\n    ## 마지막 헤더위치보다 한칸 옆을 행인덱스번호(\"rIDX\") 정보 보관 위치로 설정\r\n    hdrs_withIdxDict[\"rIDX\"] = hdrs_maxCol_idx+1\r\n    ## 시트의 각 행을 번호와 함께 pair 형태로 추출\r\n    sheetWith_rIDX = list(enumerate(sheet))\r\n    ## rIDX 보관된 시트 데이터 저장을 위한 빈 리스트 선언\r\n    sheet_rIDX = []\r\n    ## pair 형태의 각 행에서, 마지막 헤더의 한칸 우측위치에 rIDX 데이터 주입\r\n    ## 시트의 각 행마다 x 라는 이름으로 순회하며,\r\n    for x in sheetWith_rIDX:\r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치보다 클때,\r\n        if len(x[1])-1>hdrs_maxCol_idx:\r\n            #### 마지막 헤더의 우측 칸 위치를 rIDX 데이터로 치환\r\n            x[1][hdrs_maxCol_idx+1] = x[0]\r\n            sheet_rIDX.append(x[1])\r\n            \r\n        ### 행의 전체 데이터 길이가 마지막 헤더 위치와 같을때,\r\n        else:\r\n            #### 마지막 헤더의 우측칸이 없으므로 append로 rIDX 데이터 추가\r\n            x[1].append(x[0])\r\n            sheet_rIDX.append(x[1])\r\n    # <<<<< 시트 각행에 rIDX 데이터 주입하는 구간 - (끝)\r\n    \r\n    rowsGrps_perType_withNone = list(map(lambda x: sheet_rIDX[x[0]-1:x[1]], rowAreasAtSheet))\r\n    # None 데이터 치환 구간\r\n    rowsListGrps_perType = go(#>\r\n        rowsGrps_perType_withNone, list,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서\r\n        map(lambda rowGrp: \\\r\n        ## 한 행씩 골라서\r\n        list(map(lambda row: \\\r\n        ## 행을 구성하는 셀 값 중 None이 있으면 빈문자열로 치환\r\n        list(map(lambda cell: \"\" if cell==None else cell, row)), rowGrp)) ),\r\n        ## 맵 객체가 반환되므로 리스트 변환\r\n        list,\r\n    )#<\r\n    \r\n    return (rowsListGrps_perType, hdrs_withIdxDict)\r\n\r\ndef cvt_rowsListGrps_toDictGrps(rowsListGrps_perType, hdrs_withIdxDict, sheetName):\r\n    \"\"\"\r\n    헤더 행과 다수의 컨텐츠 행으로 이루어진 rowListGrps를,\r\n    모든 행을 헤더와 결합된 딕셔너리화 해서 rowDictGrps를 만드는 함수\r\n    \"\"\"\r\n    eff_hdrs_idx = hdrs_withIdxDict.values()\r\n    eff_hdrs_name = hdrs_withIdxDict.keys()\r\n    \r\n    rowsDictGrps_perType = go(#>\r\n        rowsListGrps_perType,\r\n        ## 하나의 타입을 규정하는 행들의 모임에서 한 행 씩 조작하는 함수들을 구상 후\r\n        ## 맵 함수 내에서 go로 합성하여 반복시켜 사용\r\n        map(lambda rowGrp: go(#>>\r\n            ### 그룹 전체 가져와서\r\n            rowGrp,\r\n            ### 각 행을 리스트 타입으로 변환\r\n            map(list), list,\r\n            ### 헤더에 해당하는 행 값을 추출--\r\n            map(lambda row: list(map(lambda idx: row[idx], eff_hdrs_idx))), list,\r\n            ### 헤더이름과 행 내부의 값을 2개씩 짝지어 줌\r\n            map(lambda row: list(zip(eff_hdrs_name, row))), list,\r\n            ### 헤더이름 : 값의 형태로 각 행 데이터를 딕셔너리로 만듬\r\n            map(lambda x: dict(x)),\r\n            ### 딕셔너리 마다 카테고리 정보 추가\r\n            map(lambda x: dictUpdate(x,{\"Family Category\":sheetName})),\r\n            list,\r\n            )#<<\r\n        ), list,\r\n    )#<\r\n    return rowsDictGrps_perType\r\n\r\n# 행딕셔너리 별 입력한 규칙에 따라 참거짓 여부를 반환하는 함수\r\ndef findRow_AppliedType(rowDict, tgtHDRname, rule=None):\r\n    p = re.compile('[0-9]{3,5}')\r\n    target = str(rowDict[tgtHDRname])\r\n    ## 함수 호출시 구분자(rule) 없이 호출한 경우\r\n    ## -Room Category 시트 용 이며 \"Standard Type\" 항목의 값이 000형태의 숫자인지를 판별\r\n    ## -Room Category 중 \"Standard Type\" 칼럼에 룸 넘버, \"Family Type Name\" 칼럼에 룸 이름 입력하게 되어있음\r\n    if rule==None:\r\n        p = re.compile('[0-9]{3,5}')\r\n        m = p.match(target)\r\n        stdCase = target ==\"Room No\"\r\n        res = all([m or stdCase])\r\n    ## 구분자(rule)가 정규표현식 객체로 들어온 경우\r\n    elif isinstance(rule, re.Pattern):\r\n        m = p.match(target)\r\n        res = all([m])\r\n    ## 구분자(rule)가 문자열로 들어온 경우\r\n    else:\r\n        res = rule in target\r\n    return res\r\n\r\ndef find_stdWMdicts_inGrp(rowsDictGrp):\r\n    res = go(\r\n        rowsDictGrp, list,\r\n        ## 엑셀 \"물량산출식\", \"Work Master Code\" 열에 값이 없는 행 제외\r\n        filter(lambda rD: rD[\"입찰_물량산출식\"] != \"\" and rD[\"실행_물량산출식\"] != \"\"),\r\n        filter(lambda rD: rD[\"Work Master Code\"] != \"\"),\r\n        filter(lambda rD: isinstance(rD[\"Work Master Code\"], str)), ### 7/18 오류제보 반영\r\n        ## Family Type Name에 \"H_\" 문자열 포함된 경우 제외\r\n        filter(lambda rD: not findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n        ## 행 딕셔너리의 NO, Standard Type 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictGrp[0][\"NO\"], \"Standard Type\":rowsDictGrp[0][\"Standard Type\"]})),\r\n        ## Q'ty Cal Type Tag 업데이트\r\n        map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n        list,\r\n    )\r\n    return res\r\n\r\n\r\ndef find_stdWMdicts_forCat(rowsDictsGrps):\r\n    res = go(#>\r\n        rowsDictsGrps, list,\r\n        map(find_stdWMdicts_inGrp),\r\n        #filter(lambda x: x!=[]),\r\n        list,\r\n    )#<\r\n    return res\r\n\r\ndef find_appliedTypeDicts_forCat(rowsDictsGrps):\r\n    catName = rowsDictsGrps[0][0][\"Family Category\"]\r\n    eff_hdrs_name = list(rowsDictsGrps[0][0].keys())\r\n    wmspec_headers = [\"Family Category\", \"Work Master Code\", \"GaugeCode\", \"Unit\"]\\\r\n        + list(filter(lambda x: \"Work Cat\" in x or \"Spec\" in x, eff_hdrs_name))\\\r\n        + [\"Work Master Code /w Description\", \"Description\",\"입찰_물량산출식\", \"실행_물량산출식\", \"rIDX\"]\r\n    #stdWMsDicts = find_stdWMdicts_forCat(rowsDictGrps)\r\n    \r\n    appliedTypeDicts = go(#>\r\n        rowsDictsGrps,\r\n        map(lambda rowsDictsGrp: go(#>>\r\n            rowsDictsGrp, list,\r\n            ## Family Type Name에 \"H_\" 문자열 포함된 경우만 필터링\r\n            filter(lambda rD: findRow_AppliedType(rD, \"Family Type Name\", rule=\"H_\")),\r\n            ## 행 딕셔너리의 NO, Standard Type 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"NO\":rowsDictsGrp[0][\"NO\"], \"Standard Type\":rowsDictsGrp[0][\"Standard Type\"]})),\r\n            ## 그룹 첫행을 기준으로 Q'ty Cal Type Tag 업데이트 - 추후 함수 분리 염두\r\n            map(lambda rD: dictUpdate(rD,{\"Q'ty Cal Type Tag\":rowsDictsGrp[0][\"Q'ty Cal Type Tag\"]})),\r\n            \r\n            # wmSpecs 속성들을 헤더로 하는 새로운 딕셔너리 형성 및 값 추가(값은 list형태)\r\n            map(lambda rD: dictUpdate(rD, {\"wmSpecs\": go(\r\n                ### wmspec관련 항목들 값을 리스트로 모음\r\n                map(lambda x: rD[x], wmspec_headers), list,\r\n                ### 항목명과 항목값을 모아서 딕셔너리 형태로 변환\r\n                lambda x: zip(wmspec_headers,x), dict,\r\n                ### wmSpecs 항목을 리스트 구조로 수정해 두기\r\n                lambda x: [x] if x[\"Work Master Code\"]!=\"\" else [],\r\n                \r\n            )}) ),\r\n            ## 밖으로 꺼내진 WorkMaster 관련 속성 삭제\r\n            map(lambda rD: dictDeleteKeys(rD, wmspec_headers)), list,\r\n            ## 각 딕셔너리마다 카테고리 명 입력\r\n            #map(lambda rD: dictUpdate(rD, {\"Family Category\":catName})),\r\n            list,\r\n            )#<<\r\n        ),\r\n        # 실적용 패밀리타입이 없는 그룹은 제외하는 구간\r\n        filter(lambda x: list(x)!=[]),\r\n        list,\r\n    )#<\r\n    \r\n    return appliedTypeDicts\r\n\r\ndef merge_sameFamType_wmSpecs(appliedTypeDicts):\r\n    def merge_inGrp(appliedTypeDicts_perGrp):\r\n        \"\"\"\r\n        엑셀 타입별 행그룹 내에서 실 적용 패일리명이 들어있는\r\n        행들만 추출하고, 그 중 이름이 같은 것들의 wm 정보는 합쳐서\r\n        하나의 이름에 하나의 딕셔너리 객체만 존재하도록 수정\r\n        \"\"\"\r\n        ## 그룹 내 실 적용 패밀리 타입 명 추출(중복 불허)\r\n        keysPerGrp = go(#>\r\n            appliedTypeDicts_perGrp,\r\n            ## 개별 행딕셔너리의 패밀리 타입 항목 값 추출\r\n            map(lambda rD: rD[\"Family Type Name\"]),\r\n            ## 문자열 내 \"H_\"가 포함되어있는 지 검사\r\n            filter(lambda x: \"H_\" in x),\r\n            ## 중복 Family Type Name 단일화\r\n            set, list,\r\n        )#<\r\n        ## 패밀리 타입 명을 k라는 변수명으로 하나씩 순회\r\n        for k in keysPerGrp:\r\n            ### k라는 패밀리 타입 명에 해당하는 딕셔너리 모두 검색\r\n            sameNameDicts = list(filter(lambda x: x[\"Family Type Name\"] == k, appliedTypeDicts_perGrp))\r\n            ### 하나의 타입명에 복수 객체인지를 검사하여\r\n            ### 2개 이상인 경우\r\n            if len(sameNameDicts)>=2:\r\n                ### 동일 이름의 딕셔너리들 중 첫번째 항목의 \"wmSpecs\"에\r\n                ### 나머지 항목의 wmSpecs 항목을 몰아준다\r\n                for i,rD in enumerate(sameNameDicts[1:]):\r\n                    if rD[\"wmSpecs\"]:\r\n                        sameNameDicts[0][\"wmSpecs\"].append(*rD[\"wmSpecs\"])\r\n                    else: pass\r\n                ### 몰아주기가 끝나면, 첫번째를 제외한 나머지 딕셔너리는\r\n                ### 불필요해지므로 삭제\r\n                appliedTypeDicts_perGrp.remove(sameNameDicts[i+1])\r\n            else:                \r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDicts_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return map(merge_inGrp, appliedTypeDicts)\r\n\r\ndef inject_stdWMtoAppliedTypeDicts(appliedTypeDicts, allCat_stdWMdicts_stdTypeName):\r\n    def inject_inGrp(appliedTypeDict_perGrp):\r\n        \"\"\"\r\n        타입 그룹 별 공통 WM 딕셔너리 항목들을\r\n        실적용패밀리 딕셔너리에 주입하는 함수\r\n        \"\"\"\r\n        ## 실적용패밀리 딕셔너리 리스트의 구성 원소 각각을\r\n        ## rD(rowDictionary) 라는 이름으로 순회\r\n        for rD in appliedTypeDict_perGrp:\r\n            ### rD의 \"Standard Type\" 항목 값이\r\n            ### 입력받은 타입별 공통 WM항목 딕셔너리의 키값중에\r\n            ### 포함되었는지 검사후 있으면,\r\n            if rD[\"Standard Type\"] in list(allCat_stdWMdicts_stdTypeName.keys()):\r\n                #### rD의 \"wmSpecs\" 항목에 공통 WM항목을 추가하여 재할당\r\n                rD[\"wmSpecs\"] = rD[\"wmSpecs\"] + allCat_stdWMdicts_stdTypeName[rD[\"Standard Type\"]]\r\n            else:\r\n                pass\r\n        ## 수정된 딕셔너리들 리스트를 반환\r\n        return appliedTypeDict_perGrp\r\n    # 단위 그룹에 대한 함수를 복수 그룹들 전체에 시행\r\n    return list(map(inject_inGrp, appliedTypeDicts))\r\n\r\ndef matchWith_Elem_Dict(famlist_dic,revitElems):\r\n    \"\"\"\r\n    레빗객체와 패밀리리스트 딕셔너리의 정보를 하나로 결합해주는 용도의 함수\r\n    패밀리리스트 데이터는 패밀리 타입명을 키값으로 하는 하나의 딕셔너리로 정리되어있어야 한다\r\n    revit객체는 패밀리리스트 상 존재하는 타입만 필터링해서 입력해야 함\r\n    \"\"\"\r\n    # 수행결과를 모을 빈 리스트 선언\r\n    res = []\r\n    # 모든 레빗 객체들을 하나씩 순회 \r\n    for i in revitElems:\r\n        ## revit 객체들과 revit 타입별 Family List 딕셔너리를 결합하기 위한 빈 딕셔너리 선언\r\n        combD = {}\r\n        ## 패밀리 타입명 추출 - Room 객체인 경우와 아닌 경우 분기\r\n        if \"Room\" in str(type(i)):\r\n            famTypeName = i.GetParameterValueByName(\"Number\") + \"_\" + i.GetParameterValueByName(\"Name\")\r\n        else:\r\n            famTypeName = i.GetParameterValueByName(\"Type\").GetParameterValueByName(\"Type Name\")\r\n        ## 결합용 딕셔너리의 \"Elem\" 이라는 키에 순회 중인 i (revit객체)를 할당\r\n        combD[\"Elem\"] = i\r\n        combD[\"GUID\"] = i.GetParameterValueByName(\"IfcGUID\")\r\n        ## 결합용 딕셔너리의 \"wms\" 이라는 키에 \r\n        ## 순회 중인 i (revit객체) 패밀리 타입 명과 일치하는 famlist_dictionary의 값을 할당\r\n        combD[\"wms\"] = deepcopy(famlist_dic[famTypeName])\r\n        ##결합된 딕셔너리를 res에 저장\r\n        res.append(combD)\r\n    # 전체 수행 결과 반환\r\n    return res\r\n\r\ndef formToElemDictStyle(typeDictsGrps):\r\n    res = []\r\n    for typeDicts in typeDictsGrps:\r\n        tmp = go(\r\n            typeDicts,\r\n            map(lambda x: {\"wms\": x, \"Elem\":\"from_Manual_Input\", \"GUID\": \"from_Manual_Input\"}),\r\n            list,\r\n        )\r\n        res.append(tmp)\r\n    return list(chain(*res))\r\n    \r\nmanualSheet_rowsListGrps = get_DataOnGrpsAtSheet(manualSheet, \"Standard Type\", \"H_\")\r\nmanualSheet_rowsDictGrps = cvt_rowsListGrps_toDictGrps(*manualSheet_rowsListGrps, \"13.Manual_Input\")\r\nmanualSheet_appliedTypeDicts = find_appliedTypeDicts_forCat(manualSheet_rowsDictGrps)\r\nmanualSheet_appliedTypeDicts_noDupl = merge_sameFamType_wmSpecs(manualSheet_appliedTypeDicts)\r\n#appliedTypeDicts_withStdWm = inject_stdWMtoAppliedTypeDicts(manualSheet_appliedTypeDicts_noDupl, {})\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n\r\nOUT = formToElemDictStyle(manualSheet_appliedTypeDicts_noDupl)#, manualSheet_appliedTypeDicts_noDupl#",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -8223,6 +7807,480 @@
       ],
       "Replication": "Auto",
       "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"exca_above\"]?i[\"exca_above\"]:0;",
+      "Id": "ab7e3e20c6434e708f296985c3a1b572",
+      "Inputs": [
+        {
+          "Id": "a380d8b5b68f4e0cb9ec0b3eb118a639",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "61a2ad7008d140d292ce9e8d48e1abb0",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"exca_below\"]?i[\"exca_below\"]:0;",
+      "Id": "8b37e069e9b04e51a82d06b06de25724",
+      "Inputs": [
+        {
+          "Id": "e5d79cbda1284f0f9e86def0639ae916",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ac4d6d5efea846d3a1a532679ca1cd22",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "a+b;",
+      "Id": "31bd6ca9a34b41798d88ee5aa9109367",
+      "Inputs": [
+        {
+          "Id": "3faad63fe1264aa191dc57a2d895a155",
+          "Name": "a",
+          "Description": "a",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "170e11cf58d24566ae41d080b2f6cc9a",
+          "Name": "b",
+          "Description": "b",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "637e4e785a5d4ce7965bf9514c8074c1",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "a+b;",
+      "Id": "ba773a6ef76445578f20a9ec21e63219",
+      "Inputs": [
+        {
+          "Id": "cfe16911cfd340eab1fc0ab5be55c78c",
+          "Name": "a",
+          "Description": "a",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "e89e550b05844d318be6f1ef8026b717",
+          "Name": "b",
+          "Description": "b",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f32da583f10648928b4750c5c2d809a9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "b2277c5fda6f4b039bba947743324f3d",
+      "Inputs": [
+        {
+          "Id": "0f7fd4b3e52a4ebd974ebd4b03104e52",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e4c9ec19c0374b9e806ede22f7741722",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "1a2bf08aabcc4f618efb15dff9b757a4",
+      "Inputs": [
+        {
+          "Id": "666fbfbf0a334a509bcde56a72a31244",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "73118c29051a4a2eb4753f7222b4420d",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "cff84693cea94ab1ae122e7b3c3b5ce0",
+      "Inputs": [
+        {
+          "Id": "be668bdfdd7847a68e1cb48542b266aa",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ffc393c8acc24a8fbd064db62be2a926",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.Math.Sum@double[]",
+      "Id": "0dbd8aa2198d4115bfdf7f5ceae53537",
+      "Inputs": [
+        {
+          "Id": "b71b34b9236747f6b38de307073a76d4",
+          "Name": "values",
+          "Description": "Numbers to add to sum\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "56c8c5edbfca4aa3b9fdee7f45fe027d",
+          "Name": "double",
+          "Description": "The sum of the values",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Find the sum of a series of numbers\n\nMath.Sum (values: double[]): double"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing##########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    #res = {**dic1,**dic2}\r\n    return dic1 #res\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n##########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelemDicts = IN[0]\r\n#test_sample = elemDicts[303]\r\n\r\n# Place your code below this line\r\n\r\ndef tmp_switchEarthworkFormula(elemDict):\r\n    \r\n    for i in elemDict[\"wms\"][\"wmSpecs\"]:\r\n        calcFormulas = filter(lambda x: \"산출식\" in x ,list(i.Keys))\r\n        for k in calcFormulas:\r\n            if i[k] in [\"=Exca\", \"=Back\", \"=Disp\"]:\r\n                i[k] = \"_tbd\"\r\n        \r\n    return elemDict\r\n\r\ndef tmp_switchEarthworkFormula_allDicts(elemDicts):\r\n    return list(map(tmp_switchEarthworkFormula, elemDicts))\r\n\r\ndef switchEarthworkFormula(elemDict):\r\n    for i in elemDict[\"wms\"][\"wmSpecs\"]:\r\n        calcFormulas = filter(lambda x: \"산출식\" in x ,list(i.Keys))\r\n        for k in calcFormulas:\r\n            if i[k] == \"=Exca\" and \"Above\" in i[\"Spec. 7- L10\"]:\r\n                i[k] = f'= {elemDict[\"earthQty\"][\"exca_above\"]}'\r\n                \r\n            elif i[k] == \"=Exca\" and \"Below\" in i[\"Spec. 7- L10\"]:\r\n                i[k] = f'= {elemDict[\"earthQty\"][\"exca_below\"]}'\r\n                \r\n            elif i[k] == \"=Back\":\r\n                i[k] = f'= {elemDict[\"earthQty\"][\"backfill\"]}'\r\n                \r\n            elif i[k] == \"=Disp\":\r\n                i[k] = f'= {elemDict[\"earthQty\"][\"disposal\"]}'\r\n    \r\n    return elemDict\r\n\r\ndef switchEarthworkFormula_allDicts(elemDicts):\r\n    return list(map(switchEarthworkFormula, elemDicts))\r\n# Assign your output to the OUT variable.\r\nOUT = switchEarthworkFormula_allDicts(elemDicts)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "ad52ea54ebbc4ba880bd3af3ddbfe30f",
+      "Inputs": [
+        {
+          "Id": "1ba55ffe725344f5a1ec8aad0da51772",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "699ee2afe8ef4100966173c51b9dfeb9",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\ncurry = lambda f: lambda a,*args: f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n\r\nfilter = curry(filter)\r\nmap = curry(map)\r\nreduce = curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a,f: f(a), args) ## 함수도 축약 가능 ##\r\n\r\ndef dictUpdate(dic1,dic2):\r\n    res = dic1.update(dic2)\r\n    return dic1\r\n    \r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n    \r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a: \r\n            yield from flat(i)\r\n    else: yield a\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nmanualDicts = IN[0]\r\n# Place your code below this line\r\ndef filter_noFormulaWM(manualDict):\r\n    cond = lambda x:\\\r\n            x[\"입찰_물량산출식\"].startswith(\"=\") or\\\r\n            x[\"실행_물량산출식\"].startswith(\"=\")\r\n    wms = manualDict[\"wms\"]\r\n#    for wm in wms:\r\n    wmSpecs = wms[\"wmSpecs\"]\r\n    filtered_wmSpecs = go(\r\n        wmSpecs,\r\n        filter(lambda x: cond(x) ),\r\n        list,\r\n    )\r\n    wms[\"wmSpecs\"] = filtered_wmSpecs\r\n    manualDict[\"wms\"][\"wmSpecs\"] = filtered_wmSpecs\r\n    return manualDict\r\n\r\ndef filter_noWmSpecs(manualDicts):    \r\n    res = go(\r\n        manualDicts,\r\n        filter(lambda x: len(x[\"wms\"][\"wmSpecs\"]) != 0),\r\n        list,\r\n    )\r\n\r\n    return res\r\n    \r\nfiltered_manualDicts = list(map(filter_noFormulaWM, manualDicts))\r\n# Assign your output to the OUT variable.\r\nOUT = filter_noWmSpecs(filtered_manualDicts)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "1e2f686b1ba5486bbfe48489174d2615",
+      "Inputs": [
+        {
+          "Id": "20fdc9d6cd6348c6be8d0c98fba3aeee",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "19e0cbc7ef3f45e082555ef553e9d359",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSVarArgFunction, DynamoCore",
+      "FunctionSignature": "DSCore.List.Join@var[]..[]",
+      "FunctionType": "VariableArgument",
+      "NodeType": "FunctionNode",
+      "Id": "f4975d68f4f9463a81f2d1585897e2ee",
+      "Inputs": [
+        {
+          "Id": "b628caffb4f747faa01878005a2625f4",
+          "Name": "list0",
+          "Description": "Lists to join into one.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1b2bac42c0dd4bb2b06053c640b2193a",
+          "Name": "list1",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "269dcbfbc9944c1db3d107abf604ef80",
+          "Name": "list",
+          "Description": "Joined list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Concatenates all given lists into a single list.\n\nList.Join (lists: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"온통터파기\";",
+      "Id": "5c3a62b79d404c8caf053c3ec31bfbdc",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "e79c62e2f5e9448ca140050f98aa7cb9",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Description\"];",
+      "Id": "268c422bb58a4ef3b64c791668c51006",
+      "Inputs": [
+        {
+          "Id": "7dac7ebac2f34cfdb06ee8aab4b07a41",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "c30289f7d43c47778fa7eb479c9a37c5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Work Master Code\"];",
+      "Id": "54b2a1e5cf6d407988d161528eb4fe20",
+      "Inputs": [
+        {
+          "Id": "af5678dfacc448f9a98fb70a2a5b76bd",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b4aede7fb44e430b80a5aa9c22b22afc",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"Description\"];",
+      "Id": "4b39c11e79e24a068dd54676e6198175",
+      "Inputs": [
+        {
+          "Id": "a2615f9e4a624ffe8ba42590856d536b",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "32159e4ea5e04e47a48a08da7796de9e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
@@ -8282,8 +8340,8 @@
     },
     {
       "Start": "16f6a93146ee4557a8eec29cac4eb344",
-      "End": "25377a63988d44bfa18a78b8a8806050",
-      "Id": "70397d47a6ac4e89afea79eb27f82c92",
+      "End": "e010345f3973402c89afdfbb3d58471d",
+      "Id": "56b83f454565422e935839b7adaf88e9",
       "IsHidden": "False"
     },
     {
@@ -8416,6 +8474,18 @@
       "Start": "d9f7652d7dcd49818455cfcb11afd4d5",
       "End": "22a14fba8f194143a2aaef45fb512ae7",
       "Id": "626bf182effb482b80a7dc640f56561c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d9f7652d7dcd49818455cfcb11afd4d5",
+      "End": "7dac7ebac2f34cfdb06ee8aab4b07a41",
+      "Id": "f1ea45a83c49497b8ba3d1775b56175a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d9f7652d7dcd49818455cfcb11afd4d5",
+      "End": "af5678dfacc448f9a98fb70a2a5b76bd",
+      "Id": "0cc4ee914e9e4b0db50d60c70ad722c6",
       "IsHidden": "False"
     },
     {
@@ -8689,6 +8759,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "2ae84853d9e043699e6f4ca77f9d976d",
+      "End": "a2615f9e4a624ffe8ba42590856d536b",
+      "Id": "efecd3adad6f4b9596f3b2ac53e1a96f",
+      "IsHidden": "False"
+    },
+    {
       "Start": "34eb968354d842c4bc94b81aab940dda",
       "End": "cc4ee34aba664fcb8efda003708f0790",
       "Id": "9630c62a5de54ad2b01679774a0c1696",
@@ -8710,12 +8786,6 @@
       "Start": "b4835f9063384b88aee9393fbb8d6ba8",
       "End": "030ddc1025994397944e30e9aa6471a7",
       "Id": "c567b346cf1a4c4a854c99a4020eaccd",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "7f1ed869682c4a4594c6a1912c0d7cdc",
-      "End": "51dd00ffd7304563a68c380857a8ce47",
-      "Id": "b2f4e86690014643831e10d7bab5bd07",
       "IsHidden": "False"
     },
     {
@@ -9212,12 +9282,6 @@
     },
     {
       "Start": "7fe767aa2dde4da0a94f539212075db1",
-      "End": "adf136f6f97a49d889443ca716141d60",
-      "Id": "b850547c3c604c0d961a594d31b8308e",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "7fe767aa2dde4da0a94f539212075db1",
       "End": "b3b9ed2109734c5083495c6f6df0c9f7",
       "Id": "38bc2f9828a0472da62ed3ad6784bf72",
       "IsHidden": "False"
@@ -9493,15 +9557,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "5a797fe6d3cc4cd58aeccb22f2360874",
+      "Start": "a9d145eba8e4475a90b2c565372699e5",
       "End": "b9668ea322a24115b2486a25f5414cb7",
-      "Id": "2fa2714b12f04e4bbaa8110c48ffcb1e",
+      "Id": "377d6cceccdf4674bc112cc12cf558e1",
       "IsHidden": "False"
     },
     {
-      "Start": "5a797fe6d3cc4cd58aeccb22f2360874",
+      "Start": "a9d145eba8e4475a90b2c565372699e5",
       "End": "acf6e840f5ee454c8d273f42836300c3",
-      "Id": "f7f9e8d3bd2b40cea42cf127c82c2b5f",
+      "Id": "3c9e33c671c547ec9e6974df86d05f61",
       "IsHidden": "False"
     },
     {
@@ -9631,15 +9695,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "7adb019a6d824c91ba10a922c2d27146",
+      "Start": "b6866d244bf74f90993bb73027ec60d1",
       "End": "2cbcc6d12cca444491f83bcdb3d5b997",
-      "Id": "3de1bb491dd441c58c83ee72e3fd8a24",
+      "Id": "af7ea9cd964c4923bb48d1f6103926a5",
       "IsHidden": "False"
     },
     {
-      "Start": "7adb019a6d824c91ba10a922c2d27146",
+      "Start": "b6866d244bf74f90993bb73027ec60d1",
       "End": "f90acec16d1148bcb0bd9cb7f82dc476",
-      "Id": "84b4354eeabe4cda9eaf770921d2e173",
+      "Id": "bafa5293d4f74bfd8c4e5bd492b891af",
       "IsHidden": "False"
     },
     {
@@ -9700,42 +9764,6 @@
       "Start": "d4dffbc01c9a4ce49e9c07c2f0458ce7",
       "End": "1a671480e83e405bb495ed3021fc94d7",
       "Id": "d523915c66a642f4816fdc1ba1a54ddf",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "5309e23f514849ff80f7bc17b1f075d1",
-      "End": "60425cb10993413e9350e1a0f4cdfd96",
-      "Id": "1e0c094641b340ac8715a353b8d45c1b",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "c51a75ef7b834dc9ab665e2ad4d752bf",
-      "End": "c6462a083d3242c7ad82a1e48cda1f96",
-      "Id": "da1f81777709474a8b2c0f087e1d8f22",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "afb9926052324cc497329ae063681030",
-      "End": "80ed215687b64bd4b3cc3be91366cae8",
-      "Id": "b2c7768a142748a58739a78ceed128d6",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "9ee3774be28b40ef888d70c76d078511",
-      "End": "20c6528adab94789b0a73b9fcaf5bebc",
-      "Id": "19b4bb7372524f0bb4a76e63901b353a",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "6f1e850a16914a139836ab949c25f578",
-      "End": "64eb819e36cd4d5799e41f18fa00be74",
-      "Id": "3939a23c202543d3888f9e3b3d71540c",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "4754eda3697e4bfcae301412b3240fd4",
-      "End": "68d8b781dc5c4da5880a898c2ffefa9f",
-      "Id": "e95802ad688c4542bb40ed1b5dea2bad",
       "IsHidden": "False"
     },
     {
@@ -9830,12 +9858,6 @@
     },
     {
       "Start": "796804d5d95a48189405d6a2be406fbe",
-      "End": "50db89db7d8a4dd7b4648afeee2b0589",
-      "Id": "9fa3ae97a570407e826bc8b70ad69636",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "796804d5d95a48189405d6a2be406fbe",
       "End": "6d23d8e1f2db4bdda1b0059f66e72a46",
       "Id": "be6eeebd416d4a3fb02322c7c029add6",
       "IsHidden": "False"
@@ -9855,7 +9877,7 @@
     {
       "Start": "266f688232474bea88168f12619b67fd",
       "End": "b73bca98f6f24c9ba7c48dd87740d16f",
-      "Id": "b1917fce7a73493f84714950932b3a0c",
+      "Id": "932ac2d78ee34443b5a333632ee5e527",
       "IsHidden": "False"
     },
     {
@@ -9866,32 +9888,20 @@
     },
     {
       "Start": "41c1af775e1d4a5ca7cd4e28b001813c",
-      "End": "1c5d0d4d29144a729df859c241270947",
-      "Id": "ec88e1298d0d4b49a5997b55c5394dcf",
+      "End": "1ba55ffe725344f5a1ec8aad0da51772",
+      "Id": "248efe33ab824dd693ae184ca8eda234",
       "IsHidden": "False"
     },
     {
       "Start": "41c1af775e1d4a5ca7cd4e28b001813c",
-      "End": "f4eaef34b29141f0b76e7df941d5bfe3",
-      "Id": "046773bc3668463fad25112c4d98ddbb",
+      "End": "adf136f6f97a49d889443ca716141d60",
+      "Id": "44b9267d613743c2840a58eb493b4698",
       "IsHidden": "False"
     },
     {
       "Start": "41c1af775e1d4a5ca7cd4e28b001813c",
-      "End": "1b7a2c013c384b53b1cfab11e16a6b40",
-      "Id": "ad6791d999584a02b3ff62a0359eefe7",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "41c1af775e1d4a5ca7cd4e28b001813c",
-      "End": "b20a95d125e54bc2bdd2280a99f5d2b0",
-      "Id": "a4d1fa40a867410686cb59502283e268",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "41c1af775e1d4a5ca7cd4e28b001813c",
-      "End": "6250b4efec8e497ea40cf4f8431d30ec",
-      "Id": "b0f8e5082b9241d89bd2609c3e775984",
+      "End": "45492cd0be624d11a102612a6c3864dc",
+      "Id": "70e252d9af254274b5c9491eb7862a6f",
       "IsHidden": "False"
     },
     {
@@ -9907,39 +9917,39 @@
       "IsHidden": "False"
     },
     {
-      "Start": "7c41d73338d84e0dac320bb47cfd7bb0",
-      "End": "74bd677c9eec4123b4e6bcaf3d29d9ad",
-      "Id": "bb89e6d3bc0543c0a8c879616409795c",
+      "Start": "5895056825b2449e8ea957be26d5da71",
+      "End": "a380d8b5b68f4e0cb9ec0b3eb118a639",
+      "Id": "721b15ad432d41a580e409538e3f949a",
       "IsHidden": "False"
     },
     {
-      "Start": "7c41d73338d84e0dac320bb47cfd7bb0",
-      "End": "4641dab298b946b0a01bf20e3fc42020",
-      "Id": "eec8372b9af44cdca7ac42b8836fc0a1",
+      "Start": "5895056825b2449e8ea957be26d5da71",
+      "End": "e5d79cbda1284f0f9e86def0639ae916",
+      "Id": "203b6fa4e7d24ba9bf2d6122ca732b16",
       "IsHidden": "False"
     },
     {
-      "Start": "7c41d73338d84e0dac320bb47cfd7bb0",
-      "End": "6accb4c2ae584e04983d9158164d413d",
-      "Id": "1ac54050d5984a3389f4609f5f92d4e3",
+      "Start": "5895056825b2449e8ea957be26d5da71",
+      "End": "b9e78cbb3b4e4f6db22fa1bf9ef12a9b",
+      "Id": "34ea2bc55ece4f8393b321c11c1b0fcb",
       "IsHidden": "False"
     },
     {
-      "Start": "6eeee73f35e14b72b14bf2abe4023376",
-      "End": "39cbe8e240ee40379cc8f7683352a747",
-      "Id": "f8389f0a993b4f29b0e3152dcbbed9d9",
+      "Start": "5895056825b2449e8ea957be26d5da71",
+      "End": "e1c148da325145808a0ff3f4c0f9e120",
+      "Id": "1748f2cba6184406ab5ea06e5fcdf027",
       "IsHidden": "False"
     },
     {
-      "Start": "d0307ec5853c44e2976c09c35afb338b",
-      "End": "afc4ce53e36147a5acbfb71d27945740",
-      "Id": "1e2922e47249467e85df9d0a89a52d5d",
+      "Start": "26eb491ecf0c40469ed0b5f25bf381a4",
+      "End": "be668bdfdd7847a68e1cb48542b266aa",
+      "Id": "31fd0a8b46984136a415ea8c39b5b6b7",
       "IsHidden": "False"
     },
     {
-      "Start": "5ddad4b344914519a022712073db1cab",
-      "End": "4b758107ad2b4aebac6a40d102983ff1",
-      "Id": "dbe587d12b024cf197a44c83097f0d19",
+      "Start": "7d81bcf80bef42b9b691e3725ab6b5b3",
+      "End": "b71b34b9236747f6b38de307073a76d4",
+      "Id": "15933ee462f24802a9ac64863a16700c",
       "IsHidden": "False"
     },
     {
@@ -9955,21 +9965,81 @@
       "IsHidden": "False"
     },
     {
-      "Start": "86966f258ed64ec98feb9d5d691828d4",
+      "Start": "7d25fc8a232b48bf91d08ad3e080c6c0",
       "End": "1d6cfa74e55f4e97bc84cd321cf66286",
-      "Id": "f7de00be98404322840d01f88196491f",
+      "Id": "55f2f0f2e36c40458140ab8d23999da3",
       "IsHidden": "False"
     },
     {
-      "Start": "86966f258ed64ec98feb9d5d691828d4",
+      "Start": "7d25fc8a232b48bf91d08ad3e080c6c0",
       "End": "a17de4c2b7d24a09b60c96be8f1f4367",
-      "Id": "b82e9df709294745aab02c4a1dbe0a3f",
+      "Id": "40d0bdca444c40299f9a9c6db7d093c0",
       "IsHidden": "False"
     },
     {
       "Start": "393a7123682b430cbeffc89426e3772c",
       "End": "92982ea0cf1a46ac9757a3d3253346e8",
       "Id": "a2670dae5c0e4a858663ad47aa17b6f2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ebde98554221478cbc74de7b003446d3",
+      "End": "20fdc9d6cd6348c6be8d0c98fba3aeee",
+      "Id": "6fe9d384768e4730b61fb2d3f8dbb7f3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "61a2ad7008d140d292ce9e8d48e1abb0",
+      "End": "0f7fd4b3e52a4ebd974ebd4b03104e52",
+      "Id": "a677ca01260d4c48889d77910f8c6aa6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ac4d6d5efea846d3a1a532679ca1cd22",
+      "End": "666fbfbf0a334a509bcde56a72a31244",
+      "Id": "091181ae3bc44824b9f632ab3b53f810",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e4c9ec19c0374b9e806ede22f7741722",
+      "End": "3faad63fe1264aa191dc57a2d895a155",
+      "Id": "81999ad731a74234ad0ab3aecaccd481",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "73118c29051a4a2eb4753f7222b4420d",
+      "End": "170e11cf58d24566ae41d080b2f6cc9a",
+      "Id": "fba50d161a8c429c881b79d0d99f770e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ffc393c8acc24a8fbd064db62be2a926",
+      "End": "cfe16911cfd340eab1fc0ab5be55c78c",
+      "Id": "d8179ced83e04a41a7e9476207e18629",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "56c8c5edbfca4aa3b9fdee7f45fe027d",
+      "End": "e89e550b05844d318be6f1ef8026b717",
+      "Id": "7691a74bd44e4df8867eede8fcc2ffa7",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "699ee2afe8ef4100966173c51b9dfeb9",
+      "End": "b628caffb4f747faa01878005a2625f4",
+      "Id": "94256724e7044dfa8857092347ebe1e8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "19e0cbc7ef3f45e082555ef553e9d359",
+      "End": "1b2bac42c0dd4bb2b06053c640b2193a",
+      "Id": "dc3a4fc7fc72411c9ddf424700c79791",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "269dcbfbc9944c1db3d107abf604ef80",
+      "End": "51dd00ffd7304563a68c380857a8ce47",
+      "Id": "8137fc4028f54a629cfb9dde4c20fc2c",
       "IsHidden": "False"
     }
   ],
@@ -9995,10 +10065,10 @@
       ]
     },
     {
-      "Name": "sample_json.txt",
+      "Name": "Total BOQ_blank_0805-062149.xlsx",
       "ReferenceType": "External",
       "Nodes": [
-        "c91dd77cda5f4801ac15acb997b90c5d"
+        "11184f601ab1440f92b47f1dcda08f3f"
       ]
     }
   ],
@@ -10037,15 +10107,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": -19916.58984375,
-      "EyeY": 66891.4296875,
-      "EyeZ": -109536.140625,
-      "LookX": 27513.8046875,
-      "LookY": -140187.375,
-      "LookZ": 100492.90625,
-      "UpX": 0.17324136197566986,
-      "UpY": 0.75470650196075439,
-      "UpZ": 0.63277620077133179
+      "EyeX": 82369.578125,
+      "EyeY": -85538.421875,
+      "EyeZ": -72025.09375,
+      "LookX": -16728.578125,
+      "LookY": 57095.05859375,
+      "LookZ": 93078.71875,
+      "UpX": 0.12175912410020828,
+      "UpY": 0.72537702322006226,
+      "UpZ": -0.6774975061416626
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -10285,9 +10355,9 @@
         "Id": "92a5d0c5dcc842d7b250f2421b0731ad",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": 13235.038229231346,
-        "Y": 1674.7615110928007
+        "Excluded": false,
+        "X": 13119.418457194661,
+        "Y": 1552.6131016276518
       },
       {
         "Name": "WM별 계산결과 및 spec 정리 from Element",
@@ -10296,8 +10366,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14422.412940021897,
-        "Y": 1673.4361649218613
+        "X": 14423.266608735636,
+        "Y": 1749.4126804445477
       },
       {
         "Name": "Data.ImportExcel",
@@ -10306,8 +10376,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14716.247919625668,
-        "Y": 2460.3609330032546
+        "X": 14717.101588339407,
+        "Y": 2536.337448525941
       },
       {
         "Name": "Code Block",
@@ -10316,8 +10386,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14201.850685972648,
-        "Y": 2710.7214754380093
+        "X": 14202.704354686386,
+        "Y": 2786.6979909606957
       },
       {
         "Name": "File From Path",
@@ -10326,8 +10396,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14436.247919625668,
-        "Y": 2403.3609330032546
+        "X": 14437.101588339407,
+        "Y": 2479.337448525941
       },
       {
         "Name": "Code Block",
@@ -10466,8 +10536,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 15056.247919625668,
-        "Y": 2640.3609330032546
+        "X": 15057.101588339407,
+        "Y": 2716.337448525941
       },
       {
         "Name": "Code Block",
@@ -10536,8 +10606,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13942.392745607256,
-        "Y": 2619.5292788715315
+        "X": 13943.246414320995,
+        "Y": 2695.5057943942179
       },
       {
         "Name": "Code Block",
@@ -10556,8 +10626,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 14710.708368156927,
-        "Y": 2849.8213815345148
+        "X": 14711.562036870666,
+        "Y": 2925.7978970572012
       },
       {
         "Name": "Data formatting for Excel Export___________________________",
@@ -10566,8 +10636,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 16767.795427732697,
-        "Y": 2831.861350421746
+        "X": 16745.474876582877,
+        "Y": 2774.5861017289708
       },
       {
         "Name": "Export to Total BOQ",
@@ -10576,8 +10646,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": true,
         "Excluded": false,
-        "X": 17468.790771037711,
-        "Y": 2506.0187240466944
+        "X": 17469.64443975145,
+        "Y": 2581.9952395693808
       },
       {
         "Name": "Code Block",
@@ -10586,8 +10656,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 15591.313735568696,
-        "Y": 2418.1634851741642
+        "X": 15592.167404282434,
+        "Y": 2494.1400006968506
       },
       {
         "Name": "Code Block",
@@ -10596,8 +10666,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 15577.247919625668,
-        "Y": 2640.3609330032546
+        "X": 15869.874517307484,
+        "Y": 2661.6300243444266
       },
       {
         "Name": "List.FirstItem",
@@ -10626,8 +10696,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 15172.858681375656,
-        "Y": 1962.5951995013074
+        "X": 15173.712350089394,
+        "Y": 2038.5717150239939
       },
       {
         "Name": "Code Block",
@@ -10636,8 +10706,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13108.132962713875,
-        "Y": 2529.7222366872134
+        "X": 13115.487805800884,
+        "Y": 1986.4618931559185
       },
       {
         "Name": "Total BOQ복사 및 경로 반환",
@@ -10645,9 +10715,9 @@
         "Id": "11184f601ab1440f92b47f1dcda08f3f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": 16478.85253056468,
-        "Y": 2277.7882221735044
+        "Excluded": false,
+        "X": 16479.706199278418,
+        "Y": 2353.7647376961909
       },
       {
         "Name": "Code Block",
@@ -10656,8 +10726,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13891.797553873344,
-        "Y": 2802.2487440300538
+        "X": 13892.651222587083,
+        "Y": 2878.22525955274
       },
       {
         "Name": "부재/WM 별 산식에 의한 최종 계산",
@@ -10666,8 +10736,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 2836.1345923536574,
-        "Y": -2030.4387753660044
+        "X": 2277.2307186895491,
+        "Y": -1961.2972875307948
       },
       {
         "Name": "토공관련 wm들 물량산출 수식 임시처리구간",
@@ -10675,9 +10745,9 @@
         "Id": "5ba4a873bf1d434b910b34378934a374",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 161.63237981439829,
-        "Y": -1727.1145036117582
+        "Excluded": true,
+        "X": 1225.6336932552763,
+        "Y": -2039.1933675454209
       },
       {
         "Name": "2. 물량산출모드(입찰 / 실행)",
@@ -10686,8 +10756,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -10191.300605553795,
-        "Y": -1872.1473234903997
+        "X": -9991.4947106523978,
+        "Y": -1904.1674989553671
       },
       {
         "Name": "lang_mode(영/한) select",
@@ -10696,8 +10766,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4404.0083607585693,
-        "Y": -1.9230103876170688
+        "X": -3704.431275328855,
+        "Y": -97.319885673487192
       },
       {
         "Name": "Code Block",
@@ -10975,7 +11045,7 @@
         "Id": "fef5572a431c4fde8517afbe902a131f",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Excluded": false,
         "X": 9600.936801638718,
         "Y": -3343.0895934466216
       },
@@ -11376,8 +11446,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 229.30177408641021,
-        "Y": -1994.6638695308443
+        "X": 1280.8098410420612,
+        "Y": -2209.295410879733
       },
       {
         "Name": "allElemsDict",
@@ -11386,8 +11456,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1427.13153162688,
-        "Y": 226.696819220836
+        "X": -1111.5613189007411,
+        "Y": 36.687506257388122
       },
       {
         "Name": "allElemsDict",
@@ -11396,8 +11466,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1819.04406829348,
-        "Y": 227.195429619717
+        "X": -1503.4738555673412,
+        "Y": 37.186116656269121
       },
       {
         "Name": "allTypes",
@@ -11406,8 +11476,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1797.76965150925,
-        "Y": 410.353656551273
+        "X": -1482.1994387831112,
+        "Y": 220.34434358782511
       },
       {
         "Name": "Dictionary.Keys",
@@ -11496,8 +11566,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2563.65087934771,
-        "Y": 175.759017792784
+        "X": -2248.0806666215713,
+        "Y": -14.25029517066389
       },
       {
         "Name": "Code Block",
@@ -11506,8 +11576,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2132.24468254277,
-        "Y": 320.813491689616
+        "X": -1816.6744698166312,
+        "Y": 130.80417872616812
       },
       {
         "Name": "Code Block",
@@ -11736,7 +11806,7 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3048.5106432725433,
+        "X": -3047.8335699454628,
         "Y": -1178.5702134386129
       },
       {
@@ -11825,7 +11895,7 @@
         "Id": "76c0811a0cf04a3d963a6ff40e04a0cf",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": true,
+        "Excluded": false,
         "X": 12310.71683305,
         "Y": -1424.40629494693
       },
@@ -11965,9 +12035,9 @@
         "Id": "976b571f2d854987ab91696c46d06ef7",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -825.22781478670231,
-        "Y": 479.10369412613773
+        "Excluded": true,
+        "X": -240.44933383555485,
+        "Y": 608.2989399176704
       },
       {
         "Name": "Categories",
@@ -12048,66 +12118,6 @@
         "Excluded": false,
         "X": 13958.752634666667,
         "Y": 593.06961503998889
-      },
-      {
-        "Name": "FileSystem.WriteText",
-        "ShowGeometry": true,
-        "Id": "b5d5577f371b410890a58a2d1157cd9d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": 7562.4217978441657,
-        "Y": -691.92573392349948
-      },
-      {
-        "Name": "Data.StringifyJSON",
-        "ShowGeometry": true,
-        "Id": "e90f0f35f4134e43960f3a623adfaeed",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 7137.198174922788,
-        "Y": -700.78837032313152
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "d906f426720146678be9bdfcd3ac2bab",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 6019.9167171535828,
-        "Y": -943.50483005648073
-      },
-      {
-        "Name": "Dictionary.SetValueAtKeys",
-        "ShowGeometry": true,
-        "Id": "718307cbda504e979f31c3e46a887037",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 6470.0434668321013,
-        "Y": -946.90917014854438
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "1b0c7a5ec4634ebaab18e554f17b9706",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 6213.8175466068551,
-        "Y": -847.051337239712
-      },
-      {
-        "Name": "File Path",
-        "ShowGeometry": true,
-        "Id": "c91dd77cda5f4801ac15acb997b90c5d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 6906.6768816434214,
-        "Y": -1076.6898835302311
       },
       {
         "Name": "Categories",
@@ -12226,8 +12236,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13945.0652320419,
-        "Y": 2253.77918725936
+        "X": 13945.918900755638,
+        "Y": 2329.7557027820462
       },
       {
         "Name": "5. Total BOQ 내 시트명 입력",
@@ -12236,8 +12246,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 13944.69887609095,
-        "Y": 2472.1298674140385
+        "X": 13945.552544804688,
+        "Y": 2548.1063829367249
       },
       {
         "Name": "Code Block",
@@ -12246,8 +12256,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 16065.24993480006,
-        "Y": 2003.862960655182
+        "X": 16066.103603513799,
+        "Y": 2079.8394761778682
       },
       {
         "Name": "Code Block",
@@ -12256,8 +12266,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 3278.7973643464011,
-        "Y": -2031.0196145567406
+        "X": 3704.3372118001271,
+        "Y": -2200.2722137664805
       },
       {
         "Name": "Code Block",
@@ -12266,8 +12276,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -840.0,
-        "Y": -21.0
+        "X": 53.824953830452614,
+        "Y": -55.638739488335204
       },
       {
         "Name": "3. 토공산출모드(온통 / 개별)",
@@ -12276,8 +12286,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -10138.514116117101,
-        "Y": -1628.6847068182701
+        "X": -9983.5364668666589,
+        "Y": -1609.4726015392896
       },
       {
         "Name": "Code Block",
@@ -12286,8 +12296,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2134.5190257021623,
-        "Y": -2924.9296767412211
+        "X": -420.47571448914891,
+        "Y": -1814.8234765683355
       },
       {
         "Name": "Code Block",
@@ -12296,8 +12306,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2136.7473430441814,
-        "Y": -3157.5407769814433
+        "X": -710.00630853657844,
+        "Y": -2039.3162102094468
       },
       {
         "Name": "토공 계산_1.1.1",
@@ -12306,18 +12316,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1179.50445544479,
-        "Y": -3155.52170280212
-      },
-      {
-        "Name": "List.Count",
-        "ShowGeometry": true,
-        "Id": "1d6248a3f9434f0e81a1f65cdfd6e5f5",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -609.45016535035018,
-        "Y": -2953.5687580903314
+        "X": 768.93054305780925,
+        "Y": -1958.7018555716074
       },
       {
         "Name": "calcTypeDict_symValPair",
@@ -12326,8 +12326,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1932.4830731336076,
-        "Y": -2718.8025920012174
+        "X": 120.16345957762587,
+        "Y": -1521.9827447707046
       },
       {
         "Name": "Code Block",
@@ -12336,8 +12336,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -1506.4715168303396,
-        "Y": -2815.5541199622189
+        "X": 441.9634816722596,
+        "Y": -1618.7342727317061
       },
       {
         "Name": "Code Block",
@@ -12345,59 +12345,9 @@
         "Id": "bcf627f5b71e4ce792739ad3cd781867",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": -905.73521701344907,
         "Y": -3445.578533440621
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "ef6f74c74f50416d87f1c3c71454bb16",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -883.90602479947984,
-        "Y": -2982.2818240525544
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "50510a038e40410f86c948ed768a9d1f",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -511.07399686473764,
-        "Y": -3877.3484689324537
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "8abd8789ff744000b4a2dee501b1879b",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -206.02936862428987,
-        "Y": -3878.5473308881083
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "68b1363a73b6404b95712e3c7f42edac",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -805.32521272134545,
-        "Y": -2808.1441164332045
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "4966396c04c64f1ea931071242ac442b",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 52.308065374922535,
-        "Y": -3507.273516349424
       },
       {
         "Name": "Code Block",
@@ -12406,8 +12356,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -545.76485427654757,
-        "Y": -3251.5250194752516
+        "X": -245.52077766049842,
+        "Y": -3339.0257533632957
       },
       {
         "Name": "Code Block",
@@ -12416,18 +12366,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -304.64058755188535,
-        "Y": -3167.1773380305663
-      },
-      {
-        "Name": "Code Block",
-        "ShowGeometry": true,
-        "Id": "7905e66e496b4b6b9ca58ac45a217924",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 177.31462946900763,
-        "Y": -3083.8575279191268
+        "X": -252.8129342565619,
+        "Y": -2974.7199125654324
       },
       {
         "Name": "Code Block",
@@ -12446,8 +12386,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4845.3128203875649,
-        "Y": -820.41869967272737
+        "X": -5010.0435983478419,
+        "Y": -800.45133264723927
       },
       {
         "Name": "Code Block",
@@ -12456,8 +12396,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -4930.4860607924256,
-        "Y": 404.175236635425
+        "X": -4842.6099924403243,
+        "Y": 205.71230053705904
       },
       {
         "Name": "Excel data dictionarization_ManualSheet",
@@ -12466,8 +12406,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3590.741599442706,
-        "Y": 499.62418456457294
+        "X": -1518.13634227383,
+        "Y": 482.73919558461307
       },
       {
         "Name": "List.GetItemAtIndex",
@@ -12478,6 +12418,156 @@
         "Excluded": false,
         "X": 11622.494045475974,
         "Y": -1326.7434621391646
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ab7e3e20c6434e708f296985c3a1b572",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -236.458924592853,
+        "Y": -4104.3745438447677
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "8b37e069e9b04e51a82d06b06de25724",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -212.00110937427945,
+        "Y": -3595.700367522591
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "31bd6ca9a34b41798d88ee5aa9109367",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 827.429013535286,
+        "Y": -3841.0276788999508
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ba773a6ef76445578f20a9ec21e63219",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 851.7952174861332,
+        "Y": -3291.045038180298
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "b2277c5fda6f4b039bba947743324f3d",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 427.40336225016063,
+        "Y": -3910.3205570345149
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "1a2bf08aabcc4f618efb15dff9b757a4",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 426.94156734450939,
+        "Y": -3694.4960359258876
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "cff84693cea94ab1ae122e7b3c3b5ce0",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 213.82010543066428,
+        "Y": -3153.5199855118262
+      },
+      {
+        "Name": "Math.Sum",
+        "ShowGeometry": true,
+        "Id": "0dbd8aa2198d4115bfdf7f5ceae53537",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 221.36439364862565,
+        "Y": -2968.7022354204737
+      },
+      {
+        "Name": "토공관련 wm들 물량산출 수식 처리구간",
+        "ShowGeometry": true,
+        "Id": "ad52ea54ebbc4ba880bd3af3ddbfe30f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1239.573321327066,
+        "Y": -1812.6738869991259
+      },
+      {
+        "Name": "매뉴얼 시트_물량산출 수식 처리구간",
+        "ShowGeometry": true,
+        "Id": "1e2f686b1ba5486bbfe48489174d2615",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1205.7400683799524,
+        "Y": -1271.9199298340391
+      },
+      {
+        "Name": "List.Join",
+        "ShowGeometry": true,
+        "Id": "f4975d68f4f9463a81f2d1585897e2ee",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1765.9208894787048,
+        "Y": -1608.3528621261562
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "5c3a62b79d404c8caf053c3ec31bfbdc",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -367.25276784780442,
+        "Y": -1944.5449005344906
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "268c422bb58a4ef3b64c791668c51006",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 15060.271942688121,
+        "Y": 1278.2889566833294
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "54b2a1e5cf6d407988d161528eb4fe20",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 14969.322132560368,
+        "Y": 1094.03351165336
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "4b39c11e79e24a068dd54676e6198175",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 16226.095461609031,
+        "Y": 1026.7123940627641
       }
     ],
     "Annotations": [
@@ -12703,12 +12793,12 @@
           "63669713819d404bae525815fc170901"
         ],
         "HasNestedGroups": false,
-        "Left": 13098.132962713875,
-        "Top": 1528.4361649218613,
-        "Width": 4600.6578083238364,
-        "Height": 1483.3852166126535,
+        "Left": 13105.487805800884,
+        "Top": 1407.6131016276518,
+        "Width": 4594.1566339505662,
+        "Height": 1680.1847954295495,
         "FontSize": 96.0,
-        "InitialTop": 1673.4361649218613,
+        "InitialTop": 1552.6131016276518,
         "InitialHeight": 1321.3852166126535,
         "TextblockHeight": 135.0,
         "Background": "#FFFFAA45"
@@ -12801,12 +12891,12 @@
           "58daf06df9104b8391f520ccf481f57c"
         ],
         "HasNestedGroups": false,
-        "Left": -2573.65087934771,
-        "Top": -27.240982207216007,
+        "Left": -2258.0806666215713,
+        "Top": -217.25029517066389,
         "Width": 1517.5193477208302,
-        "Height": 569.59463875848894,
+        "Height": 569.594638758489,
         "FontSize": 72.0,
-        "InitialTop": 175.759017792784,
+        "InitialTop": -14.25029517066389,
         "InitialHeight": 379.594638758489,
         "TextblockHeight": 193.0,
         "Background": "#FF48B9FF"
@@ -12821,16 +12911,22 @@
         "Nodes": [
           "0160cc09c3474815a65506ace3948e4f",
           "5ba4a873bf1d434b910b34378934a374",
-          "9a943402cecb4a248260e65c289f9e35"
+          "9a943402cecb4a248260e65c289f9e35",
+          "ad52ea54ebbc4ba880bd3af3ddbfe30f",
+          "b7dee80ea3b942a79ce2fadd8e03184f",
+          "59658e88675c417481ca86fc0e7fabfc",
+          "eba507fa5e304e17a67d7d065190e864",
+          "1e2f686b1ba5486bbfe48489174d2615",
+          "f4975d68f4f9463a81f2d1585897e2ee"
         ],
         "HasNestedGroups": false,
-        "Left": 151.63237981439829,
-        "Top": -2146.4387753660044,
-        "Width": 3014.5022125392588,
-        "Height": 551.32427175424618,
+        "Left": 110.16345957762587,
+        "Top": -2325.295410879733,
+        "Width": 2497.0672591119232,
+        "Height": 1185.375481045694,
         "FontSize": 72.0,
-        "InitialTop": -2030.4387753660044,
-        "InitialHeight": 448.32427175424618,
+        "InitialTop": -2209.295410879733,
+        "InitialHeight": 1082.375481045694,
         "TextblockHeight": 106.0,
         "Background": "#FF48B9FF"
       },
@@ -12851,7 +12947,7 @@
         "HasNestedGroups": false,
         "Left": -4011.5815147721823,
         "Top": -1487.7159127129639,
-        "Width": 1151.070871499639,
+        "Width": 1151.7479448267195,
         "Height": 583.68526624141236,
         "FontSize": 72.0,
         "InitialTop": -1371.7159127129639,
@@ -12879,7 +12975,7 @@
         "Height": 557.759739826095,
         "FontSize": 72.0,
         "InitialTop": -536.27010404532871,
-        "InitialHeight": 376.74489975992174,
+        "InitialHeight": 367.75973982609503,
         "TextblockHeight": 193.0,
         "Background": "#FF48B9FF"
       },
@@ -12913,8 +13009,8 @@
           "0fc51c8b4fe6405f9452a5dda767293e",
           "04df34ee109c4a69bf345265bc87d805",
           "4bd1d89ea5cc4ddeb9c768daec1f29ec",
-          "a3ef24fc3a664e4da7b6e1582abc023a",
-          "44d92a495ffe4938a8a2e0f191e2ac98"
+          "44d92a495ffe4938a8a2e0f191e2ac98",
+          "a3ef24fc3a664e4da7b6e1582abc023a"
         ],
         "HasNestedGroups": false,
         "Left": 8373.63296872409,
@@ -12923,7 +13019,7 @@
         "Height": 1378.0000000000018,
         "FontSize": 72.0,
         "InitialTop": -2085.74839962528,
-        "InitialHeight": 1275.0,
+        "InitialHeight": 1275.0000000000018,
         "TextblockHeight": 106.0,
         "Background": "#FF48B9FF"
       },
@@ -12973,12 +13069,12 @@
           "de4566fde19f484c81cdf869933392fc"
         ],
         "HasNestedGroups": false,
-        "Left": -10201.300605553795,
-        "Top": -1988.1473234903997,
+        "Left": -10001.494710652398,
+        "Top": -2020.1674989553671,
         "Width": 342.0,
         "Height": 248.0,
         "FontSize": 36.0,
-        "InitialTop": -1872.1473234903997,
+        "InitialTop": -1904.1674989553671,
         "InitialHeight": 145.0,
         "TextblockHeight": 106.0,
         "Background": "#FFFF7BAC"
@@ -13005,32 +13101,6 @@
         "InitialHeight": 651.71176172473724,
         "TextblockHeight": 193.0,
         "Background": "#FF71C6A8"
-      },
-      {
-        "Id": "e36e1bf77e874988bb26703f9627f4f9",
-        "Title": "<Double click here to edit group title>",
-        "DescriptionText": "<Double click here to edit group description>",
-        "IsExpanded": true,
-        "WidthAdjustment": 0.0,
-        "HeightAdjustment": 0.0,
-        "Nodes": [
-          "b5d5577f371b410890a58a2d1157cd9d",
-          "e90f0f35f4134e43960f3a623adfaeed",
-          "d906f426720146678be9bdfcd3ac2bab",
-          "718307cbda504e979f31c3e46a887037",
-          "1b0c7a5ec4634ebaab18e554f17b9706",
-          "c91dd77cda5f4801ac15acb997b90c5d"
-        ],
-        "HasNestedGroups": false,
-        "Left": 6009.9167171535828,
-        "Top": -1149.6898835302311,
-        "Width": 1791.5050806905829,
-        "Height": 619.76414960673162,
-        "FontSize": 36.0,
-        "InitialTop": -1076.6898835302311,
-        "InitialHeight": 529.76414960673162,
-        "TextblockHeight": 63.0,
-        "Background": "#FF848484"
       },
       {
         "Id": "0ff82b1632ff4d8cbcded5b0beba520c",
@@ -13060,8 +13130,8 @@
         "HeightAdjustment": 0.0,
         "Nodes": [],
         "HasNestedGroups": false,
-        "Left": 14855.393379734287,
-        "Top": 2210.1384157594603,
+        "Left": 14856.247048448025,
+        "Top": 2286.1149312821467,
         "Width": 0.0,
         "Height": 0.0,
         "FontSize": 36.0,
@@ -13090,8 +13160,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 3480.7867687642593,
-    "Y": -459.74961612169113,
-    "Zoom": 0.952401951239804
+    "X": -10507.75586447036,
+    "Y": -1182.7457849304119,
+    "Zoom": 0.63528183113564474
   }
 }
