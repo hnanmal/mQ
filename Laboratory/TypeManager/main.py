@@ -1,11 +1,29 @@
-# Version: v1.0.7
+# Version: v1.1.8
 # Changes:
-# - Ensure JSON file is saved and loaded with UTF-8 encoding.
+# - Added radio button selection for target column in the paste popup.
 
 import tkinter as tk
 from tkinter import ttk, filedialog
-from tkinter import messagebox, font
+from tkinter import messagebox, simpledialog, font
 import json
+import pyperclip
+
+
+class ColumnSelectionDialog(simpledialog.Dialog):
+    def body(self, master):
+        self.title("Select Column")
+        ttk.Label(master, text="Paste into which column?").pack()
+        self.selection = tk.StringVar(value="Item")
+        ttk.Radiobutton(
+            master, text="Item", variable=self.selection, value="Item"
+        ).pack(anchor="w")
+        ttk.Radiobutton(
+            master, text="Description", variable=self.selection, value="Description"
+        ).pack(anchor="w")
+        return None
+
+    def apply(self):
+        self.result = self.selection.get()
 
 
 class App(tk.Tk):
@@ -56,6 +74,18 @@ class App(tk.Tk):
             else:
                 self.create_three_area_tab(name)
 
+        # Initialize search index
+        self.search_results = []
+        self.search_index = 0
+        self.last_search_term = ""
+
+        # Initialize copied item storage
+        self.copied_items = []
+
+        # Bind copy and paste shortcuts
+        self.bind_all("<Control-c>", self.copy_selected_items)
+        self.bind_all("<Control-v>", self.paste_copied_items)
+
     def create_single_area_tab(self, name):
         # Create a frame for the tab
         tab_frame = ttk.Frame(self.notebook)
@@ -91,6 +121,14 @@ class App(tk.Tk):
         self.level_limit_combo.current(2)  # Default to level 3
         self.level_limit_combo.bind("<<ComboboxSelected>>", self.update_level_limit)
 
+        # Search entry and button
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(button_frame, textvariable=self.search_var, width=30)
+        search_entry.bind("<Return>", self.on_enter_key)
+        search_button = ttk.Button(
+            button_frame, text="Search", command=self.search_items
+        )
+
         # Pack buttons and combobox
         add_button.pack(side="left", padx=2, pady=5)
         remove_button.pack(side="left", padx=2, pady=5)
@@ -98,6 +136,8 @@ class App(tk.Tk):
         load_button.pack(side="left", padx=2, pady=5)
         collapse_button.pack(side="left", padx=2, pady=5)
         self.level_limit_combo.pack(side="left", padx=2, pady=5)
+        search_entry.pack(side="right", padx=2, pady=5)
+        search_button.pack(side="right", padx=2, pady=5)
 
         # Create a frame for the treeview and scrollbar
         tree_frame = ttk.Frame(tab_frame)
@@ -107,13 +147,22 @@ class App(tk.Tk):
         tree_scroll = ttk.Scrollbar(tree_frame)
         tree_scroll.pack(side="right", fill="y")
 
+        # Create a style for the Treeview to ensure custom tag colors are applied
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=25)
+        style.map(
+            "Treeview",
+            background=[("selected", "blue")],
+            foreground=[("selected", "white")],
+        )
+
         # Create and pack the Treeview widget inside this frame
         self.tree = ttk.Treeview(
             tree_frame,
             columns=("indented_name", "description"),
             show="tree headings",
             yscrollcommand=tree_scroll.set,
-            padding=(0, 5),
+            style="Treeview",
         )
         self.tree.column("#0", width=50, anchor="center")  # Tree structure column
         self.tree.column("indented_name", width=300, minwidth=200)
@@ -135,7 +184,6 @@ class App(tk.Tk):
         self.tree.tag_configure(
             "top_level", background="light green", font=self.font_level_0
         )
-
         # Define tag for level 4 items with blue foreground and custom font
         self.tree.tag_configure("level_4", foreground="blue", font=self.font_level_4)
 
@@ -484,6 +532,117 @@ class App(tk.Tk):
             self._expand_recursive(
                 child, current_level=current_level + 1, level_limit=level_limit
             )
+
+    def search_items(self):
+        search_term = self.search_var.get().lower()
+        if not search_term:
+            return
+
+        # Get all items in the treeview
+        items = self.tree.get_children("")
+        self.search_results = []
+
+        def recursive_search(item):
+            if search_term in self.tree.item(item, "values")[0].lower():
+                self.search_results.append(item)
+            for child in self.tree.get_children(item):
+                recursive_search(child)
+
+        for item in items:
+            recursive_search(item)
+
+        if self.search_results:
+            self.search_index = 0
+            self.select_search_result()
+
+    def select_search_result(self):
+        if self.search_results:
+            item = self.search_results[self.search_index]
+            self.tree.selection_set(item)
+            self.tree.see(item)
+            self.search_index = (self.search_index + 1) % len(self.search_results)
+
+    def on_enter_key(self, event):
+        search_term = self.search_var.get().lower()
+        if search_term != self.last_search_term:
+            self.search_results = []
+            self.search_index = 0
+            self.last_search_term = search_term
+
+        if not self.search_results:
+            self.search_items()
+        else:
+            self.select_search_result()
+
+    def copy_selected_items(self, event=None):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an item to copy.")
+            return
+        self.copied_items = [self.get_item_data(item) for item in selected_items]
+        messagebox.showinfo("Copy", "Selected items copied successfully.")
+
+    def paste_copied_items(self, event=None):
+        clipboard_text = pyperclip.paste()
+        selected_items = self.tree.selection()
+
+        # If clipboard contains tab-separated values and matches the number of selected items
+        if clipboard_text and selected_items:
+            clipboard_lines = clipboard_text.split("\n")
+            clipboard_lines = [
+                line for line in clipboard_lines if line
+            ]  # Remove empty lines
+            if len(clipboard_lines) == len(selected_items):
+                target_column = (
+                    self.ask_target_column()
+                )  # Ask the user for target column
+                if target_column is None:
+                    return  # If user cancels the operation
+                for item, text in zip(selected_items, clipboard_lines):
+                    if target_column == "Item":
+                        self.original_names[item] = text  # Update the original name
+                        self.update_displayed_name(
+                            item
+                        )  # Update displayed name with the new value
+                    elif target_column == "Description":
+                        self.tree.set(
+                            item, "description", text
+                        )  # Update the description
+                return
+
+        if not self.copied_items:
+            messagebox.showwarning("No Copy", "No copied items to paste.")
+            return
+        if not selected_items:
+            messagebox.showwarning(
+                "No Selection", "Please select an item to paste into."
+            )
+            return
+        for item_data in self.copied_items:
+            self.paste_item_data(selected_items[0], item_data)
+        messagebox.showinfo("Paste", "Copied items pasted successfully.")
+        self.copied_items = []  # Clear copied items after pasting
+        self.tree.item(selected_items[0], open=True)
+
+    def ask_target_column(self):
+        dialog = ColumnSelectionDialog(self)
+        return dialog.result
+
+    def paste_item_data(self, parent, item_data):
+        parent_number = self.tree.item(parent, "text")
+        children = self.tree.get_children(parent)
+        new_index = len(children) + 1
+        new_number = f"{parent_number}.{new_index}"
+        new_item = self.tree.insert(
+            parent,
+            "end",
+            text=new_number,
+            values=(item_data["name"], item_data["description"]),
+        )
+        self.original_names[new_item] = item_data["name"]
+        self.update_displayed_name(new_item)
+        for child_data in item_data["children"]:
+            self.paste_item_data(new_item, child_data)
 
 
 if __name__ == "__main__":

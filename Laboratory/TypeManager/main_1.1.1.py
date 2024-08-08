@@ -1,6 +1,11 @@
+# Version: v1.1.1
+# Changes:
+# - Enabled initial search and result navigation using Enter key.
+# - Reset search results when the search term changes.
+
 import tkinter as tk
 from tkinter import ttk, filedialog
-from tkinter import messagebox
+from tkinter import messagebox, font
 import json
 
 
@@ -11,11 +16,11 @@ class App(tk.Tk):
         self.title("Tabbed Page App")
         self.geometry("1400x900")  # Window size
 
-        # Track expand/collapse state
-        self.is_expanded = True
-
         # Create a dictionary to store original names
         self.original_names = {}
+
+        # Track the previous level limit
+        self.previous_level_limit = 3  # Default level limit
 
         # Create a notebook (tabbed pane)
         self.notebook = ttk.Notebook(self)
@@ -52,6 +57,11 @@ class App(tk.Tk):
             else:
                 self.create_three_area_tab(name)
 
+        # Initialize search index
+        self.search_results = []
+        self.search_index = 0
+        self.last_search_term = ""
+
     def create_single_area_tab(self, name):
         # Create a frame for the tab
         tab_frame = ttk.Frame(self.notebook)
@@ -72,16 +82,38 @@ class App(tk.Tk):
         load_button = ttk.Button(
             button_frame, text="Load", command=self.load_configuration
         )
-        self.toggle_button = ttk.Button(
-            button_frame, text="Collapse All", command=self.toggle_expand_collapse
+        collapse_button = ttk.Button(
+            button_frame, text="Collapse All", command=self.collapse_all
         )
 
-        # Pack buttons with less padding
+        # Level limit combobox
+        self.level_limit_var = tk.StringVar()
+        self.level_limit_combo = ttk.Combobox(
+            button_frame, textvariable=self.level_limit_var, state="readonly", width=10
+        )
+        self.level_limit_combo["values"] = [
+            str(i) for i in range(1, 11)
+        ]  # Levels 1 to 10
+        self.level_limit_combo.current(2)  # Default to level 3
+        self.level_limit_combo.bind("<<ComboboxSelected>>", self.update_level_limit)
+
+        # Search entry and button
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(button_frame, textvariable=self.search_var, width=30)
+        search_entry.bind("<Return>", self.on_enter_key)
+        search_button = ttk.Button(
+            button_frame, text="Search", command=self.search_items
+        )
+
+        # Pack buttons and combobox
         add_button.pack(side="left", padx=2, pady=5)
         remove_button.pack(side="left", padx=2, pady=5)
         save_button.pack(side="left", padx=2, pady=5)
         load_button.pack(side="left", padx=2, pady=5)
-        self.toggle_button.pack(side="left", padx=2, pady=5)
+        collapse_button.pack(side="left", padx=2, pady=5)
+        self.level_limit_combo.pack(side="left", padx=2, pady=5)
+        search_entry.pack(side="right", padx=2, pady=5)
+        search_button.pack(side="right", padx=2, pady=5)
 
         # Create a frame for the treeview and scrollbar
         tree_frame = ttk.Frame(tab_frame)
@@ -91,12 +123,22 @@ class App(tk.Tk):
         tree_scroll = ttk.Scrollbar(tree_frame)
         tree_scroll.pack(side="right", fill="y")
 
+        # Create a style for the Treeview to ensure custom tag colors are applied
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=25)
+        style.map(
+            "Treeview",
+            background=[("selected", "blue")],
+            foreground=[("selected", "white")],
+        )
+
         # Create and pack the Treeview widget inside this frame
         self.tree = ttk.Treeview(
             tree_frame,
             columns=("indented_name", "description"),
             show="tree headings",
             yscrollcommand=tree_scroll.set,
+            style="Treeview",
         )
         self.tree.column("#0", width=50, anchor="center")  # Tree structure column
         self.tree.column("indented_name", width=300, minwidth=200)
@@ -109,10 +151,17 @@ class App(tk.Tk):
         # Configure the scrollbar
         tree_scroll.config(command=self.tree.yview)
 
+        # Define custom fonts
+        self.font_level_0 = font.Font(family="Arial", size=12)
+        self.font_level_4 = font.Font(family="Arial", size=10)
+        self.default_font = font.Font(family="Arial", size=10)  # Default font size
+
         # Define tag for top-level items with light green background and bold font
         self.tree.tag_configure(
-            "top_level", background="light green", font=("Arial", 10, "bold")
+            "top_level", background="light green", font=self.font_level_0
         )
+        # Define tag for level 4 items with blue foreground and custom font
+        self.tree.tag_configure("level_4", foreground="blue", font=self.font_level_4)
 
         # Add initial top-level items to the tree
         for i, item in enumerate(self.top_level_items):
@@ -189,7 +238,10 @@ class App(tk.Tk):
     def add_numbered_item(
         self, parent, number, original_name, description, top_level=False
     ):
+        depth = self.get_item_depth(parent) + 1
         tags = ("top_level",) if top_level else ()
+        if depth == 4:
+            tags = ("level_4",)
         item_id = self.tree.insert(
             parent, "end", text=number, values=(original_name, description), tags=tags
         )
@@ -359,8 +411,8 @@ class App(tk.Tk):
             defaultextension=".json", filetypes=[("JSON files", "*.json")]
         )
         if file_path:
-            with open(file_path, "w") as f:
-                json.dump(tree_data, f, indent=4)
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(tree_data, f, indent=4, ensure_ascii=False)
 
     def get_item_data(self, item):
         item_data = {
@@ -378,7 +430,7 @@ class App(tk.Tk):
     def load_configuration(self):
         file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
         if file_path:
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 tree_data = json.load(f)
             # Clear existing tree
             for item in self.tree.get_children():
@@ -388,7 +440,10 @@ class App(tk.Tk):
                 self.insert_item_data("", item_data)
 
     def insert_item_data(self, parent, item_data):
+        depth = self.get_item_depth(parent) + 1
         tags = ("top_level",) if parent == "" else ()
+        if depth == 4:
+            tags = ("level_4",)
         new_item = self.tree.insert(
             parent,
             "end",
@@ -403,25 +458,6 @@ class App(tk.Tk):
         for child_data in item_data["children"]:
             self.insert_item_data(new_item, child_data)
 
-    def toggle_expand_collapse(self):
-        if self.is_expanded:
-            self.collapse_all()
-            self.toggle_button.config(text="Expand All")
-        else:
-            self.expand_all()
-            self.toggle_button.config(text="Collapse All")
-        self.is_expanded = not self.is_expanded
-
-    def expand_all(self):
-        for item in self.tree.get_children():
-            self.tree.item(item, open=True)
-            self._expand_recursive(item)
-
-    def _expand_recursive(self, item):
-        for child in self.tree.get_children(item):
-            self.tree.item(child, open=True)
-            self._expand_recursive(child)
-
     def collapse_all(self):
         for item in self.tree.get_children():
             self.tree.item(item, open=False)
@@ -431,6 +467,88 @@ class App(tk.Tk):
         for child in self.tree.get_children(item):
             self.tree.item(child, open=False)
             self._collapse_recursive(child)
+
+    def update_level_limit(self, event):
+        # Get the selected level limit
+        new_level_limit = int(self.level_limit_var.get())
+
+        # Collapse nodes below the previous level limit
+        if new_level_limit < self.previous_level_limit:
+            self.collapse_all_to_level(new_level_limit)
+
+        # Expand the tree based on the selected level limit
+        for item in self.tree.get_children():
+            self.tree.item(item, open=True)
+            self._expand_recursive(item, current_level=1, level_limit=new_level_limit)
+
+        # Update the previous level limit
+        self.previous_level_limit = new_level_limit
+
+    def collapse_all_to_level(self, level_limit):
+        for item in self.tree.get_children():
+            self._collapse_to_level_recursive(
+                item, current_level=1, level_limit=level_limit
+            )
+
+    def _collapse_to_level_recursive(self, item, current_level, level_limit):
+        if current_level >= level_limit:
+            for child in self.tree.get_children(item):
+                self.tree.item(child, open=False)
+        else:
+            for child in self.tree.get_children(item):
+                self._collapse_to_level_recursive(
+                    child, current_level=current_level + 1, level_limit=level_limit
+                )
+
+    def _expand_recursive(self, item, current_level, level_limit):
+        if current_level >= level_limit:
+            return
+        for child in self.tree.get_children(item):
+            self.tree.item(child, open=True)
+            self._expand_recursive(
+                child, current_level=current_level + 1, level_limit=level_limit
+            )
+
+    def search_items(self):
+        search_term = self.search_var.get().lower()
+        if not search_term:
+            return
+
+        # Get all items in the treeview
+        items = self.tree.get_children("")
+        self.search_results = []
+
+        def recursive_search(item):
+            if search_term in self.tree.item(item, "values")[0].lower():
+                self.search_results.append(item)
+            for child in self.tree.get_children(item):
+                recursive_search(child)
+
+        for item in items:
+            recursive_search(item)
+
+        if self.search_results:
+            self.search_index = 0
+            self.select_search_result()
+
+    def select_search_result(self):
+        if self.search_results:
+            item = self.search_results[self.search_index]
+            self.tree.selection_set(item)
+            self.tree.see(item)
+            self.search_index = (self.search_index + 1) % len(self.search_results)
+
+    def on_enter_key(self, event):
+        search_term = self.search_var.get().lower()
+        if search_term != self.last_search_term:
+            self.search_results = []
+            self.search_index = 0
+            self.last_search_term = search_term
+
+        if not self.search_results:
+            self.search_items()
+        else:
+            self.select_search_result()
 
 
 if __name__ == "__main__":
