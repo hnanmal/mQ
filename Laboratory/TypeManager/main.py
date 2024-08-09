@@ -1,10 +1,10 @@
-# Version: v1.1.8
+# Version: v1.4.4 (dragTrial)
 # Changes:
-# - Added radio button selection for target column in the paste popup.
+# - Corrected the Alt key function to temporarily enable Order Adjustment Mode when dragging.
 
 import tkinter as tk
 from tkinter import ttk, filedialog
-from tkinter import messagebox, simpledialog, font
+from tkinter import messagebox, simpledialog, font, Menu
 import json
 import pyperclip
 
@@ -82,9 +82,54 @@ class App(tk.Tk):
         # Initialize copied item storage
         self.copied_items = []
 
-        # Bind copy and paste shortcuts
-        self.bind_all("<Control-c>", self.copy_selected_items)
-        self.bind_all("<Control-v>", self.paste_copied_items)
+        # Bind copy and paste shortcuts for external clipboard
+        self.bind_all("<Control-c>", self.copy_to_clipboard)
+        self.bind_all("<Control-v>", self.paste_from_clipboard)
+
+        # Initialize right-click context menu
+        self.tree.bind("<Button-3>", self.show_context_menu)
+
+        # Initialize drag-and-drop variables
+        self.drag_data = {"x": 0, "y": 0, "items": []}
+
+        # Add "Order Adjustment Mode" button
+        self.order_adjustment_mode = tk.BooleanVar(value=False)
+        self.order_adjustment_button = ttk.Button(
+            self,
+            text="Order Adjustment Mode: OFF",
+            command=self.toggle_order_adjustment_mode,
+        )
+        self.order_adjustment_button.pack(side="top", anchor="w", padx=10, pady=5)
+
+        # Track whether the item is in text editing mode
+        self.is_text_editing = False
+
+        # Bind Alt key for temporary Order Adjustment Mode
+        self.bind_all("<Alt-KeyPress>", self.alt_key_pressed)
+        self.bind_all("<Alt-KeyRelease>", self.alt_key_released)
+
+        # Track if Alt key is held down
+        self.alt_key_down = False
+
+    def alt_key_pressed(self, event):
+        self.alt_key_down = True
+
+    def alt_key_released(self, event):
+        self.alt_key_down = False
+
+    def toggle_order_adjustment_mode(self):
+        self.order_adjustment_mode.set(not self.order_adjustment_mode.get())
+        mode_text = "ON" if self.order_adjustment_mode.get() else "OFF"
+        self.order_adjustment_button.config(text=f"Order Adjustment Mode: {mode_text}")
+        # Only enable drag-and-drop bindings when order adjustment mode is ON
+        if self.order_adjustment_mode.get():
+            self.tree.bind("<ButtonPress-1>", self.on_drag_start)
+            self.tree.bind("<B1-Motion>", self.on_drag_motion)
+            self.tree.bind("<ButtonRelease-1>", self.on_drag_release)
+        else:
+            self.tree.unbind("<ButtonPress-1>")
+            self.tree.unbind("<B1-Motion>")
+            self.tree.unbind("<ButtonRelease-1>")
 
     def create_single_area_tab(self, name):
         # Create a frame for the tab
@@ -196,6 +241,11 @@ class App(tk.Tk):
 
         # Add single-click event for editing descriptions
         self.tree.bind("<Button-1>", self.on_item_single_click)
+
+        # Bind mouse events for drag-and-drop functionality
+        self.tree.bind("<ButtonPress-1>", self.on_drag_start)
+        self.tree.bind("<B1-Motion>", self.on_drag_motion)
+        self.tree.bind("<ButtonRelease-1>", self.on_drag_release)
 
         # Add the tab to the notebook
         self.notebook.add(tab_frame, text=f"   {name}   ")
@@ -371,6 +421,9 @@ class App(tk.Tk):
         # Get current item name value
         current_value = self.original_names.get(item, "")
 
+        # Set editing mode flag
+        self.is_text_editing = True
+
         # Create an Entry widget to edit the item name
         entry = ttk.Entry(self.tree, width=len(current_value) + 5)
         entry.insert(0, current_value)
@@ -393,11 +446,15 @@ class App(tk.Tk):
             # This error can occur if the entry is destroyed before this method is called
             pass
         finally:
+            self.is_text_editing = False  # Clear editing mode flag
             entry.destroy()
 
     def edit_description(self, item):
         # Get current description value
         current_value = self.tree.set(item, "description")
+
+        # Set editing mode flag
+        self.is_text_editing = True
 
         # Create an Entry widget to edit the description
         entry = ttk.Entry(self.tree, width=len(current_value) + 5)
@@ -420,6 +477,7 @@ class App(tk.Tk):
             # This error can occur if the entry is destroyed before this method is called
             pass
         finally:
+            self.is_text_editing = False  # Clear editing mode flag
             entry.destroy()
 
     def on_button_click(self, message):
@@ -574,15 +632,29 @@ class App(tk.Tk):
         else:
             self.select_search_result()
 
-    def copy_selected_items(self, event=None):
+    def copy_to_clipboard(self, event=None):
+        if self.is_text_editing:
+            return  # Skip clipboard operation if in text editing mode
         selected_items = self.tree.selection()
         if not selected_items:
             messagebox.showwarning("No Selection", "Please select an item to copy.")
             return
-        self.copied_items = [self.get_item_data(item) for item in selected_items]
-        messagebox.showinfo("Copy", "Selected items copied successfully.")
+        clipboard_data = "\n".join(
+            [self.original_names[item] for item in selected_items]
+        )
+        pyperclip.copy(clipboard_data)
+        messagebox.showinfo("Copy", "Selected items copied to clipboard.")
 
-    def paste_copied_items(self, event=None):
+    def paste_from_clipboard(self, event=None):
+        if self.is_text_editing:
+            # Directly paste clipboard content into the focused entry widget
+            clipboard_text = pyperclip.paste()
+            entry = self.focus_get()
+            if isinstance(entry, ttk.Entry):
+                entry.delete(0, tk.END)  # Clear the current content
+                entry.insert(tk.END, clipboard_text)  # Insert clipboard content
+            return
+
         clipboard_text = pyperclip.paste()
         selected_items = self.tree.selection()
 
@@ -610,20 +682,6 @@ class App(tk.Tk):
                         )  # Update the description
                 return
 
-        if not self.copied_items:
-            messagebox.showwarning("No Copy", "No copied items to paste.")
-            return
-        if not selected_items:
-            messagebox.showwarning(
-                "No Selection", "Please select an item to paste into."
-            )
-            return
-        for item_data in self.copied_items:
-            self.paste_item_data(selected_items[0], item_data)
-        messagebox.showinfo("Paste", "Copied items pasted successfully.")
-        self.copied_items = []  # Clear copied items after pasting
-        self.tree.item(selected_items[0], open=True)
-
     def ask_target_column(self):
         dialog = ColumnSelectionDialog(self)
         return dialog.result
@@ -643,6 +701,123 @@ class App(tk.Tk):
         self.update_displayed_name(new_item)
         for child_data in item_data["children"]:
             self.paste_item_data(new_item, child_data)
+
+    def show_context_menu(self, event):
+        context_menu = Menu(self, tearoff=0)
+        context_menu.add_command(label="Copy", command=self.copy_selected_items)
+        context_menu.add_command(label="Paste", command=self.paste_copied_items)
+        context_menu.add_separator()
+        context_menu.add_command(
+            label="상위레벨로", command=self.move_items_up_one_level
+        )
+        context_menu.add_command(
+            label="하위레벨로", command=self.move_items_down_one_level
+        )
+        context_menu.post(event.x_root, event.y_root)
+
+    def copy_selected_items(self):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an item to copy.")
+            return
+        self.copied_items = [self.get_item_data(item) for item in selected_items]
+        messagebox.showinfo("Copy", "Selected items copied successfully.")
+
+    def paste_copied_items(self):
+        if not self.copied_items:
+            messagebox.showwarning("No Copy", "No copied items to paste.")
+            return
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning(
+                "No Selection", "Please select an item to paste into."
+            )
+            return
+        for item_data in self.copied_items:
+            self.paste_item_data(selected_items[0], item_data)
+        messagebox.showinfo("Paste", "Copied items pasted successfully.")
+        self.copied_items = []  # Clear copied items after pasting
+        self.tree.item(selected_items[0], open=True)
+
+    def on_drag_start(self, event):
+        if not self.order_adjustment_mode.get() and not self.alt_key_down:
+            return
+        items = self.tree.selection()
+        if items:
+            self.drag_data["items"] = items
+            self.drag_data["x"] = event.x
+            self.drag_data["y"] = event.y
+
+    def on_drag_motion(self, event):
+        if not self.order_adjustment_mode.get() and not self.alt_key_down:
+            return
+        if self.drag_data["items"]:
+            for item in self.drag_data["items"]:
+                self.tree.selection_set(item)
+            self.tree.focus(self.drag_data["items"][0])
+
+    def on_drag_release(self, event):
+        if not self.order_adjustment_mode.get() and not self.alt_key_down:
+            return
+        if not self.drag_data["items"]:
+            return
+
+        target_item = self.tree.identify_row(event.y)
+        if not target_item or target_item in self.drag_data["items"]:
+            self.drag_data = {"x": 0, "y": 0, "items": []}
+            return
+
+        if messagebox.askyesno(
+            "Confirm Move", "Do you want to move the selected items here?"
+        ):
+            self.move_items(self.drag_data["items"], target_item)
+
+        # Ensure all UI updates are complete before removing selection
+        self.update_idletasks()
+
+        # Clear the selection after moving
+        self.tree.selection_remove(self.tree.selection())
+        self.drag_data = {"x": 0, "y": 0, "items": []}
+
+    def move_items(self, items, target_item):
+        target_parent = self.tree.parent(target_item)
+        target_index = self.tree.index(target_item)
+
+        for item in items:
+            parent = self.tree.parent(item)
+            if parent == target_parent:
+                # Same level move within the same parent
+                self.tree.move(item, target_parent, target_index)
+            else:
+                # Move to a different level
+                if self.get_item_depth(item) == self.get_item_depth(target_item):
+                    self.tree.move(item, target_parent, target_index)
+                else:
+                    # Move to the end of the target parent
+                    self.tree.move(item, target_item, "end")
+
+            self.renumber_children(parent)
+        self.renumber_children(target_parent)
+
+    def move_items_up_one_level(self):
+        selected_items = self.tree.selection()
+        for item in selected_items:
+            parent = self.tree.parent(item)
+            if parent:
+                grandparent = self.tree.parent(parent)
+                if grandparent:
+                    self.tree.move(item, grandparent, self.tree.index(parent) + 1)
+                    self.renumber_children(grandparent)
+        messagebox.showinfo("Level Change", "Selected items moved up one level.")
+
+    def move_items_down_one_level(self):
+        selected_items = self.tree.selection()
+        for item in selected_items:
+            previous_sibling = self.tree.prev(item)
+            if previous_sibling:
+                self.tree.move(item, previous_sibling, "end")
+                self.renumber_children(previous_sibling)
+        messagebox.showinfo("Level Change", "Selected items moved down one level.")
 
 
 if __name__ == "__main__":

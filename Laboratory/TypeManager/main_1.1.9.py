@@ -1,12 +1,29 @@
-# Version: v1.1.1
+# Version: v1.1.9
 # Changes:
-# - Enabled initial search and result navigation using Enter key.
-# - Reset search results when the search term changes.
+# - Moved the functionality to copy and paste treeview items to a right-click context menu.
 
 import tkinter as tk
 from tkinter import ttk, filedialog
-from tkinter import messagebox, font
+from tkinter import messagebox, simpledialog, font, Menu
 import json
+import pyperclip
+
+
+class ColumnSelectionDialog(simpledialog.Dialog):
+    def body(self, master):
+        self.title("Select Column")
+        ttk.Label(master, text="Paste into which column?").pack()
+        self.selection = tk.StringVar(value="Item")
+        ttk.Radiobutton(
+            master, text="Item", variable=self.selection, value="Item"
+        ).pack(anchor="w")
+        ttk.Radiobutton(
+            master, text="Description", variable=self.selection, value="Description"
+        ).pack(anchor="w")
+        return None
+
+    def apply(self):
+        self.result = self.selection.get()
 
 
 class App(tk.Tk):
@@ -61,6 +78,16 @@ class App(tk.Tk):
         self.search_results = []
         self.search_index = 0
         self.last_search_term = ""
+
+        # Initialize copied item storage
+        self.copied_items = []
+
+        # Bind copy and paste shortcuts for external clipboard
+        self.bind_all("<Control-c>", self.copy_to_clipboard)
+        self.bind_all("<Control-v>", self.paste_from_clipboard)
+
+        # Initialize right-click context menu
+        self.tree.bind("<Button-3>", self.show_context_menu)
 
     def create_single_area_tab(self, name):
         # Create a frame for the tab
@@ -549,6 +576,95 @@ class App(tk.Tk):
             self.search_items()
         else:
             self.select_search_result()
+
+    def copy_to_clipboard(self, event=None):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an item to copy.")
+            return
+        clipboard_data = "\n".join(
+            [self.tree.set(item, "indented_name") for item in selected_items]
+        )
+        pyperclip.copy(clipboard_data)
+        messagebox.showinfo("Copy", "Selected items copied to clipboard.")
+
+    def paste_from_clipboard(self, event=None):
+        clipboard_text = pyperclip.paste()
+        selected_items = self.tree.selection()
+
+        # If clipboard contains tab-separated values and matches the number of selected items
+        if clipboard_text and selected_items:
+            clipboard_lines = clipboard_text.split("\n")
+            clipboard_lines = [
+                line for line in clipboard_lines if line
+            ]  # Remove empty lines
+            if len(clipboard_lines) == len(selected_items):
+                target_column = (
+                    self.ask_target_column()
+                )  # Ask the user for target column
+                if target_column is None:
+                    return  # If user cancels the operation
+                for item, text in zip(selected_items, clipboard_lines):
+                    if target_column == "Item":
+                        self.original_names[item] = text  # Update the original name
+                        self.update_displayed_name(
+                            item
+                        )  # Update displayed name with the new value
+                    elif target_column == "Description":
+                        self.tree.set(
+                            item, "description", text
+                        )  # Update the description
+                return
+
+    def ask_target_column(self):
+        dialog = ColumnSelectionDialog(self)
+        return dialog.result
+
+    def paste_item_data(self, parent, item_data):
+        parent_number = self.tree.item(parent, "text")
+        children = self.tree.get_children(parent)
+        new_index = len(children) + 1
+        new_number = f"{parent_number}.{new_index}"
+        new_item = self.tree.insert(
+            parent,
+            "end",
+            text=new_number,
+            values=(item_data["name"], item_data["description"]),
+        )
+        self.original_names[new_item] = item_data["name"]
+        self.update_displayed_name(new_item)
+        for child_data in item_data["children"]:
+            self.paste_item_data(new_item, child_data)
+
+    def show_context_menu(self, event):
+        context_menu = Menu(self, tearoff=0)
+        context_menu.add_command(label="Copy", command=self.copy_selected_items)
+        context_menu.add_command(label="Paste", command=self.paste_copied_items)
+        context_menu.post(event.x_root, event.y_root)
+
+    def copy_selected_items(self):
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select an item to copy.")
+            return
+        self.copied_items = [self.get_item_data(item) for item in selected_items]
+        messagebox.showinfo("Copy", "Selected items copied successfully.")
+
+    def paste_copied_items(self):
+        if not self.copied_items:
+            messagebox.showwarning("No Copy", "No copied items to paste.")
+            return
+        selected_items = self.tree.selection()
+        if not selected_items:
+            messagebox.showwarning(
+                "No Selection", "Please select an item to paste into."
+            )
+            return
+        for item_data in self.copied_items:
+            self.paste_item_data(selected_items[0], item_data)
+        messagebox.showinfo("Paste", "Copied items pasted successfully.")
+        self.copied_items = []  # Clear copied items after pasting
+        self.tree.item(selected_items[0], open=True)
 
 
 if __name__ == "__main__":

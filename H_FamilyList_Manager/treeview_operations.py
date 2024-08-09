@@ -1,0 +1,222 @@
+# Version: 1.0.8
+
+import tkinter as tk
+from tkinter import ttk
+
+
+class TreeviewOperations:
+    def __init__(self, app):
+        self.app = app
+
+        # Configure the treeview styles after treeview is fully initialized
+        self.configure_styles()
+
+    def configure_styles(self):
+        # Create a style for the Treeview to ensure custom tag colors are applied
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=25)
+        style.map(
+            "Treeview",
+            background=[("selected", "blue")],
+            foreground=[("selected", "white")],
+        )
+
+        # Ensure that the Treeview uses this style
+        self.app.tree.configure(style="Treeview")
+
+        # Define custom fonts
+        self.font_level_0 = tk.font.Font(family="Arial", size=14, weight="bold")
+        self.font_level_4 = tk.font.Font(family="Arial", size=12)
+        self.default_font = tk.font.Font(family="Arial", size=10)
+
+        # Define tag for top-level items with light green background and bold font
+        self.app.tree.tag_configure(
+            "top_level", background="light green", font=self.font_level_0
+        )
+        # Define tag for level 4 items with blue foreground and custom font
+        self.app.tree.tag_configure(
+            "level_4", foreground="blue", font=self.font_level_4
+        )
+        # Define default tag for other items
+        self.app.tree.tag_configure("default", font=self.default_font)
+
+    def add_numbered_item(
+        self, parent, number, original_name, description, top_level=False
+    ):
+        depth = self.get_item_depth(parent) + 1
+        tags = ("default",)
+        if top_level:
+            tags = ("top_level",)
+        elif depth == 4:
+            tags = ("level_4",)
+
+        item_id = self.app.tree.insert(
+            parent, "end", text=number, values=(original_name, description), tags=tags
+        )
+        self.app.original_names[item_id] = original_name
+        self.update_displayed_name(item_id)
+        return item_id
+
+    def update_displayed_name(self, item):
+        original_name = self.app.original_names.get(item, "")
+        depth = self.get_item_depth(item)
+        indented_name = " " * (depth * 4) + original_name
+        self.app.tree.set(item, "indented_name", indented_name)
+
+    def get_item_depth(self, item):
+        depth = 0
+        parent = self.app.tree.parent(item)
+        while parent:
+            depth += 1
+            parent = self.app.tree.parent(parent)
+        return depth
+
+    def renumber_children(self, parent):
+        children = self.app.tree.get_children(parent)
+        for i, child in enumerate(children, start=1):
+            parent_number = self.app.tree.item(parent, "text")
+            new_number = f"{parent_number}.{i}"
+            self.app.tree.item(child, text=new_number)
+            self.update_displayed_name(child)
+            self.renumber_children(child)
+
+    def add_item(self):
+        selected_item = self.app.tree.focus()
+        if not selected_item:
+            new_index = len(self.app.tree.get_children())
+            new_item_id = self.add_numbered_item(
+                "", str(new_index), "New Top-level Item", "", top_level=True
+            )
+            self.app.tree.selection_set(new_item_id)
+        else:
+            parent_number = self.app.tree.item(selected_item, "text")
+            children = self.app.tree.get_children(selected_item)
+            new_index = len(children) + 1
+            new_number = f"{parent_number}.{new_index}"
+            new_item_id = self.add_numbered_item(
+                selected_item, new_number, "New Sub-item", ""
+            )
+            self.app.tree.selection_set(new_item_id)
+            self.app.tree.item(selected_item, open=True)
+
+    def remove_selected_item(self):
+        selected_items = self.app.tree.selection()
+        if not selected_items:
+            return
+
+        parents_to_renumber = set()
+        for item in selected_items:
+            parent = self.app.tree.parent(item)
+            if parent:
+                parents_to_renumber.add(parent)
+            self.app.tree.delete(item)
+            self.app.original_names.pop(item, None)
+
+        for parent in parents_to_renumber:
+            self.renumber_children(parent)
+
+    def collapse_all(self):
+        for item in self.app.tree.get_children():
+            self.app.tree.item(item, open=False)
+            self._collapse_recursive(item)
+
+    def _collapse_recursive(self, item):
+        for child in self.app.tree.get_children(item):
+            self.app.tree.item(child, open=False)
+            self._collapse_recursive(child)
+
+    def on_item_single_click(self, event):
+        selected_item = self.app.tree.identify_row(event.y)
+        column = self.app.tree.identify_column(event.x)
+        if column == "#2":  # "#2" corresponds to the Description column
+            self.edit_description(selected_item)
+
+    def on_item_double_click(self, event):
+        selected_item = self.app.tree.identify_row(event.y)
+        column = self.app.tree.identify_column(event.x)
+        if column == "#1":
+            self.edit_item_name(selected_item)
+
+    def edit_item_name(self, item):
+        current_value = self.app.original_names.get(item, "")
+
+        entry = ttk.Entry(self.app.tree, width=len(current_value) + 5)
+        entry.insert(0, current_value)
+        entry.bind("<Return>", lambda e: self.save_item_name(entry, item))
+        entry.bind("<FocusOut>", lambda e: self.save_item_name(entry, item))
+        bbox = self.app.tree.bbox(item, column="indented_name")
+        if bbox:
+            entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+            entry.focus()
+        else:
+            entry.destroy()
+
+    def save_item_name(self, entry, item):
+        try:
+            new_value = entry.get()
+            self.app.original_names[item] = new_value
+            self.update_displayed_name(item)
+        except tk.TclError:
+            pass
+        finally:
+            entry.destroy()
+
+    def edit_description(self, item):
+        current_value = self.app.tree.set(item, "description")
+
+        entry = ttk.Entry(self.app.tree, width=len(current_value) + 5)
+        entry.insert(0, current_value)
+        entry.bind("<Return>", lambda e: self.save_description(entry, item))
+        entry.bind("<FocusOut>", lambda e: self.save_description(entry, item))
+        bbox = self.app.tree.bbox(item, column="description")
+        if bbox:
+            entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+            entry.focus()
+        else:
+            entry.destroy()
+
+    def save_description(self, entry, item):
+        try:
+            new_value = entry.get()
+            self.app.tree.set(item, "description", new_value)
+        except tk.TclError:
+            pass
+        finally:
+            entry.destroy()
+
+    def update_level_limit(self, event):
+        new_level_limit = int(self.app.level_limit_var.get())
+
+        if new_level_limit < self.app.previous_level_limit:
+            self.collapse_all_to_level(new_level_limit)
+
+        for item in self.app.tree.get_children():
+            self.app.tree.item(item, open=True)
+            self._expand_recursive(item, current_level=1, level_limit=new_level_limit)
+
+        self.app.previous_level_limit = new_level_limit
+
+    def collapse_all_to_level(self, level_limit):
+        for item in self.app.tree.get_children():
+            self._collapse_to_level_recursive(
+                item, current_level=1, level_limit=level_limit
+            )
+
+    def _collapse_to_level_recursive(self, item, current_level, level_limit):
+        if current_level >= level_limit:
+            for child in self.app.tree.get_children(item):
+                self.app.tree.item(child, open=False)
+        else:
+            for child in self.app.tree.get_children(item):
+                self._collapse_to_level_recursive(
+                    child, current_level=current_level + 1, level_limit=level_limit
+                )
+
+    def _expand_recursive(self, item, current_level, level_limit):
+        if current_level >= level_limit:
+            return
+        for child in self.app.tree.get_children(item):
+            self.app.tree.item(child, open=True)
+            self._expand_recursive(
+                child, current_level=current_level + 1, level_limit=level_limit
+            )
