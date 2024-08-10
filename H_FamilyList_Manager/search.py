@@ -1,5 +1,6 @@
 # Version: 1.0.14
-
+import tkinter as tk
+from tkinter import ttk
 
 class SearchManager:
     def __init__(self, app):

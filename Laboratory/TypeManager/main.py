@@ -25,25 +25,26 @@ class ColumnSelectionDialog(simpledialog.Dialog):
     def apply(self):
         self.result = self.selection.get()
 
-
+### for app.py
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-
-        self.title("Tabbed Page App")
-        self.geometry("1400x900")  # Window size
+        
+        self.title("Tabbed Page App")    ### || for app.py > App class
+        self.geometry("1400x900")  # Window size    ### || for app.py > App class
 
         # Create a dictionary to store original names
-        self.original_names = {}
+        self.original_names = {}    ### || for app.py > App class
 
         # Track the previous level limit
-        self.previous_level_limit = 3  # Default level limit
+        self.previous_level_limit = 3  # Default level limit    ### || for app.py > App class
 
         # Create a notebook (tabbed pane)
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill="both", expand=True)
+        self.notebook = ttk.Notebook(self)    ### || for app.py > App class
+        self.notebook.pack(fill="both", expand=True)    ### || for app.py > App class
 
         # List of tab names and top-level item names (without numbers and periods)
+            ### || for app.py > App class
         tab_names = [
             "형식 표준 구성도",
             "계산 기준",
@@ -63,10 +64,12 @@ class App(tk.Tk):
             "Generic",
             "Manual_Input",
         ]
+            ### || for app.py > App class
         self.top_level_items = tab_names[
             2:
         ]  # Top-level items without numbers and periods
 
+            ### || for app.py > App class > 
         # Create tabs with the specified names
         for i, name in enumerate(tab_names):
             if name == "형식 표준 구성도":
@@ -74,14 +77,17 @@ class App(tk.Tk):
             else:
                 self.create_three_area_tab(name)
 
+            ### || for .py > SearchManager class > search_items method
         # Initialize search index
         self.search_results = []
         self.search_index = 0
         self.last_search_term = ""
 
+            ### || for clipboard.py > ClipboardManager class > copy_to_clipboard method
         # Initialize copied item storage
         self.copied_items = []
 
+            ### || for clipboard.py > ClipboardManager class > copy_to_clipboard method
         # Bind copy and paste shortcuts for external clipboard
         self.bind_all("<Control-c>", self.copy_to_clipboard)
         self.bind_all("<Control-v>", self.paste_from_clipboard)
