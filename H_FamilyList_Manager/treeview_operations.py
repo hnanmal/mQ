@@ -11,6 +11,10 @@ class TreeviewOperations:
         # Configure the treeview styles after treeview is fully initialized
         self.configure_styles()
 
+        self.app.tree.bind(
+            "<Button-3>", self.app.context_menu_manager.show_context_menu
+        )  ### mk
+
     def configure_styles(self):
         # Create a style for the Treeview to ensure custom tag colors are applied
         style = ttk.Style()

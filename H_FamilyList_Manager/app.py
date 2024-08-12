@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 from ui import create_single_area_tab, create_three_area_tab
+from clipboard import ClipboardManager
 from config_management import ConfigurationManager
 from context_menu import ContextMenuManager
 from search import SearchManager
@@ -31,9 +32,10 @@ class App(tk.Tk):
 
         # Initialize managers and operations
         self.config_manager = ConfigurationManager(self)
-        self.treeview_operations = TreeviewOperations(self)
+        self.clipboard_manager = ClipboardManager(self)
         self.context_menu_manager = ContextMenuManager(self)
         self.search_manager = SearchManager(self)
+        self.treeview_operations = TreeviewOperations(self)
 
         # List of tab names and top-level item names
         tab_names = [

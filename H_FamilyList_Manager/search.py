@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+
 class SearchManager:
     def __init__(self, app):
         self.app = app

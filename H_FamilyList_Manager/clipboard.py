@@ -9,6 +9,10 @@ class ClipboardManager:
         self.app = app
 
     def copy_to_clipboard(self, event=None):
+        self.app.copied_items = []  ### mk
+        self.app.bind_all("<Control-c>", self.copy_to_clipboard)
+        self.app.bind_all("<Control-v>", self.paste_from_clipboard)
+
         if self.app.is_text_editing:
             return  # Skip clipboard operation if in text editing mode
         selected_items = self.app.tree.selection()

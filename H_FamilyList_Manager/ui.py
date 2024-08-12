@@ -61,7 +61,7 @@ def create_single_area_tab(app, name):
 
     # Search entry and button (added back from v1.4.4)
     app.search_var = tk.StringVar()
-    app.search_manager.setup_search(button_frame) ### mk
+    app.search_manager.setup_search(button_frame)  ### mk
     # search_entry = ttk.Entry(button_frame, textvariable=app.search_var, width=30)
     # search_entry.bind("<Return>", app.search_manager.on_enter_key)
     # search_button = ttk.Button(
