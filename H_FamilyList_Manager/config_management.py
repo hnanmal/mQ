@@ -1,12 +1,18 @@
 # Version: 1.0.0
 
 import json
+from tkinter import simpledialog, ttk
+from dialogs import ColumnSelectionDialog
 from tkinter import filedialog
 
 
 class ConfigurationManager:
     def __init__(self, app):
         self.app = app
+
+    def ask_target_column(self):
+        dialog = ColumnSelectionDialog(self.app)
+        return dialog.result
 
     def save_configuration(self):
         tree_data = []

@@ -1,13 +1,16 @@
 # Version: 1.0.6
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import simpledialog, ttk
 from ui import create_single_area_tab, create_three_area_tab
 from clipboard import ClipboardManager
+from drag_and_drop import DragAndDropManager
 from config_management import ConfigurationManager
 from context_menu import ContextMenuManager
 from search import SearchManager
 from treeview_operations import TreeviewOperations
+
+# from dialogs import ColumnSelectionDialog
 
 
 class App(tk.Tk):
@@ -16,6 +19,11 @@ class App(tk.Tk):
 
         self.title("Tabbed Page App")
         self.geometry("1400x900")  # Window size
+
+        # Create Treeview ### mk
+        self.tree = ttk.Treeview(
+            self, show="tree"
+        )  # Use show="tree" to avoid showing placeholders
 
         # Initialize previous level limit
         self.previous_level_limit = 3  # Default value
@@ -31,7 +39,9 @@ class App(tk.Tk):
         self.tree = ttk.Treeview(self)  # Initialize treeview directly
 
         # Initialize managers and operations
+        # self.dialog = ColumnSelectionDialog(self)
         self.config_manager = ConfigurationManager(self)
+        self.drag_and_drop_manager = DragAndDropManager(self)
         self.clipboard_manager = ClipboardManager(self)
         self.context_menu_manager = ContextMenuManager(self)
         self.search_manager = SearchManager(self)
@@ -70,6 +80,9 @@ class App(tk.Tk):
 
         # Initialize TreeviewOperations after the tree is created
         self.treeview_operations = TreeviewOperations(self)
+
+        # Track whether the item is in text editing mode
+        self.is_text_editing = False
 
 
 if __name__ == "__main__":

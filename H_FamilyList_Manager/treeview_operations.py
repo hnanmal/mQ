@@ -29,9 +29,9 @@ class TreeviewOperations:
         self.app.tree.configure(style="Treeview")
 
         # Define custom fonts
-        self.font_level_0 = tk.font.Font(family="Arial", size=14, weight="bold")
-        self.font_level_4 = tk.font.Font(family="Arial", size=12)
-        self.default_font = tk.font.Font(family="Arial", size=10)
+        self.font_level_0 = tk.font.Font(family="Arial", size=12, weight="bold")
+        self.font_level_4 = tk.font.Font(family="Arial", size=11)
+        self.default_font = tk.font.Font(family="Arial", size=9)
 
         # Define tag for top-level items with light green background and bold font
         self.app.tree.tag_configure(
@@ -144,6 +144,8 @@ class TreeviewOperations:
     def edit_item_name(self, item):
         current_value = self.app.original_names.get(item, "")
 
+        self.app.is_text_editing = True
+
         entry = ttk.Entry(self.app.tree, width=len(current_value) + 5)
         entry.insert(0, current_value)
         entry.bind("<Return>", lambda e: self.save_item_name(entry, item))
@@ -163,10 +165,14 @@ class TreeviewOperations:
         except tk.TclError:
             pass
         finally:
+            self.app.is_text_editing = False  # Clear editing mode flag
             entry.destroy()
 
     def edit_description(self, item):
         current_value = self.app.tree.set(item, "description")
+
+        # Set editing mode flag
+        self.app.is_text_editing = True
 
         entry = ttk.Entry(self.app.tree, width=len(current_value) + 5)
         entry.insert(0, current_value)
@@ -186,6 +192,7 @@ class TreeviewOperations:
         except tk.TclError:
             pass
         finally:
+            self.app.is_text_editing = False  # Clear editing mode flag
             entry.destroy()
 
     def update_level_limit(self, event):

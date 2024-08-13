@@ -53,7 +53,8 @@ def create_single_area_tab(app, name):
         button_frame, textvariable=level_limit_var, state="readonly", width=10
     )
     level_limit_combo["values"] = [str(i) for i in range(1, 11)]  # Levels 1 to 10
-    level_limit_combo.current(2)  # Default to level 3
+    # level_limit_combo.current(2)  # Default to level 3
+    level_limit_combo.current(6)  # Default to level 7
     level_limit_combo.bind(
         "<<ComboboxSelected>>", app.treeview_operations.update_level_limit
     )
@@ -98,9 +99,9 @@ def create_single_area_tab(app, name):
     tree_scroll.config(command=app.tree.yview)
 
     # Define custom fonts
-    app.font_level_0 = font.Font(family="Arial", size=14, weight="bold")
-    app.font_level_4 = font.Font(family="Arial", size=12)
-    app.default_font = font.Font(family="Arial", size=10)
+    app.font_level_0 = font.Font(family="Arial", size=12, weight="bold")
+    app.font_level_4 = font.Font(family="Arial", size=11)
+    app.default_font = font.Font(family="Arial", size=9)
 
     # Define tag for top-level items with light green background and bold font
     app.tree.tag_configure("top_level", background="light green", font=app.font_level_0)
@@ -119,6 +120,31 @@ def create_single_area_tab(app, name):
 
     # Add the tab to the notebook
     app.notebook.add(tab_frame, text=f"   {name}   ")
+
+    # Add "Order Adjustment Mode" button
+    app.order_adjustment_mode = tk.BooleanVar(value=False)
+    app.order_adjustment_button = ttk.Button(
+        app,
+        text="Order Adjustment Mode: OFF",
+        command=app.drag_and_drop_manager.toggle_order_adjustment_mode,
+    )
+    app.order_adjustment_button.pack(side="top", anchor="w", padx=10, pady=5)
+
+    ########################
+    # app.alt_key_down = False
+
+    # def alt_key_pressed(self, event):
+    #     # self.alt_key_down = True
+    #     self.alt_key_down = event.keycode == 18
+    #     print("alt!!")
+
+    # def alt_key_released(self, event):
+    #     # self.alt_key_down = False
+    #     self.alt_key_down = event.keycode != 18
+
+    # Bind Alt key for temporary Order Adjustment Mode
+    # app.bind_all("<Alt-KeyPress>", alt_key_pressed)
+    # app.bind_all("<Alt-KeyRelease>", alt_key_released)
 
 
 def create_three_area_tab(app, name):
