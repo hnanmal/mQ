@@ -17,6 +17,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
+        # self.root = tk.Tk()
+        # self = tk.Tk()
         self.title("Tabbed Page App")
         self.geometry("1400x900")  # Window size
 
@@ -46,6 +48,9 @@ class App(tk.Tk):
         self.context_menu_manager = ContextMenuManager(self)
         self.search_manager = SearchManager(self)
         self.treeview_operations = TreeviewOperations(self)
+
+        self.ctrl_space_down = False
+        self.bind_all("<Control-space>", self.drag_and_drop_manager.ctrl_space_pressed)
 
         # List of tab names and top-level item names
         tab_names = [
@@ -88,3 +93,6 @@ class App(tk.Tk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+    # root = tk.Tk()
+    # app = App(root)
+    # app.mainloop()

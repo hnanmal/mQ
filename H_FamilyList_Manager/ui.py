@@ -7,12 +7,22 @@ from search import SearchManager
 
 def create_single_area_tab(app, name):
     # Create a frame for the tab
-    tab_frame = ttk.Frame(app.notebook)
+    # root = app.root
+
+    main_frame = ttk.Frame(app.notebook)
+    main_frame.pack(fill="both", expand=True)
+
+    # tab_frame = ttk.Frame(app.notebook)
+    tab_frame = ttk.Frame(main_frame)
     tab_frame.pack(fill="both", expand=True)
 
     # Frame for buttons at the top
     button_frame = ttk.Frame(tab_frame)
     button_frame.pack(fill="x", padx=10, pady=10)
+
+    # Frame for buttons at the top
+    bottom_frame = ttk.Frame(tab_frame)
+    bottom_frame.pack(fill="x", padx=10, pady=10)
 
     # Add Item Button
     add_button = ttk.Button(
@@ -63,13 +73,6 @@ def create_single_area_tab(app, name):
     # Search entry and button (added back from v1.4.4)
     app.search_var = tk.StringVar()
     app.search_manager.setup_search(button_frame)  ### mk
-    # search_entry = ttk.Entry(button_frame, textvariable=app.search_var, width=30)
-    # search_entry.bind("<Return>", app.search_manager.on_enter_key)
-    # search_button = ttk.Button(
-    #     button_frame, text="Search", command=app.search_manager.search_items
-    # )
-    # search_entry.pack(side="right", padx=2, pady=5)
-    # search_button.pack(side="right", padx=2, pady=5)
 
     # Create a frame for the treeview and scrollbar
     tree_frame = ttk.Frame(tab_frame)
@@ -119,32 +122,23 @@ def create_single_area_tab(app, name):
     app.tree.bind("<Button-1>", app.treeview_operations.on_item_single_click)
 
     # Add the tab to the notebook
-    app.notebook.add(tab_frame, text=f"   {name}   ")
+    # app.notebook.add(tab_frame, text=f"   {name}   ")
+    app.notebook.add(main_frame, text=f"   {name}   ")
 
     # Add "Order Adjustment Mode" button
     app.order_adjustment_mode = tk.BooleanVar(value=False)
+    # app.order_adjustment_button = ttk.Button(
+    #     root,
+    #     text="Order Adjustment Mode: OFF",
+    #     command=app.drag_and_drop_manager.toggle_order_adjustment_mode,
+    # )
     app.order_adjustment_button = ttk.Button(
-        app,
+        # button_frame,
+        main_frame,
         text="Order Adjustment Mode: OFF",
         command=app.drag_and_drop_manager.toggle_order_adjustment_mode,
     )
-    app.order_adjustment_button.pack(side="top", anchor="w", padx=10, pady=5)
-
-    ########################
-    # app.alt_key_down = False
-
-    # def alt_key_pressed(self, event):
-    #     # self.alt_key_down = True
-    #     self.alt_key_down = event.keycode == 18
-    #     print("alt!!")
-
-    # def alt_key_released(self, event):
-    #     # self.alt_key_down = False
-    #     self.alt_key_down = event.keycode != 18
-
-    # Bind Alt key for temporary Order Adjustment Mode
-    # app.bind_all("<Alt-KeyPress>", alt_key_pressed)
-    # app.bind_all("<Alt-KeyRelease>", alt_key_released)
+    app.order_adjustment_button.pack(side="bottom", anchor="w", padx=10, pady=5)
 
 
 def create_three_area_tab(app, name):
