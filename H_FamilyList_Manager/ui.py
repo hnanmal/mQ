@@ -113,7 +113,7 @@ def create_single_area_tab(app, name):
 
     # Add initial top-level items to the tree
     for i, item in enumerate(app.top_level_items):
-        app.treeview_operations.add_numbered_item("", f"{i}", item, "", top_level=True)
+        app.treeview_operations.add_numbered_item("", f"{i}", item, "", top_level=True, track_undo=False)
 
     # Bind double-click event for editing item names
     app.tree.bind("<Double-1>", app.treeview_operations.on_item_double_click)

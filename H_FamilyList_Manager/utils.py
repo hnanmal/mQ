@@ -56,7 +56,15 @@ class FileUtils:
             return
 
         last_action = app.undo_stack.pop()
-        last_action_type = last_action["type"]
+        # last_action_type = last_action["type"]
+        last_action_type = last_action.get("type")
+
+        # Debugging: Print the action type being processed
+        print(f"Undoing action type: {last_action_type}")
+
+        if last_action_type not in ["add", "delete", "edit", "move", "move_down", "move_up", "paste"]:
+            tk.messagebox.showerror("Undo Error", "Invalid action in undo stack.")
+            return
 
         if last_action_type == "add":
             if app.tree.exists(last_action["item"]):  # Check if item exists
@@ -130,3 +138,9 @@ class FileUtils:
                     original_index = position["original_index"]
                     app.tree.move(item, original_parent, original_index)
                     app.treeview_operations.renumber_children(original_parent)
+
+        elif  last_action_type == "paste":
+            # Undo the paste by deleting all pasted items
+            for item in last_action["items"]:
+                if app.tree.exists(item):
+                    app.tree.delete(item)

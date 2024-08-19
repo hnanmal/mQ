@@ -44,9 +44,13 @@ class TreeviewOperations:
         # Define default tag for other items
         self.app.tree.tag_configure("default", font=self.default_font)
 
+    # def add_numbered_item(
+    #     self, parent, number, original_name, description, top_level=False
+    # ):
     def add_numbered_item(
-        self, parent, number, original_name, description, top_level=False
+        self, parent, number, original_name, description, top_level=False, track_undo=True
     ):
+        """Add a numbered item to the treeview and optionally track it for undo."""
         depth = self.get_item_depth(parent) + 1
         tags = ("default",)
         if top_level:
@@ -60,8 +64,12 @@ class TreeviewOperations:
         self.app.original_names[item_id] = original_name
         self.update_displayed_name(item_id)
 
-        # Push this add action to the undo stack
-        self.app.undo_stack.append({"type": "add", "item": item_id})
+        if track_undo:
+            # Push this add action to the undo stack if tracking is enabled
+            self.app.undo_stack.append({'type': 'add', 'item': item_id, 'parent': parent})
+
+        # # Push this add action to the undo stack
+        # self.app.undo_stack.append({"type": "add", "item": item_id})
 
         return item_id
 
@@ -107,22 +115,6 @@ class TreeviewOperations:
             self.app.tree.selection_set(new_item_id)
             self.app.tree.item(selected_item, open=True)
 
-    # def remove_selected_item(self):
-    #     selected_items = self.app.tree.selection()
-    #     if not selected_items:
-    #         return
-
-    #     parents_to_renumber = set()
-    #     for item in selected_items:
-    #         parent = self.app.tree.parent(item)
-    #         if parent:
-    #             parents_to_renumber.add(parent)
-    #         self.app.tree.delete(item)
-    #         self.app.original_names.pop(item, None)
-
-    #     for parent in parents_to_renumber:
-    #         self.renumber_children(parent)
-
     def remove_selected_item(self):
         selected_items = self.app.tree.selection()
         if not selected_items:
@@ -143,6 +135,9 @@ class TreeviewOperations:
                 "tags": self.app.tree.item(item, "tags"),
                 "children": self._get_subtree(item),  # Get the entire subtree
             }
+
+            # Log the action for debugging
+            print(f"Adding delete action to undo stack for item {item_data['number']}")
 
             # Push the delete operation to the undo stack
             self.app.undo_stack.append(

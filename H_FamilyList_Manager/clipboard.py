@@ -98,9 +98,13 @@ class ClipboardManager:
         )
         self.app.original_names[new_item] = item_data["name"]
         self.app.treeview_operations.update_displayed_name(new_item)
+
+        # Recursively paste children
         for child_data in item_data["children"]:
             self.paste_item_data(new_item, child_data)
 
+        return new_item  # Return the newly created item
+    
     def copy_selected_items(self):
         selected_items = self.app.tree.selection()
         if not selected_items:
@@ -119,8 +123,24 @@ class ClipboardManager:
                 "No Selection", "Please select an item to paste into."
             )
             return
+        
+        pasted_items = []  # Track all pasted items for undo purposes
+        # for item_data in self.app.copied_items:
+        #     self.paste_item_data(selected_items[0], item_data)
         for item_data in self.app.copied_items:
-            self.paste_item_data(selected_items[0], item_data)
-        # tk.messagebox.showinfo("Paste", "Copied items pasted successfully.")
+            new_item = self.paste_item_data(selected_items[0], item_data)
+            pasted_items.append(new_item)  # Keep track of pasted items
+
+        # Debugging: Print what is being added to the undo stack
+        print(f"Adding to undo stack: type='paste', items={pasted_items}, parent={selected_items[0]}")
+
+
+        # Record the paste operation in the undo stack
+        self.app.undo_stack.append({
+            'type': 'paste',
+            'items': pasted_items,
+            'parent': selected_items[0]
+        })
+
         self.app.copied_items = []  # Clear copied items after pasting
         self.app.tree.item(selected_items[0], open=True)
