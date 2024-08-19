@@ -2,6 +2,8 @@
 
 import tkinter as tk
 from tkinter import simpledialog, ttk
+
+from utils import FileUtils
 from ui import create_single_area_tab, create_three_area_tab
 from clipboard import ClipboardManager
 from drag_and_drop import DragAndDropManager
@@ -17,8 +19,14 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        # self.root = tk.Tk()
-        # self = tk.Tk()
+        # Existing initialization code...
+
+        # Initialize an undo stack to keep track of changes
+        self.undo_stack = []
+
+        # Bind Ctrl-Z to the undo function
+        self.bind_all("<Control-z>", self.undo)
+
         self.title("Tabbed Page App")
         self.geometry("1400x900")  # Window size
 
@@ -88,6 +96,10 @@ class App(tk.Tk):
 
         # Track whether the item is in text editing mode
         self.is_text_editing = False
+
+    def undo(self, event=None):
+        """Handle the undo operation by delegating to FileUtils."""
+        FileUtils.undo_last_action(self)
 
 
 if __name__ == "__main__":

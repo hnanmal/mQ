@@ -1,4 +1,4 @@
-# Version: 1.0.8
+# Version: 1.0.9
 
 import tkinter as tk
 from tkinter import ttk
@@ -59,6 +59,10 @@ class TreeviewOperations:
         )
         self.app.original_names[item_id] = original_name
         self.update_displayed_name(item_id)
+
+        # Push this add action to the undo stack
+        self.app.undo_stack.append({"type": "add", "item": item_id})
+
         return item_id
 
     def update_displayed_name(self, item):
@@ -103,6 +107,22 @@ class TreeviewOperations:
             self.app.tree.selection_set(new_item_id)
             self.app.tree.item(selected_item, open=True)
 
+    # def remove_selected_item(self):
+    #     selected_items = self.app.tree.selection()
+    #     if not selected_items:
+    #         return
+
+    #     parents_to_renumber = set()
+    #     for item in selected_items:
+    #         parent = self.app.tree.parent(item)
+    #         if parent:
+    #             parents_to_renumber.add(parent)
+    #         self.app.tree.delete(item)
+    #         self.app.original_names.pop(item, None)
+
+    #     for parent in parents_to_renumber:
+    #         self.renumber_children(parent)
+
     def remove_selected_item(self):
         selected_items = self.app.tree.selection()
         if not selected_items:
@@ -113,11 +133,49 @@ class TreeviewOperations:
             parent = self.app.tree.parent(item)
             if parent:
                 parents_to_renumber.add(parent)
+
+            # Capture the item's data, styles, and children before deleting
+            index = self.app.tree.index(item)
+            item_data = {
+                "number": self.app.tree.item(item, "text"),
+                "name": self.app.original_names.get(item, ""),
+                "description": self.app.tree.set(item, "description"),
+                "tags": self.app.tree.item(item, "tags"),
+                "children": self._get_subtree(item),  # Get the entire subtree
+            }
+
+            # Push the delete operation to the undo stack
+            self.app.undo_stack.append(
+                {
+                    "type": "delete",
+                    "item": item,
+                    "parent": parent,
+                    "index": index,
+                    "data": item_data,
+                }
+            )
+
+            # Proceed with deletion
             self.app.tree.delete(item)
             self.app.original_names.pop(item, None)
 
         for parent in parents_to_renumber:
             self.renumber_children(parent)
+
+    def _get_subtree(self, item):
+        """Recursively get all child items and their data."""
+        children = []
+        for child in self.app.tree.get_children(item):
+            child_data = {
+                "item": child,
+                "number": self.app.tree.item(child, "text"),
+                "name": self.app.original_names.get(child, ""),
+                "description": self.app.tree.set(child, "description"),
+                "tags": self.app.tree.item(child, "tags"),
+                "children": self._get_subtree(child),  # Recursively get subtree
+            }
+            children.append(child_data)
+        return children
 
     def collapse_all(self):
         for item in self.app.tree.get_children():

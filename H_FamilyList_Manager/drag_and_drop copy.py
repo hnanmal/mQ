@@ -44,18 +44,9 @@ class DragAndDropManager:
             self.drag_data["x"] = event.x
             self.drag_data["y"] = event.y
 
-            # Track original parent and index for undo
-            self.drag_data["original_positions"] = []
-            for item in items:
-                original_parent = self.app.tree.parent(item)
-                original_index = self.app.tree.index(item)
-                self.drag_data["original_positions"].append(
-                    {
-                        "item": item,
-                        "original_parent": original_parent,
-                        "original_index": original_index,
-                    }
-                )
+            # # Capture the original parent and index for undo
+            # self.drag_data["original_parent"] = self.app.tree.parent(items)
+            # self.drag_data["original_index"] = self.app.tree.index(items)
 
     def on_drag_motion(self, event):
         # if not self.app.order_adjustment_mode.get() and not self.app.alt_key_down:
@@ -96,13 +87,6 @@ class DragAndDropManager:
         target_parent = self.app.tree.parent(target_item)
         target_index = self.app.tree.index(target_item)
 
-        # Capture current positions for undo
-        new_positions = []
-        for item in items:
-            new_positions.append(
-                {"item": item, "new_parent": target_parent, "new_index": target_index}
-            )
-
         for item in items:
             parent = self.app.tree.parent(item)
             if parent == target_parent:
@@ -121,73 +105,24 @@ class DragAndDropManager:
             self.app.treeview_operations.renumber_children(parent)
         self.app.treeview_operations.renumber_children(target_parent)
 
-        # Push move operation to undo stack
-        self.app.undo_stack.append(
-            {
-                "type": "move",
-                "original_positions": self.drag_data["original_positions"],
-                "new_positions": new_positions,
-            }
-        )
-
     def move_items_up_one_level(self):
         selected_items = self.app.tree.selection()
-        original_positions = []
-
         for item in selected_items:
             parent = self.app.tree.parent(item)
             if parent:
                 grandparent = self.app.tree.parent(parent)
                 if grandparent:
-                    original_parent = parent
-                    original_index = self.app.tree.index(item)
-
-                    # Capture the original positions before the move
-                    original_positions.append(
-                        {
-                            "item": item,
-                            "original_parent": original_parent,
-                            "original_index": original_index,
-                        }
-                    )
-
-                    # Perform the move
                     self.app.tree.move(
                         item, grandparent, self.app.tree.index(parent) + 1
                     )
                     self.app.treeview_operations.renumber_children(grandparent)
-
-        # After moving, store the operation in the undo stack
-        if original_positions:
-            self.app.undo_stack.append(
-                {"type": "move_up", "original_positions": original_positions}
-            )
+        # tk.messagebox.showinfo("Level Change", "Selected items moved up one level.")
 
     def move_items_down_one_level(self):
         selected_items = self.app.tree.selection()
-        original_positions = []
-
         for item in selected_items:
             previous_sibling = self.app.tree.prev(item)
             if previous_sibling:
-                original_parent = self.app.tree.parent(item)
-                original_index = self.app.tree.index(item)
-
-                # Capture the original positions before the move
-                original_positions.append(
-                    {
-                        "item": item,
-                        "original_parent": original_parent,
-                        "original_index": original_index,
-                    }
-                )
-
-                # Perform the move
                 self.app.tree.move(item, previous_sibling, "end")
                 self.app.treeview_operations.renumber_children(previous_sibling)
-
-        # After moving, store the operation in the undo stack
-        if original_positions:
-            self.app.undo_stack.append(
-                {"type": "move_down", "original_positions": original_positions}
-            )
+        # tk.messagebox.showinfo("Level Change", "Selected items moved down one level.")
