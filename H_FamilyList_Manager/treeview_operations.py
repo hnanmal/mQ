@@ -48,11 +48,19 @@ class TreeviewOperations:
     #     self, parent, number, original_name, description, top_level=False
     # ):
     def add_numbered_item(
-        self, parent, number, original_name, description, top_level=False, track_undo=True
+        self,
+        parent,
+        number,
+        original_name,
+        description,
+        top_level=False,
+        track_undo=True,
     ):
         """Add a numbered item to the treeview and optionally track it for undo."""
         depth = self.get_item_depth(parent) + 1
-        tags = ("default",)
+        # tags = ("default",) <- 인덴트 오류 발생 시킴
+        tags = ()
+
         if top_level:
             tags = ("top_level",)
         elif depth == 4:
@@ -66,18 +74,22 @@ class TreeviewOperations:
 
         if track_undo:
             # Push this add action to the undo stack if tracking is enabled
-            self.app.undo_stack.append({'type': 'add', 'item': item_id, 'parent': parent})
+            self.app.undo_stack.append(
+                {"type": "add", "item": item_id, "parent": parent}
+            )
 
         # # Push this add action to the undo stack
         # self.app.undo_stack.append({"type": "add", "item": item_id})
 
         return item_id
 
-    def update_displayed_name(self, item):
-        original_name = self.app.original_names.get(item, "")
-        depth = self.get_item_depth(item)
+    def update_displayed_name(self, item_id):
+        original_name = self.app.original_names.get(item_id, "")
+        depth = self.get_item_depth(item_id)
         indented_name = " " * (depth * 4) + original_name
-        self.app.tree.set(item, "indented_name", indented_name)
+
+        self.app.tree.set(item_id, "indented_name", indented_name)
+        return indented_name
 
     def get_item_depth(self, item):
         depth = 0
@@ -95,6 +107,13 @@ class TreeviewOperations:
             self.app.tree.item(child, text=new_number)
             self.update_displayed_name(child)
             self.renumber_children(child)
+
+    def reapply_styles(self, item):
+        """Force reapply of styles to the given item."""
+        tags = self.app.tree.item(item, "tags")
+        for tag in tags:
+            self.app.tree.tag_configure(tag)
+        self.app.tree.update_idletasks()  # Ensure the display is updated
 
     def add_item(self):
         selected_item = self.app.tree.focus()
@@ -114,6 +133,7 @@ class TreeviewOperations:
             )
             self.app.tree.selection_set(new_item_id)
             self.app.tree.item(selected_item, open=True)
+            # print(dir(new_item_id))
 
     def remove_selected_item(self):
         selected_items = self.app.tree.selection()
@@ -204,6 +224,7 @@ class TreeviewOperations:
         entry.bind("<Return>", lambda e: self.save_item_name(entry, item))
         entry.bind("<FocusOut>", lambda e: self.save_item_name(entry, item))
         bbox = self.app.tree.bbox(item, column="indented_name")
+        # bbox = self.app.tree.bbox(item, column="#1")
         if bbox:
             entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
             entry.focus()

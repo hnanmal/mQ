@@ -36,7 +36,7 @@ class App(tk.Tk):
         )  # Use show="tree" to avoid showing placeholders
 
         # Initialize previous level limit
-        self.previous_level_limit = 3  # Default value
+        self.previous_level_limit = 7  # Default value
 
         # Initialize original_names attribute
         self.original_names = {}  # Added attribute for storing original names
