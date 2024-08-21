@@ -38,6 +38,12 @@ class ConfigurationManager:
             for item_data in tree_data:
                 self.insert_item_data("", item_data)
 
+        # After populating the treeview, collect level 6 items
+        level_6_items = self.app.treeview_operations.collect_level_6_items()
+
+        # Update the Listbox in the "WM 그룹별 매칭" tab
+        self.app.update_wm_group_matching_treeview(level_6_items)
+
     def get_item_data(self, item):
         item_data = {
             "number": self.app.tree.item(item, "text"),

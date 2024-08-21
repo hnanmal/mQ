@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from collections import OrderedDict
 
 
 class TreeviewOperations:
@@ -305,3 +306,28 @@ class TreeviewOperations:
             self._expand_recursive(
                 child, current_level=current_level + 1, level_limit=level_limit
             )
+
+    # treeview_operations.py
+
+    def collect_level_6_items(self):
+        """Collect all unique level 6 items by their original name, keeping the first occurrence."""
+        level_6_items = OrderedDict()  # Use OrderedDict to keep order and uniqueness
+        for item in self.app.tree.get_children():
+            self._collect_level_6_recursive(item, level_6_items)
+        return list(
+            level_6_items.keys()
+        )  # Return only the names, not the entire dictionary
+
+    def _collect_level_6_recursive(self, parent, level_6_items):
+        """Recursively collect level 6 items."""
+        for item in self.app.tree.get_children(parent):
+            if self.get_item_depth(item) == 6:
+                # Retrieve the original name without indentation
+                item_name = self.app.original_names.get(item, "")
+                if (
+                    item_name not in level_6_items
+                ):  # Add only if it's not already in the OrderedDict
+                    level_6_items[item_name] = (
+                        None  # Value is irrelevant, we're using keys to ensure uniqueness
+                    )
+            self._collect_level_6_recursive(item, level_6_items)

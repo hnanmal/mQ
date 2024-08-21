@@ -11,6 +11,8 @@ from config_management import ConfigurationManager
 from context_menu import ContextMenuManager
 from search import SearchManager
 from treeview_operations import TreeviewOperations
+from ui import create_wm_matching_by_group_tab
+
 
 # from dialogs import ColumnSelectionDialog
 
@@ -63,6 +65,7 @@ class App(tk.Tk):
         # List of tab names and top-level item names
         tab_names = [
             "형식 표준 구성도",
+            "WM 그룹별 매칭",
             "계산 기준",
             "Room",
             "Floors",
@@ -81,13 +84,17 @@ class App(tk.Tk):
             "Manual_Input",
         ]
         self.top_level_items = tab_names[
-            2:
+            3:
         ]  # Top-level items without numbers and periods
 
         # Create tabs with the specified names
         for i, name in enumerate(tab_names):
             if name == "형식 표준 구성도":
                 create_single_area_tab(self, name)
+
+            # Initialize the new "WM 그룹별 매칭" tab
+            elif name == "WM 그룹별 매칭":
+                create_wm_matching_by_group_tab(self)
             else:
                 create_three_area_tab(self, name)
 
@@ -101,10 +108,29 @@ class App(tk.Tk):
         """Handle the undo operation by delegating to FileUtils."""
         FileUtils.undo_last_action(self)
 
+    def update_wm_group_matching_treeview(self, level_6_items):
+        # Clear the current content of the Treeview
+        self.wm_group_treeview.delete(*self.wm_group_treeview.get_children())
+
+        # Insert the unique names into the Treeview
+        for name in level_6_items:
+            self.wm_group_treeview.insert("", tk.END, values=(name,))
+
+    def update_center_title_label(self, event):
+        # Get the selected item
+        selected_item = self.wm_group_treeview.selection()
+
+        if selected_item:
+            # Get the value of the selected item (the name)
+            item_name = self.wm_group_treeview.item(selected_item[0], "values")[0]
+
+            # Update the center title label with the selected item's name
+            self.center_title_label.config(text=item_name)
+        else:
+            # Clear the label if no item is selected
+            self.center_title_label.config(text="")
+
 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-    # root = tk.Tk()
-    # app = App(root)
-    # app.mainloop()
