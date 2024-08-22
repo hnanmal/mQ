@@ -101,6 +101,9 @@ class App(tk.Tk):
         # Initialize TreeviewOperations after the tree is created
         self.treeview_operations = TreeviewOperations(self)
 
+        # Load the default configuration on startup
+        self.config_manager.load_configuration(file_path="defaultTypeTree.json")
+
         # Track whether the item is in text editing mode
         self.is_text_editing = False
 

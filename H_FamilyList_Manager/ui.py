@@ -1,6 +1,7 @@
 # Version: 1.0.12
 
-import time
+# import time
+import json
 import tkinter as tk
 from tkinter import ttk, font
 from search import SearchManager
@@ -156,6 +157,7 @@ def create_wm_matching_by_group_tab(app):
     left_frame = tk.Frame(tab_frame, width=250)
     center_frame = tk.Frame(tab_frame, width=300)
     right_frame = tk.Frame(tab_frame)
+    center_button_frame = tk.Frame(center_frame, width=50)  # Frame for the buttons
 
     # Configure grid layout for the tab_frame
     tab_frame.grid_columnconfigure(0, weight=0)
@@ -165,6 +167,9 @@ def create_wm_matching_by_group_tab(app):
 
     left_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
     center_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+    center_button_frame.grid(
+        row=2, column=1, sticky="nsew", padx=5, pady=5
+    )  # Place the button frame
     right_frame.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
 
     left_frame.grid_rowconfigure(0, weight=1)
@@ -174,6 +179,9 @@ def create_wm_matching_by_group_tab(app):
     center_frame.grid_rowconfigure(1, weight=0)
     center_frame.grid_rowconfigure(2, weight=1)
     center_frame.grid_columnconfigure(0, weight=1)
+
+    center_button_frame.grid_rowconfigure(0, weight=0)  # Align with the top of the area
+    center_button_frame.grid_columnconfigure(0, weight=1)
 
     right_frame.grid_rowconfigure(0, weight=1)
     right_frame.grid_columnconfigure(0, weight=1)
@@ -194,9 +202,30 @@ def create_wm_matching_by_group_tab(app):
     app.center_title_label = ttk.Label(center_frame, text="", font=("Arial", 14))
     app.center_title_label.grid(row=1, column=0, sticky="nw", padx=10, pady=5)
 
-    # Create a white display area under the title
-    app.drop_area = tk.Frame(center_frame, bg="white", relief="sunken", bd=2)
+    # Create a Listbox for the drop area to hold multiple items and allow selection
+    app.drop_area = tk.Listbox(
+        center_frame, bg="white", relief="sunken", bd=2, selectmode=tk.SINGLE
+    )
     app.drop_area.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
+
+    # Add + and - buttons to the center_button_frame
+    add_button = ttk.Button(
+        center_button_frame, text="+", command=lambda: add_item_to_center(app)
+    )
+    add_button.grid(row=0, column=0, padx=5, pady=5, sticky="n")
+
+    remove_button = ttk.Button(
+        center_button_frame, text="-", command=lambda: remove_item_from_center(app)
+    )
+    remove_button.grid(row=1, column=0, padx=5, pady=5, sticky="n")
+
+    # Add Lock button
+    lock_button = ttk.Button(
+        center_button_frame,
+        text="Lock",
+        command=lambda: toggle_lock(app, add_button, remove_button, lock_button),
+    )
+    lock_button.grid(row=2, column=0, padx=5, pady=5, sticky="n")
 
     # Create a Frame for Excel Treeview in the right area
     excel_frame = tk.Frame(right_frame)
@@ -229,42 +258,132 @@ def create_wm_matching_by_group_tab(app):
     # Enable drag-and-drop functionality
     enable_drag_and_drop(app)
 
+    # Initialize the lock state
+    app.is_locked = False
+
+
+def toggle_lock(app, add_button, remove_button, lock_button):
+    # Toggle lock state
+    if not app.is_locked:
+        # Lock the interface
+        add_button["state"] = "disabled"
+        remove_button["state"] = "disabled"
+        app.drop_area["bg"] = "gray"
+        app.excel_treeview.unbind("<ButtonPress-1>")
+        lock_button["text"] = "Unlock"
+
+        # Save the current selection title and dragged items
+        current_title = app.center_title_label.cget("text")
+        items = app.drop_area.get(0, tk.END)
+
+        # Save to a dictionary (or update the existing one)
+        if not hasattr(app, "wm_group_match"):
+            app.wm_group_match = {}  # Initialize the dictionary if it doesn't exist
+
+        app.wm_group_match[current_title] = list(items)
+
+        # Optionally, save this to a JSON file immediately (can also be done later)
+        save_to_json(app.wm_group_match)
+
+    else:
+        # Unlock the interface
+        add_button["state"] = "normal"
+        remove_button["state"] = "normal"
+        app.drop_area["bg"] = "white"
+        # app.excel_treeview.bind(
+        #     "<ButtonPress-1>", lambda e: on_drag_start(e, app.excel_treeview)
+        # )
+        lock_button["text"] = "Lock"
+
+    # Flip the lock state
+    app.is_locked = not app.is_locked
+
+
+def add_item_to_center(app):
+    selected_items = app.excel_treeview.selection()
+    if not selected_items:
+        tk.messagebox.showwarning(
+            "No Selection", "Please select an item from the Excel data."
+        )
+        return
+
+    for item in selected_items:
+        item_text = app.excel_treeview.item(item, "values")[
+            0
+        ]  # Get the first column value
+        app.drop_area.insert(tk.END, item_text)  # Insert item text into the Listbox
+
+
+def save_to_json(data, filename="wm_group_match.json"):
+    """Saves the given dictionary to a JSON file."""
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+
+def remove_item_from_center(app):
+    selected_index = app.drop_area.curselection()
+    if selected_index:
+        app.drop_area.delete(selected_index)
+
 
 def enable_drag_and_drop(app):
     # Handle drag start
     def on_drag_start(event, treeview):
-        # Delay to ensure the selection process completes
-        app.after(50, lambda: initiate_drag(event, treeview))
+        # Ensure dragging is not initiated from the left area
+        if treeview == app.wm_group_treeview:
+            return  # Do nothing if dragging is initiated from the left area
+
+        app.selected_items = treeview.selection()
+        # Save the initial position
+        app.drag_start_x = event.x_root
+        app.drag_start_y = event.y_root
+
+        # Start listening for mouse movement
+        app.bind("<B1-Motion>", lambda e: initiate_drag(e, treeview))
+        app.bind("<ButtonRelease-1>", on_drop)
 
     def initiate_drag(event, treeview):
-        # Clear any previous drag data
-        if hasattr(app, "dragged_items"):
-            del app.dragged_items
+        # Calculate distance moved
+        dx = abs(event.x_root - app.drag_start_x)
+        dy = abs(event.y_root - app.drag_start_y)
 
-        selected_items = treeview.selection()
-        if selected_items:
-            print("drag on")  # Debugging: print when drag starts
-            app.dragged_items = [(treeview, item) for item in selected_items]
-            item_texts = [treeview.item(item, "values")[0] for item in selected_items]
+        selected_items = app.selected_items
 
-            # Create a label to follow the cursor
-            if hasattr(app, "drag_label"):
-                app.drag_label.destroy()  # Ensure previous label is destroyed
-            app.drag_label = tk.Label(app, text=", ".join(item_texts), bg="yellow")
-            app.drag_label.place(x=event.x_root, y=event.y_root)
-            app.bind(
-                "<B1-Motion>", on_drag_motion
-            )  # Bind motion event to follow the cursor
-            app.bind("<ButtonRelease-1>", on_drop)  # Bind drop event to the root window
+        # Only start dragging if the mouse has moved a significant distance
+        if dx > 5 or dy > 5:
+            # Clear any previous drag data
+            if hasattr(app, "dragged_items"):
+                del app.dragged_items
 
-    # Handle dragging motion to move the drag_label
+            # selected_items = treeview.selection()
+            print(selected_items)  # Debugging
+            if selected_items:
+                print("drag on")  # Debugging: print when drag starts
+                app.dragged_items = [(treeview, item) for item in selected_items]
+
+                item_texts = [
+                    treeview.item(item, "values")[0] for item in selected_items
+                ]
+
+                # Create a label to follow the cursor
+                if hasattr(app, "drag_label"):
+                    app.drag_label.destroy()  # Ensure previous label is destroyed
+                app.drag_label = ttk.Label(
+                    app,
+                    text=",\n ".join(item_texts),  # bg="yellow"
+                )
+                app.drag_label.place(x=event.x_root, y=event.y_root)
+
+                app.bind("<B1-Motion>", on_drag_motion)
+
     def on_drag_motion(event):
+        # print(f"Motion event at x={event.x_root}, y={event.y_root}")  # Debugging
         if hasattr(app, "drag_label"):
             app.drag_label.place(
-                x=event.x_root + 10, y=event.y_root + 10
+                x=event.x_root,
+                y=event.y_root,
             )  # Slight offset for visibility
 
-    # Handle drop action
     def on_drop(event):
         print("drag off")  # Debugging: print when drag ends
 
@@ -282,7 +401,7 @@ def enable_drag_and_drop(app):
                 label = ttk.Label(
                     app.drop_area, text=item_text, background="white", anchor="w"
                 )
-                label.pack(anchor="w", padx=5, pady=2)
+                app.drop_area.insert(tk.END, item_text)
 
         # Cleanup: remove drag label
         if hasattr(app, "drag_label"):
@@ -297,17 +416,10 @@ def enable_drag_and_drop(app):
         app.unbind("<B1-Motion>")
         app.unbind("<ButtonRelease-1>")
 
-    # Bind the drag start to both Treeviews
-    app.wm_group_treeview.bind(
-        "<ButtonPress-1>", lambda e: on_drag_start(e, app.wm_group_treeview)
-    )
+    # Bind the drag start only to the Treeview in the right area (Excel data)
     app.excel_treeview.bind(
         "<ButtonPress-1>", lambda e: on_drag_start(e, app.excel_treeview)
     )
-
-    # Handle shift-click and control-click for multi-selection
-    app.wm_group_treeview.bind("<Shift-ButtonPress-1>", lambda e: None)
-    app.wm_group_treeview.bind("<Control-ButtonPress-1>", lambda e: None)
 
 
 def display_excel_data_openpyxl(app):
