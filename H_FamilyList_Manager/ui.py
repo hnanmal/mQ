@@ -183,7 +183,8 @@ def create_wm_matching_by_group_tab(app):
     center_button_frame.grid_rowconfigure(0, weight=0)  # Align with the top of the area
     center_button_frame.grid_columnconfigure(0, weight=1)
 
-    right_frame.grid_rowconfigure(0, weight=1)
+    right_frame.grid_rowconfigure(0, weight=0)  # Adjusted to make space for search
+    right_frame.grid_rowconfigure(1, weight=1)
     right_frame.grid_columnconfigure(0, weight=1)
 
     # Create a Treeview to display the unique names without indents in the left area
@@ -191,6 +192,13 @@ def create_wm_matching_by_group_tab(app):
     app.wm_group_treeview.heading("name", text="Name")
     app.wm_group_treeview.column("name", width=240, anchor="w")
     app.wm_group_treeview.grid(row=0, column=0, sticky="nsew")
+
+    # Add a vertical scrollbar to the left area
+    left_scrollbar = ttk.Scrollbar(
+        left_frame, orient="vertical", command=app.wm_group_treeview.yview
+    )
+    app.wm_group_treeview.configure(yscrollcommand=left_scrollbar.set)
+    left_scrollbar.grid(row=0, column=1, sticky="ns")
 
     # Create a fixed title label in the center area
     fixed_title_label = ttk.Label(
@@ -208,28 +216,68 @@ def create_wm_matching_by_group_tab(app):
     )
     app.drop_area.grid(row=2, column=0, sticky="nsew", padx=10, pady=10)
 
+    # Add horizontal and vertical scrollbars to the center area
+    # center_scrollbar_y = ttk.Scrollbar(
+    #     center_frame, orient="vertical", command=app.drop_area.yview
+    # )
+    center_scrollbar_x = ttk.Scrollbar(
+        center_frame, orient="horizontal", command=app.drop_area.xview
+    )
+    app.drop_area.configure(
+        # yscrollcommand=center_scrollbar_y.set,
+        xscrollcommand=center_scrollbar_x.set
+    )
+    # center_scrollbar_y.grid(row=2, column=1, sticky="ns")
+    center_scrollbar_x.grid(row=3, column=0, sticky="ew")
+
     # Add + and - buttons to the center_button_frame
-    add_button = ttk.Button(
+    app.add_button = ttk.Button(
         center_button_frame, text="+", command=lambda: add_item_to_center(app)
     )
-    add_button.grid(row=0, column=0, padx=5, pady=5, sticky="n")
+    app.add_button.grid(row=0, column=0, padx=5, pady=5, sticky="n")
 
-    remove_button = ttk.Button(
+    app.remove_button = ttk.Button(
         center_button_frame, text="-", command=lambda: remove_item_from_center(app)
     )
-    remove_button.grid(row=1, column=0, padx=5, pady=5, sticky="n")
+    app.remove_button.grid(row=1, column=0, padx=5, pady=5, sticky="n")
 
     # Add Lock button
-    lock_button = ttk.Button(
+    app.lock_button = ttk.Button(
         center_button_frame,
         text="Lock",
-        command=lambda: toggle_lock(app, add_button, remove_button, lock_button),
+        command=lambda: toggle_lock(
+            app, app.add_button, app.remove_button, app.lock_button
+        ),
     )
-    lock_button.grid(row=2, column=0, padx=5, pady=5, sticky="n")
+    app.lock_button.grid(row=2, column=0, padx=5, pady=5, sticky="n")
 
     # Create a Frame for Excel Treeview in the right area
+    search_frame = tk.Frame(right_frame)
+    search_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+
+    search_label = ttk.Label(search_frame, text="Search:")
+    search_label.pack(side="left", padx=(0, 5))
+
+    search_var = tk.StringVar()
+    search_entry = ttk.Entry(search_frame, textvariable=search_var)
+    search_entry.pack(side="left", fill="x", expand=True)
+
+    search_button = ttk.Button(
+        search_frame,
+        text="Search",
+        command=lambda: filter_excel_data(app, search_var.get()),
+    )
+    search_button.pack(side="left", padx=(5, 0))
+
+    #######
+    # Bind the Enter key to trigger the search when pressed in the search box
+    search_entry.bind(
+        "<Return>", lambda event: filter_excel_data(app, search_var.get())
+    )
+    #######
+
     excel_frame = tk.Frame(right_frame)
-    excel_frame.grid(row=0, column=0, sticky="nsew")
+    excel_frame.grid(row=1, column=0, sticky="nsew")
 
     excel_frame.grid_rowconfigure(0, weight=1)
     excel_frame.grid_columnconfigure(0, weight=1)
@@ -255,48 +303,167 @@ def create_wm_matching_by_group_tab(app):
 
     app.wm_group_treeview.bind("<<TreeviewSelect>>", app.update_center_title_label)
 
+    # Define styles for locked and unlocked items in the left area
+    app.wm_group_treeview.tag_configure("locked", background="gray")
+    app.wm_group_treeview.tag_configure("unlocked", background="white")
+
     # Enable drag-and-drop functionality
     enable_drag_and_drop(app)
 
     # Initialize the lock state
-    app.is_locked = False
+    app.lock_status = {}
+
+    # Now load the WM Group Match data to set initial states
+    load_wm_group_match_data(app)
+
+    # Set the initial state based on the selected item or disable if none selected
+    app.update_center_title_label(None)
+
+
+def filter_excel_data(app, search_keyword):
+    # Get all rows in the Treeview
+    all_items = app.excel_treeview.get_children()
+
+    # Clear the Treeview
+    for item in all_items:
+        app.excel_treeview.delete(item)
+
+    # Reinsert only the rows that match the search keyword
+    file_path = "WorkMaster_DB.xlsx"  # Assuming the file is in the project directory
+    workbook = load_workbook(filename=file_path)
+    sheet = workbook.active
+
+    for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
+        if 2 <= i <= 6:  # Skip rows 2 through 5
+            continue
+        if any(search_keyword.lower() in str(cell).lower() for cell in row):
+            app.excel_treeview.insert("", "end", values=row)
 
 
 def toggle_lock(app, add_button, remove_button, lock_button):
-    # Toggle lock state
-    if not app.is_locked:
-        # Lock the interface
-        add_button["state"] = "disabled"
-        remove_button["state"] = "disabled"
-        app.drop_area["bg"] = "gray"
-        app.excel_treeview.unbind("<ButtonPress-1>")
-        lock_button["text"] = "Unlock"
+    # Get the currently selected item
+    selected_item = app.wm_group_treeview.selection()
+    if not selected_item:
+        return
 
-        # Save the current selection title and dragged items
-        current_title = app.center_title_label.cget("text")
-        items = app.drop_area.get(0, tk.END)
+    item_name = app.wm_group_treeview.item(selected_item[0], "values")[0]
 
-        # Save to a dictionary (or update the existing one)
-        if not hasattr(app, "wm_group_match"):
-            app.wm_group_match = {}  # Initialize the dictionary if it doesn't exist
+    # Toggle the lock state for the current item
+    is_locked = app.lock_status.get(item_name, False)
+    app.lock_status[item_name] = not is_locked
 
-        app.wm_group_match[current_title] = list(items)
+    # Update the lock button text
+    lock_button.config(text="Unlock" if app.lock_status[item_name] else "Lock")
 
-        # Optionally, save this to a JSON file immediately (can also be done later)
-        save_to_json(app.wm_group_match)
+    # Update the background color of the drop area based on the lock state
+    app.drop_area.config(bg="gray" if app.lock_status[item_name] else "white")
 
+    # Update the treeview item color based on the lock state
+    if app.lock_status[item_name]:
+        app.wm_group_treeview.item(selected_item[0], tags=("locked",))
     else:
-        # Unlock the interface
-        add_button["state"] = "normal"
-        remove_button["state"] = "normal"
-        app.drop_area["bg"] = "white"
-        # app.excel_treeview.bind(
-        #     "<ButtonPress-1>", lambda e: on_drag_start(e, app.excel_treeview)
-        # )
-        lock_button["text"] = "Lock"
+        app.wm_group_treeview.item(selected_item[0], tags=("unlocked",))
 
-    # Flip the lock state
-    app.is_locked = not app.is_locked
+    # Save the current matching results to JSON
+    save_current_matching_to_json(app, item_name)
+
+    # Save the lock status to wm_group_match.json
+    save_lock_status_to_json(app)
+
+    # Update the item color in the left area
+    app.wm_group_treeview.item(
+        selected_item, tags=("locked" if app.lock_status[item_name] else "unlocked")
+    )
+
+
+def save_lock_status_to_json(app):
+    try:
+        with open("wm_group_match.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {}
+
+    if "lock_status" not in data:
+        data["lock_status"] = {}
+
+    # Update the lock status for the current item
+    data["lock_status"] = app.lock_status
+
+    with open("wm_group_match.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def load_wm_group_match_data(app):
+    try:
+        with open("wm_group_match.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Load the lock status from the JSON file
+        app.lock_status = data.get("lock_status", {})
+
+        # Set the initial state of each item in the left area based on the lock status
+        for item in app.wm_group_treeview.get_children():
+            item_name = app.wm_group_treeview.item(item, "values")[0]
+            is_locked = app.lock_status.get(item_name, False)
+            if is_locked:
+                app.wm_group_treeview.item(item, tags=("locked",))
+            else:
+                app.wm_group_treeview.item(item, tags=("unlocked",))
+
+    except FileNotFoundError:
+        app.lock_status = {}
+
+
+def reapply_lock_status(app):
+    """Reapply the lock status to the items in the left area based on their saved lock state."""
+    for item_id in app.wm_group_treeview.get_children():
+        item_name = app.wm_group_treeview.item(item_id, "values")[
+            0
+        ].lower()  # Normalize the name
+        is_locked = app.lock_status.get(item_name, False)
+        if is_locked:
+            app.wm_group_treeview.item(item_id, tags=("locked",))
+        else:
+            app.wm_group_treeview.item(item_id, tags=("unlocked",))
+
+
+def save_current_matching_to_json(app, item_name):
+    """Save the current matching data to JSON for the specified item."""
+    current_matches = list(
+        app.drop_area.get(0, tk.END)
+    )  # Get all items in the drop area
+
+    # Load the existing JSON data
+    try:
+        with open("wm_group_match.json", "r", encoding="utf-8") as file:
+            wm_group_match_data = json.load(file)
+    except FileNotFoundError:
+        wm_group_match_data = {}
+
+    # Update the JSON data with the new match
+    wm_group_match_data[item_name] = current_matches
+
+    # Save the updated data back to the file
+    with open("wm_group_match.json", "w", encoding="utf-8") as file:
+        json.dump(wm_group_match_data, file, indent=4, ensure_ascii=False)
+
+
+def get_item_texts(item_values):
+    res = [
+        item_values[0],
+        item_values[3],
+        item_values[5],
+        item_values[7],
+        item_values[9],
+        item_values[11],
+        item_values[13],
+        item_values[15],
+        item_values[17],
+        item_values[19],
+        item_values[21],
+        item_values[23],
+    ]
+    return res
 
 
 def add_item_to_center(app):
@@ -308,10 +475,16 @@ def add_item_to_center(app):
         return
 
     for item in selected_items:
-        item_text = app.excel_treeview.item(item, "values")[
-            0
-        ]  # Get the first column value
-        app.drop_area.insert(tk.END, item_text)  # Insert item text into the Listbox
+        item_values = app.excel_treeview.item(item, "values")
+        # Get the 0th, 7th, and 9th column values
+        item_texts = get_item_texts(item_values)
+        item_string = " - ".join(item_texts)
+
+        # Insert all selected values into the Listbox
+        app.drop_area.insert(
+            tk.END,
+            item_string,
+        )  # Insert item text into the Listbox
 
 
 def save_to_json(data, filename="wm_group_match.json"):
@@ -395,13 +568,16 @@ def enable_drag_and_drop(app):
         if widget_under_mouse == app.drop_area:
             # Display dragged items in the drop area
             for treeview, item in app.dragged_items:
-                item_text = treeview.item(item, "values")[
-                    0
-                ]  # Get the first column value
-                label = ttk.Label(
-                    app.drop_area, text=item_text, background="white", anchor="w"
+                item_values = treeview.item(item, "values")
+                # Get the 0th, 7th, and 9th column values
+                item_texts = get_item_texts(item_values)
+                item_string = " - ".join(item_texts)
+
+                # Insert all selected values into the Listbox
+                app.drop_area.insert(
+                    tk.END,
+                    item_string,
                 )
-                app.drop_area.insert(tk.END, item_text)
 
         # Cleanup: remove drag label
         if hasattr(app, "drag_label"):
@@ -431,11 +607,18 @@ def display_excel_data_openpyxl(app):
     # Set up the Treeview columns
     columns = [cell.value for cell in sheet[1]]  # Assuming the first row is the header
     app.excel_treeview["columns"] = columns
-    for col in columns:
-        app.excel_treeview.heading(col, text=col)
-        app.excel_treeview.column(
-            col, anchor="w", width=150
-        )  # Set a default width for each column
+
+    # Columns to be hidden (2, 3, 5, 7, 9, 11, 13)
+    hidden_columns = [1, 2, 4, 6, 8, 10, 12]  # Zero-based index
+
+    for idx, col in enumerate(columns):
+        if idx in hidden_columns:
+            app.excel_treeview.column(col, width=0, stretch=tk.NO)
+        else:
+            app.excel_treeview.heading(col, text=col)
+            app.excel_treeview.column(
+                col, anchor="w", width=150
+            )  # Set a default width for visible columns
 
     # Insert rows into the Treeview
     for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):

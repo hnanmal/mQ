@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import simpledialog, ttk
+import json
 
 from utils import FileUtils
 from ui import create_single_area_tab, create_three_area_tab
@@ -31,6 +32,9 @@ class App(tk.Tk):
 
         self.title("Tabbed Page App")
         self.geometry("1400x900")  # Window size
+
+        # # Initialize the Treeview early in the __init__ process
+        # self.wm_group_treeview = None
 
         # Create Treeview ### mk
         self.tree = ttk.Treeview(
@@ -107,6 +111,9 @@ class App(tk.Tk):
         # Track whether the item is in text editing mode
         self.is_text_editing = False
 
+        # Load WM Group Match data from JSON
+        self.wm_group_match_data = self.load_wm_group_match_data()
+
     def undo(self, event=None):
         """Handle the undo operation by delegating to FileUtils."""
         FileUtils.undo_last_action(self)
@@ -120,6 +127,9 @@ class App(tk.Tk):
             self.wm_group_treeview.insert("", tk.END, values=(name,))
 
     def update_center_title_label(self, event):
+        # Reload the WM Group Match data from the JSON file
+        self.wm_group_match_data = self.load_wm_group_match_data()
+
         # Get the selected item
         selected_item = self.wm_group_treeview.selection()
 
@@ -129,9 +139,57 @@ class App(tk.Tk):
 
             # Update the center title label with the selected item's name
             self.center_title_label.config(text=item_name)
+
+            # Clear the current content in the center area
+            self.drop_area.delete(0, tk.END)
+
+            # Check if there is matching data in wm_group_match.json
+            if item_name in self.wm_group_match_data:
+                # Populate the center area with the matched data
+                for entry in self.wm_group_match_data[item_name]:
+                    self.drop_area.insert(tk.END, entry)
+            else:
+                # If no match is found, leave the area empty
+                self.drop_area.insert(tk.END, "No matching data found.")
+
+            # Update the lock button state and center area background color
+            is_locked = self.lock_status.get(item_name, False)
+            self.lock_button.config(text="Unlock" if is_locked else "Lock")
+            self.drop_area.config(bg="gray" if is_locked else "white")
+
         else:
             # Clear the label if no item is selected
             self.center_title_label.config(text="")
+
+    def load_wm_group_match_data(self):
+        try:
+            with open("wm_group_match.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                # Update lock status based on the JSON data
+                self.lock_status = data.get("lock_status", {})
+                # Apply the lock status to the treeview items
+                for item in self.wm_group_treeview.get_children():
+                    item_name = self.wm_group_treeview.item(item, "values")[0]
+                    is_locked = self.lock_status.get(item_name, False)
+                    if is_locked:
+                        self.wm_group_treeview.item(item, tags=("locked",))
+                    else:
+                        self.wm_group_treeview.item(item, tags=("unlocked",))
+                return data
+        except FileNotFoundError:
+            return {}
+
+    def save_lock_status(app):
+        try:
+            with open("wm_group_match.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            data = {}
+
+        data["lock_status"] = app.lock_status
+
+        with open("wm_group_match.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
