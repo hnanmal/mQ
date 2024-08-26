@@ -36,10 +36,10 @@ class App(tk.Tk):
         # # Initialize the Treeview early in the __init__ process
         # self.wm_group_treeview = None
 
-        # Create Treeview ### mk
-        self.tree = ttk.Treeview(
-            self, show="tree"
-        )  # Use show="tree" to avoid showing placeholders
+        # # Create Treeview ### mk
+        # self.tree = ttk.Treeview(
+        #     self, show="tree"
+        # )  # Use show="tree" to avoid showing placeholders
 
         # Initialize previous level limit
         self.previous_level_limit = 7  # Default value
@@ -102,8 +102,8 @@ class App(tk.Tk):
             else:
                 create_three_area_tab(self, name)
 
-        # Initialize TreeviewOperations after the tree is created
-        self.treeview_operations = TreeviewOperations(self)
+        # # Initialize TreeviewOperations after the tree is created
+        # self.treeview_operations = TreeviewOperations(self)
 
         # Load the default configuration on startup
         self.config_manager.load_configuration(file_path="defaultTypeTree.json")
