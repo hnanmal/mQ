@@ -1,0 +1,10 @@
+# - app.py
+# - utils.py
+# - ui.py
+# - clipboard.py
+# - drag_and_drop.py
+# - config_management.py
+# - context_menu.py
+# - search.py
+# - treeview_operations.py
+# - dialogs.py
