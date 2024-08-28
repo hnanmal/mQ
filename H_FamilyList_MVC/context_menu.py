@@ -6,6 +6,10 @@ from tkinter import Menu, messagebox
 class ContextMenuManager:
     def __init__(self, app):
         self.app = app
+        self.app.tree.bind(
+            "<Button-3>",
+            self.show_context_menu,
+        )
 
     def show_context_menu(self, event):
         print("Right-click detected")  # 디버그 로그
@@ -31,6 +35,7 @@ class ContextMenuManager:
             command=self.group_selected_items_under_new_parent,
         )
         context_menu.post(event.x_root, event.y_root)
+        # context_menu.tk_popup(event.x_root, event.y_root)
 
     def group_selected_items_under_new_parent(self):
         selected_items = self.app.tree.selection()
