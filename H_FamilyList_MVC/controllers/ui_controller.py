@@ -40,7 +40,7 @@ def add_item_to_center(app):
         item_values = app.excel_treeview.item(item, "values")
         # Get the 0th, 7th, and 9th column values
         item_texts = get_item_texts(item_values)
-        item_string = " - ".join(item_texts)
+        item_string = " |: ".join(item_texts)
 
         # Insert all selected values into the Listbox
         app.drop_area.insert(

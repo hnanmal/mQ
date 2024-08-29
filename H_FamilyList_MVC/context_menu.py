@@ -6,7 +6,7 @@ from tkinter import Menu, messagebox
 class ContextMenuManager:
     def __init__(self, app):
         self.app = app
-        self.app.tree.bind(
+        self.app.bind(
             "<Button-3>",
             self.show_context_menu,
         )

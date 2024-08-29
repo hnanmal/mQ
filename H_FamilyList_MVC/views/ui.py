@@ -356,25 +356,6 @@ class UIManager:
 
         with open("wm_group_match.json", "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
-
-    def load_wm_group_match_data(app):
-        try:
-            with open("wm_group_match.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            # Load the lock status from the JSON file
-            app.lock_status = data.get("lock_status", {})
-
-            # Set the initial state of each item in the left area based on the lock status
-            for item in app.wm_group_treeview.get_children():
-                item_name = app.wm_group_treeview.item(item, "values")[0]
-                is_locked = app.lock_status.get(item_name, False)
-                if is_locked:
-                    app.wm_group_treeview.item(item, tags=("locked",))
-                else:
-                    app.wm_group_treeview.item(item, tags=("unlocked",))
-
-        except FileNotFoundError:
             app.lock_status = {}
 
     def reapply_lock_status(app):
@@ -466,7 +447,7 @@ class UIManager:
                     item_values = treeview.item(item, "values")
                     # Get the 0th, 7th, and 9th column values
                     item_texts = app.config_manager.get_item_texts(item_values)
-                    item_string = " - ".join(item_texts)
+                    item_string = " |: ".join(item_texts)
 
                     # Insert all selected values into the Listbox
                     app.drop_area.insert(
