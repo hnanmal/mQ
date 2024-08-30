@@ -7,7 +7,7 @@ from models.wm_group import (
     load_wm_group_match_data,
     # save_lock_status_to_json,
     # save_current_matching_to_json,
-    # filter_excel_data,
+    filter_excel_data,
     # save_configuration,
     load_configuration,
 )
@@ -27,6 +27,8 @@ from controllers.ui_controller import (
     add_item_to_center,
     remove_item_from_center,
     toggle_lock,
+    check_used_wm_item,
+    update_drop_area,
 )
 
 # Other necessary imports
@@ -73,6 +75,7 @@ class App(tk.Tk):
         # Initialize managers and operations
         self.ui_manager = UIManager(self)
         self.config_manager = ConfigurationManager(self)
+        self.ui_controller = ConfigurationManager(self)
         self.drag_and_drop_manager = DragAndDropManager(self)
         self.clipboard_manager = ClipboardManager(self)
         self.context_menu_manager = ContextMenuManager(self)
@@ -139,40 +142,64 @@ class App(tk.Tk):
         for name in level_6_items:
             self.wm_group_treeview.insert("", tk.END, values=(name,))
 
-    def update_center_title_label(self, event):
-        # Reload the WM Group Match data from the JSON file
-        self.wm_group_match_data = load_wm_group_match_data(self)
+    # def update_center_title_label(self, event):
+    #     # Reload the WM Group Match data from the JSON file
+    #     self.wm_group_match_data = load_wm_group_match_data(self)
 
-        # Get the selected item
-        selected_item = self.wm_group_treeview.selection()
+    #     # Get the selected item
+    #     selected_item = self.wm_group_treeview.selection()
 
-        if selected_item:
-            # Get the value of the selected item (the name)
-            item_name = self.wm_group_treeview.item(selected_item[0], "values")[0]
+    #     if selected_item:
+    #         # Get the value of the selected item (the name)
+    #         item_name = self.wm_group_treeview.item(selected_item[0], "values")[0]
 
-            # Update the center title label with the selected item's name
-            self.center_title_label.config(text=item_name)
+    #         # Update the center title label with the selected item's name
+    #         self.center_title_label.config(text=item_name)
 
-            # Clear the current content in the center area
-            self.drop_area.delete(0, tk.END)
+    #         # Clear the current content in the center area
+    #         self.drop_area.delete(0, tk.END)
 
-            # Check if there is matching data in wm_group_match.json
-            if item_name in self.wm_group_match_data:
-                # Populate the center area with the matched data
-                for entry in self.wm_group_match_data[item_name]:
-                    self.drop_area.insert(tk.END, entry)
-            else:
-                # If no match is found, leave the area empty
-                self.drop_area.insert(tk.END, "No matching data found.")
+    #         # Check if there is matching data in wm_group_match.json
+    #         if item_name in self.wm_group_match_data:
+    #             # Populate the center area with the matched data
+    #             for entry in self.wm_group_match_data[item_name]:
+    #                 self.drop_area.insert(tk.END, entry)
+    #         else:
+    #             # If no match is found, leave the area empty
+    #             self.drop_area.insert(tk.END, "No matching data found.")
 
-            # Update the lock button state and center area background color
-            is_locked = self.lock_status.get(item_name, False)
-            self.lock_button.config(text="Unlock" if is_locked else "Lock")
-            self.drop_area.config(bg="gray" if is_locked else "white")
+    #         # Update the lock button state and center area background color
+    #         is_locked = self.lock_status.get(item_name, False)
+    #         self.lock_button.config(text="Unlock" if is_locked else "Lock")
+    #         self.drop_area.config(bg="gray" if is_locked else "white")
 
-        else:
-            # Clear the label if no item is selected
-            self.center_title_label.config(text="")
+    #     else:
+    #         # Clear the label if no item is selected
+    #         self.center_title_label.config(text="")
+
+
+def update_center_title_label(app, event):
+    # Get the selected item
+    selected_item = app.wm_group_treeview.selection()
+    if not selected_item:
+        return
+
+    # Get the value of the selected item (the name)
+    item_name = app.wm_group_treeview.item(selected_item[0], "values")[0]
+
+    # Update the center title label with the selected item's name
+    app.center_title_label.config(text=item_name)
+
+    # Update the drop area with the matching content
+    update_drop_area(app, item_name)
+
+    # Update the lock button state and center area background color
+    is_locked = app.lock_status.get(item_name, False)
+    app.lock_button.config(text="Unlock" if is_locked else "Lock")
+    app.drop_area.config(bg="gray" if is_locked else "white")
+
+    # Force the UI to update to reflect changes
+    app.drop_area.update_idletasks()
 
 
 if __name__ == "__main__":

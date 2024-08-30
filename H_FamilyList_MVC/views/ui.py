@@ -22,6 +22,8 @@ from controllers.ui_controller import (
     add_item_to_center,
     remove_item_from_center,
     toggle_lock,
+    check_used_wm_item,
+    get_item_texts,
 )
 
 
@@ -61,11 +63,15 @@ class UIManager:
         remove_button.pack(side="left", padx=2, pady=5)
 
         # Save Button
-        save_button = ttk.Button(button_frame, text="Save", command=save_configuration)
+        save_button = ttk.Button(
+            button_frame, text="Save", command=lambda: save_configuration(app)
+        )
         save_button.pack(side="left", padx=2, pady=5)
 
         # Load Button
-        load_button = ttk.Button(button_frame, text="Load", command=load_configuration)
+        load_button = ttk.Button(
+            button_frame, text="Load", command=lambda: load_configuration(app)
+        )
         load_button.pack(side="left", padx=2, pady=5)
 
         # Collapse All Button
@@ -287,9 +293,17 @@ class UIManager:
         search_button = ttk.Button(
             search_frame,
             text="Search",
-            command=lambda: self.filter_excel_data(app, search_var.get()),
+            command=lambda: filter_excel_data(app, search_var.get()),
         )
         search_button.pack(side="left", padx=(5, 0))
+
+        # Add "Check Used WM Item" button
+        check_button = ttk.Button(
+            search_frame,
+            text="Check Used WM Item",
+            command=lambda: check_used_wm_item(app),
+        )
+        check_button.pack(side="left", padx=(5, 0))
 
         #######
         # Bind the Enter key to trigger the search when pressed in the search box
@@ -323,7 +337,9 @@ class UIManager:
 
         app.notebook.add(tab_frame, text="WM 그룹별 매칭")
 
-        app.wm_group_treeview.bind("<<TreeviewSelect>>", app.update_center_title_label)
+        app.wm_group_treeview.bind(
+            "<<TreeviewSelect>>", lambda event: update_center_title_label(app, event)
+        )
 
         # Define styles for locked and unlocked items in the left area
         app.wm_group_treeview.tag_configure("locked", background="gray")
@@ -335,11 +351,24 @@ class UIManager:
         # Initialize the lock state
         app.lock_status = {}
 
+        # # Bind the selection event to update buttons based on lock status
+        # app.wm_group_treeview.bind(
+        #     "<<TreeviewSelect>>", self.on_wm_group_treeview_select
+        # )
+
         # Now load the WM Group Match data to set initial states
         load_wm_group_match_data(app)
 
+        # Reapply lock status after loading
+        self.reapply_lock_status(app)
+
+        # Set the initial state of the + and - buttons
+        self.update_buttons_based_on_lock_status(app)
+
         # Set the initial state based on the selected item or disable if none selected
-        app.update_center_title_label(None)
+        update_center_title_label(app, None)
+
+        # app.drop_area.update_idletasks()  # Force the UI to update
 
     def save_lock_status_to_json(app):
         try:
@@ -358,17 +387,47 @@ class UIManager:
             json.dump(data, f, indent=4, ensure_ascii=False)
             app.lock_status = {}
 
-    def reapply_lock_status(app):
+    # def reapply_lock_status(app):
+    #     """Reapply the lock status to the items in the left area based on their saved lock state."""
+    #     for item_id in app.wm_group_treeview.get_children():
+    #         item_name = app.wm_group_treeview.item(item_id, "values")[
+    #             0
+    #         ].lower()  # Normalize the name
+    #         is_locked = app.lock_status.get(item_name, False)
+    #         if is_locked:
+    #             app.wm_group_treeview.item(item_id, tags=("locked",))
+    #         else:
+    #             app.wm_group_treeview.item(item_id, tags=("unlocked",))
+
+    # def on_wm_group_treeview_select(self, event):
+    #     self.update_buttons_based_on_lock_status(self.app)
+
+    def reapply_lock_status(self, app):
         """Reapply the lock status to the items in the left area based on their saved lock state."""
         for item_id in app.wm_group_treeview.get_children():
             item_name = app.wm_group_treeview.item(item_id, "values")[
                 0
-            ].lower()  # Normalize the name
+            ].strip()  # .lower()  # Normalize the name
             is_locked = app.lock_status.get(item_name, False)
             if is_locked:
                 app.wm_group_treeview.item(item_id, tags=("locked",))
             else:
                 app.wm_group_treeview.item(item_id, tags=("unlocked",))
+
+        # Check the currently selected item to update the + and - buttons
+        self.update_buttons_based_on_lock_status(app)
+
+    def update_buttons_based_on_lock_status(self, app):
+        selected_item = app.wm_group_treeview.selection()
+        if selected_item:
+            item_name = app.wm_group_treeview.item(selected_item[0], "values")[0]
+            is_locked = app.lock_status.get(item_name, False)
+            if is_locked:
+                app.add_button.config(state=tk.DISABLED)
+                app.remove_button.config(state=tk.DISABLED)
+            else:
+                app.add_button.config(state=tk.NORMAL)
+                app.remove_button.config(state=tk.NORMAL)
 
     def save_to_json(data, filename="wm_group_match.json"):
         """Saves the given dictionary to a JSON file."""
@@ -446,7 +505,7 @@ class UIManager:
                 for treeview, item in app.dragged_items:
                     item_values = treeview.item(item, "values")
                     # Get the 0th, 7th, and 9th column values
-                    item_texts = app.config_manager.get_item_texts(item_values)
+                    item_texts = get_item_texts(item_values)
                     item_string = " |: ".join(item_texts)
 
                     # Insert all selected values into the Listbox
@@ -472,6 +531,26 @@ class UIManager:
         app.excel_treeview.bind(
             "<ButtonPress-1>", lambda e: on_drag_start(e, app.excel_treeview)
         )
+
+    # def tag_matched_items_in_excel(self, app):
+    #     if not hasattr(app, "wm_group_match_data"):
+    #         app.wm_group_match_data = {}
+
+    #     # Get the matched items from wm_group_match.json
+    #     matched_items = set()
+    #     for group, items in app.wm_group_match_data.items():
+    #         matched_items.update(items)
+
+    #     # Define a tag for pink text color
+    #     app.excel_treeview.tag_configure("pink", foreground="pink")
+
+    #     # Tag rows that match the wm_group_match_data
+    #     for item_id in app.excel_treeview.get_children():
+    #         row_values = app.excel_treeview.item(item_id, "values")
+    #         row_text = " |: ".join(map(str, row_values))
+
+    #         if any(matched_item in row_text for matched_item in matched_items):
+    #             app.excel_treeview.item(item_id, tags=("pink",))
 
     def display_excel_data_openpyxl(self, app):
         # Load the Excel file using openpyxl

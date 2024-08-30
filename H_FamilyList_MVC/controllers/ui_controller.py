@@ -9,6 +9,48 @@ from models.wm_group import (
     load_configuration,
 )
 
+# import logging
+
+# # Configure logging to write to a file
+# logging.basicConfig(
+#     filename="debug_log.txt",
+#     level=logging.DEBUG,
+#     format="%(asctime)s - %(levelname)s - %(message)s",
+# )
+
+
+def check_used_wm_item(app):
+    # logging.debug("Starting check_used_wm_item function")
+
+    """Highlight Excel rows that match any item in wm_group_match_data based on substring matching with the first item."""
+    # Get the matched items from wm_group_match.json
+    matched_items = set()
+    for group, items in app.wm_group_match_data.items():
+        matched_items.update(items)
+    # logging.debug(f"Matched items: {matched_items}")
+
+    # Define a tag for blue text color and light gray background
+    app.excel_treeview.tag_configure(
+        "highlight", foreground="blue", background="light gray"
+    )
+    # logging.debug("Highlight tag configured in Treeview")
+
+    # Iterate over all rows in the Excel Treeview
+    for row_id in app.excel_treeview.get_children():
+        row_data = app.excel_treeview.item(row_id, "values")
+        # logging.debug(f"Row data: {row_data}")
+
+        # Check if the first item in the row is a substring of any item in wm_group_match_data
+        first_item = str(row_data[0]).strip() if row_data else ""
+        if any(first_item in matched_item for matched_item in matched_items):
+            app.excel_treeview.item(row_id, tags=("highlight",))
+            # logging.debug(f"Applied highlight tag to row: {row_data}")
+        else:
+            app.excel_treeview.item(row_id, tags=())
+            # logging.debug(f"No match for row: {row_data}")
+
+    app.excel_treeview.update_idletasks()
+
 
 def get_item_texts(item_values):
     res = [
@@ -55,7 +97,24 @@ def remove_item_from_center(app):
         app.drop_area.delete(selected_index)
 
 
+def update_drop_area(app, item_name):
+    # Clear the current content in the center area
+    app.drop_area.delete(0, tk.END)
+
+    # Check if there is matching data in wm_group_match_data
+    if item_name in app.wm_group_match_data:
+        # Populate the center area with the matched data
+        for entry in app.wm_group_match_data[item_name]:
+            app.drop_area.insert(tk.END, entry)
+    else:
+        # If no match is found, leave the area empty or display a placeholder
+        app.drop_area.insert(tk.END, "No matching data found.")
+
+
 def toggle_lock(app, add_button, remove_button, lock_button):
+    # Determine the current state
+    is_locked = lock_button.config("text")[-1] == "Lock"  #####
+
     # Get the currently selected item
     selected_item = app.wm_group_treeview.selection()
     if not selected_item:
@@ -76,8 +135,14 @@ def toggle_lock(app, add_button, remove_button, lock_button):
     # Update the treeview item color based on the lock state
     if app.lock_status[item_name]:
         app.wm_group_treeview.item(selected_item[0], tags=("locked",))
+        # Disable the + and - buttons when locked
+        add_button.config(state=tk.DISABLED)
+        remove_button.config(state=tk.DISABLED)
     else:
         app.wm_group_treeview.item(selected_item[0], tags=("unlocked",))
+        # Enable the + and - buttons when unlocked
+        add_button.config(state=tk.NORMAL)
+        remove_button.config(state=tk.NORMAL)
 
     # Save the current matching results to JSON
     save_current_matching_to_json(app, item_name)
@@ -85,6 +150,8 @@ def toggle_lock(app, add_button, remove_button, lock_button):
     # Save the lock status to wm_group_match.json
     save_lock_status_to_json(app)
 
+    # Update the drop area content after toggling the lock
+    update_drop_area(app, item_name)
     # Update the item color in the left area
     app.wm_group_treeview.item(
         selected_item, tags=("locked" if app.lock_status[item_name] else "unlocked")

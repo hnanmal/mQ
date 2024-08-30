@@ -10,6 +10,7 @@ def load_wm_group_match_data(app):
     try:
         with open("wm_group_match.json", "r", encoding="utf-8") as f:
             data = json.load(f)
+            app.wm_group_match_data = data.get("matches", {})
             # Update lock status based on the JSON data
             app.lock_status = data.get("lock_status", {})
             # Apply the lock status to the treeview items
@@ -22,7 +23,8 @@ def load_wm_group_match_data(app):
                     app.wm_group_treeview.item(item, tags=("unlocked",))
             return data
     except FileNotFoundError:
-        return {}
+        app.wm_group_match_data = {}
+        app.lock_status = {}
 
 
 def save_lock_status_to_json(app):
@@ -43,10 +45,6 @@ def save_lock_status_to_json(app):
 
 
 def save_current_matching_to_json(app, item_name):
-    """Save the current matching data to JSON for the specified item."""
-    current_matches = list(
-        app.drop_area.get(0, tk.END)
-    )  # Get all items in the drop area
 
     # Load the existing JSON data
     try:
@@ -55,8 +53,14 @@ def save_current_matching_to_json(app, item_name):
     except FileNotFoundError:
         wm_group_match_data = {}
 
+    """Save the current matching data to JSON for the specified item."""
+    current_matches = list(
+        app.drop_area.get(0, tk.END)
+    )  # Get all items in the drop area
+
     # Update the JSON data with the new match
-    wm_group_match_data[item_name] = current_matches
+    # wm_group_match_data[item_name] = current_matches
+    wm_group_match_data[item_name] = list(current_matches)
 
     # Save the updated data back to the file
     with open("wm_group_match.json", "w", encoding="utf-8") as file:
@@ -86,7 +90,7 @@ def filter_excel_data(app, search_keyword):
 def save_configuration(app):
     tree_data = []
     for item in app.tree.get_children():
-        tree_data.append(app.get_item_data(app, item))
+        tree_data.append(app.config_manager.get_item_data(app, item))
     # Save to JSON file
     file_path = filedialog.asksaveasfilename(
         defaultextension=".json", filetypes=[("JSON files", "*.json")]
@@ -94,6 +98,26 @@ def save_configuration(app):
     if file_path:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(tree_data, f, indent=4, ensure_ascii=False)
+
+
+# def load_configuration(app, file_path=None):
+#     if not file_path:
+#         file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+#     if file_path:
+#         with open(file_path, "r", encoding="utf-8") as f:
+#             tree_data = json.load(f)
+#         # Clear existing tree
+#         for item in app.tree.get_children():
+#             app.tree.delete(item)
+#         # Load new tree
+#         for item_data in tree_data:
+#             app.config_manager.insert_item_data(app, "", item_data)
+
+#     # After populating the treeview, collect level 6 items
+#     level_6_items = app.treeview_operations.collect_level_6_items()
+
+#     # Update the Listbox in the "WM 그룹별 매칭" tab
+#     app.update_wm_group_matching_treeview(level_6_items)
 
 
 def load_configuration(app, file_path=None):
@@ -114,3 +138,6 @@ def load_configuration(app, file_path=None):
 
     # Update the Listbox in the "WM 그룹별 매칭" tab
     app.update_wm_group_matching_treeview(level_6_items)
+
+    # Reapply visual styles and lock status in WM Group Matching tab
+    app.ui_manager.reapply_lock_status(app)
