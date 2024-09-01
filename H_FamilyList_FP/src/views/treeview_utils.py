@@ -308,3 +308,18 @@ def load_treeview(tree):
         new_data = load_json_data(load_path)
         if new_data:
             populate_treeview(tree, new_data)
+
+def swap_items(tree, item1, item2):
+    """Swap the positions of two items in the same parent."""
+    parent = tree.parent(item1)
+    index1 = tree.index(item1)
+    index2 = tree.index(item2)
+    tree.move(item1, parent, index2)
+    tree.move(item2, parent, index1)
+    renumber_treeview_items(tree, parent)
+
+def move_item(tree, item, new_parent, sibling):
+    """Move the item to a new parent, above the given sibling."""
+    tree.move(item, new_parent, tree.index(sibling))
+    renumber_treeview_items(tree, new_parent)
+    renumber_treeview_items(tree, tree.parent(item))  # Renumber original parent

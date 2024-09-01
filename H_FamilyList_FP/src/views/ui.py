@@ -1,10 +1,17 @@
 # src/views/ui.py
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from tkinter import font  # Import the font module explicitly
+from src.controllers.tree_controller import  (
+    calculate_level,
+    on_drag_start,
+    on_drag_motion,
+    on_drag_release,
+)
 from src.views.styles import configure_styles
 from src.views.treeview_utils import (
+    renumber_treeview_items,
     save_treeview, 
     load_treeview, 
     expand_or_collapse_tree,
@@ -144,6 +151,11 @@ def create_family_standard_tab(notebook, state, logging_text_widget):
     # Create tree view below the buttons
     tree = create_treeview(tab, logging_text_widget)
 
+    # Bind dragging events
+    tree.bind("<ButtonPress-1>", lambda event: on_drag_start(tree, event))
+    tree.bind("<B1-Motion>", lambda event: on_drag_motion(tree, event))
+    tree.bind("<ButtonRelease-1>", lambda event: on_drag_release(tree, event))
+
     # First row: Save, Load, Dropdown, Search box, Search button
     save_button = ttk.Button(button_frame, text="Save", command=lambda: save_treeview(tree))
     load_button = ttk.Button(button_frame, text="Load", command=lambda: load_treeview(tree))
@@ -187,3 +199,71 @@ def create_family_standard_tab(notebook, state, logging_text_widget):
     # Force a refresh to apply styles
     tree.update_idletasks()
     return tab
+
+# Variables to track drag start and end positions
+drag_data = {"item": None, "start_parent": None}
+
+def on_drag_start(tree, event):
+    """Start the dragging process."""
+    region = tree.identify("region", event.x, event.y)
+    if region == "heading":
+        return  # Prevent dragging from the header
+
+    item = tree.identify_row(event.y)
+    if item:
+        drag_data["item"] = item
+        drag_data["start_parent"] = tree.parent(item)
+
+def on_drag_motion(tree, event):
+    """Handle the dragging motion."""
+    # You can implement visual feedback here (e.g., highlight the drop target)
+
+def on_drag_release(tree, event):
+    """Handle the drop and perform the move operation."""
+    if not drag_data["item"]:
+        return
+
+    drop_item = tree.identify_row(event.y)
+    if not drop_item:
+        return
+
+    start_item = drag_data["item"]
+    start_parent = drag_data["start_parent"]
+    end_parent = tree.parent(drop_item)
+
+    if start_parent == end_parent:
+        # Same parent: swap positions
+        swap_items(tree, start_item, drop_item)
+    else:
+        # Different parents: prompt for level change if necessary
+        start_level = calculate_level(tree, start_item)
+        end_level = calculate_level(tree, drop_item)
+        if start_level != end_level:
+            if not confirm_level_change():
+                return
+
+        # Move the item to the new parent
+        move_item(tree, start_item, end_parent, drop_item)
+
+    # Clear drag data
+    drag_data["item"] = None
+    drag_data["start_parent"] = None
+
+def swap_items(tree, item1, item2):
+    """Swap the positions of two items in the same parent."""
+    parent = tree.parent(item1)
+    index1 = tree.index(item1)
+    index2 = tree.index(item2)
+    tree.move(item1, parent, index2)
+    tree.move(item2, parent, index1)
+    renumber_treeview_items(tree, parent)
+
+def move_item(tree, item, new_parent, sibling):
+    """Move the item to a new parent, above the given sibling."""
+    tree.move(item, new_parent, tree.index(sibling))
+    renumber_treeview_items(tree, new_parent)
+    renumber_treeview_items(tree, drag_data["start_parent"])  # Renumber original parent
+
+def confirm_level_change():
+    """Prompt the user to confirm the level change."""
+    return messagebox.askokcancel("확인", "선택한 항목의 레벨이 변경됩니다. 이동하시겠습니까?")
