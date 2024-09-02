@@ -5,12 +5,11 @@ from tkinter import messagebox
 from src.controllers.event_dispatcher import dispatch_event
 from src.views.styles import configure_styles
 from src.utils.tree_utils import (
+    extract_treeview_data,
+    insert_item_with_indentation,
+    calculate_level,
     determine_tag_by_level,
     renumber_treeview_items,
-    calculate_level,
-    # confirm_level_change,
-    # move_item,
-    # swap_items,
 )
 
 # Stack to keep track of operations for undo functionality
@@ -173,53 +172,53 @@ def undo_operation(tree):
             #     tree.item(new_item, tags=("OtherLevels",))
 
 
-def insert_item_with_indentation(tree, parent, item_data, index):
-    """Insert an item with proper indentation and styling based on its level."""
-    # Calculate the level by counting the number of parents in the hierarchy
-    level = calculate_level(tree, parent)
+# def insert_item_with_indentation(tree, parent, item_data, index):
+#     """Insert an item with proper indentation and styling based on its level."""
+#     # Calculate the level by counting the number of parents in the hierarchy
+#     level = calculate_level(tree, parent)
 
-    # Add indentation to the name based on the level
-    indented_name = "  " * (level + 1) + item_data["name"]
+#     # Add indentation to the name based on the level
+#     indented_name = "  " * (level + 1) + item_data["name"]
 
-    # Determine the appropriate style based on the level
-    tag = determine_tag_by_level(level)
+#     # Determine the appropriate style based on the level
+#     tag = determine_tag_by_level(level)
 
-    # Insert the item at the specified index with the style tag
-    new_item = tree.insert(
-        parent,
-        index,
-        text=item_data["number"],
-        values=(indented_name, item_data["description"]),
-        tags=(tag,),
-    )
+#     # Insert the item at the specified index with the style tag
+#     new_item = tree.insert(
+#         parent,
+#         index,
+#         text=item_data["number"],
+#         values=(indented_name, item_data["description"]),
+#         tags=(tag,),
+#     )
 
-    # Recursively insert any children
-    for child in item_data.get("children", []):
-        insert_item_with_indentation(tree, new_item, child, "end")
+#     # Recursively insert any children
+#     for child in item_data.get("children", []):
+#         insert_item_with_indentation(tree, new_item, child, "end")
 
-    # Force a refresh to apply styles immediately
-    tree.update_idletasks()
+#     # Force a refresh to apply styles immediately
+#     tree.update_idletasks()
 
-    return new_item
+#     return new_item
 
 
-def extract_treeview_data(tree, item_id=None):
-    """Extract data from the Treeview to save in JSON format."""
+# def extract_treeview_data(tree, item_id=None):
+#     """Extract data from the Treeview to save in JSON format."""
 
-    def extract_items(item_id):
-        item_values = tree.item(item_id, "values")
-        item_data = {
-            "number": tree.item(item_id, "text"),  # Save the number
-            "name": item_values[0].strip(),  # Strip any indentation before saving
-            "description": item_values[1],  # Save the description as is
-        }
-        children = tree.get_children(item_id)
-        if children:
-            item_data["children"] = [extract_items(child) for child in children]
-        return item_data
+#     def extract_items(item_id):
+#         item_values = tree.item(item_id, "values")
+#         item_data = {
+#             "number": tree.item(item_id, "text"),  # Save the number
+#             "name": item_values[0].strip(),  # Strip any indentation before saving
+#             "description": item_values[1],  # Save the description as is
+#         }
+#         children = tree.get_children(item_id)
+#         if children:
+#             item_data["children"] = [extract_items(child) for child in children]
+#         return item_data
 
-    if item_id:
-        return extract_items(item_id)
-    else:
-        root_items = tree.get_children("")
-        return [extract_items(item) for item in root_items]
+#     if item_id:
+#         return extract_items(item_id)
+#     else:
+#         root_items = tree.get_children("")
+#         return [extract_items(item) for item in root_items]

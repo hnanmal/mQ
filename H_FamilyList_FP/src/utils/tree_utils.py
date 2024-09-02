@@ -1,4 +1,28 @@
 # src/utils/tree_utils.py
+import tkinter as tk
+
+# from src.controllers.tree_controller import extract_treeview_data, insert_item_with_indentation
+
+
+def enable_tree_item_editing(tree, item, column):
+    """Enable editing for the specified column of the treeview item."""
+    x, y, width, height = tree.bbox(item, column)
+    entry = tk.Entry(tree, width=width)
+
+    # Get the current text in the cell
+    current_value = tree.item(item, "values")[int(column[1:]) - 1]
+
+    entry.insert(0, current_value)
+    entry.place(x=x, y=y, width=width, height=height)
+
+    def save_edit(event):
+        new_value = entry.get()
+        tree.set(item, column=column, value=new_value)
+        entry.destroy()
+
+    entry.bind("<Return>", save_edit)
+    entry.bind("<FocusOut>", lambda event: entry.destroy())
+    entry.focus()
 
 
 def determine_tag_by_level(level):
@@ -78,3 +102,69 @@ def swap_items(tree, item1, item2):
     tree.move(item1, parent, index2)
     tree.move(item2, parent, index1)
     renumber_treeview_items(tree, parent)
+
+
+def copy_treeview_items(tree, selected_items):
+    """Copy selected items and their children."""
+    copied_items = []
+    for item in selected_items:
+        item_data = extract_treeview_data(tree, item)
+        copied_items.append(item_data)
+    return copied_items
+
+def paste_treeview_items(tree, target_item, copied_items):
+    """Paste copied items as children of the target item."""
+    for item_data in copied_items:
+        insert_item_with_indentation(tree, target_item, item_data, 'end')
+    renumber_treeview_items(tree, target_item)
+
+
+def extract_treeview_data(tree, item_id=None):
+    """Extract data from the Treeview to save in JSON format."""
+
+    def extract_items(item_id):
+        item_values = tree.item(item_id, "values")
+        item_data = {
+            "number": tree.item(item_id, "text"),  # Save the number
+            "name": item_values[0].strip(),  # Strip any indentation before saving
+            "description": item_values[1],  # Save the description as is
+        }
+        children = tree.get_children(item_id)
+        if children:
+            item_data["children"] = [extract_items(child) for child in children]
+        return item_data
+
+    if item_id:
+        return extract_items(item_id)
+    else:
+        root_items = tree.get_children("")
+        return [extract_items(item) for item in root_items]
+
+def insert_item_with_indentation(tree, parent, item_data, index):
+    """Insert an item with proper indentation and styling based on its level."""
+    # Calculate the level by counting the number of parents in the hierarchy
+    level = calculate_level(tree, parent)
+
+    # Add indentation to the name based on the level
+    indented_name = "  " * (level + 1) + item_data["name"]
+
+    # Determine the appropriate style based on the level
+    tag = determine_tag_by_level(level)
+
+    # Insert the item at the specified index with the style tag
+    new_item = tree.insert(
+        parent,
+        index,
+        text=item_data["number"],
+        values=(indented_name, item_data["description"]),
+        tags=(tag,),
+    )
+
+    # Recursively insert any children
+    for child in item_data.get("children", []):
+        insert_item_with_indentation(tree, new_item, child, "end")
+
+    # Force a refresh to apply styles immediately
+    tree.update_idletasks()
+
+    return new_item

@@ -2,10 +2,10 @@
 
 from src.core.event_handling import handle_tab_switch, handle_lock_toggle
 
-from src.controllers.drag_handlers import (
-    on_drag_start,
+from src.views.drag_and_drop import (
     on_drag_motion,
     on_drag_release,
+    on_drag_start,
 )
 from src.views.logging_utils import log_event
 

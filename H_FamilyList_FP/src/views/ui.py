@@ -6,111 +6,30 @@ from tkinter import ttk
 # from tkinter import font  # Import the font module explicitly
 from src.controllers.tree_controller import (
     add_item,
-    on_item_select,
+    # on_item_select,
     remove_item,
     undo_operation,
 )
-from src.controllers.drag_handlers import (
-    on_drag_start,
-    on_drag_motion,
-    on_drag_release,
-)
 from src.models.tree_model import (
+    load_json_data,
     save_treeview,
     load_treeview,
 )
 from src.views.styles import configure_styles
 
 from src.views.treeview_utils import (
-    enable_editing,
     expand_or_collapse_tree,
-    load_json_data,
+    # load_json_data,
     populate_treeview,
     search_treeview,
 )
-
-
-def generate_context_menu(tree, item, column):
-    """Generate a context menu based on the selected item and column."""
-    menu = tk.Menu(tree, tearoff=0)
-
-    # Define the actions and their corresponding functions
-    actions = {
-        "Edit": lambda: enable_editing(tree, item, column),
-        "Delete": lambda: remove_item(tree, item),
-        # Add more actions here as needed
-    }
-
-    for label, command in actions.items():
-        menu.add_command(label=label, command=command)
-
-    return menu
-
-
-def on_right_click(event, tree):
-    """Handle the right-click event and show the context menu."""
-    region = tree.identify("region", event.x, event.y)
-    if region != "cell":
-        return  # Only proceed if the click is within a cell
-
-    item = tree.identify_row(event.y)
-    column = tree.identify_column(event.x)
-
-    if item and column:
-        # Generate the context menu
-        menu = generate_context_menu(tree, item, column)
-        # Show the context menu
-        menu.post(event.x_root, event.y_root)
-
-
-def create_treeview(parent, state, logging_text_widget):
-    """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
-    # Create a frame to hold the treeview and scrollbar
-    tree_frame = ttk.Frame(parent)
-    tree_frame.pack(fill=tk.BOTH, expand=True)
-
-    # Create a vertical scrollbar
-    scrollbar = ttk.Scrollbar(tree_frame, orient="vertical")
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-    # Create a tree view widget with a hierarchical number column.
-    # tree = ttk.Treeview(parent, columns=("name", "description"), show="tree headings")
-    tree = ttk.Treeview(
-        tree_frame,
-        columns=("name", "description"),
-        show="tree headings",
-        yscrollcommand=scrollbar.set,
-    )
-
-    # Set up the columns
-    tree.heading("#0", text="Number", anchor="w")
-    tree.heading("name", text="Name", anchor="w")
-    tree.heading("description", text="Description", anchor="w")
-
-    # Configure the columns
-    tree.column("#0", width=220, minwidth=220, stretch=False, anchor="w")
-    tree.column("name", width=200, anchor="w")
-    tree.column("description", width=300, anchor="w")
-
-    tree.pack(fill=tk.BOTH, expand=True)
-
-    # Configure the scrollbar
-    scrollbar.config(command=tree.yview)
-
-    # Apply the custom styles
-    configure_styles(tree)
-
-    # Bind the selection event
-    tree.bind(
-        "<<TreeviewSelect>>",
-        lambda event: on_item_select(event, state, logging_text_widget),
-    )
-
-    # Bind the right-click event
-    tree.bind("<Button-3>", lambda event: on_right_click(event, tree))
-
-    tree.update_idletasks()
-    return tree
+from src.views.logging_utils import setup_logging_frame
+from src.views.treeview_handlers import create_treeview
+from src.views.drag_and_drop import (
+    on_drag_motion,
+    on_drag_release,
+    on_drag_start,
+)
 
 
 def create_other_tab(notebook, name):
@@ -123,7 +42,7 @@ def create_other_tab(notebook, name):
     return tab
 
 
-def create_family_standard_tab(notebook, state, logging_text_widget):
+def create_family_standard_tab(root, notebook, state, logging_text_widget):
     """Create and configure the Family Standard Configuration tab."""
     tab = ttk.Frame(notebook)
     notebook.add(tab, text="패밀리 표준 구성도")
@@ -133,7 +52,7 @@ def create_family_standard_tab(notebook, state, logging_text_widget):
     button_frame.pack(fill=tk.X, pady=10)
 
     # Create tree view below the buttons
-    tree = create_treeview(tab, state, logging_text_widget)
+    tree = create_treeview(root, tab, state, logging_text_widget)
 
     # Bind dragging events
     tree.bind("<ButtonPress-1>", lambda event: on_drag_start(tree, event))

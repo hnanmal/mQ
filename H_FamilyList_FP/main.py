@@ -3,10 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 from src.views.ui import (
-    configure_styles,
     create_other_tab,
     create_family_standard_tab,
-    create_treeview,
 )
 from src.models.configuration import load_config, save_config
 from src.models.wm_group import WMGroupManager
@@ -19,6 +17,7 @@ from src.views.logging_utils import (
 from src.views.treeview_utils import *
 from src.models.tree_model import load_json_data, save_json_data
 from src.views.ui import create_family_standard_tab
+from src.views.treeview_handlers import handle_copy, handle_paste
 
 
 def main():
@@ -37,7 +36,7 @@ def main():
     logging_text_widget = setup_logging_frame(root)
 
     # Create the Family Standard Configuration tab
-    create_family_standard_tab(notebook, state, logging_text_widget)
+    create_family_standard_tab(root, notebook, state, logging_text_widget)
 
     # List of tab names
     other_tab_names = [
@@ -65,11 +64,11 @@ def main():
     for name in other_tab_names:
         create_other_tab(notebook, name)
 
-    # # Set up the logging area
-    # setup_logging_frame(root)
-
     # Debugging: Print statement to confirm main function is running
     print("Starting main application...")
+
+    # root.bind('<Control-c>', handle_copy)
+    # root.bind('<Control-v>', handle_paste)
 
     # Start the main loop
     root.mainloop()

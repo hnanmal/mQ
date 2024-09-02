@@ -14,27 +14,6 @@ def get_clicked_column(tree, event):
     return tree.identify_column(event.x)
 
 
-def enable_editing(tree, item, column):
-    """Enable editing for the specified column of the treeview item."""
-    x, y, width, height = tree.bbox(item, column)
-    entry = tk.Entry(tree, width=width)
-
-    # Get the current text in the cell
-    current_value = tree.item(item, "values")[int(column[1:]) - 1]
-
-    entry.insert(0, current_value)
-    entry.place(x=x, y=y, width=width, height=height)
-
-    def save_edit(event):
-        new_value = entry.get()
-        tree.set(item, column=column, value=new_value)
-        entry.destroy()
-
-    entry.bind("<Return>", save_edit)
-    entry.bind("<FocusOut>", lambda event: entry.destroy())
-    entry.focus()
-
-
 search_state = {"last_search": None, "last_match": None}
 
 
@@ -82,35 +61,6 @@ def search_treeview(tree, search_text):
     search_state["last_search"] = None
     search_state["last_match"] = None
     print("No more matches found.")
-
-
-def load_json_data(file_path):
-    """Load JSON data from a file with UTF-8 encoding."""
-    if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
-        return None
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            print("JSON data loaded successfully.")
-            return data
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return None
-    except UnicodeDecodeError as e:
-        print(f"Encoding error: {e}")
-        return None
-
-
-def save_json_data(file_path, data):
-    """Save data to a JSON file with UTF-8 encoding."""
-    try:
-        with open(file_path, "w", encoding="utf-8") as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
-            print("Tree view data saved successfully.")
-    except Exception as e:
-        print(f"Error saving JSON: {e}")
 
 
 def populate_treeview(tree, data, parent="", level=0):
