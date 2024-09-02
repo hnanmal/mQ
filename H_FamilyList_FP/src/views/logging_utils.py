@@ -4,6 +4,9 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 
+from src.utils.tree_utils import calculate_level
+
+
 class RedirectText:
     def __init__(self, text_widget):
         self.output = text_widget
@@ -33,3 +36,27 @@ def setup_logging_frame(root):
     sys.stderr = redirect
 
     return redirect  # Return the RedirectText instance
+
+
+# src/views/logging_utils.py
+
+
+def log_event(tree, item, logging_widget):
+    """Log the details of a tree item to the logging area."""
+    item_text = tree.item(item, "text")
+    item_values = tree.item(item, "values")
+
+    # Retrieve the tags associated with the item
+    item_tags = tree.item(item, "tags")
+
+    # Prepare the log message
+    log_message = f"Selected Item:\nNumber: {item_text}\n"
+
+    if item_tags:
+        log_message += f"Tags: {', '.join(item_tags)}\n"
+
+    if item_values:
+        log_message += f"Name: {item_values[0]}\nDescription: {item_values[1]}\n"
+
+    # Write the log message to the logging widget
+    logging_widget.write(log_message)

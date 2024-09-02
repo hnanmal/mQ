@@ -2,22 +2,24 @@
 import tkinter as tk
 from tkinter import ttk
 import sys
-from src.views.ui import ( 
+from src.views.ui import (
     configure_styles,
     create_other_tab,
-    create_buttons,
-    create_family_standard_tab, 
+    create_family_standard_tab,
     create_treeview,
-    )
+)
 from src.models.configuration import load_config, save_config
 from src.models.wm_group import WMGroupManager
 from src.controllers.logic import initialize_app, lock_toggle_logic
 from src.controllers.event_dispatcher import dispatch_event
-from src.views.logging_utils import setup_logging_frame  # Import the logging setup function
+from src.views.logging_utils import (
+    setup_logging_frame,
+)  # Import the logging setup function
 
 from src.views.treeview_utils import *
 from src.models.tree_model import load_json_data, save_json_data
 from src.views.ui import create_family_standard_tab
+
 
 def main():
     state, wm_group_manager = initialize_app()
@@ -40,8 +42,8 @@ def main():
     # List of tab names
     other_tab_names = [
         # "패밀리 표준 구성도",  # Family Standard Configuration
-        "WM 그룹별 매칭",    # WM Group Matching
-        "계산 기준",        # Calculation Criteria
+        "WM 그룹별 매칭",  # WM Group Matching
+        "계산 기준",  # Calculation Criteria
         "Room",
         "Floors",
         "Roofs",
@@ -71,6 +73,7 @@ def main():
 
     # Start the main loop
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
