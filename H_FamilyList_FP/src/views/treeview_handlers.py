@@ -10,8 +10,10 @@ from src.controllers.clipboard_management import (
     paste_from_clipboard,
     paste_external_data,
 )
+
 # from src.controllers.clipboard_management import clipboard_data  # Ensure this is imported
 clipboard_data = None
+
 
 def create_treeview(root, parent, state, logging_text_widget):
     """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
@@ -58,11 +60,12 @@ def create_treeview(root, parent, state, logging_text_widget):
     # Bind the right-click event
     tree.bind("<Button-3>", lambda event: on_right_click(event, tree))
 
-    tree.bind("<Control-c>", lambda e: handle_copy(root, tree, e))
+    tree.bind("<Control-c>", lambda event: handle_copy(root, tree, event))
     tree.bind("<Control-v>", lambda e: handle_paste(tree, e, clipboard_data))
 
-    # tree.update_idletasks()
+    tree.update_idletasks()
     return tree
+
 
 def on_right_click(event, tree):
     item = tree.identify_row(event.y)
@@ -70,6 +73,7 @@ def on_right_click(event, tree):
     if item and column:
         menu = generate_context_menu(tree, item, column)
         menu.post(event.x_root, event.y_root)
+
 
 def handle_copy(root, tree, event):
     if root.focus_get() == tree:
@@ -88,7 +92,11 @@ def handle_copy(root, tree, event):
 #     except Exception as e:
 #         print(f"Error during copy: {e}")
 
-def handle_paste(tree, event,):# clipboard_data):
+
+def handle_paste(
+    tree,
+    event,
+):  # clipboard_data):
     global clipboard_data
     try:
         selected_items = tree.selection()
@@ -105,6 +113,7 @@ def handle_paste(tree, event,):# clipboard_data):
     except Exception as e:
         print(f"Error during paste: {e}")
 
+
 def ask_paste_location():
     """Prompt user to select whether to paste into Name or Description."""
     paste_dialog = tk.Tk()
@@ -113,9 +122,9 @@ def ask_paste_location():
     result = tk.messagebox.askquestion(
         "Paste Location",
         "Where do you want to paste the text?",
-        icon='question',
-        type='radio',
-        options=['name', 'description'],
+        icon="question",
+        type="radio",
+        options=["name", "description"],
     )
 
     paste_dialog.destroy()

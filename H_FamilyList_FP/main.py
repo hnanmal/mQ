@@ -67,9 +67,12 @@ def main():
     # Debugging: Print statement to confirm main function is running
     print("Starting main application...")
 
-    # root.bind('<Control-c>', handle_copy)
-    # root.bind('<Control-v>', handle_paste)
+    def debug_bind(e):
+        print("!!!!")
 
+    # tree.bind_all("<Control-c>", debug_bind)
+    # tree.bind_all("<Control-v>", debug_bind)
+    print("!!!!")
     # Start the main loop
     root.mainloop()
 
