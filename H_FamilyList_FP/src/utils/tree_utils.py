@@ -1,8 +1,6 @@
 # src/utils/tree_utils.py
 import tkinter as tk
 
-# from src.controllers.tree_controller import extract_treeview_data, insert_item_with_indentation
-
 
 def enable_tree_item_editing(tree, item, column):
     """Enable editing for the specified column of the treeview item."""
@@ -104,21 +102,6 @@ def swap_items(tree, item1, item2):
     renumber_treeview_items(tree, parent)
 
 
-def copy_treeview_items(tree, selected_items):
-    """Copy selected items and their children."""
-    copied_items = []
-    for item in selected_items:
-        item_data = extract_treeview_data(tree, item)
-        copied_items.append(item_data)
-    return copied_items
-
-def paste_treeview_items(tree, target_item, copied_items):
-    """Paste copied items as children of the target item."""
-    for item_data in copied_items:
-        insert_item_with_indentation(tree, target_item, item_data, 'end')
-    renumber_treeview_items(tree, target_item)
-
-
 def extract_treeview_data(tree, item_id=None):
     """Extract data from the Treeview to save in JSON format."""
 
@@ -128,6 +111,7 @@ def extract_treeview_data(tree, item_id=None):
             "number": tree.item(item_id, "text"),  # Save the number
             "name": item_values[0].strip(),  # Strip any indentation before saving
             "description": item_values[1],  # Save the description as is
+            # "children": [],
         }
         children = tree.get_children(item_id)
         if children:
@@ -135,21 +119,59 @@ def extract_treeview_data(tree, item_id=None):
         return item_data
 
     if item_id:
+        print(f"Extracting data for item_id: {item_id}")  # 디버깅 메시지 추가
         return extract_items(item_id)
     else:
         root_items = tree.get_children("")
         return [extract_items(item) for item in root_items]
 
+
+def copy_treeview_items(tree, selected_items):
+    """Copy selected items and their children."""
+    copied_items = []
+    for item in selected_items:
+        # item_data = extract_treeview_data(tree, item)
+        item_data = extract_treeview_data(tree, item)
+        copied_items.append(item_data)
+    return copied_items
+
+
+def paste_treeview_items(tree, target_item, copied_items):
+    """Paste copied items as children of the target item."""
+    print(f"Pasting items to target: {target_item}")  # 디버깅 로그 추가
+    for item_data in copied_items:
+        # print(f"item_data: {item_data}")
+        print(
+            # f"Inserting item {item_data['name']} under {target_item}"
+            f"item_data: {item_data}, type: {type(item_data)}"
+        )  # 디버깅 로그 추가
+        insert_item_with_indentation(tree, target_item, item_data, "end")
+    renumber_treeview_items(tree, target_item)
+
+
 def insert_item_with_indentation(tree, parent, item_data, index):
     """Insert an item with proper indentation and styling based on its level."""
+
+    # item_data 디버깅 출력
+    print(f"Inserting item_data: {item_data}, type: {type(item_data)}")
+
     # Calculate the level by counting the number of parents in the hierarchy
     level = calculate_level(tree, parent)
+
+    # 예상한 item_data 구조가 맞는지 확인
+    if isinstance(item_data, dict) and "name" in item_data:
+        indented_name = "  " * (level + 1) + item_data["name"]
+    else:
+        raise ValueError(f"Invalid item_data format: {item_data}")
 
     # Add indentation to the name based on the level
     indented_name = "  " * (level + 1) + item_data["name"]
 
     # Determine the appropriate style based on the level
     tag = determine_tag_by_level(level)
+
+    # Debugging: Check if the tree is getting the correct item and parent
+    print(f"Parent: {parent}, Index: {index}, Indented Name: {indented_name}")
 
     # Insert the item at the specified index with the style tag
     new_item = tree.insert(

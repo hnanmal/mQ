@@ -10,11 +10,13 @@ from src.utils.tree_utils import calculate_level
 class RedirectText:
     def __init__(self, text_widget):
         self.output = text_widget
+        self.original_stdout = sys.stdout  # Save the original stdout
 
     def write(self, string):
         self.output.delete(1.0, tk.END)  # Clear existing content
         self.output.insert(tk.END, string)
         self.output.see(tk.END)  # Auto-scroll to the end
+        self.original_stdout.write(string)  # Also write to the original stdout
 
     def flush(self):
         pass  # Needed for compatibility with some output methods
@@ -36,9 +38,6 @@ def setup_logging_frame(root):
     sys.stderr = redirect
 
     return redirect  # Return the RedirectText instance
-
-
-# src/views/logging_utils.py
 
 
 def log_event(tree, item, logging_widget):

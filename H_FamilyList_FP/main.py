@@ -7,7 +7,8 @@ from src.views.ui import (
     create_family_standard_tab,
 )
 from src.models.configuration import load_config, save_config
-from src.models.wm_group import WMGroupManager
+
+# from src.models.wm_group import WMGroupManager
 from src.controllers.logic import initialize_app, lock_toggle_logic
 from src.controllers.event_dispatcher import dispatch_event
 from src.views.logging_utils import (
@@ -65,14 +66,8 @@ def main():
         create_other_tab(notebook, name)
 
     # Debugging: Print statement to confirm main function is running
-    print("Starting main application...")
+    logging_text_widget.write("Application Started.")
 
-    def debug_bind(e):
-        print("!!!!")
-
-    # tree.bind_all("<Control-c>", debug_bind)
-    # tree.bind_all("<Control-v>", debug_bind)
-    print("!!!!")
     # Start the main loop
     root.mainloop()
 
