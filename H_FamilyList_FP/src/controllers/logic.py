@@ -4,8 +4,8 @@ from src.core.state_management import AppState
 from src.models.wm_group import WMGroupManager
 
 
-def initialize_app():
-    state = AppState()
+def initialize_app(logging_text_widget):
+    state = AppState(logging_text_widget)
     wm_group_manager = WMGroupManager()
     state.update_wm_group_data(wm_group_manager.get_wm_group_data())
     return state, wm_group_manager

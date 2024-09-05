@@ -1,5 +1,6 @@
 # src/controllers/tree_controller.py
 from tkinter import messagebox
+from copy import deepcopy
 
 # from src.views.treeview_utils import swap_items, move_item
 from src.controllers.event_dispatcher import dispatch_event
@@ -18,7 +19,8 @@ undo_stack = []
 # Include other functions for adding, removing, undoing, saving, loading, etc.
 
 
-def on_item_select(event, state, logging_text_widget):
+def on_item_select(event, state):
+    logging_text_widget = state.logging_text_widget
     tree = event.widget
     selected_item = tree.selection()[0]
     dispatch_event(
@@ -28,10 +30,10 @@ def on_item_select(event, state, logging_text_widget):
     )
 
 
-def add_item(tree):
+def add_item(tree, state):
     """Add a new item to the tree view with proper indentation based on its level."""
+    logging_text_widget = state.logging_text_widget
     selected_item = tree.selection()
-
     # Determine the parent for the new item
     if selected_item:
         parent = selected_item[0]  # Get the ID of the selected item
@@ -67,9 +69,16 @@ def add_item(tree):
     # Push the operation to the undo stack
     undo_stack.append(("remove", new_item))
 
+    dispatch_event(
+        "ADD_ITEM",
+        state,
+        {"tree": tree, "item": new_item, "logging_widget": logging_text_widget},
+    )
 
-def remove_item(tree):
+
+def remove_item(tree, state):
     """Remove the selected items from the Treeview based on the highest level and renumber the remaining items."""
+    logging_text_widget = state.logging_text_widget
     selected_items = tree.selection()
     if not selected_items:
         return
@@ -84,6 +93,16 @@ def remove_item(tree):
     items_to_delete = [
         item for item in selected_items if calculate_level(tree, item) == highest_level
     ]
+    ## dispatch for logging
+    dispatch_event(
+        "REMOVE_ITEM",
+        state,
+        {
+            "tree": tree,
+            "item": deepcopy(items_to_delete),
+            "logging_widget": logging_text_widget,
+        },
+    )
 
     # Collect all undo operations in a list
     undo_operations = []
@@ -116,9 +135,6 @@ def remove_item(tree):
 
     # Push all undo operations to the stack as a single action
     undo_stack.append(("batch_remove", undo_operations))
-
-    # Debugging: Print stack after removal
-    print(f"Undo Stack: {undo_stack}")
 
 
 def undo_operation(tree):

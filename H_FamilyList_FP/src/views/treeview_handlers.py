@@ -18,7 +18,7 @@ from src.utils.tree_utils import extract_treeview_data
 # global clipboard_data
 
 
-def create_treeview(root, parent, state, logging_text_widget):
+def create_treeview(root, parent, state):
     """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
     # Create a frame to hold the treeview and scrollbar
     tree_frame = ttk.Frame(parent)
@@ -57,7 +57,7 @@ def create_treeview(root, parent, state, logging_text_widget):
     # Bind the selection event
     tree.bind(
         "<<TreeviewSelect>>",
-        lambda event: on_item_select(event, state, logging_text_widget),
+        lambda event: on_item_select(event, state),
     )
 
     # Bind the right-click event

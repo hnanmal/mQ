@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 # from tkinter import font  # Import the font module explicitly
+from src.controllers.event_dispatcher import dispatch_event
 from src.controllers.tree_controller import (
     add_item,
     # on_item_select,
@@ -25,10 +26,11 @@ from src.views.treeview_utils import (
 )
 from src.views.logging_utils import setup_logging_frame
 from src.views.treeview_handlers import create_treeview
+
 from src.views.drag_and_drop import (
     on_drag_motion,
-    on_drag_release,
-    on_drag_start,
+    # on_drag_release,
+    # on_drag_start,
 )
 
 
@@ -42,22 +44,36 @@ def create_other_tab(notebook, name):
     return tab
 
 
-def create_family_standard_tab(root, notebook, state, logging_text_widget):
+def create_family_standard_tab(root, notebook, state):
     """Create and configure the Family Standard Configuration tab."""
     tab = ttk.Frame(notebook)
     notebook.add(tab, text="패밀리 표준 구성도")
+    # logging_text_widget = state.logging_text_widget
 
     # Create a frame for all the buttons (Save, Load, Add, Remove, Undo, Search)
     button_frame = ttk.Frame(tab)
     button_frame.pack(fill=tk.X, pady=10)
 
     # Create tree view below the buttons
-    tree = create_treeview(root, tab, state, logging_text_widget)
+    tree = create_treeview(root, tab, state)
 
-    # Bind dragging events
-    tree.bind("<ButtonPress-1>", lambda event: on_drag_start(tree, event))
-    tree.bind("<B1-Motion>", lambda event: on_drag_motion(tree, event))
-    tree.bind("<ButtonRelease-1>", lambda event: on_drag_release(tree, event))
+    # # Bind dragging events
+    tree.bind(
+        "<B1-Motion>",
+        lambda event: on_drag_motion(tree, event),
+    )
+    tree.bind(
+        "<ButtonPress-1>",
+        lambda event: dispatch_event(
+            "DRAG_START", state, {"tree": tree, "event": event}
+        ),
+    )
+    tree.bind(
+        "<ButtonRelease-1>",
+        lambda event: dispatch_event(
+            "DRAG_RELEASE", state, {"tree": tree, "event": event}
+        ),
+    )
 
     # First row: Save, Load, Dropdown, Search box, Search button
     save_button = ttk.Button(
@@ -94,10 +110,10 @@ def create_family_standard_tab(root, notebook, state, logging_text_widget):
 
     # Second row: Add Item, Remove Item, and Undo buttons
     add_button = ttk.Button(
-        button_frame, text="Add Item", command=lambda: add_item(tree)
+        button_frame, text="Add Item", command=lambda: add_item(tree, state)
     )
     remove_button = ttk.Button(
-        button_frame, text="Remove Item", command=lambda: remove_item(tree)
+        button_frame, text="Remove Item", command=lambda: remove_item(tree, state)
     )
     undo_button = ttk.Button(
         button_frame, text="Undo", command=lambda: undo_operation(tree)

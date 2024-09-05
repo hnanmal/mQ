@@ -2,12 +2,13 @@
 
 
 class AppState:
-    def __init__(self):
+    def __init__(self, logging_text_widget):
         self._state = {}
         self.current_tab = None
         self.config = None
         self.wm_group_data = {}
         self.lock_status = {}
+        self.logging_text_widget = logging_text_widget
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
 
     def __getitem__(self, key):

@@ -1,43 +1,50 @@
 # src/main.py
 import tkinter as tk
 from tkinter import ttk
-import sys
+
+# import sys
 from src.views.ui import (
     create_other_tab,
     create_family_standard_tab,
 )
-from src.models.configuration import load_config, save_config
+
+# from src.models.configuration import load_config, save_config
 
 # from src.models.wm_group import WMGroupManager
-from src.controllers.logic import initialize_app, lock_toggle_logic
-from src.controllers.event_dispatcher import dispatch_event
+from src.controllers.logic import initialize_app
+
+# from src.controllers.event_dispatcher import dispatch_event
 from src.views.logging_utils import (
     setup_logging_frame,
 )  # Import the logging setup function
 
 from src.views.treeview_utils import *
-from src.models.tree_model import load_json_data, save_json_data
+
+# from src.models.tree_model import load_json_data, save_json_data
 from src.views.ui import create_family_standard_tab
-from src.views.treeview_handlers import handle_copy, handle_paste
+
+# from src.views.treeview_handlers import handle_copy, handle_paste
 
 
 def main():
-    state, wm_group_manager = initialize_app()
 
     # Initialize the main Tkinter window
     root = tk.Tk()
     root.title("H Family List")
     root.geometry("1400x900")
 
+    # Set up the logging area and get the logging text widget
+    logging_text_widget = setup_logging_frame(root)
+
+    # state
+    state, wm_group_manager = initialize_app(logging_text_widget)
+
     # Create the notebook (tab container)
     notebook = ttk.Notebook(root)
     notebook.pack(fill="both", expand=True)
 
-    # Set up the logging area and get the logging text widget
-    logging_text_widget = setup_logging_frame(root)
-
     # Create the Family Standard Configuration tab
-    create_family_standard_tab(root, notebook, state, logging_text_widget)
+    create_family_standard_tab(root, notebook, state)
 
     # List of tab names
     other_tab_names = [
@@ -66,7 +73,7 @@ def main():
         create_other_tab(notebook, name)
 
     # Debugging: Print statement to confirm main function is running
-    logging_text_widget.write("Application Started.")
+    logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
 
     # Start the main loop
     root.mainloop()
