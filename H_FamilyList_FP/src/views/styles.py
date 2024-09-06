@@ -19,3 +19,22 @@ def configure_styles(tree):
     tree.tag_configure("Level0", font=font_level_0, background="#D6EFD8")
     tree.tag_configure("Level4", font=font_level_4, foreground="blue")
     tree.tag_configure("OtherLevels", font=default_font)
+
+
+def configure_tab_styles():
+    """Configure different styles for upper and lower tabs."""
+    style = ttk.Style()
+
+    # Style for the upper-level tabs (larger tabs)
+    style.configure(
+        "Upper.TNotebook.Tab",
+        font=("Malgun Gothic", 12, "bold"),  # Larger font size for upper tabs
+        padding=[77, 2],  # Increase padding for upper tabs: [horizontal, vertical]
+    )
+
+    # Style for the lower-level (sub) tabs (smaller tabs)
+    style.configure(
+        "Lower.TNotebook.Tab",
+        font=("Malgun Gothic", 10),  # Smaller font size for lower tabs
+        padding=[5, 2],  # Default padding for lower tabs
+    )

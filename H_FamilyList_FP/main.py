@@ -4,13 +4,11 @@ from tkinter import ttk
 
 # import sys
 from src.views.ui import (
-    create_other_tab,
-    create_family_standard_tab,
+    create_notebook_with_tabs,
+    create_project_standard_tab,
+    create_team_standard_tab,
 )
 
-# from src.models.configuration import load_config, save_config
-
-# from src.models.wm_group import WMGroupManager
 from src.controllers.logic import initialize_app
 
 # from src.controllers.event_dispatcher import dispatch_event
@@ -19,11 +17,7 @@ from src.views.logging_utils import (
 )  # Import the logging setup function
 
 from src.views.treeview_utils import *
-
-# from src.models.tree_model import load_json_data, save_json_data
-from src.views.ui import create_family_standard_tab
-
-# from src.views.treeview_handlers import handle_copy, handle_paste
+from src.views.styles import configure_tab_styles
 
 
 def main():
@@ -33,44 +27,24 @@ def main():
     root.title("H Family List")
     root.geometry("1400x900")
 
+    # Open the window in full screen
+    root.state("zoomed")  # Maximizes the window while keeping window controls visible
+
+    configure_tab_styles()  # Configure the tab style
+
     # Set up the logging area and get the logging text widget
     logging_text_widget = setup_logging_frame(root)
 
     # state
-    state, wm_group_manager = initialize_app(logging_text_widget)
+    app_state, wm_group_manager = initialize_app(logging_text_widget)
 
     # Create the notebook (tab container)
-    notebook = ttk.Notebook(root)
-    notebook.pack(fill="both", expand=True)
+    main_notebook = create_notebook_with_tabs(root, app_state)
+    main_notebook.pack(fill="both", expand=True)
 
-    # Create the Family Standard Configuration tab
-    create_family_standard_tab(root, notebook, state)
-
-    # List of tab names
-    other_tab_names = [
-        # "패밀리 표준 구성도",  # Family Standard Configuration
-        "WM 그룹별 매칭",  # WM Group Matching
-        "계산 기준",  # Calculation Criteria
-        "Room",
-        "Floors",
-        "Roofs",
-        "Walls_Ext",
-        "Walls_Int",
-        "St_Fdn",
-        "St_Col",
-        "St_Framing",
-        "Ceilings",
-        "Doors",
-        "Windows",
-        "Stairs",
-        "Railings",
-        "Generic",
-        "Manual_Input",
-    ]
-
-    # Create other tabs
-    for name in other_tab_names:
-        create_other_tab(notebook, name)
+    # Create upper-level tabs: Team Standard and Project Standard
+    create_team_standard_tab(root, main_notebook, app_state)
+    create_project_standard_tab(main_notebook, app_state)
 
     # Debugging: Print statement to confirm main function is running
     logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")

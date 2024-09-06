@@ -174,3 +174,5 @@ def undo_operation(tree):
             item_level = calculate_level(tree, new_item)
             tag = determine_tag_by_level(item_level)
             tree.item(new_item, tags=(tag,))
+
+    renumber_treeview_items(tree, parent_id)

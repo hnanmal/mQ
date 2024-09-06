@@ -4,10 +4,10 @@ import tkinter as tk
 from tkinter import ttk
 
 # from tkinter import font  # Import the font module explicitly
+from src.core.event_handling import handle_tab_switch
 from src.controllers.event_dispatcher import dispatch_event
 from src.controllers.tree_controller import (
     add_item,
-    # on_item_select,
     remove_item,
     undo_operation,
 )
@@ -16,11 +16,11 @@ from src.models.tree_model import (
     save_treeview,
     load_treeview,
 )
-from src.views.styles import configure_styles
+
+# from src.views.styles import configure_styles
 
 from src.views.treeview_utils import (
     expand_or_collapse_tree,
-    # load_json_data,
     populate_treeview,
     search_treeview,
 )
@@ -29,26 +29,99 @@ from src.views.treeview_handlers import create_treeview
 
 from src.views.drag_and_drop import (
     on_drag_motion,
-    # on_drag_release,
-    # on_drag_start,
 )
 
 
-def create_other_tab(notebook, name):
-    """Create a generic tab."""
+def handle_tab_click(event, notebook, state):
+    """Handle a tab click event."""
+    clicked_tab_index = notebook.index("@%d,%d" % (event.x, event.y))
+    clicked_tab_name = notebook.tab(clicked_tab_index, "text")
+
+    # Log the clicked tab name
+    logging_text_widget = state.logging_text_widget
+    # logging_text_widget.write(f"Clicked on tab: {clicked_tab_name}\n")
+    logging_text_widget.write(f":: [ {clicked_tab_name} ] 탭에 오셨습니다. ::\n")
+
+    # Set the clicked tab in the state (optional)
+    state.set_current_tab(clicked_tab_name)
+
+
+def create_notebook_with_tabs(root, state):
+    main_notebook = ttk.Notebook(root, style="Upper.TNotebook")
+
+    return main_notebook
+
+
+def create_sub_tab(notebook, name):
+    """Create a sub-tab."""
     tab = ttk.Frame(notebook)
     notebook.add(tab, text=name)
-
-    # Add other UI components as needed for the tab
-    # For now, this function creates an empty tab
     return tab
+
+
+def create_team_standard_tab(root, notebook, state):
+    """Create the Team Standard tab with its sub-tabs."""
+    team_standard_tab = ttk.Frame(notebook)
+    notebook.add(team_standard_tab, text="Team Standard")
+
+    team_notebook = ttk.Notebook(
+        team_standard_tab, style="Lower.TNotebook"
+    )  # Lower-level notebook
+    team_notebook.pack(fill="both", expand=True)
+
+    # Add sub-tabs to the "Team Standard" tab
+    create_family_standard_tab(root, team_notebook, state)
+    create_sub_tab(team_notebook, "WM Group Matching")
+
+    # Bind the tab click event
+    team_notebook.bind(
+        "<Button-1>", lambda event: handle_tab_click(event, team_notebook, state)
+    )
+
+
+def create_project_standard_tab(notebook, state):
+    """Create the Project Standard tab with its sub-tabs."""
+    project_standard_tab = ttk.Frame(notebook)
+    notebook.add(project_standard_tab, text="Project Standard")  # Use larger tab style
+
+    project_notebook = ttk.Notebook(
+        project_standard_tab, style="Lower.TNotebook"
+    )  # Lower-level notebook
+    project_notebook.pack(fill="both", expand=True)
+
+    other_tab_names = [
+        "프로젝트 정보 입력",
+        "산출기준",
+        "Room",
+        "Floors",
+        "Roofs",
+        "Walls_Ext",
+        "Walls_Int",
+        "St_Fdn",
+        "St_Col",
+        "St_Framing",
+        "Ceilings",
+        "Doors",
+        "Windows",
+        "Stairs",
+        "Railings",
+        "Generic",
+        "Manual_Input",
+    ]
+
+    for name in other_tab_names:
+        create_sub_tab(project_notebook, name)
+
+    # Bind the tab click event
+    project_notebook.bind(
+        "<Button-1>", lambda event: handle_tab_click(event, project_notebook, state)
+    )
 
 
 def create_family_standard_tab(root, notebook, state):
     """Create and configure the Family Standard Configuration tab."""
-    tab = ttk.Frame(notebook)
+    tab = create_sub_tab(notebook, "Family Standard Configuration Diagram")
     notebook.add(tab, text="패밀리 표준 구성도")
-    # logging_text_widget = state.logging_text_widget
 
     # Create a frame for all the buttons (Save, Load, Add, Remove, Undo, Search)
     button_frame = ttk.Frame(tab)

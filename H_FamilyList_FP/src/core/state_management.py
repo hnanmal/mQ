@@ -5,6 +5,7 @@ class AppState:
     def __init__(self, logging_text_widget):
         self._state = {}
         self.current_tab = None
+        self.previous_tab = None  # Track the previous tab
         self.config = None
         self.wm_group_data = {}
         self.lock_status = {}
@@ -20,6 +21,10 @@ class AppState:
     # Add getter and setter for clipboard_data
     def get_clipboard_data(self):
         return self.clipboard_data
+
+    def get_current_tab(self):
+        """Return the currently selected tab."""
+        return self.current_tab
 
     def set_clipboard_data(self, data):
         self.clipboard_data = data
@@ -38,3 +43,10 @@ class AppState:
 
     def get_lock_status(self, item_name):
         return self.lock_status.get(item_name, False)
+
+    # Method to get and set previous tab
+    def get_previous_tab(self):
+        return self.previous_tab
+
+    def set_previous_tab(self, tab_name):
+        self.previous_tab = tab_name

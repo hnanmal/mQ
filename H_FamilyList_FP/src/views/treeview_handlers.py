@@ -13,10 +13,6 @@ from src.controllers.clipboard_management import (
 )
 from src.utils.tree_utils import extract_treeview_data
 
-# from src.controllers.clipboard_management import clipboard_data  # Ensure this is imported
-# clipboard_data = None
-# global clipboard_data
-
 
 def create_treeview(root, parent, state):
     """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
@@ -78,21 +74,6 @@ def on_right_click(event, tree):
         menu.post(event.x_root, event.y_root)
 
 
-# def handle_copy(root, tree, event):
-#     if root.focus_get() == tree:
-#         print("Copy event triggered")
-#     else:
-#         print("Treeview is not focused")
-
-
-# def copy_to_clipboard(tree, selected_items):
-#     global clipboard_data
-#     # selected_items = tree.selection()
-#     if selected_items:
-#         clipboard_data = extract_treeview_data(tree, selected_items)
-#         print(f"Copied items: {clipboard_data}")  # Debugging line
-
-
 def handle_copy(tree, event, state):
     try:
         selected_items = tree.selection()
@@ -130,23 +111,6 @@ def handle_paste(tree, event, state):
             )  # 붙여넣기 위치 선택 (Name 또는 Description)
             if paste_to:
                 paste_external_data(tree, paste_target_items, paste_to)
-
-
-# def ask_paste_location():
-#     """Prompt user to select whether to paste into Name or Description."""
-#     paste_dialog = tk.Tk()
-#     paste_dialog.withdraw()  # Hide the root window
-
-#     result = tk.messagebox.askquestion(
-#         "Paste Location",
-#         "Where do you want to paste the text?",
-#         icon="question",
-#         type="radio",
-#         options=["name", "description"],
-#     )
-
-#     paste_dialog.destroy()
-#     return result
 
 
 class PasteLocationDialog(simpledialog.Dialog):

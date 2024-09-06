@@ -11,11 +11,8 @@ from src.views.logging_utils import log_event_add, log_event_remove, log_event_s
 
 
 def dispatch_event(event_type, state, data=None):
-    # logging_text_widget = state.logging_text_widget
 
-    if event_type == "TAB_SWITCH":
-        handle_tab_switch(state, data)
-    elif event_type == "LOCK_TOGGLE":
+    if event_type == "LOCK_TOGGLE":
         handle_lock_toggle(state, data)
     elif event_type == "DRAG_START":
         on_drag_start(data["tree"], data["event"])
@@ -29,4 +26,5 @@ def dispatch_event(event_type, state, data=None):
         log_event_add(data["tree"], data["item"], data["logging_widget"])
     elif event_type == "REMOVE_ITEM":
         log_event_remove(data["tree"], data["item"], data["logging_widget"])
+
     # Add more event handlers as needed
