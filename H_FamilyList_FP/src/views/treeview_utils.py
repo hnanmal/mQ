@@ -1,10 +1,5 @@
 # src/views/treeview_utils.py
 
-import json
-import os
-import tkinter as tk
-from tkinter import filedialog
-
 from src.controllers.tree_controller import *
 from src.views.styles import configure_styles
 

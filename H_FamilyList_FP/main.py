@@ -43,7 +43,7 @@ def main():
     main_notebook.pack(fill="both", expand=True)
 
     # Create upper-level tabs: Team Standard and Project Standard
-    create_team_standard_tab(root, main_notebook, app_state)
+    create_team_standard_tab(root, main_notebook, app_state, wm_group_manager)
     create_project_standard_tab(main_notebook, app_state)
 
     # Debugging: Print statement to confirm main function is running
