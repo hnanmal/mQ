@@ -35,7 +35,9 @@ def get_selected_row_indices(sheet_widget):
     for item in selected_items:
         # Handle range selections via Box_nt
         if isinstance(item, Box_nt):
-            selected_rows.update(range(item.from_r, item.upto_r))  # Add the range of row indices
+            selected_rows.update(
+                range(item.from_r, item.upto_r)
+            )  # Add the range of row indices
     # Return the sorted list of selected row indices
     return sorted(selected_rows)
 
@@ -104,3 +106,5 @@ def display_level_6_items_list(parent, on_select_item):
         listbox.bind("<<ListboxSelect>>", on_listbox_select)
         # Force a refresh to apply styles immediately
         listbox.update_idletasks()
+
+        return listbox  # Return the listbox widget
