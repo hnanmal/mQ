@@ -47,7 +47,7 @@ def load_and_display_excel_with_search(parent, wm_group_manager):
         # Set headers and data
         headers = [str(cell) for cell in data[4]]  # First row as headers
         sheet_widget.headers(headers)
-        sheet_widget.set_sheet_data(data[6:])  # Populate the data, skipping headers
+        sheet_widget.set_sheet_data(data[5:])  # Populate the data, skipping headers
 
         # Optionally hide specific columns
         sheet_widget.hide_columns([1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22])
@@ -66,7 +66,7 @@ def load_and_display_excel_with_search(parent, wm_group_manager):
         )
 
         # Highlight rows that match items from wm_group_match.json
-        highlight_matched_rows(sheet_widget, data[6:], wm_group_manager)
+        highlight_matched_rows(sheet_widget, data[5:], wm_group_manager)
 
         # Bind the Enter key to trigger search functionality
         search_entry.bind(
@@ -92,28 +92,34 @@ def highlight_matched_rows(sheet_widget, excel_data, wm_group_manager):
     wm_group_data = wm_group_manager.get_wm_group_data()
     # print("A04AN084-00002" in str(wm_group_data))
     # Loop through each row in the Excel data
+    # sheet_widget.highlight_rows(bg="white")
     for row_index, row in enumerate(excel_data):
         first_column_value = row[0]  # Get the first column value as a string
         if first_column_value in str(wm_group_data):
             # Highlight the row with light gray background
             sheet_widget.highlight_rows(row_index, bg="#e2e2e2")
             continue  # Stop checking other items once a match is found
-    sheet_widget.update_idletasks()
+        else:
+            sheet_widget.highlight_rows(row_index, bg="white")
+    # sheet_widget.update_idletasks()
 
 
 def search_excel_data(sheet_widget, original_data, search_text, wm_group_manager):
     """Filter the Excel rows based on the search text and update the sheet."""
+    highlight_matched_rows(sheet_widget, original_data[5:], wm_group_manager)
     if not search_text:
         # If search text is empty, show all rows
-        sheet_widget.set_sheet_data(original_data[6:])
-        highlight_matched_rows(sheet_widget, original_data[6:], wm_group_manager)
+        sheet_widget.set_sheet_data(original_data[5:])
+        highlight_matched_rows(sheet_widget, original_data[5:], wm_group_manager)
+        sheet_widget.update_idletasks()
     else:
         # Filter rows that contain the search text
         filtered_data = [
             row
-            for row in original_data[6:]
+            for row in original_data[5:]
             if any(search_text.lower() in str(cell).lower() for cell in row)
         ]
         # Update the sheet with the filtered data
         sheet_widget.set_sheet_data(filtered_data)
         highlight_matched_rows(sheet_widget, filtered_data, wm_group_manager)
+        sheet_widget.update_idletasks()
