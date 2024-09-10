@@ -5,6 +5,7 @@ from tkinter import ttk
 from src.controllers.event_management import handle_tab_click
 from src.views.wm_group_matching import create_wm_group_matching_tab
 from src.views.tree_management import create_family_standard_tab, create_sub_tab
+from src.views.project_info_tab import create_project_info_tab
 
 def create_notebook_with_tabs(root, state):
     main_notebook = ttk.Notebook(root, style="Upper.TNotebook")
@@ -41,8 +42,11 @@ def create_project_standard_tab(notebook, state):
     )  # Lower-level notebook
     project_notebook.pack(fill="both", expand=True)
 
+    # Create the "프로젝트 정보 입력" tab
+    create_project_info_tab(project_notebook, state)
+
     other_tab_names = [
-        "프로젝트 정보 입력",
+        # "프로젝트 정보 입력",
         "산출기준",
         "Room",
         "Floors",
