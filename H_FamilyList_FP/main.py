@@ -35,6 +35,9 @@ def main():
     # Set up the logging area and get the logging text widget
     logging_text_widget = setup_logging_frame(root)
 
+    # Log the start of loading
+    logging_text_widget.write("Configuring system...\n")
+
     # state
     app_state, wm_group_manager = initialize_app(logging_text_widget)
 
@@ -46,8 +49,8 @@ def main():
     create_team_standard_tab(root, main_notebook, app_state, wm_group_manager)
     create_project_standard_tab(main_notebook, app_state)
 
-    # Debugging: Print statement to confirm main function is running
-    logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
+    # # Debugging: Print statement to confirm main function is running
+    # logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
 
     # Start the main loop
     root.mainloop()

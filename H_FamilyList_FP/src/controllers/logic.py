@@ -21,10 +21,11 @@ def lock_toggle_logic(
     del_button,
     lock_button,
 ):
+    logging_text_widget = state.logging_text_widget
     is_locked = not state.get_lock_status(item_name)  # Toggle the lock status
-    state.set_lock_status(item_name, is_locked)
-
-    # matched_items = center_listbox.get(0, tk.END)
+    state.set_lock_status(
+        item_name, is_locked
+    )  ### <- 아이템 클릭 시 작동하도록 옮기는 것 고려
 
     if is_locked:
         # Apply lock styles and disable the listbox and buttons
@@ -45,6 +46,9 @@ def lock_toggle_logic(
         wm_group_manager.update_wm_group_data(
             item_name, list(matched_items), locked=True
         )
+        logging_text_widget.write(
+            f":: {item_name} 항목의 WorkMaster 매칭결과가 저장되었습니다.\n"
+        )
 
     else:
         # Reset to unlocked state
@@ -62,6 +66,9 @@ def lock_toggle_logic(
         matched_items = center_listbox.get(0, tk.END)
         wm_group_manager.update_wm_group_data(
             item_name, list(matched_items), locked=False
+        )
+        logging_text_widget.write(
+            f":: {item_name} 항목 잠금이 해제되었습니다.WorkMaster 추가 및 삭제가 가능합니다.\n"
         )
     # Save the updated data
     wm_group_manager.save()

@@ -7,7 +7,9 @@ from tksheet.other_classes import Box_nt
 from openpyxl import load_workbook
 
 
-def load_and_display_excel_with_search(parent, wm_group_manager):
+def load_and_display_excel_with_search(
+    parent, wm_group_manager, logging_text_widget, callback_after_load
+):
     """Read the WorkMaster_DB.xlsx file using openpyxl and display it in tksheet with a search feature."""
     try:
         # Load the Excel file using openpyxl
@@ -35,7 +37,11 @@ def load_and_display_excel_with_search(parent, wm_group_manager):
             search_frame,
             text="Search",
             command=lambda: search_excel_data(
-                sheet_widget, data, search_var.get(), wm_group_manager
+                sheet_widget,
+                data,
+                search_var.get(),
+                wm_group_manager,
+                logging_text_widget,
             ),
         )
         search_button.pack(side=tk.LEFT, padx=5)
@@ -62,11 +68,13 @@ def load_and_display_excel_with_search(parent, wm_group_manager):
             "column_width_resize",
             "double_click_column_resize",
             "copy",
-            "ctrl_click_select",
+            # "ctrl_click_select",
         )
 
         # Highlight rows that match items from wm_group_match.json
-        highlight_matched_rows(sheet_widget, data[5:], wm_group_manager)
+        highlight_matched_rows(
+            sheet_widget, data[5:], wm_group_manager, logging_text_widget
+        )
 
         # Bind the Enter key to trigger search functionality
         search_entry.bind(
@@ -76,23 +84,37 @@ def load_and_display_excel_with_search(parent, wm_group_manager):
                 data,
                 search_var.get(),
                 wm_group_manager,
+                logging_text_widget,
+            ),
+        )
+        # Delay the highlight process to allow UI updates
+        parent.after(
+            100,
+            lambda: highlight_matched_rows(
+                sheet_widget, data[5:], wm_group_manager, logging_text_widget
             ),
         )
 
-        sheet_widget.update_idletasks()
+        # Call the callback after Excel loading and highlighting are complete
+        parent.after(100, callback_after_load)  # Delayed execution to prevent freezing
+
+        # sheet_widget.update_idletasks()
+
         return sheet_widget  # Return the sheet widget for use in other functions
+
     except FileNotFoundError:
         tk.Label(parent, text="WorkMaster_DB.xlsx not found").pack(pady=20)
     except Exception as e:
         tk.Label(parent, text=f"Error: {e}").pack(pady=20)
 
 
-def highlight_matched_rows(sheet_widget, excel_data, wm_group_manager):
+def highlight_matched_rows(
+    sheet_widget, excel_data, wm_group_manager, logging_text_widget
+):
     """Highlight rows in the Excel sheet that match any items in wm_group_match.json."""
     wm_group_data = wm_group_manager.get_wm_group_data()
-    # print("A04AN084-00002" in str(wm_group_data))
+
     # Loop through each row in the Excel data
-    # sheet_widget.highlight_rows(bg="white")
     for row_index, row in enumerate(excel_data):
         first_column_value = row[0]  # Get the first column value as a string
         if first_column_value in str(wm_group_data):
@@ -101,16 +123,21 @@ def highlight_matched_rows(sheet_widget, excel_data, wm_group_manager):
             continue  # Stop checking other items once a match is found
         else:
             sheet_widget.highlight_rows(row_index, bg="white")
-    # sheet_widget.update_idletasks()
 
 
-def search_excel_data(sheet_widget, original_data, search_text, wm_group_manager):
+def search_excel_data(
+    sheet_widget, original_data, search_text, wm_group_manager, logging_text_widget
+):
     """Filter the Excel rows based on the search text and update the sheet."""
-    highlight_matched_rows(sheet_widget, original_data[5:], wm_group_manager)
+    highlight_matched_rows(
+        sheet_widget, original_data[5:], wm_group_manager, logging_text_widget
+    )
     if not search_text:
         # If search text is empty, show all rows
         sheet_widget.set_sheet_data(original_data[5:])
-        highlight_matched_rows(sheet_widget, original_data[5:], wm_group_manager)
+        highlight_matched_rows(
+            sheet_widget, original_data[5:], wm_group_manager, logging_text_widget
+        )
         sheet_widget.update_idletasks()
     else:
         # Filter rows that contain the search text
@@ -121,5 +148,7 @@ def search_excel_data(sheet_widget, original_data, search_text, wm_group_manager
         ]
         # Update the sheet with the filtered data
         sheet_widget.set_sheet_data(filtered_data)
-        highlight_matched_rows(sheet_widget, filtered_data, wm_group_manager)
+        highlight_matched_rows(
+            sheet_widget, filtered_data, wm_group_manager, logging_text_widget
+        )
         sheet_widget.update_idletasks()

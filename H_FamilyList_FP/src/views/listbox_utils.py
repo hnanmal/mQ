@@ -72,7 +72,7 @@ def remove_selected_items_from_listbox(listbox):
         listbox.delete(item)
 
 
-def display_level_6_items_list(parent, on_select_item):
+def display_level_6_items_list(state, parent, on_select_item):
     """Display level 6 items from defaultTypeTree.json in a Listbox with a scrollbar."""
     file_path = "resources/defaultTypeTree.json"
     tree_data = load_json_data(file_path)
@@ -94,6 +94,8 @@ def display_level_6_items_list(parent, on_select_item):
 
         # Add level 6 items to the Listbox
         for item in level_6_items:
+            is_locked = not state.get_lock_status(item)
+            state.set_lock_status(item, is_locked)
             listbox.insert(tk.END, item)
 
         # Bind the selection event

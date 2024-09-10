@@ -29,6 +29,10 @@ def update_listbox_item_styles(listbox, wm_group_manager):
 
 
 def create_wm_group_matching_tab(notebook, state, wm_group_manager):
+    logging_text_widget = state.logging_text_widget
+    # Log the start of loading
+    logging_text_widget.write("Configuring system...\n")
+
     # Define the function to handle item selection
     def on_select_item(item_name):
         section2_label.config(text=item_name)
@@ -172,10 +176,22 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
     lock_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     # Display the level 6 items in Section 1 as a Listbox and get the listbox instance
-    left_listbox = display_level_6_items_list(section1, on_select_item)
+    left_listbox = display_level_6_items_list(state, section1, on_select_item)
+
+    # After initializing all components, move to Excel loading
+    def after_excel_load():
+        """Call this after Excel data is loaded and highlighted."""
+        logging_text_widget.write(
+            "Loading complete.\n패밀리리스트에 오신것을 환영합니다..\n"
+        )
 
     # In the third section, read and display the Excel file using tksheet
-    sheet_widget = load_and_display_excel_with_search(section3, wm_group_manager)
+    sheet_widget = load_and_display_excel_with_search(
+        section3,
+        wm_group_manager,
+        logging_text_widget,
+        after_excel_load,
+    )
 
     # Initialize the left listbox with the styles reflecting lock status
     update_listbox_item_styles(left_listbox, wm_group_manager)
