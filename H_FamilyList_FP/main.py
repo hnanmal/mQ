@@ -50,7 +50,7 @@ def main():
     create_project_standard_tab(main_notebook, app_state)
 
     # # Debugging: Print statement to confirm main function is running
-    # logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
+    logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
 
     # Start the main loop
     root.mainloop()

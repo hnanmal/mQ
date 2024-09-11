@@ -5,7 +5,8 @@ from tkinter import ttk
 from src.controllers.event_management import handle_tab_click
 from src.views.wm_group_matching import create_wm_group_matching_tab
 from src.views.tree_management import create_family_standard_tab, create_sub_tab
-from src.views.project_info_tab import create_project_info_tab
+from src.views.project_info_tab.project_info_tab import create_project_info_tab
+
 
 def create_notebook_with_tabs(root, state):
     main_notebook = ttk.Notebook(root, style="Upper.TNotebook")
@@ -31,6 +32,7 @@ def create_team_standard_tab(root, notebook, state, wm_group_manager):
     team_notebook.bind(
         "<Button-1>", lambda event: handle_tab_click(event, team_notebook, state)
     )
+
 
 def create_project_standard_tab(notebook, state):
     """Create the Project Standard tab with its sub-tabs."""

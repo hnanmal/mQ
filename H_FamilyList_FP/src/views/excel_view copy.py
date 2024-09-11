@@ -1,14 +1,14 @@
+# src/views/excel_view.py
+
 import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
+from tksheet.other_classes import Box_nt
 from openpyxl import load_workbook
 
 
 def load_and_display_excel_with_search(
-    parent,
-    wm_group_manager,
-    logging_text_widget,
-    callback_after_load,
+    parent, wm_group_manager, logging_text_widget, callback_after_load
 ):
     """Read the WorkMaster_DB.xlsx file using openpyxl and display it in tksheet with a search feature."""
     try:
@@ -23,7 +23,7 @@ def load_and_display_excel_with_search(
             data_.append(list(row))
         data = list(filter(lambda x: any(x) != False, data_))
 
-        # Create a frame for the search box and buttons
+        # Create a frame for the search box and search button
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill=tk.X, padx=5, pady=5)
 
@@ -37,7 +37,11 @@ def load_and_display_excel_with_search(
             search_frame,
             text="Search",
             command=lambda: search_excel_data(
-                sheet_widget, data, search_var.get(), wm_group_manager, shadow_var.get()
+                sheet_widget,
+                data,
+                search_var.get(),
+                wm_group_manager,
+                logging_text_widget,
             ),
         )
         search_button.pack(side=tk.LEFT, padx=5)
@@ -64,26 +68,13 @@ def load_and_display_excel_with_search(
             "column_width_resize",
             "double_click_column_resize",
             "copy",
-            "ctrl_click_select",
+            # "ctrl_click_select",
         )
 
-        # Create a variable to track the shadow feature status
-        shadow_var = tk.BooleanVar(value=False)
-
-        # Create a button to toggle shadowing of used WM type
-        def toggle_shadow():
-            if shadow_var.get():
-                highlight_matched_rows(sheet_widget, data[5:], wm_group_manager)
-            else:
-                reset_highlighting(sheet_widget, data[5:])
-
-        shadow_button = ttk.Checkbutton(
-            search_frame,
-            text="Shadow used WM type",
-            variable=shadow_var,
-            command=toggle_shadow,
+        # Highlight rows that match items from wm_group_match.json
+        highlight_matched_rows(
+            sheet_widget, data[5:], wm_group_manager, logging_text_widget
         )
-        shadow_button.pack(side=tk.RIGHT, padx=5)
 
         # Bind the Enter key to trigger search functionality
         search_entry.bind(
@@ -93,52 +84,71 @@ def load_and_display_excel_with_search(
                 data,
                 search_var.get(),
                 wm_group_manager,
-                shadow_var.get(),
+                logging_text_widget,
+            ),
+        )
+        # Delay the highlight process to allow UI updates
+        parent.after(
+            100,
+            lambda: highlight_matched_rows(
+                sheet_widget, data[5:], wm_group_manager, logging_text_widget
             ),
         )
 
-        sheet_widget.update_idletasks()
+        # Call the callback after Excel loading and highlighting are complete
+        parent.after(100, callback_after_load)  # Delayed execution to prevent freezing
+
+        # sheet_widget.update_idletasks()
+
         return sheet_widget  # Return the sheet widget for use in other functions
+
     except FileNotFoundError:
         tk.Label(parent, text="WorkMaster_DB.xlsx not found").pack(pady=20)
     except Exception as e:
         tk.Label(parent, text=f"Error: {e}").pack(pady=20)
 
 
-def highlight_matched_rows(sheet_widget, excel_data, wm_group_manager):
+def highlight_matched_rows(
+    sheet_widget, excel_data, wm_group_manager, logging_text_widget
+):
     """Highlight rows in the Excel sheet that match any items in wm_group_match.json."""
     wm_group_data = wm_group_manager.get_wm_group_data()
+
+    # Loop through each row in the Excel data
     for row_index, row in enumerate(excel_data):
         first_column_value = row[0]  # Get the first column value as a string
         if first_column_value in str(wm_group_data):
-            sheet_widget.highlight_rows(
-                row_index, bg="#e2e2e2"
-            )  # Highlight matching rows
+            # Highlight the row with light gray background
+            sheet_widget.highlight_rows(row_index, bg="#e2e2e2")
+            continue  # Stop checking other items once a match is found
         else:
             sheet_widget.highlight_rows(row_index, bg="white")
 
 
-def reset_highlighting(sheet_widget, excel_data):
-    """Reset row highlighting to default (white background)."""
-    for row_index, _ in enumerate(excel_data):
-        sheet_widget.highlight_rows(row_index, bg="white")
-
-
 def search_excel_data(
-    sheet_widget, original_data, search_text, wm_group_manager, shadow_enabled
+    sheet_widget, original_data, search_text, wm_group_manager, logging_text_widget
 ):
     """Filter the Excel rows based on the search text and update the sheet."""
-    # reset_highlighting(sheet_widget, original_data[5:])
+    highlight_matched_rows(
+        sheet_widget, original_data[5:], wm_group_manager, logging_text_widget
+    )
     if not search_text:
+        # If search text is empty, show all rows
         sheet_widget.set_sheet_data(original_data[5:])
-        if shadow_enabled:
-            highlight_matched_rows(sheet_widget, original_data[5:], wm_group_manager)
+        highlight_matched_rows(
+            sheet_widget, original_data[5:], wm_group_manager, logging_text_widget
+        )
+        sheet_widget.update_idletasks()
     else:
+        # Filter rows that contain the search text
         filtered_data = [
             row
             for row in original_data[5:]
             if any(search_text.lower() in str(cell).lower() for cell in row)
         ]
+        # Update the sheet with the filtered data
         sheet_widget.set_sheet_data(filtered_data)
-        if shadow_enabled:
-            highlight_matched_rows(sheet_widget, filtered_data, wm_group_manager)
+        highlight_matched_rows(
+            sheet_widget, filtered_data, wm_group_manager, logging_text_widget
+        )
+        sheet_widget.update_idletasks()
