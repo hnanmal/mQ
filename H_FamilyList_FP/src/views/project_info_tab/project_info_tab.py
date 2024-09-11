@@ -30,7 +30,9 @@ def create_project_info_tab(notebook, state):
                 loaded_data = json.load(f)
 
             # Save loaded data to state
-            state["project_info"] = loaded_data
+            # state["project_info"] = loaded_data
+            state.project_info = loaded_data
+            print(state.project_info)
 
             # Populate UI fields from project_info
             project_name_var.set(loaded_data.get("project_name", ""))
@@ -69,32 +71,31 @@ def create_project_info_tab(notebook, state):
 
     def save_project_info():
         # Check if the state contains a 'finish_types' attribute, or create one
-        finish_types_data = getattr(state, "finish_types", {})
-
+        # finish_types_data = getattr(state, "finish_types", {})
+        finish_types_data = state.project_info["building_list"]
+        
         # Consolidate all relevant data into the project_info dictionary
-        project_info = {
+        project_info_ = {
             "project_name": project_name_var.get(),
             "project_type": project_type_var.get(),
             "building_list": {
                 building_treeview.item(item, "values")[0]: {
                     "building_name": building_treeview.item(item, "values")[0],
-                    "building_number": building_treeview.item(item, "values")[1]
+                    "building_number": int(building_treeview.item(item, "values")[1])
                     or None,
-                    "finish_types": finish_types_data.get(
-                        building_treeview.item(item, "values")[0], []
-                    ),
+                    "finish_types": state.project_info["building_list"][building_treeview.item(item, "values")[0]]["finish_types"],
                 }
                 for item in building_treeview.get_children()
             },
         }
 
         # Save project_info in the state
-        state.project_info = project_info
+        state.project_info = project_info_
 
         # Save to file
-        file_path = f"{project_info['project_name']}_pjt_info.json"
+        file_path = f"{project_info_['project_name']}_pjt_info.json"
         with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(project_info, f, ensure_ascii=False, indent=4)
+            json.dump(project_info_, f, ensure_ascii=False, indent=4)
         print(f"Project Info saved to {file_path}")
 
     load_info_button = ttk.Button(
@@ -151,8 +152,10 @@ def create_project_info_tab(notebook, state):
             building_treeview.set(item, "Number", start_number + idx)
 
             # Update the building list in the state with new numbers
-            if building_name in state["building_list"]:
-                state["building_list"][building_name]["building_number"] = (
+            # buildings = list(map(lambda x: x["building_name"] ,state["building_list"]))
+            # if building_name in buildings:
+            if building_name in state.project_info["building_list"]:
+                state.project_info["building_list"][building_name]["building_number"] = (
                     start_number + idx
                 )
 
@@ -232,13 +235,17 @@ def create_project_info_tab(notebook, state):
     # Add Treeview Selection Binding
     def on_building_select(event):
         selected_item = building_treeview.selection()
+        building_name = building_treeview.item(selected_item[0], "values")[0]
         if selected_item:
             selected_building = building_treeview.item(selected_item[0])["values"][0]
             selected_building_label.config(
                 text=f"Selected Building: {selected_building}"
             )
+            ## 여기에 finish_listbox 업데이트 
+            finish_listbox.delete(0,tk.END)
+            for finish_type in state.project_info["building_list"][building_name]["finish_types"]:
+                finish_listbox.insert(tk.END, finish_type)
 
-    building_treeview.bind("<<TreeviewSelect>>", on_building_select)
 
     finish_type_list_label = ttk.Label(
         section2, text="Finish Type List", font=("Arial", 14)
@@ -247,10 +254,13 @@ def create_project_info_tab(notebook, state):
 
     finish_listbox = tk.Listbox(section2, height=8)
     finish_listbox.pack(pady=10, fill=tk.BOTH, expand=True)
+    
+    building_treeview.bind("<<TreeviewSelect>>", on_building_select)
 
     # Add Finish Type functionality
     def add_finish_type():
         finish_type = new_finish_text.get("1.0", tk.END).strip()
+        
         if finish_type:
             selected_item = building_treeview.selection()
             if selected_item:
@@ -258,13 +268,12 @@ def create_project_info_tab(notebook, state):
                 finish_listbox.insert(tk.END, finish_type)
 
                 # Update state for the selected building
-                if "finish_types" not in state:
-                    state["finish_types"] = {}
-                if building_name not in state["finish_types"]:
-                    state["finish_types"][building_name] = []
-                state["finish_types"][building_name].append(finish_type)
+                if "finish_types" not in state.project_info["building_list"][building_name]:
+                    state.project_info["building_list"][building_name]["finish_types"] = []
+                state.project_info["building_list"][building_name]["finish_types"].append(finish_type)
 
                 new_finish_text.delete("1.0", tk.END)
+        print(state.project_info)
 
     def remove_finish_type():
         selected_items = finish_listbox.curselection()
