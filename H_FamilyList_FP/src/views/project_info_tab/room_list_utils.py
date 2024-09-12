@@ -4,6 +4,7 @@ import tkinter as tk
 
 # Add room functionality
 def add_room(state, building_treeview, finish_listbox, room_listbox, new_room_text):
+    building_name = building_treeview.item(selected_item[0], "values")[0]
     room_input = new_room_text.get("1.0", tk.END).strip()
 
     if room_input:
@@ -15,8 +16,8 @@ def add_room(state, building_treeview, finish_listbox, room_listbox, new_room_te
             finishType_name = finish_listbox.item(selected_item[0], "values")[0]
             room_listbox.insert(tk.END, room)
 
-            # Update state for the selected building
-            if "finish_types" not in state.project_info["building_list"][building_name]:
+            # Update state for the selected finish type
+            if "rooms" not in state.project_info["building_list"][building_name]:
                 state.project_info["building_list"][building_name]["finish_types"] = []
             state.project_info["building_list"][building_name]["finish_types"].append(
                 room

@@ -34,11 +34,18 @@ def add_building(state, building_treeview, new_building_text):
         for building in buildings:
             if building.strip():
                 building_name = building.strip()
-                state.project_info["building_list"][building] = {
-                    "building_name": building_name,
-                    "building_number": None,
-                    "finish_types": [],
-                }
+                # state.project_info["building_list"][building] = {
+                #     "building_name": building_name,
+                #     "building_number": None,
+                #     "finish_types": [],
+                # }
+                state.project_info["building_list"].append(
+                    {
+                        "building_name": building_name,
+                        "building_number": None,
+                        "finish_types": [],
+                    }
+                )
                 building_treeview.insert("", "end", values=(building_name, ""))
                 state.logging_text_widget.write(f"add [ {building_name} ] building.\n")
         new_building_text.delete("1.0", tk.END)
@@ -82,11 +89,17 @@ def on_building_select(
         selected_building_label.config(text=f"Selected Building: {selected_building}")
         ## 여기에 finish_listbox 업데이트
         finish_listbox.delete(0, tk.END)
-        if state.project_info["building_list"][building_name]["finish_types"] != []:
-            for finish_type in state.project_info["building_list"][building_name][
-                "finish_types"
-            ]:
-                finish_listbox.insert(tk.END, finish_type)
+        # if state.project_info["building_list"][building_name]["finish_types"] != []:
+        #     for finish_type in state.project_info["building_list"][building_name][
+        #         "finish_types"
+        #     ]:
+        #         finish_listbox.insert(tk.END, finish_type)
+        for building_dic in state.project_info["building_list"]:
+            if building_name == building_dic["building_name"] and building_dic["finish_types"] != []:
+                for finish_type in building_dic["finish_types"]:
+                    finish_listbox.insert(tk.END, finish_type)
+
+
         state.logging_text_widget.write(
             f"[ {building_name} ] 빌딩의 피니시 타입을 조회합니다.\n"
         )

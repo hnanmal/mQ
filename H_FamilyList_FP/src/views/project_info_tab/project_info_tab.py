@@ -195,18 +195,18 @@ def create_project_info_tab(notebook, state):
     new_room_text = tk.Text(room_listbox_frame, height=2, width=30)
     new_room_text.pack(pady=5)
 
-    add_button = ttk.Button(
-        room_listbox_frame,
-        text="Add",
-        command=lambda: add_building(state, building_treeview, new_room_text),
-    )
-    add_button.pack(side=tk.LEFT, padx=5, pady=5)
+    # add_button = ttk.Button(
+    #     room_listbox_frame,
+    #     text="Add",
+    #     command=lambda: add_building(state, building_treeview, new_room_text),
+    # )
+    # add_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-    remove_button = ttk.Button(
-        room_listbox_frame,
-        text="Remove",
-        command=lambda: remove_building(state, building_treeview),
-    )
-    remove_button.pack(side=tk.LEFT, padx=5, pady=5)
+    # remove_button = ttk.Button(
+    #     room_listbox_frame,
+    #     text="Remove",
+    #     command=lambda: remove_building(state, building_treeview),
+    # )
+    # remove_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     return project_info_tab

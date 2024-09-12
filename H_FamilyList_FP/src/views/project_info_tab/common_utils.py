@@ -54,9 +54,20 @@ def load_project_info(
 
         # Clear and populate the building treeview
         building_treeview.delete(*building_treeview.get_children())
-        for building_name, building_data in loaded_data.get(
-            "building_list", {}
-        ).items():
+        # for building_name, building_data in loaded_data.get(
+        #     "building_list", {}
+        # ).items():
+        #     building_treeview.insert(
+        #         "",
+        #         "end",
+        #         values=(
+        #             building_data["building_name"],
+        #             building_data["building_number"],
+        #         ),
+        #     )
+        for building_data in loaded_data.get(
+            "building_list", []
+        ):
             building_treeview.insert(
                 "",
                 "end",
