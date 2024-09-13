@@ -8,7 +8,12 @@ from src.models.tree_model import load_json_data, load_treeview, save_treeview
 from src.controllers.event_dispatcher import dispatch_event
 from src.views.treeview_handlers import create_treeview
 from src.views.drag_and_drop import on_drag_motion
-from src.views.treeview_utils import expand_or_collapse_tree, populate_treeview, search_treeview
+from src.views.treeview_utils import (
+    expand_or_collapse_tree,
+    populate_treeview,
+    search_treeview,
+)
+
 
 def create_sub_tab(notebook, name):
     """Create a sub-tab."""
@@ -27,7 +32,7 @@ def create_family_standard_tab(root, notebook, state):
     button_frame.pack(fill=tk.X, pady=10)
 
     # Create tree view below the buttons
-    tree = create_treeview(root, tab, state)
+    tree = create_treeview(tab, state)
 
     # # Bind dragging events
     tree.bind(

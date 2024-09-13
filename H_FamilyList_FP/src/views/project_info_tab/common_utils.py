@@ -65,9 +65,7 @@ def load_project_info(
         #             building_data["building_number"],
         #         ),
         #     )
-        for building_data in loaded_data.get(
-            "building_list", []
-        ):
+        for building_data in loaded_data.get("building_list", []):
             building_treeview.insert(
                 "",
                 "end",
@@ -78,7 +76,7 @@ def load_project_info(
             )
 
         # Clear and populate finish types for the selected building
-        finish_listbox.delete(0, tk.END)
+        # finish_listbox.delete(0, tk.END)
         selected_building = building_treeview.selection()
         if selected_building:
             selected_building_name = building_treeview.item(

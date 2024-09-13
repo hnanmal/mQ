@@ -14,7 +14,7 @@ from src.controllers.clipboard_management import (
 from src.utils.tree_utils import extract_treeview_data
 
 
-def create_treeview(root, parent, state):
+def create_treeview(parent, state):
     """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
     # Create a frame to hold the treeview and scrollbar
     tree_frame = ttk.Frame(parent)

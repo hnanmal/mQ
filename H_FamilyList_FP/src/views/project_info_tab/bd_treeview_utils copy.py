@@ -87,14 +87,10 @@ def on_building_select(
     if selected_item:
         selected_building = building_treeview.item(selected_item[0])["values"][0]
         selected_building_label.config(text=f"Selected Building: {selected_building}")
-        ## 여기에 finish_listbox 업데이트
+        # ## 여기에 finish_listbox 업데이트
         # finish_listbox.delete(0, tk.END)
-
         # for building_dic in state.project_info["building_list"]:
-        #     if (
-        #         building_name == building_dic["building_name"]
-        #         and building_dic["finish_types"] != []
-        #     ):
+        #     if building_name == building_dic["building_name"] and building_dic["finish_types"] != []:
         #         for finish_type in building_dic["finish_types"]:
         #             finish_listbox.insert(tk.END, finish_type)
 
