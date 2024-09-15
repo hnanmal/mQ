@@ -21,15 +21,20 @@ def create_treeview(parent, state):
     tree_frame.pack(fill=tk.BOTH, expand=True)
 
     # Create a vertical scrollbar
-    scrollbar = ttk.Scrollbar(tree_frame, orient="vertical")
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    v_scrollbar = ttk.Scrollbar(tree_frame, orient="vertical")
+    v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Create horizontal scrollbar
+    h_scroll = ttk.Scrollbar(tree_frame, orient="horizontal")
+    h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
 
     # Create a tree view widget with a hierarchical number column.
     tree = ttk.Treeview(
         tree_frame,
         columns=("name", "description"),
         show="tree headings",
-        yscrollcommand=scrollbar.set,
+        yscrollcommand=v_scrollbar.set,
+        xscrollcommand=h_scroll.set,
     )
 
     # Set up the columns
@@ -45,7 +50,7 @@ def create_treeview(parent, state):
     tree.pack(fill=tk.BOTH, expand=True)
 
     # Configure the scrollbar
-    scrollbar.config(command=tree.yview)
+    v_scrollbar.config(command=tree.yview)
 
     # Apply the custom styles
     configure_styles(tree)

@@ -80,23 +80,24 @@ def on_click_edit(event, state, building_treeview):
 
 # Add Treeview Selection Binding
 def on_building_select(
-    event, state, building_treeview, selected_building_label, finish_listbox
+    event, state, building_treeview, selected_building_label, room_treeview
 ):
     selected_item = building_treeview.selection()
     building_name = building_treeview.item(selected_item[0], "values")[0]
     if selected_item:
         selected_building = building_treeview.item(selected_item[0])["values"][0]
         selected_building_label.config(text=f"Selected Building: {selected_building}")
-        ## 여기에 finish_listbox 업데이트
-        # finish_listbox.delete(0, tk.END)
+        room_treeview.delete(*room_treeview.get_children())
 
-        # for building_dic in state.project_info["building_list"]:
-        #     if (
-        #         building_name == building_dic["building_name"]
-        #         and building_dic["finish_types"] != []
-        #     ):
-        #         for finish_type in building_dic["finish_types"]:
-        #             finish_listbox.insert(tk.END, finish_type)
+        for building_dic in state.project_info["building_list"]:
+            if building_name == building_dic["building_name"]:
+                for room_dic in building_dic["room_list"]:
+                    room_treeview.insert(
+                        "",
+                        "end",
+                        text=room_dic["room_no"],
+                        values=(room_dic["room_name"], room_dic["finish_type"]),
+                    )
 
         state.logging_text_widget.write(
             f"[ {building_name} ] 빌딩의 피니시 타입을 조회합니다.\n"

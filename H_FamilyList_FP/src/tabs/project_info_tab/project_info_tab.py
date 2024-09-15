@@ -3,21 +3,26 @@ from tkinter import ttk
 from tkinter import filedialog
 import json
 
-from src.views.project_info_tab.bd_treeview_utils import (
+from src.tabs.project_info_tab.bd_treeview_utils import (
     add_building,
     auto_numbering,
     on_building_select,
     on_click_edit,
     remove_building,
 )
-from src.views.project_info_tab.common_utils import (
+from src.tabs.project_info_tab.common_utils import (
     # auto_numbering,
     load_project_info,
     save_project_info,
 )
-from src.views.project_info_tab.finishType_list_utils import (
+from src.tabs.project_info_tab.finishType_list_utils import (
     add_finish_type,
     remove_finish_type,
+)
+from src.views.treeview_handlers import create_treeview
+from src.tabs.project_info_tab.room_treeview_utils import (
+    add_item_in_roomTree,
+    remove_item_in_roomTree,
 )
 
 
@@ -25,27 +30,31 @@ def create_project_info_tab(notebook, state):
     """Create the '프로젝트 정보 입력' tab with two sections."""
     project_info_tab = ttk.Frame(notebook)
     notebook.add(project_info_tab, text="프로젝트 정보 입력")
+    state.current_loaded_pjt = None
 
     # Divide the tab into three sections (frames)
+    section0 = ttk.Frame(project_info_tab, height=70)
     section1 = ttk.Frame(project_info_tab, width=300, height=200)
     section2 = ttk.Frame(project_info_tab, width=400, height=200)
-    section3 = ttk.Frame(project_info_tab, width=400, height=200)
+    section3 = ttk.Frame(project_info_tab, width=100, height=200)
 
-    section1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    section2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    section0.pack(side=tk.TOP, fill=tk.BOTH)
+    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-    section1.pack_propagate(False)
-    section2.pack_propagate(False)
-    section3.pack_propagate(False)
+    # section0.pack_propagate(False)
+    # section1.pack_propagate(False)
+    # section2.pack_propagate(False)
+    # section3.pack_propagate(False)
 
-    save_load_btn_frame = ttk.Frame(section1, width=300)
+    save_load_btn_frame = ttk.Frame(section0, width=300)
     save_load_btn_frame.pack(pady=10, anchor="w")
     load_info_button = ttk.Button(
         save_load_btn_frame,
         text="Load Project Info",
         command=lambda: load_project_info(
-            state, project_name_var, project_type_var, building_treeview, finish_listbox
+            state, project_name_var, project_type_var, building_treeview, room_treeview
         ),
     )
     load_info_button.pack(side="left", padx=30, pady=10, anchor="w")
@@ -54,7 +63,11 @@ def create_project_info_tab(notebook, state):
         save_load_btn_frame,
         text="Save Project Info",
         command=lambda: save_project_info(
-            state, project_name_var, project_type_var, building_treeview
+            state,
+            project_name_var,
+            project_type_var,
+            building_treeview,
+            room_treeview,
         ),
     )
     save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
@@ -134,79 +147,49 @@ def create_project_info_tab(notebook, state):
         "<Button-1>", lambda e: on_click_edit(e, state, building_treeview)
     )
 
-    # Section 2 - Selected Building and Finish Type
+    # Section 2 - Selected Building's room list
     selected_building_label = ttk.Label(
         section2, text="Selected Building: ", font=("Arial", 14)
     )
     selected_building_label.pack(pady=10, anchor="w")
 
-    finish_type_list_label = ttk.Label(
-        section2, text="Finish Type List", font=("Arial", 14)
+    room_treview_label = ttk.Label(
+        section2, text="Room Treeview with Finish Type", font=("Arial", 14)
     )
-    finish_type_list_label.pack(padx=20, pady=10, anchor="w")
+    room_treview_label.pack(padx=20, pady=10, anchor="w")
 
-    finish_listbox_frame = ttk.Frame(section2, width=300)
-    finish_listbox_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    room_treeview_frame = ttk.Frame(section2, width=300)
+    room_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-    finish_listbox = tk.Listbox(finish_listbox_frame, height=8)
-    finish_listbox.pack(pady=10, fill=tk.BOTH, expand=True)
+    room_treeview = create_treeview(project_info_tab, state)
+    room_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
     building_treeview.bind(
         "<<TreeviewSelect>>",
         lambda e: on_building_select(
-            e, state, building_treeview, selected_building_label, finish_listbox
+            e, state, building_treeview, selected_building_label, room_treeview
         ),
     )
 
-    new_finish_text = tk.Text(finish_listbox_frame, height=2, width=30)
-    new_finish_text.pack(pady=5)
-
-    add_type_button = ttk.Button(
-        finish_listbox_frame,
-        text="Add Type",
-        command=lambda: add_finish_type(
-            state, building_treeview, finish_listbox, new_finish_text
-        ),
-    )
-    add_type_button.pack(side=tk.LEFT, padx=5, pady=5)
-
-    remove_type_button = ttk.Button(
-        finish_listbox_frame,
-        text="Remove Type",
-        command=lambda: remove_finish_type(state, building_treeview, finish_listbox),
-    )
-    remove_type_button.pack(side=tk.LEFT, padx=5, pady=5)
-
-    # Section 3 - Room List
-    selected_finishType_label = ttk.Label(
-        section3, text="Selected finish Type: ", font=("Arial", 14)
-    )
-    selected_finishType_label.pack(pady=10, anchor="w")
-
-    room_list_label = ttk.Label(section3, text="Room List", font=("Arial", 14))
-    room_list_label.pack(padx=20, pady=10, anchor="w")
-
-    room_listbox_frame = ttk.Frame(section3, width=300)
-    room_listbox_frame.pack(pady=10, fill=tk.BOTH, expand=True)
-
-    room_listbox = tk.Listbox(room_listbox_frame, height=8)
-    room_listbox.pack(pady=10, fill=tk.BOTH, expand=True)
-
-    new_room_text = tk.Text(room_listbox_frame, height=2, width=30)
+    new_room_text = tk.Text(room_treeview_frame, height=40, width=50)
     new_room_text.pack(pady=5)
 
-    # add_button = ttk.Button(
-    #     room_listbox_frame,
-    #     text="Add",
-    #     command=lambda: add_building(state, building_treeview, new_room_text),
-    # )
-    # add_button.pack(side=tk.LEFT, padx=5, pady=5)
+    add_item_button = ttk.Button(
+        room_treeview_frame,
+        text="Add Items",
+        command=lambda: add_item_in_roomTree(
+            state, building_treeview, room_treeview, new_room_text
+        ),
+    )
+    add_item_button.pack(side=tk.LEFT, padx=30, pady=5)
 
-    # remove_button = ttk.Button(
-    #     room_listbox_frame,
-    #     text="Remove",
-    #     command=lambda: remove_building(state, building_treeview),
-    # )
-    # remove_button.pack(side=tk.LEFT, padx=5, pady=5)
+    remove_item_button = ttk.Button(
+        room_treeview_frame,
+        text="Remove Items",
+        command=lambda: remove_item_in_roomTree(
+            state, building_treeview, room_treeview
+        ),
+    )
+    remove_item_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     return project_info_tab

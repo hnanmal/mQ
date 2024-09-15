@@ -31,7 +31,6 @@ def main():
     root.state("zoomed")  # Maximizes the window while keeping window controls visible
 
     configure_tab_styles()  # Configure the tab style
-
     # Set up the logging area and get the logging text widget
     logging_text_widget = setup_logging_frame(root)
 
@@ -40,6 +39,14 @@ def main():
 
     # state
     app_state, wm_group_manager = initialize_app(logging_text_widget)
+
+    # defining the callback function (observer)
+    def my_callback(var, index, mode):
+        print("Traced variable {}").format(app_state["current_loaded_pjt"].get())
+
+    # app_state.current_loaded_pjt = tk.StringVar()
+    app_state["current_loaded_pjt"] = tk.StringVar()
+    app_state["current_loaded_pjt"].set("project file not loaded yet")
 
     # Create the notebook (tab container)
     main_notebook = create_notebook_with_tabs(root, app_state)
