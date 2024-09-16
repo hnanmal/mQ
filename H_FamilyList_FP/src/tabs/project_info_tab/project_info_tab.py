@@ -77,7 +77,7 @@ def create_project_info_tab(notebook, state):
     project_name_label.pack(pady=10, anchor="w")
 
     project_name_var = tk.StringVar()
-    # state.project_name_var = project_name_var  ## state 전달
+    state.project_name_var = project_name_var  ## state 전달
     project_name_entry = ttk.Entry(section1, textvariable=project_name_var, width=30)
     project_name_entry.pack(pady=10, anchor="w")
 

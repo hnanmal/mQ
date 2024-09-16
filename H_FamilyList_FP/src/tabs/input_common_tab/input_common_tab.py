@@ -24,12 +24,6 @@ def create_input_common_tab(notebook, state):
     save_load_btn_frame = ttk.Frame(section0, width=300)
     save_load_btn_frame.pack(pady=10, anchor="w")
 
-    # state.logging_text_widget.write(str(state.current_loaded_pjt))
-
-    # def on_file_path_change(*args):
-    #     print(f"File path changed to: {file_load_status}")
-
-    # file_load_status = state["current_loaded_pjt"].get()
     current_load_label = ttk.Label(
         save_load_btn_frame, textvariable=state["current_loaded_pjt"]
     )
@@ -47,3 +41,9 @@ def create_input_common_tab(notebook, state):
         ),
     )
     save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
+
+    earth_label = ttk.Label(section1, text="Earth Work", font=("Arial", 14))
+    earth_label.pack(pady=10, anchor="w")
+
+    steel_label = ttk.Label(section2, text="Steel Work", font=("Arial", 14))
+    steel_label.pack(pady=10, anchor="w")
