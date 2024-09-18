@@ -9,44 +9,7 @@ import json
 def save_project_info(
     state, project_name_var, project_type_var, building_treeview, room_treeview
 ):
-    # Consolidate all relevant data into the project_info dictionary
-    # project_info_ = {
-    #     "project_name": project_name_var.get(),
-    #     "project_type": project_type_var.get(),
-    #     "building_list": [
-    #         {
-    #             "building_name": building_treeview.item(item, "values")[0],
-    #             "building_number": int(building_treeview.item(item, "values")[1])
-    #             or None,
-    #             "room_list": {}
-    #         }
-    #         for item in building_treeview.get_children()
-    #     ],
-    # }
-    # project_info_ = {
-    #     "project_name": project_name_var.get(),
-    #     "project_type": project_type_var.get(),
-    #     "building_list": [],
-    # }
-    # for bd in building_treeview.get_children():
-    #     building_treeview.focus(bd)
-    #     project_info_["building_list"].append(
-    #         {
-    #             "building_name": building_treeview.item(bd, "values")[0],
-    #             "building_number": int(building_treeview.item(bd, "values")[1]),
-    #             "room_list": [
-    #                 {
-    #                     "room_name": room_treeview.item(room, "values")[0],
-    #                     "room_no": room_treeview.item(room, "text"),
-    #                     "finish_type": room_treeview.item(room, "values")[1],
-    #                 }
-    #                 for room in room_treeview.get_children()
-    #             ],
-    #         }
-    #     )
-
     # Save project_info in the state
-    # state.project_info = project_info_
     state.project_info["project_name"] = project_name_var.get()
     state.project_info["project_type"] = project_type_var.get()
     project_info_ = state.project_info
@@ -93,3 +56,41 @@ def load_project_info(
                 ),
             )
         state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
+
+
+# Function to handle in-place editing
+def on_click_edit(event, state, tree):
+    # Identify which item and column were clicked
+    region = tree.identify_region(event.x, event.y)
+    if region == "cell":
+        column = tree.identify_column(event.x)
+        row = tree.identify_row(event.y)
+
+        # Get the item ID and current value of the clicked cell
+        item_id = tree.identify_row(event.y)
+        col_num = (
+            int(column.replace("#", "")) - 1
+        )  # Treeview columns are numbered as #1, #2, ...
+        current_value = tree.item(item_id, "values")[col_num]
+
+        # Get the bounding box of the cell
+        x, y, width, height = tree.bbox(item_id, column)
+
+        # Create an Entry widget over the cell
+        entry = ttk.Entry(tree)
+        entry.place(x=x, y=y, width=width, height=height)
+
+        # Insert the current value into the Entry widget
+        entry.insert(0, current_value)
+        entry.focus()
+
+        # Save the new value when Enter is pressed or focus is lost
+        def save_edit(event=None):
+            new_value = entry.get()
+            values = list(tree.item(item_id, "values"))
+            values[col_num] = new_value
+            tree.item(item_id, values=values)  # Update the treeview with the new value
+            entry.destroy()  # Remove the Entry widget after saving
+
+        entry.bind("<Return>", save_edit)  # Save when Enter is pressed
+        entry.bind("<FocusOut>", save_edit)  # Save when focus is lost

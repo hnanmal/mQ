@@ -31,6 +31,12 @@ def create_project_info_tab(notebook, state):
     project_info_tab = ttk.Frame(notebook)
     notebook.add(project_info_tab, text="프로젝트 정보 입력")
     state.current_loaded_pjt = None
+    state.project_info = {
+        "project_name": None,
+        "project_type": None,
+        "common_info": {"earth": [], "steel": []},
+        "building_list": [],
+    }
 
     # Divide the tab into three sections (frames)
     section0 = ttk.Frame(project_info_tab, height=70)
