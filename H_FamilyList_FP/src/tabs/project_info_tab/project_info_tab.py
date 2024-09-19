@@ -60,7 +60,12 @@ def create_project_info_tab(notebook, state):
         save_load_btn_frame,
         text="Load Project Info",
         command=lambda: load_project_info(
-            state, project_name_var, project_type_var, building_treeview, room_treeview
+            state,
+            project_name_var,
+            project_type_var,
+            building_treeview,
+            state.earth_treeview,
+            state.steel_treeview,
         ),
     )
     load_info_button.pack(side="left", padx=30, pady=10, anchor="w")
@@ -103,18 +108,21 @@ def create_project_info_tab(notebook, state):
     building_list_label.pack(pady=10, anchor="w")
 
     # Frame for Treeview and Scrollbar
-    bd_listbox_frame = ttk.Frame(section1, width=300)
-    bd_listbox_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    bd_treeview_frame = ttk.Frame(section1, width=300)
+    bd_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
     auto_number_button = ttk.Button(
-        bd_listbox_frame,
+        bd_treeview_frame,
         text="Auto Numbering",
         command=lambda: auto_numbering(state, building_treeview),
     )
     auto_number_button.pack(side=tk.TOP, padx=5, pady=5, anchor="e")
 
     building_treeview = ttk.Treeview(
-        bd_listbox_frame, columns=("Building Name", "Number"), show="headings", height=8
+        bd_treeview_frame,
+        columns=("Building Name", "Number"),
+        show="headings",
+        height=8,
     )
     # state.building_treeview = building_treeview  ## state 전달
 
@@ -127,7 +135,7 @@ def create_project_info_tab(notebook, state):
     building_treeview.column("Number", width=100)
 
     scrollbar = ttk.Scrollbar(
-        bd_listbox_frame, orient=tk.VERTICAL, command=building_treeview.yview
+        bd_treeview_frame, orient=tk.VERTICAL, command=building_treeview.yview
     )
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     building_treeview.config(yscrollcommand=scrollbar.set)

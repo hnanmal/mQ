@@ -7,6 +7,7 @@ from src.views.wm_group_matching import create_wm_group_matching_tab
 from src.views.tree_management import create_family_standard_tab, create_sub_tab
 from src.tabs.project_info_tab.project_info_tab import create_project_info_tab
 from src.tabs.input_common_tab.input_common_tab import create_input_common_tab
+from src.tabs.calc_criteria_tab.calc_criteria_tab import create_calc_criteria_tab
 
 
 def create_notebook_with_tabs(root, state):
@@ -48,11 +49,12 @@ def create_project_standard_tab(notebook, state):
     # Create the "프로젝트 정보 입력" tab
     create_project_info_tab(project_notebook, state)
     create_input_common_tab(project_notebook, state)
+    create_calc_criteria_tab(project_notebook, state)
 
     other_tab_names = [
         # "프로젝트 정보 입력",
         # "공통입력",
-        "산출기준",
+        # "산출기준",
         "Room",
         "Floors",
         "Roofs",

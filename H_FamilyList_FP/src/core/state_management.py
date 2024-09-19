@@ -11,6 +11,7 @@ class AppState:
         self.lock_status = {}
         self.logging_text_widget = logging_text_widget
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
+        self.project_info = None  # Loaded project data
 
     def __getitem__(self, key):
         return self._state.get(key)

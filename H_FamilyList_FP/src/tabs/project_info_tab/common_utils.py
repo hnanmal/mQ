@@ -6,6 +6,23 @@ from tkinter import filedialog
 import json
 
 
+def refresh_treeview(treeview, data, targetCat):
+    # Clear existing Treeview data
+    treeview.delete(*treeview.get_children())
+    # Insert new data from the loaded JSON
+    for item in data.get("common_info", {}).get(targetCat, []):
+        treeview.insert(
+            "",
+            "end",
+            values=(
+                item["항목"],
+                item["입력값"],
+                item["단위"],
+                item["비고"],
+            ),
+        )
+
+
 def save_project_info(
     state, project_name_var, project_type_var, building_treeview, room_treeview
 ):
@@ -27,7 +44,12 @@ def save_project_info(
 
 # Load Project Info Button
 def load_project_info(
-    state, project_name_var, project_type_var, building_treeview, room_treeview
+    state,
+    project_name_var,
+    project_type_var,
+    building_treeview,
+    earth_treeview,
+    steel_treeview,
 ):
 
     file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
@@ -39,6 +61,10 @@ def load_project_info(
         state.project_info = loaded_data
         state["current_loaded_pjt"].set(f"<< {file_path} >> has been loaded !")
         # print(state.project_info)
+
+        # Update the Treeview with loaded data
+        refresh_treeview(earth_treeview, loaded_data, "earth")
+        refresh_treeview(steel_treeview, loaded_data, "steel")
 
         # Populate UI fields from project_info
         project_name_var.set(loaded_data.get("project_name", ""))

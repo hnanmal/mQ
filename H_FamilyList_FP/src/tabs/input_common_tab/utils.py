@@ -35,17 +35,17 @@ def create_defaultTreeview(state, frame, columns):
     return tree
 
 
-def add_common_param(state, earth_treeview, new_param_text):
+def add_common_param(state, treeview, new_param_text):
     param_input = new_param_text.get("1.0", tk.END).strip()
     if param_input:
         params = param_input.split("\n")
         for param in params:
             if param.strip():
                 param_name, param_input, param_unit, param_disc = param.split(",")
-                earth_treeview.insert(
+                treeview.insert(
                     "",
                     "end",
-                    values=(param_name, int(param_input), param_unit, param_disc),
+                    values=(param_name, param_input, param_unit, param_disc),
                 )
                 state.logging_text_widget.write(f"add [ {param_name} ] item.\n")
         new_param_text.delete("1.0", tk.END)
