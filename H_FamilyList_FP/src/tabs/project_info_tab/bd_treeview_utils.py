@@ -34,11 +34,6 @@ def add_building(state, building_treeview, new_building_text):
         for building in buildings:
             if building.strip():
                 building_name = building.strip()
-                # state.project_info["building_list"][building] = {
-                #     "building_name": building_name,
-                #     "building_number": None,
-                #     "finish_types": [],
-                # }
                 state.project_info["building_list"].append(
                     {
                         "building_name": building_name,

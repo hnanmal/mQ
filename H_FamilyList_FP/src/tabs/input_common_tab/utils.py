@@ -30,7 +30,7 @@ def create_defaultTreeview(state, frame, columns):
     # Pack the Treeview into the window
     tree.pack(fill=tk.BOTH, expand=True)
 
-    tree.bind("<Button-1>", lambda e: on_click_edit(e, state, tree))
+    tree.bind("<Double-Button-1>", lambda e: on_click_edit(e, state, tree))
 
     return tree
 
