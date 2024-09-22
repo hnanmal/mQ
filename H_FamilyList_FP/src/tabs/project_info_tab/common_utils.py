@@ -59,7 +59,7 @@ def load_project_info(
 
         # Save loaded data to state
         state.project_info = loaded_data
-        state["current_loaded_pjt"].set(f"<< {file_path} >> has been loaded !")
+        state["current_loaded_pjt"].set(file_path)
         # print(state.project_info)
 
         # Update the Treeview with loaded data
@@ -86,6 +86,7 @@ def load_project_info(
 
 # Function to handle in-place editing
 def on_click_edit(event, state, tree):
+
     # Identify which item and column were clicked
     region = tree.identify_region(event.x, event.y)
     if region == "cell":
@@ -111,12 +112,19 @@ def on_click_edit(event, state, tree):
         entry.focus()
 
         # Save the new value when Enter is pressed or focus is lost
-        def save_edit(event=None):
+        def save_edit(state, event=None):
             new_value = entry.get()
             values = list(tree.item(item_id, "values"))
             values[col_num] = new_value
             tree.item(item_id, values=values)  # Update the treeview with the new value
             entry.destroy()  # Remove the Entry widget after saving
+            state.edited_value.set(new_value)
+            print(state.edited_value.get())
+            # return new_value
 
-        entry.bind("<Return>", save_edit)  # Save when Enter is pressed
-        entry.bind("<FocusOut>", save_edit)  # Save when focus is lost
+        entry.bind(
+            "<Return>", lambda e: save_edit(state, e)
+        )  # Save when Enter is pressed
+        entry.bind(
+            "<FocusOut>", lambda e: save_edit(state, e)
+        )  # Save when focus is lost

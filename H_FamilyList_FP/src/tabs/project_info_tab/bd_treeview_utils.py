@@ -48,9 +48,19 @@ def add_building(state, building_treeview, new_building_text):
 
 def remove_building(state, building_treeview):
     selected_items = building_treeview.selection()
+    print(selected_items)
     for item in selected_items:
         building_name = building_treeview.item(item, "values")[0]
         state.logging_text_widget.write(f"remove [ {building_name} ] building.\n")
+        for idx, value in enumerate(state.project_info["building_list"]):
+            if building_name == value["building_name"]:
+                del state.project_info["building_list"][idx]
+        # state.project_info["building_list"].remove(
+        #     {
+
+        #     }
+        # )
+
         building_treeview.delete(item)
 
 

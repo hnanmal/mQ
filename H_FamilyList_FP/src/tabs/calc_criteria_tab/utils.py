@@ -1,7 +1,133 @@
 # src/tabs/calc_criteria_tab/utils.py
 import json
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
+
+
+# Function to handle in-place editing
+def on_click_edit_calcType(
+    event,
+    # on_click_edit,
+    state,
+    calcType_treeview,
+    # cat_treeview,
+):
+    selected_calcType = calcType_treeview.selection()[0]
+    selected_calcType_name = calcType_treeview.item(selected_calcType)["values"][0]
+    # selected_calcType_cat = calcType_treeview.item(selected_calcType)["values"][1]
+
+    # Identify which item and column were clicked
+    region = calcType_treeview.identify_region(event.x, event.y)
+    if region == "cell":
+        column = calcType_treeview.identify_column(event.x)
+        row = calcType_treeview.identify_row(event.y)
+
+        # Get the item ID and current value of the clicked cell
+        item_id = calcType_treeview.identify_row(event.y)
+        col_num = (
+            int(column.replace("#", "")) - 1
+        )  # Treeview columns are numbered as #1, #2, ...
+        current_value = calcType_treeview.item(item_id, "values")[col_num]
+
+        # Get the bounding box of the cell
+        x, y, width, height = calcType_treeview.bbox(item_id, column)
+
+        # Create an Entry widget over the cell
+        entry = ttk.Entry(calcType_treeview)
+        entry.place(x=x, y=y, width=width, height=height)
+
+        # Insert the current value into the Entry widget
+        entry.insert(0, current_value)
+        entry.focus()
+
+        # Save the new value when Enter is pressed or focus is lost
+        def save_edit(state, event=None):
+            new_value = entry.get()
+            values = list(calcType_treeview.item(item_id, "values"))
+            values[col_num] = new_value
+            calcType_treeview.item(
+                item_id, values=values
+            )  # Update the treeview with the new value
+            entry.destroy()  # Remove the Entry widget after saving
+            state.edited_value.set(new_value)
+            print(state.edited_value.get())
+            # return new_value
+
+            for calc_type_dic in state.project_info["calc_types"]:
+                if calc_type_dic["type_tag"] == selected_calcType_name:
+                    calc_type_dic["type_tag"] = new_value
+                    for formula_dic in calc_type_dic["formulas"]:
+                        formula_dic["calc_type"] = new_value
+
+        entry.bind(
+            "<Return>", lambda e: save_edit(state, e)
+        )  # Save when Enter is pressed
+        entry.bind(
+            "<FocusOut>", lambda e: save_edit(state, e)
+        )  # Save when focus is lost
+
+
+# Function to handle in-place editing
+def on_click_edit_formula(
+    event,
+    # on_click_edit,
+    state,
+    stdFormula_treeview,
+    # cat_treeview,
+):
+    selected_formula = stdFormula_treeview.selection()[0]
+    selected_formula_name = stdFormula_treeview.item(selected_formula)["values"][0]
+    # selected_calcType_cat = stdFormula_treeview.item(selected_formula)["values"][1]
+
+    # Identify which item and column were clicked
+    region = stdFormula_treeview.identify_region(event.x, event.y)
+    if region == "cell":
+        column = stdFormula_treeview.identify_column(event.x)
+        row = stdFormula_treeview.identify_row(event.y)
+
+        # Get the item ID and current value of the clicked cell
+        item_id = stdFormula_treeview.identify_row(event.y)
+        col_num = (
+            int(column.replace("#", "")) - 1
+        )  # Treeview columns are numbered as #1, #2, ...
+        current_value = stdFormula_treeview.item(item_id, "values")[col_num]
+
+        # Get the bounding box of the cell
+        x, y, width, height = stdFormula_treeview.bbox(item_id, column)
+
+        # Create an Entry widget over the cell
+        entry = ttk.Entry(stdFormula_treeview)
+        entry.place(x=x, y=y, width=width, height=height)
+
+        # Insert the current value into the Entry widget
+        entry.insert(0, current_value)
+        entry.focus()
+
+        # Save the new value when Enter is pressed or focus is lost
+        def save_edit(state, event=None):
+            new_value = entry.get()
+            values = list(stdFormula_treeview.item(item_id, "values"))
+            values[col_num] = new_value
+            stdFormula_treeview.item(
+                item_id, values=values
+            )  # Update the treeview with the new value
+            entry.destroy()  # Remove the Entry widget after saving
+            state.edited_value.set(new_value)
+            print(state.edited_value.get())
+            # return new_value
+
+            for calc_type_dic in state.project_info["calc_types"]:
+                for formula_dic in calc_type_dic["formulas"]:
+                    if formula_dic["formula"] == selected_formula_name:
+                        formula_dic["formula"] = new_value
+
+        entry.bind(
+            "<Return>", lambda e: save_edit(state, e)
+        )  # Save when Enter is pressed
+        entry.bind(
+            "<FocusOut>", lambda e: save_edit(state, e)
+        )  # Save when focus is lost
 
 
 def on_cat_select(
@@ -70,19 +196,22 @@ def on_calcType_select(
 
 
 def add_calcType(state, cat_treeview, calcType_treeview, new_calcType_text):
-    param_input = new_calcType_text.get("1.0", tk.END).strip()
+    calcType_input = new_calcType_text.get("1.0", tk.END).strip()
     cat = cat_treeview.selection()[0]
     cat_name = cat_treeview.item(cat, "values")[0]
-    if param_input:
-        params = param_input.split("\n")
-        for param in params:
-            if param.strip():
+    if calcType_input:
+        calcTypes = calcType_input.split("\n")
+        for calcType in calcTypes:
+            if calcType.strip():
                 calcType_treeview.insert(
                     "",
                     "end",
-                    values=(param, cat_name),
+                    values=(calcType, cat_name),
                 )
-                state.logging_text_widget.write(f"add [ {param} ] Calc Type tag.\n")
+                state.project_info["calc_types"].append(
+                    {"type_tag": calcType, "category": cat_name, "formulas": []}
+                )
+                state.logging_text_widget.write(f"add [ {calcType} ] Calc Type tag.\n")
         new_calcType_text.delete("1.0", tk.END)
 
 
@@ -94,22 +223,33 @@ def remove_calcType(state, calcType_treeview):
         calcType_treeview.delete(item)
 
 
-# 삽입, 삭제 시에 state.project_info를 수정하면서 가고,
-# Save에서는 현재 state.project_info를 저장만 하도록 수정 요
 def add_formula(state, calcType_treeview, stdFormula_treeview, new_formula_text):
-    param_input = new_formula_text.get("1.0", tk.END).strip()
+    formula_input = new_formula_text.get("1.0", tk.END).strip()
     calcType = calcType_treeview.selection()[0]
     calcType_name = calcType_treeview.item(calcType, "values")[0]
-    if param_input:
-        params = param_input.split("\n")
-        for param in params:
-            if param.strip():
+
+    if formula_input:
+        formulas = formula_input.split("\n")
+        for formula in formulas:
+            if formula.strip():
+                # # state 저장
+                for idx, calcType in enumerate(state.project_info["calc_types"]):
+                    if calcType_name == calcType["type_tag"]:
+                        calcType["formulas"].append(
+                            {
+                                "formula": formula,
+                                "description": "",
+                                "calc_type": calcType_name,
+                            }
+                        )
+
+                # 트리뷰 저장
                 stdFormula_treeview.insert(
                     "",
                     "end",
-                    values=(param, "", calcType_name),
+                    values=(formula, "", calcType_name),
                 )
-                state.logging_text_widget.write(f"add [ {param} ] Calc Type tag.\n")
+                state.logging_text_widget.write(f"add [ {formula} ] 산출식.\n")
         new_formula_text.delete("1.0", tk.END)
 
 
@@ -121,44 +261,11 @@ def remove_formula(state, stdFormula_treeview):
         stdFormula_treeview.delete(item)
 
 
-def save_project_calcType_info(state, calcType_treeview, stdFormula_treeview):
-    # Save project_info in the state
-
-    # Function to retrieve all headers
-    def get_treeview_headers(tree):
-        headers = []
-        for col in tree["columns"]:
-            header = tree.heading(col)["text"]
-            headers.append(header)
-        return headers
-
-    calcType_headers = get_treeview_headers(calcType_treeview)
-    stdFormula_headers = get_treeview_headers(stdFormula_treeview)
-    calc_types = []
-    for item in calcType_treeview.get_children():
-        tmp_calc = {}
-        for k, v in zip(calcType_headers, calcType_treeview.item(item).get("values")):
-            tmp_calc[k] = v
-        tmp_calc["formulas"] = []
-        for formula in stdFormula_treeview.get_children():
-            if (
-                calcType_treeview.item(item).get("values")[0]
-                == stdFormula_treeview.item(formula).get("values")[2]
-            ):
-                tmp_formula = {}
-                for k, v in zip(
-                    stdFormula_headers, stdFormula_treeview.item(formula).get("values")
-                ):
-                    tmp_formula[k] = v
-                tmp_calc["formulas"].append(tmp_formula)
-        calc_types.append(tmp_calc)
-
-    state.project_info["calc_types"] = calc_types
+def save_project_calcType_info(
+    state, cat_treeview, calcType_treeview, stdFormula_treeview
+):
     project_info_ = state.project_info
-    # earth_treeview.get_children()
 
-    # Save to file
-    # file_path = f"{project_info_['project_name']}_pjt_info.json"
     file_path = filedialog.asksaveasfilename(
         defaultextension=".txt",  # Default file extension
         filetypes=[("JSON files", "*.json"), ("All files", "*.*")],

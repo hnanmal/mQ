@@ -10,12 +10,14 @@ from src.tabs.input_common_tab.utils import (
     create_defaultTreeview,
     save_project_common_info,
 )
-from src.tabs.project_info_tab.common_utils import refresh_treeview
+from src.tabs.project_info_tab.common_utils import on_click_edit, refresh_treeview
 from src.tabs.calc_criteria_tab.utils import (
     add_calcType,
     add_formula,
     on_calcType_select,
     on_cat_select,
+    on_click_edit_calcType,
+    on_click_edit_formula,
     remove_calcType,
     remove_formula,
     save_project_calcType_info,
@@ -23,6 +25,7 @@ from src.tabs.calc_criteria_tab.utils import (
 
 
 def create_calc_criteria_tab(notebook, state):
+    state.edited_value = tk.StringVar(value="Initial Value")
     """Create the '공통 정보 입력' tab with two sections."""
     calc_criteria_tab = ttk.Frame(notebook)
     notebook.add(calc_criteria_tab, text="산출 기준")
@@ -55,6 +58,7 @@ def create_calc_criteria_tab(notebook, state):
         text="Save Project Info",
         command=lambda: save_project_calcType_info(
             state,
+            cat_treeview,
             calcType_treeview,
             stdFormula_treeview,
             # modelParam_treeview,
@@ -143,6 +147,14 @@ def create_calc_criteria_tab(notebook, state):
             calcType_treeview,
         ),
     )
+    calcType_treeview.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_calcType(
+            e,
+            state,
+            calcType_treeview,
+        ),
+    )
 
     new_calcType_text = tk.Text(section2, height=4, width=30)
     new_calcType_text.pack(pady=5, anchor="w")
@@ -163,6 +175,7 @@ def create_calc_criteria_tab(notebook, state):
     )
     del_selectedCalcType_button.pack(side=tk.LEFT, padx=5, pady=5)
 
+    # Section 3 - Selected Calc type's formula list
     selected_calcType_label = ttk.Label(
         section3, text="Selected Q'ty Calc Type Tag: ", font=("Arial", 14)
     )
@@ -196,6 +209,14 @@ def create_calc_criteria_tab(notebook, state):
             stdFormula_treeview,
         ),
     )
+    stdFormula_treeview.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_formula(
+            e,
+            state,
+            stdFormula_treeview,
+        ),
+    )
 
     new_formula_text = tk.Text(section3, height=4, width=30)
     new_formula_text.pack(pady=5, anchor="w")
@@ -215,3 +236,33 @@ def create_calc_criteria_tab(notebook, state):
         command=lambda: remove_formula(state, stdFormula_treeview),
     )
     del_selectedCalcType_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # Section 4 - Selected Calc types's Model Parameter list
+    modelParam_label = ttk.Label(section4, text="모델 Parameter", font=("Arial", 14))
+    modelParam_label.pack(padx=20, pady=10, anchor="w")
+
+    modelParam_treeview_frame = ttk.Frame(section4, width=300)
+    modelParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    modelParam_treeview = create_defaultTreeview(
+        state,
+        modelParam_treeview_frame,
+        ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
+    )
+    modelParam_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    # Section 5 - Selected Calc types's Manual Input Parameter list
+    manual_inputParam_label = ttk.Label(
+        section5, text="수동 입력값", font=("Arial", 14)
+    )
+    manual_inputParam_label.pack(padx=20, pady=10, anchor="w")
+
+    manual_inputParam_treeview_frame = ttk.Frame(section5, width=300)
+    manual_inputParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    manual_inputParam_treeview = create_defaultTreeview(
+        state,
+        manual_inputParam_treeview_frame,
+        ("항목", "수식 약자", "수동입력값", "단위", "비고", "calc_type"),
+    )
+    manual_inputParam_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
