@@ -195,22 +195,94 @@ def on_click_edit_modelParam(
         )  # Save when focus is lost
 
 
+def on_click_edit_manual_Param(
+    event,
+    # on_click_edit,
+    state,
+    manual_Param_treeview,
+    # cat_treeview,
+):
+    selected_modelParam = manual_Param_treeview.selection()[0]
+    selected_modelParam_name = manual_Param_treeview.item(selected_modelParam)[
+        "values"
+    ][0]
+    # selected_calcType_cat = stdFormula_treeview.item(selected_formula)["values"][1]
+
+    # Identify which item and column were clicked
+    region = manual_Param_treeview.identify_region(event.x, event.y)
+    if region == "cell":
+        column = manual_Param_treeview.identify_column(event.x)
+        row = manual_Param_treeview.identify_row(event.y)
+
+        # Get the item ID and current value of the clicked cell
+        item_id = manual_Param_treeview.identify_row(event.y)
+        col_num = (
+            int(column.replace("#", "")) - 1
+        )  # Treeview columns are numbered as #1, #2, ...
+        current_value = manual_Param_treeview.item(item_id, "values")[col_num]
+
+        # Get the bounding box of the cell
+        x, y, width, height = manual_Param_treeview.bbox(item_id, column)
+
+        # Create an Entry widget over the cell
+        entry = ttk.Entry(manual_Param_treeview)
+        entry.place(x=x, y=y, width=width, height=height)
+
+        # Insert the current value into the Entry widget
+        entry.insert(0, current_value)
+        entry.focus()
+
+        # Save the new value when Enter is pressed or focus is lost
+        def save_edit(state, event=None):
+            new_value = entry.get()
+            values = list(manual_Param_treeview.item(item_id, "values"))
+            values[col_num] = new_value
+            manual_Param_treeview.item(
+                item_id, values=values
+            )  # Update the treeview with the new value
+            entry.destroy()  # Remove the Entry widget after saving
+            state.edited_value.set(new_value)
+            print(state.edited_value.get())
+            # return new_value
+
+            for calc_type_dic in state.project_info["calc_types"]:
+                for manualParam_dic in calc_type_dic["manual_params"]:
+                    manualParam_dic_keys = list(manualParam_dic.keys())
+                    if manualParam_dic["항목"] == selected_modelParam_name:
+                        manualParam_dic[manualParam_dic_keys[col_num]] = new_value
+
+        entry.bind(
+            "<Return>", lambda e: save_edit(state, e)
+        )  # Save when Enter is pressed
+        entry.bind(
+            "<FocusOut>", lambda e: save_edit(state, e)
+        )  # Save when focus is lost
+
+
 def on_cat_select(
     event,
     state,
-    treeview1,
-    label,
-    treeview2,
+    cat_treeview,
+    selected_Cat_label,
+    selected_calcType_label,
+    calcType_treeview,
+    stdFormula_treeview,
+    modelParam_treeview,
+    manual_Param_treeview,
 ):
-    selected_item = treeview1.selection()
+    selected_item = cat_treeview.selection()
     if selected_item:
-        selected_itemName = treeview1.item(selected_item[0])["values"][0]
-        label.config(text=f"Selected Category: {selected_itemName}")
-        treeview2.delete(*treeview2.get_children())
+        selected_itemName = cat_treeview.item(selected_item[0])["values"][0]
+        selected_Cat_label.config(text=f"Selected Category: {selected_itemName}")
+        selected_calcType_label.config(text=f"Selected Calc Type Tag:       ")
+        calcType_treeview.delete(*calcType_treeview.get_children())
+        stdFormula_treeview.delete(*stdFormula_treeview.get_children())
+        modelParam_treeview.delete(*modelParam_treeview.get_children())
+        manual_Param_treeview.delete(*manual_Param_treeview.get_children())
 
         for calcType_dic in state.project_info["calc_types"]:
             if selected_itemName == calcType_dic["category"]:
-                treeview2.insert(
+                calcType_treeview.insert(
                     "",
                     "end",
                     values=(
@@ -241,6 +313,8 @@ def on_calcType_select(
 
     if selected_item:
         stdFormula_treeview.delete(*stdFormula_treeview.get_children())
+        modelParam_treeview.delete(*modelParam_treeview.get_children())
+        manual_Param_treeview.delete(*manual_Param_treeview.get_children())
         selected_itemName = calcType_treeview.item(selected_item)["values"][0]
         label.config(text=f"Selected Calc Type Tag: {selected_itemName}")
 
@@ -267,6 +341,19 @@ def on_calcType_select(
                             modelParam_dic["단위"],
                             modelParam_dic["비고"],
                             modelParam_dic["calc_type"],
+                        ),
+                    )
+                for manualParam_dic in calcType_dic["manual_params"]:
+                    manual_Param_treeview.insert(
+                        "",
+                        "end",
+                        values=(
+                            manualParam_dic["항목"],
+                            manualParam_dic["수식 약자"],
+                            manualParam_dic["수동입력값"],
+                            manualParam_dic["단위"],
+                            manualParam_dic["비고"],
+                            manualParam_dic["calc_type"],
                         ),
                     )
 
@@ -440,6 +527,93 @@ def remove_modelParam(state, modelParam_treeview, calcType_treeview):
                         )
 
         modelParam_treeview.delete(selected_modelParam)
+
+
+def add_manualParam(
+    state, calcType_treeview, manual_Param_treeview, new_manualParam_text
+):
+    manualParam_input = new_manualParam_text.get("1.0", tk.END).strip()
+    calcType = calcType_treeview.selection()[0]
+    calcType_name = calcType_treeview.item(calcType, "values")[0]
+
+    if manualParam_input:
+        manualParams = manualParam_input.split("\n")
+        for manualParam in manualParams:
+            if manualParam.strip():
+                col_list_ = ["항목", "수식 약자", "수동입력값", "단위", "비고"]
+                input_cnt = len(manualParam.split(","))
+                col_list = col_list_[: input_cnt + 1]
+                input_dict = dict(zip(col_list, manualParam.split(",")))
+                # # state 저장
+                for idx, calcType in enumerate(state.project_info["calc_types"]):
+                    if calcType_name == calcType["type_tag"]:
+                        calcType["manual_params"].append(
+                            {
+                                "항목": input_dict["항목"],
+                                "수식 약자": (
+                                    input_dict["수식 약자"]
+                                    if input_dict.get("수식 약자")
+                                    else ""
+                                ),
+                                "수동입력값": (
+                                    input_dict["수동입력값"]
+                                    if input_dict.get("수동입력값")
+                                    else ""
+                                ),
+                                "단위": (
+                                    input_dict["단위"] if input_dict.get("단위") else ""
+                                ),
+                                "비고": (
+                                    input_dict["비고"] if input_dict.get("비고") else ""
+                                ),
+                                "calc_type": calcType_name,
+                            }
+                        )
+
+                # 트리뷰 저장
+                manual_Param_treeview.insert(
+                    "",
+                    "end",
+                    values=(
+                        input_dict["항목"] if input_dict.get("항목") else "",
+                        input_dict["수식 약자"] if input_dict.get("수식 약자") else "",
+                        (
+                            input_dict["수동입력값"]
+                            if input_dict.get("수동입력값")
+                            else ""
+                        ),
+                        input_dict["단위"] if input_dict.get("단위") else "",
+                        input_dict["비고"] if input_dict.get("비고") else "",
+                        calcType_name,
+                    ),
+                )
+                state.logging_text_widget.write(
+                    f"add [ {manualParam} ] 수동입력 파라미터.\n"
+                )
+        new_manualParam_text.delete("1.0", tk.END)
+
+
+def remove_manualParam(state, manual_Param_treeview, calcType_treeview):
+    selected_calcType = calcType_treeview.selection()[0]
+    selected_calcType_name = calcType_treeview.item(selected_calcType, "values")[0]
+    selected_manualParams = manual_Param_treeview.selection()
+    for selected_manualParam in selected_manualParams:
+        selected_manualParam_name = manual_Param_treeview.item(
+            selected_manualParam, "values"
+        )[0]
+        state.logging_text_widget.write(
+            f"remove [ {selected_manualParam_name} ] 수동입력 파라미터.\n"
+        )
+
+        for idx, calcType_dic in enumerate(state.project_info["calc_types"]):
+            if calcType_dic["type_tag"] == selected_calcType_name:
+                for manual_param_dic in calcType_dic["manual_params"]:
+                    if manual_param_dic["항목"] == selected_manualParam_name:
+                        state.project_info["calc_types"][idx]["manual_params"].remove(
+                            manual_param_dic
+                        )
+
+        manual_Param_treeview.delete(selected_manualParam)
 
 
 def save_project_calcType_info(state):

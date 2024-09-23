@@ -14,14 +14,17 @@ from src.tabs.project_info_tab.common_utils import on_click_edit, refresh_treevi
 from src.tabs.calc_criteria_tab.utils import (
     add_calcType,
     add_formula,
+    add_manualParam,
     add_modelParam,
     on_calcType_select,
     on_cat_select,
     on_click_edit_calcType,
     on_click_edit_formula,
+    on_click_edit_manual_Param,
     on_click_edit_modelParam,
     remove_calcType,
     remove_formula,
+    remove_manualParam,
     remove_modelParam,
     save_project_calcType_info,
 )
@@ -35,7 +38,7 @@ def create_calc_criteria_tab(notebook, state):
 
     # Divide the tab into three sections (frames)
     bigArea1 = ttk.Frame(calc_criteria_tab, width=500, height=200)
-    bigArea2 = ttk.Frame(calc_criteria_tab, width=500, height=200)
+    bigArea2 = ttk.Frame(calc_criteria_tab, width=300, height=200)
     bigArea1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     bigArea2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
@@ -53,7 +56,7 @@ def create_calc_criteria_tab(notebook, state):
     section4.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
     section5.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-    save_load_btn_frame = ttk.Frame(section0, width=300)
+    save_load_btn_frame = ttk.Frame(section0, width=100)
     save_load_btn_frame.pack(pady=10, anchor="w")
 
     current_load_label = ttk.Label(
@@ -120,12 +123,12 @@ def create_calc_criteria_tab(notebook, state):
 
     # Section 2 - Selected Category's Criteria list
     selected_Cat_label = ttk.Label(
-        section2, text="Selected Category: ", font=("Arial", 14)
+        section2, text="Selected Category:         ", font=("Arial", 13)
     )
     selected_Cat_label.pack(pady=10, anchor="w")
 
     calcTypeTag_label = ttk.Label(
-        section2, text="Q'ty Calc Type Tag", font=("Arial", 14)
+        section2, text="Q'ty Calc Type Tag", font=("Arial", 12)
     )
     calcTypeTag_label.pack(padx=20, pady=10, anchor="w")
 
@@ -146,7 +149,11 @@ def create_calc_criteria_tab(notebook, state):
             state,
             cat_treeview,
             selected_Cat_label,
+            selected_calcType_label,
             calcType_treeview,
+            stdFormula_treeview,
+            modelParam_treeview,
+            manual_Param_treeview,
         ),
     )
     calcType_treeview.bind(
@@ -179,7 +186,7 @@ def create_calc_criteria_tab(notebook, state):
 
     # Section 3 - Selected Calc type's formula list
     selected_calcType_label = ttk.Label(
-        section3, text="Selected Q'ty Calc Type Tag: ", font=("Arial", 14)
+        section3, text="Selected Calc Type Tag:       ", font=("Arial", 12)
     )
     selected_calcType_label.pack(pady=10, anchor="w")
 
@@ -198,6 +205,16 @@ def create_calc_criteria_tab(notebook, state):
             "calc_type",
         ),
     )
+    # Set column properties
+    stdFormula_treeview.column(
+        "formula", anchor="w", width=200
+    )  # Align text to the left (west)
+    stdFormula_treeview.column(
+        "description", anchor="w", width=200
+    )  # Align text to the left (west)
+    stdFormula_treeview.column(
+        "calc_type", anchor="w", width=50
+    )  # Align text to the left (west)
     stdFormula_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
     calcType_treeview.bind(
@@ -280,7 +297,9 @@ def create_calc_criteria_tab(notebook, state):
     del_selected_modelParam_button = ttk.Button(
         section4,
         text="Del",
-        command=lambda: remove_modelParam(state, modelParam_treeview),
+        command=lambda: remove_modelParam(
+            state, modelParam_treeview, calcType_treeview
+        ),
     )
     del_selected_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -299,6 +318,15 @@ def create_calc_criteria_tab(notebook, state):
     )
     manual_Param_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
+    manual_Param_treeview.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_manual_Param(
+            e,
+            state,
+            manual_Param_treeview,
+        ),
+    )
+
     new_manualParam_text = tk.Text(section5, height=2, width=100)
     new_manualParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
 
@@ -314,6 +342,8 @@ def create_calc_criteria_tab(notebook, state):
     del_selected_manualParam_button = ttk.Button(
         section5,
         text="Del",
-        command=lambda: remove_manualParam(state, manual_Param_treeview),
+        command=lambda: remove_manualParam(
+            state, manual_Param_treeview, calcType_treeview
+        ),
     )
     del_selected_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
