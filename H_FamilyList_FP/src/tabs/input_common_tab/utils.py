@@ -7,12 +7,20 @@ from tkinter import filedialog
 from src.tabs.project_info_tab.common_utils import on_click_edit
 
 
-def create_defaultTreeview(state, frame, columns):
+def create_defaultTreeview(state, frame, columns, height=None):
     # Define the columns for the Treeview
     # columns = ("Name", "Age", "City")
 
     # Create the Treeview with columns
-    tree = ttk.Treeview(frame, columns=columns, show="headings")
+    tree = (
+        ttk.Treeview(frame, columns=columns, show="headings", height=height)
+        if height
+        else ttk.Treeview(
+            frame,
+            columns=columns,
+            show="headings",
+        )
+    )
 
     # # Define the column headings
     for col in columns:
