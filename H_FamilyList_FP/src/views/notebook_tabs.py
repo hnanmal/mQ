@@ -51,10 +51,48 @@ def create_project_standard_tab(notebook, state):
     create_input_common_tab(project_notebook, state)
     create_calc_criteria_tab(project_notebook, state)
 
+    # other_tab_names = [
+    #     # "프로젝트 정보 입력",
+    #     # "공통입력",
+    #     # "산출기준",
+    #     "Room",
+    #     "Floors",
+    #     "Roofs",
+    #     "Walls_Ext",
+    #     "Walls_Int",
+    #     "St_Fdn",
+    #     "St_Col",
+    #     "St_Framing",
+    #     "Ceilings",
+    #     "Doors",
+    #     "Windows",
+    #     "Stairs",
+    #     "Railings",
+    #     "Generic",
+    #     "Manual_Input",
+    # ]
+
+    # for name in other_tab_names:
+    #     create_sub_tab(project_notebook, name)
+
+    # Bind the tab click event
+    project_notebook.bind(
+        "<Button-1>", lambda event: handle_tab_click(event, project_notebook, state)
+    )
+
+
+def create_family_linkage_tab(notebook, state):
+    """Create the Project Standard tab with its sub-tabs."""
+    family_linkage_tab = ttk.Frame(notebook)
+    notebook.add(family_linkage_tab, text="패밀리 타입 관리")  # Use larger tab style
+
+    project_notebook = ttk.Notebook(
+        family_linkage_tab, style="Lower.TNotebook"
+    )  # Lower-level notebook
+    project_notebook.pack(fill="both", expand=True)
+
+    # Create the "프로젝트 정보 입력" tab
     other_tab_names = [
-        # "프로젝트 정보 입력",
-        # "공통입력",
-        # "산출기준",
         "Room",
         "Floors",
         "Roofs",

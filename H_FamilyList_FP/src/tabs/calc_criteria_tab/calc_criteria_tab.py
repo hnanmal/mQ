@@ -14,12 +14,15 @@ from src.tabs.project_info_tab.common_utils import on_click_edit, refresh_treevi
 from src.tabs.calc_criteria_tab.utils import (
     add_calcType,
     add_formula,
+    add_modelParam,
     on_calcType_select,
     on_cat_select,
     on_click_edit_calcType,
     on_click_edit_formula,
+    on_click_edit_modelParam,
     remove_calcType,
     remove_formula,
+    remove_modelParam,
     save_project_calcType_info,
 )
 
@@ -31,19 +34,24 @@ def create_calc_criteria_tab(notebook, state):
     notebook.add(calc_criteria_tab, text="산출 기준")
 
     # Divide the tab into three sections (frames)
-    section0 = ttk.Frame(calc_criteria_tab, height=70)
-    section1 = ttk.Frame(calc_criteria_tab, width=100, height=200)
-    section2 = ttk.Frame(calc_criteria_tab, width=100, height=200)
-    section3 = ttk.Frame(calc_criteria_tab, width=500, height=200)
-    section4 = ttk.Frame(calc_criteria_tab, width=500, height=200)
-    section5 = ttk.Frame(calc_criteria_tab, width=500, height=200)
+    bigArea1 = ttk.Frame(calc_criteria_tab, width=500, height=200)
+    bigArea2 = ttk.Frame(calc_criteria_tab, width=500, height=200)
+    bigArea1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    bigArea2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
-    section0.pack(side=tk.TOP, fill=tk.BOTH)
-    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section0 = ttk.Frame(bigArea1, height=70)
+    section1 = ttk.Frame(bigArea1, width=30, height=200)
+    section2 = ttk.Frame(bigArea1, width=100, height=200)
+    section3 = ttk.Frame(bigArea1, width=500, height=200)
+    section4 = ttk.Frame(bigArea2, width=500, height=100)
+    section5 = ttk.Frame(bigArea2, width=500, height=200)
+
+    section0.pack(side=tk.TOP, anchor="w", fill=tk.Y)
+    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.Y, expand=True)
     section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    section4.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    section5.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section4.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
+    section5.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
     save_load_btn_frame = ttk.Frame(section0, width=300)
     save_load_btn_frame.pack(pady=10, anchor="w")
@@ -56,14 +64,7 @@ def create_calc_criteria_tab(notebook, state):
     save_info_button = ttk.Button(
         save_load_btn_frame,
         text="Save Project Info",
-        command=lambda: save_project_calcType_info(
-            state,
-            cat_treeview,
-            calcType_treeview,
-            stdFormula_treeview,
-            # modelParam_treeview,
-            # manual_inputParam_treeview,
-        ),
+        command=lambda: save_project_calcType_info(state),
     )
     save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
 
@@ -72,8 +73,8 @@ def create_calc_criteria_tab(notebook, state):
     category_list_label.pack(pady=10, anchor="w")
 
     # Frame for Treeview and Scrollbar
-    cat_treeview_frame = ttk.Frame(section1, width=300)
-    cat_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    cat_treeview_frame = ttk.Frame(section1, width=30)
+    cat_treeview_frame.pack(pady=10, fill=tk.Y, expand=True)
 
     cat_treeview = ttk.Treeview(
         cat_treeview_frame,
@@ -82,8 +83,9 @@ def create_calc_criteria_tab(notebook, state):
         height=8,
     )
 
-    cat_treeview.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    cat_treeview.heading("Category Name", text="Category Name")
+    cat_treeview.pack(side=tk.LEFT, fill=tk.Y, expand=True)
+    cat_treeview.heading("Category Name", text="Category")
+    cat_treeview.column("#0", width=50)
 
     scrollbar = ttk.Scrollbar(
         cat_treeview_frame, orient=tk.VERTICAL, command=cat_treeview.yview
@@ -207,6 +209,8 @@ def create_calc_criteria_tab(notebook, state):
             calcType_treeview,
             selected_calcType_label,
             stdFormula_treeview,
+            modelParam_treeview,
+            manual_Param_treeview,
         ),
     )
     stdFormula_treeview.bind(
@@ -230,39 +234,86 @@ def create_calc_criteria_tab(notebook, state):
     )
     add_new_formula_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-    del_selectedCalcType_button = ttk.Button(
+    del_selected_formula_button = ttk.Button(
         section3,
         text="Del",
-        command=lambda: remove_formula(state, stdFormula_treeview),
+        command=lambda: remove_formula(state, stdFormula_treeview, calcType_treeview),
     )
-    del_selectedCalcType_button.pack(side=tk.LEFT, padx=5, pady=5)
+    del_selected_formula_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     # Section 4 - Selected Calc types's Model Parameter list
     modelParam_label = ttk.Label(section4, text="모델 Parameter", font=("Arial", 14))
     modelParam_label.pack(padx=20, pady=10, anchor="w")
 
-    modelParam_treeview_frame = ttk.Frame(section4, width=300)
+    modelParam_treeview_frame = ttk.Frame(section4, width=300, height=100)
     modelParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
     modelParam_treeview = create_defaultTreeview(
         state,
         modelParam_treeview_frame,
         ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
+        height=5,
     )
-    modelParam_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
+    modelParam_treeview.pack(pady=10, fill=tk.X, expand=True)
+
+    modelParam_treeview.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_modelParam(
+            e,
+            state,
+            modelParam_treeview,
+        ),
+    )
+
+    new_modelParam_text = tk.Text(section4, height=2, width=100)
+    new_modelParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
+
+    add_new_modelParam_button = ttk.Button(
+        section4,
+        text="Add",
+        command=lambda: add_modelParam(
+            state, calcType_treeview, modelParam_treeview, new_modelParam_text
+        ),
+    )
+    add_new_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    del_selected_modelParam_button = ttk.Button(
+        section4,
+        text="Del",
+        command=lambda: remove_modelParam(state, modelParam_treeview),
+    )
+    del_selected_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     # Section 5 - Selected Calc types's Manual Input Parameter list
-    manual_inputParam_label = ttk.Label(
-        section5, text="수동 입력값", font=("Arial", 14)
-    )
-    manual_inputParam_label.pack(padx=20, pady=10, anchor="w")
+    manual_Param_label = ttk.Label(section5, text="수동 입력값", font=("Arial", 14))
+    manual_Param_label.pack(padx=20, pady=10, anchor="w")
 
-    manual_inputParam_treeview_frame = ttk.Frame(section5, width=300)
-    manual_inputParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    manual_Param_treeview_frame = ttk.Frame(section5, width=300, height=100)
+    manual_Param_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-    manual_inputParam_treeview = create_defaultTreeview(
+    manual_Param_treeview = create_defaultTreeview(
         state,
-        manual_inputParam_treeview_frame,
+        manual_Param_treeview_frame,
         ("항목", "수식 약자", "수동입력값", "단위", "비고", "calc_type"),
+        height=5,
     )
-    manual_inputParam_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
+    manual_Param_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    new_manualParam_text = tk.Text(section5, height=2, width=100)
+    new_manualParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
+
+    add_new_manualParam_button = ttk.Button(
+        section5,
+        text="Add",
+        command=lambda: add_manualParam(
+            state, calcType_treeview, manual_Param_treeview, new_manualParam_text
+        ),
+    )
+    add_new_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    del_selected_manualParam_button = ttk.Button(
+        section5,
+        text="Del",
+        command=lambda: remove_manualParam(state, manual_Param_treeview),
+    )
+    del_selected_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
