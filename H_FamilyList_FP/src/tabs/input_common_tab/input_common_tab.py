@@ -23,7 +23,7 @@ def create_input_common_tab(notebook, state):
     section1 = ttk.Frame(input_common_tab, width=300, height=200)
     section2 = ttk.Frame(input_common_tab, width=400, height=200)
 
-    section0.pack(side=tk.TOP, fill=tk.BOTH)
+    section0.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
@@ -33,7 +33,7 @@ def create_input_common_tab(notebook, state):
     current_load_label = ttk.Label(
         save_load_btn_frame, textvariable=state["current_loaded_pjt"]
     )
-    current_load_label.pack(side="top", padx=10, pady=10)
+    current_load_label.pack(side="right", padx=10, pady=10)
 
     save_info_button = ttk.Button(
         save_load_btn_frame,

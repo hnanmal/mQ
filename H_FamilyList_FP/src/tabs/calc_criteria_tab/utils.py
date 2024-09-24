@@ -86,11 +86,13 @@ def on_click_edit_calcType(
             print(state.edited_value.get())
             # return new_value
 
+            calc_type_dic_keys = ["type_tag", "설명", "category"]
             for calc_type_dic in state.project_info["calc_types"]:
                 if calc_type_dic["type_tag"] == selected_calcType_name:
-                    calc_type_dic["type_tag"] = new_value
-                    for formula_dic in calc_type_dic["formulas"]:
-                        formula_dic["calc_type"] = new_value
+                    calc_type_dic[calc_type_dic_keys[col_num]] = new_value
+                    if col_num == 0:
+                        for formula_dic in calc_type_dic["formulas"]:
+                            formula_dic["calc_type"] = new_value
 
         entry.bind(
             "<Return>", lambda e: save_edit(state, e)
@@ -319,6 +321,7 @@ def on_cat_select(
                     "end",
                     values=(
                         calcType_dic["type_tag"],
+                        calcType_dic["설명"],
                         calcType_dic["category"],
                     ),
                 )
@@ -338,10 +341,10 @@ def on_calcType_select(
     modelParam_treeview,
     manual_Param_treeview,
 ):
-    selected_cat = cat_treeview.selection()
-    selected_catName = cat_treeview.item(selected_cat)["values"][0]
+    # selected_cat = cat_treeview.selection()
+    # selected_catName = cat_treeview.item(selected_cat)["values"][0]
     selected_item = calcType_treeview.selection()
-    selected_itemCat = calcType_treeview.item(selected_item)["values"][1]
+    # selected_itemCat = calcType_treeview.item(selected_item)["values"][-1]
 
     if selected_item:
         stdFormula_treeview.delete(*stdFormula_treeview.get_children())
@@ -405,11 +408,12 @@ def add_calcType(state, cat_treeview, calcType_treeview, new_calcType_text):
                 calcType_treeview.insert(
                     "",
                     "end",
-                    values=(calcType, cat_name),
+                    values=(calcType, "", cat_name),
                 )
                 state.project_info["calc_types"].append(
                     {
                         "type_tag": calcType,
+                        "설명": "",
                         "category": cat_name,
                         "formulas": [],
                         "model_params": [],

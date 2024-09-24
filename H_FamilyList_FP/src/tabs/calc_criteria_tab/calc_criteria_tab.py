@@ -37,6 +37,9 @@ def create_calc_criteria_tab(notebook, state):
     calc_criteria_tab = ttk.Frame(notebook)
     notebook.add(calc_criteria_tab, text="산출 기준")
 
+    # s = ttk.Style()
+    # s.configure("new.TFrame", background="#7AC5CD")
+
     # Divide the tab into three sections (frames)
     bigArea1 = ttk.Frame(calc_criteria_tab, width=500, height=200)
     bigArea2 = ttk.Frame(calc_criteria_tab, width=300, height=200)
@@ -50,7 +53,7 @@ def create_calc_criteria_tab(notebook, state):
     section4 = ttk.Frame(bigArea2, width=500, height=100)
     section5 = ttk.Frame(bigArea2, width=500, height=200)
 
-    section0.pack(side=tk.TOP, anchor="w", fill=tk.Y)
+    section0.pack(side=tk.TOP, anchor="w", fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.Y, expand=True)
     section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
@@ -63,7 +66,7 @@ def create_calc_criteria_tab(notebook, state):
     current_load_label = ttk.Label(
         save_load_btn_frame, textvariable=state["current_loaded_pjt"]
     )
-    current_load_label.pack(side="top", padx=10, pady=10)
+    current_load_label.pack(side="right", padx=10, pady=10)
 
     save_info_button = ttk.Button(
         save_load_btn_frame,
@@ -139,7 +142,7 @@ def create_calc_criteria_tab(notebook, state):
     calcType_treeview = create_defaultTreeview(
         state,
         calcType_treeview_frame,
-        ("type_tag", "category"),
+        ("type_tag", "설명", "category"),
     )
     calcType_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
@@ -193,6 +196,8 @@ def create_calc_criteria_tab(notebook, state):
 
     stdFormula_label = ttk.Label(section3, text="표준 수식 예시", font=("Arial", 14))
     stdFormula_label.pack(padx=20, pady=10, anchor="w")
+
+    smallfont = tk.font.Font(size=11)
 
     stdFormula_treeview_frame = ttk.Frame(section3, width=300)
     stdFormula_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
@@ -260,7 +265,9 @@ def create_calc_criteria_tab(notebook, state):
     del_selected_formula_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     # Section 4 - Selected Calc types's Model Parameter list
-    modelParam_label = ttk.Label(section4, text="모델 Parameter", font=("Arial", 14))
+    modelParam_label = ttk.Label(
+        section4, text="모델 Parameter", font=("Arial", 14, "bold")
+    )
     modelParam_label.pack(padx=20, pady=10, anchor="w")
 
     modelParam_treeview_frame = ttk.Frame(section4, width=300, height=100)
@@ -305,16 +312,21 @@ def create_calc_criteria_tab(notebook, state):
     del_selected_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     # Section 5 - Selected Calc types's Manual Input Parameter list
-    manual_Param_label = ttk.Label(section5, text="수동 입력값", font=("Arial", 14))
-    manual_Param_label.pack(padx=20, pady=10, anchor="w")
+
+    manual_Param_labelArea = ttk.Frame(section5, height=70)
+    manual_Param_labelArea.pack(side=tk.TOP, anchor="w")
+    manual_Param_label = ttk.Label(
+        manual_Param_labelArea, text="수동 입력값", font=("Arial", 14, "bold")
+    )
+    manual_Param_label.pack(side=tk.LEFT, padx=20, pady=10, anchor="w")
     update_manualParam_common_button = ttk.Button(
-        section5,
+        manual_Param_labelArea,
         text="Update Common Items",
         command=lambda: update_manualParamTree_inputCommon(
             state, manual_Param_treeview
         ),
     )
-    update_manualParam_common_button.pack(side=tk.TOP, padx=20, pady=10, anchor="e")
+    update_manualParam_common_button.pack(side=tk.RIGHT, padx=20, pady=10, anchor="e")
 
     manual_Param_treeview_frame = ttk.Frame(section5, width=300, height=100)
     manual_Param_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
@@ -323,7 +335,7 @@ def create_calc_criteria_tab(notebook, state):
         state,
         manual_Param_treeview_frame,
         ("항목", "수식 약자", "수동입력값", "단위", "비고", "calc_type"),
-        height=6,
+        height=8,
     )
     manual_Param_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
