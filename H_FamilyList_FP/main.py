@@ -46,10 +46,6 @@ def main():
     # state
     app_state, wm_group_manager = initialize_app(logging_text_widget)
 
-    # defining the callback function (observer)
-    def my_callback(var, index, mode):
-        print("Traced variable {}").format(app_state["current_loaded_pjt"].get())
-
     # app_state.current_loaded_pjt = tk.StringVar()
     app_state["current_loaded_pjt"] = tk.StringVar()
     app_state["current_loaded_pjt"].set("project file not loaded yet")

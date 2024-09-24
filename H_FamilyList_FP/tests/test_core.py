@@ -1,50 +1,36 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import filedialog
+import time
 
 
-# Function to update labels in all tabs
-def update_file_path_label(state, labels):
-    for label in labels:
-        label.config(text=f"Loaded File: {state['file_path']}")
+def load_data():
+    for i in range(1, 101):  # Simulate loading with 100 items
+        time.sleep(0.05)  # Simulate a time-consuming task
+        tree.insert("", "end", values=(f"Item {i}", f"Value {i}"))
+        progress_var.set(i)
+        root.update_idletasks()  # Update UI
+
+    progress_bar.pack_forget()  # Remove progress bar after loading is complete
 
 
-# Function to handle file loading and state update
-def load_file(state, labels):
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        state["file_path"] = file_path  # Store the file path in the state
-        update_file_path_label(state, labels)  # Update the labels in all tabs
-
-
-# Create the main window
 root = tk.Tk()
-notebook = ttk.Notebook(root)
+root.title("Treeview Loading Animation Example")
 
-# Shared state dictionary
-state = {"file_path": "No file loaded"}
+# Create Treeview
+tree = ttk.Treeview(root, columns=("Column 1", "Column 2"), show="headings")
+tree.heading("Column 1", text="Column 1")
+tree.heading("Column 2", text="Column 2")
+tree.pack(pady=10)
 
-# Tab 1
-tab1 = ttk.Frame(notebook)
-notebook.add(tab1, text="Tab 1")
-label_tab1 = ttk.Label(tab1, text=f"Loaded File: {state['file_path']}")
-label_tab1.pack(pady=10)
-
-# Tab 2
-tab2 = ttk.Frame(notebook)
-notebook.add(tab2, text="Tab 2")
-label_tab2 = ttk.Label(tab2, text=f"Loaded File: {state['file_path']}")
-label_tab2.pack(pady=10)
-
-# Tab 3 - File loading button
-tab3 = ttk.Frame(notebook)
-notebook.add(tab3, text="Load File")
-load_button = ttk.Button(
-    tab3, text="Load File", command=lambda: load_file(state, [label_tab1, label_tab2])
+# Progress bar to indicate loading
+progress_var = tk.IntVar()
+progress_bar = ttk.Progressbar(
+    root, orient="horizontal", length=200, variable=progress_var, maximum=100
 )
-load_button.pack(pady=10)
+progress_bar.pack(pady=10)
 
-# Pack the notebook
-notebook.pack(expand=True, fill="both")
+# Load button
+load_button = ttk.Button(root, text="Load Data", command=load_data)
+load_button.pack(pady=10)
 
 root.mainloop()

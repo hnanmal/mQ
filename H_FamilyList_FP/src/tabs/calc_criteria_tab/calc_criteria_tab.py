@@ -27,6 +27,7 @@ from src.tabs.calc_criteria_tab.utils import (
     remove_manualParam,
     remove_modelParam,
     save_project_calcType_info,
+    update_manualParamTree_inputCommon,
 )
 
 
@@ -306,6 +307,14 @@ def create_calc_criteria_tab(notebook, state):
     # Section 5 - Selected Calc types's Manual Input Parameter list
     manual_Param_label = ttk.Label(section5, text="수동 입력값", font=("Arial", 14))
     manual_Param_label.pack(padx=20, pady=10, anchor="w")
+    update_manualParam_common_button = ttk.Button(
+        section5,
+        text="Update Common Items",
+        command=lambda: update_manualParamTree_inputCommon(
+            state, manual_Param_treeview
+        ),
+    )
+    update_manualParam_common_button.pack(side=tk.TOP, padx=20, pady=10, anchor="e")
 
     manual_Param_treeview_frame = ttk.Frame(section5, width=300, height=100)
     manual_Param_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
@@ -314,7 +323,7 @@ def create_calc_criteria_tab(notebook, state):
         state,
         manual_Param_treeview_frame,
         ("항목", "수식 약자", "수동입력값", "단위", "비고", "calc_type"),
-        height=5,
+        height=6,
     )
     manual_Param_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 

@@ -34,8 +34,8 @@ def save_project_info(
     # Save to file
     # file_path = f"{project_info_['project_name']}_pjt_info.json"
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".txt",  # Default file extension
-        filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        defaultextension=".hpjt",  # Default file extension
+        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)
@@ -52,7 +52,7 @@ def load_project_info(
     steel_treeview,
 ):
 
-    file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+    file_path = filedialog.askopenfilename(filetypes=[("HPJT files", "*.hpjt")])
     if file_path:
         with open(file_path, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)

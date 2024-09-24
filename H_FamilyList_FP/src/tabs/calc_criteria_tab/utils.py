@@ -5,6 +5,38 @@ from tkinter import ttk
 from tkinter import filedialog
 
 
+# Function to update Treeview items based on target_list
+def update_manualParamTree_inputCommon(state, manual_Param_treeview):
+    common_earth_items = state.project_info["common_info"]["earth"]
+    common_earth_items_names = [
+        common_earth_item["항목"] for common_earth_item in common_earth_items
+    ]
+
+    # Iterate through all items in the Treeview
+    for tree_idx, item_id in enumerate(manual_Param_treeview.get_children()):
+        # Get the value of the first column (index 0)
+        calc_type = manual_Param_treeview.item(item_id, "values")[-1]
+        first_column_value = manual_Param_treeview.item(item_id, "values")[0]
+        for com_idx, item_name in enumerate(common_earth_items_names):
+            if item_name == first_column_value:
+                manual_Param_treeview.set(
+                    item_id,
+                    column="수동입력값",
+                    value=common_earth_items[com_idx]["입력값"],
+                )
+                manual_Param_treeview.set(
+                    item_id, column="단위", value=common_earth_items[com_idx]["단위"]
+                )
+                for calc_type_dic in state.project_info["calc_types"]:
+                    if calc_type_dic["type_tag"] == calc_type:
+                        calc_type_dic["manual_params"][tree_idx]["수동입력값"] = (
+                            common_earth_items[com_idx]["입력값"]
+                        )
+                        calc_type_dic["manual_params"][tree_idx]["단위"] = (
+                            common_earth_items[com_idx]["단위"]
+                        )
+
+
 # Function to handle in-place editing
 def on_click_edit_calcType(
     event,
@@ -376,7 +408,13 @@ def add_calcType(state, cat_treeview, calcType_treeview, new_calcType_text):
                     values=(calcType, cat_name),
                 )
                 state.project_info["calc_types"].append(
-                    {"type_tag": calcType, "category": cat_name, "formulas": []}
+                    {
+                        "type_tag": calcType,
+                        "category": cat_name,
+                        "formulas": [],
+                        "model_params": [],
+                        "manual_params": [],
+                    }
                 )
                 state.logging_text_widget.write(f"add [ {calcType} ] Calc Type tag.\n")
         new_calcType_text.delete("1.0", tk.END)
@@ -620,8 +658,8 @@ def save_project_calcType_info(state):
     project_info_ = state.project_info
 
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".txt",  # Default file extension
-        filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        defaultextension=".hpjt",  # Default file extension
+        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)

@@ -21,10 +21,12 @@ def auto_numbering(state, building_treeview):
         building_treeview.set(item, "Number", start_number + idx)
 
         # Update the building list in the state with new numbers
-        if building_name in state.project_info["building_list"]:
-            state.project_info["building_list"][building_name]["building_number"] = (
-                start_number + idx
-            )
+        # if building_name in state.project_info["building_list"]:
+        #     state.project_info["building_list"][idx]["building_number"] = (
+        #         start_number + idx
+        #     )
+
+        state.project_info["building_list"][idx]["building_number"] = start_number + idx
 
 
 def add_building(state, building_treeview, new_building_text):
@@ -38,7 +40,7 @@ def add_building(state, building_treeview, new_building_text):
                     {
                         "building_name": building_name,
                         "building_number": None,
-                        "finish_types": [],
+                        "room_list": [],
                     }
                 )
                 building_treeview.insert("", "end", values=(building_name, ""))

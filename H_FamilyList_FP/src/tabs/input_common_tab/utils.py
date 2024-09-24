@@ -1,6 +1,7 @@
 # src/tabs/input_common_tab/utils.py
 import json
 import tkinter as tk
+from ttkwidgets import CheckboxTreeview
 from tkinter import ttk
 from tkinter import filedialog
 
@@ -8,9 +9,6 @@ from src.tabs.project_info_tab.common_utils import on_click_edit
 
 
 def create_defaultTreeview(state, frame, columns, height=None):
-    # Define the columns for the Treeview
-    # columns = ("Name", "Age", "City")
-
     # Create the Treeview with columns
     tree = (
         ttk.Treeview(frame, columns=columns, show="headings", height=height)
@@ -21,6 +19,15 @@ def create_defaultTreeview(state, frame, columns, height=None):
             show="headings",
         )
     )
+    # tree = (
+    #     CheckboxTreeview(frame, columns=columns, show="headings", height=height)
+    #     if height
+    #     else CheckboxTreeview(
+    #         frame,
+    #         columns=columns,
+    #         show="headings",
+    #     )
+    # )
 
     # # Define the column headings
     for col in columns:
@@ -96,8 +103,8 @@ def save_project_common_info(state, earth_treeview, steel_treeview):
     # Save to file
     # file_path = f"{project_info_['project_name']}_pjt_info.json"
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".txt",  # Default file extension
-        filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        defaultextension=".hpjt",  # Default file extension
+        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)
