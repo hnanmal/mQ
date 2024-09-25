@@ -93,6 +93,10 @@ def on_click_edit_calcType(
                     if col_num == 0:
                         for formula_dic in calc_type_dic["formulas"]:
                             formula_dic["calc_type"] = new_value
+                        for modelParam_dic in calc_type_dic["model_params"]:
+                            modelParam_dic["calc_type"] = new_value
+                        for manualParam_dic in calc_type_dic["manual_params"]:
+                            manualParam_dic["calc_type"] = new_value
 
         entry.bind(
             "<Return>", lambda e: save_edit(state, e)
@@ -108,8 +112,11 @@ def on_click_edit_formula(
     # on_click_edit,
     state,
     stdFormula_treeview,
-    # cat_treeview,
+    calcType_treeview,
 ):
+    selected_calcType = calcType_treeview.selection()[0]
+    selected_calcType_name = calcType_treeview.item(selected_calcType)["values"][0]
+
     selected_formula = stdFormula_treeview.selection()[0]
     selected_formula_name = stdFormula_treeview.item(selected_formula)["values"][0]
     # selected_calcType_cat = stdFormula_treeview.item(selected_formula)["values"][1]
@@ -125,6 +132,7 @@ def on_click_edit_formula(
         col_num = (
             int(column.replace("#", "")) - 1
         )  # Treeview columns are numbered as #1, #2, ...
+        row_num = stdFormula_treeview.index(item_id)
         current_value = stdFormula_treeview.item(item_id, "values")[col_num]
 
         # Get the bounding box of the cell
@@ -152,10 +160,14 @@ def on_click_edit_formula(
             # return new_value
 
             for calc_type_dic in state.project_info["calc_types"]:
-                for formula_dic in calc_type_dic["formulas"]:
-                    formula_dic_keys = list(formula_dic.keys())
-                    if formula_dic["formula"] == selected_formula_name:
-                        formula_dic[formula_dic_keys[col_num]] = new_value
+                if calc_type_dic["type_tag"] == selected_calcType_name:
+                    for data_idx, formula_dic in enumerate(calc_type_dic["formulas"]):
+                        formula_dic_keys = list(formula_dic.keys())
+                        if (
+                            formula_dic["formula"] == selected_formula_name
+                            and data_idx == row_num
+                        ):
+                            formula_dic[formula_dic_keys[col_num]] = new_value
 
         entry.bind(
             "<Return>", lambda e: save_edit(state, e)
@@ -170,8 +182,11 @@ def on_click_edit_modelParam(
     # on_click_edit,
     state,
     modelParam_treeview,
-    # cat_treeview,
+    calcType_treeview,
 ):
+    selected_calcType = calcType_treeview.selection()[0]
+    selected_calcType_name = calcType_treeview.item(selected_calcType)["values"][0]
+
     selected_modelParam = modelParam_treeview.selection()[0]
     selected_modelParam_name = modelParam_treeview.item(selected_modelParam)["values"][
         0
@@ -216,10 +231,11 @@ def on_click_edit_modelParam(
             # return new_value
 
             for calc_type_dic in state.project_info["calc_types"]:
-                for modelParam_dic in calc_type_dic["model_params"]:
-                    modelParam_dic_keys = list(modelParam_dic.keys())
-                    if modelParam_dic["항목"] == selected_modelParam_name:
-                        modelParam_dic[modelParam_dic_keys[col_num]] = new_value
+                if calc_type_dic["type_tag"] == selected_calcType_name:
+                    for modelParam_dic in calc_type_dic["model_params"]:
+                        modelParam_dic_keys = list(modelParam_dic.keys())
+                        if modelParam_dic["항목"] == selected_modelParam_name:
+                            modelParam_dic[modelParam_dic_keys[col_num]] = new_value
 
         entry.bind(
             "<Return>", lambda e: save_edit(state, e)
@@ -234,8 +250,11 @@ def on_click_edit_manual_Param(
     # on_click_edit,
     state,
     manual_Param_treeview,
-    # cat_treeview,
+    calcType_treeview,
 ):
+    selected_calcType = calcType_treeview.selection()[0]
+    selected_calcType_name = calcType_treeview.item(selected_calcType)["values"][0]
+
     selected_modelParam = manual_Param_treeview.selection()[0]
     selected_modelParam_name = manual_Param_treeview.item(selected_modelParam)[
         "values"
@@ -280,10 +299,11 @@ def on_click_edit_manual_Param(
             # return new_value
 
             for calc_type_dic in state.project_info["calc_types"]:
-                for manualParam_dic in calc_type_dic["manual_params"]:
-                    manualParam_dic_keys = list(manualParam_dic.keys())
-                    if manualParam_dic["항목"] == selected_modelParam_name:
-                        manualParam_dic[manualParam_dic_keys[col_num]] = new_value
+                if calc_type_dic["type_tag"] == selected_calcType_name:
+                    for manualParam_dic in calc_type_dic["manual_params"]:
+                        manualParam_dic_keys = list(manualParam_dic.keys())
+                        if manualParam_dic["항목"] == selected_modelParam_name:
+                            manualParam_dic[manualParam_dic_keys[col_num]] = new_value
 
         entry.bind(
             "<Return>", lambda e: save_edit(state, e)

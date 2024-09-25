@@ -56,6 +56,20 @@ def create_project_info_tab(notebook, state):
 
     save_load_btn_frame = ttk.Frame(section0, width=300)
     save_load_btn_frame.pack(pady=10, anchor="w")
+
+    save_info_button = ttk.Button(
+        save_load_btn_frame,
+        text="Save Project Info",
+        command=lambda: save_project_info(
+            state,
+            project_name_var,
+            project_type_var,
+            building_treeview,
+            room_treeview,
+        ),
+    )
+    save_info_button.pack(side="left", padx=20, pady=20, anchor="w")
+
     load_info_button = ttk.Button(
         save_load_btn_frame,
         text="Load Project Info",
@@ -69,19 +83,6 @@ def create_project_info_tab(notebook, state):
         ),
     )
     load_info_button.pack(side="left", padx=30, pady=10, anchor="w")
-
-    save_info_button = ttk.Button(
-        save_load_btn_frame,
-        text="Save Project Info",
-        command=lambda: save_project_info(
-            state,
-            project_name_var,
-            project_type_var,
-            building_treeview,
-            room_treeview,
-        ),
-    )
-    save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
 
     # Section 1 - Project Info
     project_name_label = ttk.Label(section1, text="Project Name", font=("Arial", 14))

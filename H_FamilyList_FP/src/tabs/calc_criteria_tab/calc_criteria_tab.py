@@ -73,7 +73,7 @@ def create_calc_criteria_tab(notebook, state):
         text="Save Project Info",
         command=lambda: save_project_calcType_info(state),
     )
-    save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
+    save_info_button.pack(side="left", padx=10, pady=10, anchor="w")
 
     # Category List Title
     category_list_label = ttk.Label(section1, text="Category List", font=("Arial", 14))
@@ -194,10 +194,10 @@ def create_calc_criteria_tab(notebook, state):
     )
     selected_calcType_label.pack(pady=10, anchor="w")
 
-    stdFormula_label = ttk.Label(section3, text="표준 수식 예시", font=("Arial", 14))
+    stdFormula_label = ttk.Label(section3, text="표준 수식", font=("Arial", 14))
     stdFormula_label.pack(padx=20, pady=10, anchor="w")
 
-    smallfont = tk.font.Font(size=11)
+    # smallfont = tk.font.Font(size=11)
 
     stdFormula_treeview_frame = ttk.Frame(section3, width=300)
     stdFormula_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
@@ -242,6 +242,7 @@ def create_calc_criteria_tab(notebook, state):
             e,
             state,
             stdFormula_treeview,
+            calcType_treeview,
         ),
     )
 
@@ -287,6 +288,7 @@ def create_calc_criteria_tab(notebook, state):
             e,
             state,
             modelParam_treeview,
+            calcType_treeview,
         ),
     )
 
@@ -345,6 +347,7 @@ def create_calc_criteria_tab(notebook, state):
             e,
             state,
             manual_Param_treeview,
+            calcType_treeview,
         ),
     )
 

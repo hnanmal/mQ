@@ -44,7 +44,7 @@ def create_input_common_tab(notebook, state):
             steel_treeview,
         ),
     )
-    save_info_button.pack(side="left", padx=30, pady=10, anchor="w")
+    save_info_button.pack(side="left", padx=10, pady=10, anchor="w")
 
     earth_label = ttk.Label(section1, text="Earth Work", font=("Arial", 14))
     earth_label.pack(pady=10, anchor="w")
