@@ -14,7 +14,6 @@ def handle_tab_click(event, notebook, state):
     state.clicked_tab_name = clicked_tab_name
     # Log the clicked tab name
     logging_text_widget = state.logging_text_widget
-    # logging_text_widget.write(f"Clicked on tab: {clicked_tab_name}\n")
     logging_text_widget.write(f":: [ {clicked_tab_name} ] 탭에 오셨습니다. ::\n")
 
     # reload_tab_content(state, notebook)

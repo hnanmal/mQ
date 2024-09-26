@@ -5,7 +5,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
-    creat_combo_buildingList,
     save_project_roomType_info,
 )
 
@@ -33,13 +32,8 @@ def create_room_tab(notebook, state):
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     # bigArea1 세부 구성
-    save_load_btn_frame = ttk.Frame(section0, width=100)
-    save_load_btn_frame.pack(pady=10, anchor="w")
-
-    current_load_label = ttk.Label(
-        save_load_btn_frame, textvariable=state["current_loaded_pjt"]
-    )
-    current_load_label.pack(side="right", padx=10, pady=10)
+    save_load_btn_frame = ttk.Frame(section0, width=100, relief="ridge")
+    save_load_btn_frame.pack(side="left", pady=10, anchor="w")
 
     save_info_button = ttk.Button(
         save_load_btn_frame,
@@ -48,13 +42,28 @@ def create_room_tab(notebook, state):
     )
     save_info_button.pack(side="left", padx=10, pady=10, anchor="w")
 
-    state.project_info_var = tk.StringVar()
-    try:
-        building_list = json.dump(state.project_info_var.get())
-        combo_box = ttk.Combobox(section0, textvariable=building_list)
-        combo_box.pack(pady=20)
-    except:
-        pass
+    current_load_label = ttk.Label(
+        save_load_btn_frame, textvariable=state["current_loaded_pjt"]
+    )
+    current_load_label.pack(side="left", padx=10, pady=10)
+
+    bd_comboBox = ttk.Combobox(section0)
+    bd_comboBox.config(
+        state="readonly", height=20
+    )  # 콤보 박스에 사용자가 직접 입력 불가
+    bd_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
+    bd_comboBox.set("대상 빌딩 선택")  # 맨 처음 나타낼 값 설정
+    bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
+    state.bd_combobox = bd_comboBox
+
+    calc_comboBox = ttk.Combobox(section0)
+    calc_comboBox.config(
+        state="readonly", height=20
+    )  # 콤보 박스에 사용자가 직접 입력 불가
+    calc_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
+    calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
+    calc_comboBox.pack(side=tk.RIGHT, padx=10, pady=10, anchor="e")
+    state.calc_comboBox = calc_comboBox
 
     # bigArea2 세부 구성
     ## section1 세부 구성

@@ -11,13 +11,8 @@ from src.tabs.project_info_tab.bd_treeview_utils import (
     remove_building,
 )
 from src.tabs.project_info_tab.common_utils import (
-    # auto_numbering,
     load_project_info,
     save_project_info,
-)
-from src.tabs.project_info_tab.finishType_list_utils import (
-    add_finish_type,
-    remove_finish_type,
 )
 from src.views.treeview_handlers import create_treeview
 from src.tabs.project_info_tab.room_treeview_utils import (

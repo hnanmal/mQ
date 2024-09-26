@@ -1,4 +1,5 @@
 # src/core/state_management.py
+import tkinter as tk
 
 
 class AppState:

@@ -20,15 +20,6 @@ def create_defaultTreeview(state, frame, columns, height=None):
             show="headings",
         )
     )
-    # tree = (
-    #     CheckboxTreeview(frame, columns=columns, show="headings", height=height)
-    #     if height
-    #     else CheckboxTreeview(
-    #         frame,
-    #         columns=columns,
-    #         show="headings",
-    #     )
-    # )
 
     # # Define the column headings
     for col in columns:
