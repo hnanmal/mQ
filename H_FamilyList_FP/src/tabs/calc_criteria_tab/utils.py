@@ -4,6 +4,128 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
+from src.tabs.input_common_tab.utils import create_defaultTreeview
+
+
+def on_doubleClick_newWindow(event, state, calcType_treeview):
+    window = tk.Toplevel()
+    window.geometry("1280x800+100+100")
+    window.wm_attributes("-topmost", 1)
+
+    section4_window = ttk.Frame(window, width=800, height=100)
+    section5_window = ttk.Frame(window, width=800, height=100)
+    section4_window.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
+    section5_window.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    # Section 4 - Selected Calc types's Model Parameter list
+    modelParam_label = ttk.Label(
+        section4_window, text="모델 Parameter", font=("Arial", 14, "bold")
+    )
+    modelParam_label.pack(padx=20, pady=10, anchor="w")
+
+    modelParam_treeview_frame = ttk.Frame(section4_window, width=300, height=100)
+    modelParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    modelParam_treeview_window = create_defaultTreeview(
+        state,
+        modelParam_treeview_frame,
+        ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
+        height=5,
+    )
+    modelParam_treeview_window.pack(pady=10, fill=tk.X, expand=True)
+
+    modelParam_treeview_window.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_modelParam(
+            e,
+            state,
+            modelParam_treeview_window,
+            calcType_treeview,
+        ),
+    )
+
+    new_modelParam_text = tk.Text(section4_window, height=2, width=100)
+    new_modelParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
+
+    add_new_modelParam_button = ttk.Button(
+        section4_window,
+        text="Add",
+        command=lambda: add_modelParam(
+            state, calcType_treeview, modelParam_treeview_window, new_modelParam_text
+        ),
+    )
+    add_new_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    del_selected_modelParam_button = ttk.Button(
+        section4_window,
+        text="Del",
+        command=lambda: remove_modelParam(
+            state, modelParam_treeview_window, calcType_treeview
+        ),
+    )
+    del_selected_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    # Section 5 - Selected Calc types's Manual Input Parameter list
+
+    manual_Param_labelArea = ttk.Frame(section5_window, height=70)
+    manual_Param_labelArea.pack(side=tk.TOP, anchor="w")
+    manual_Param_label = ttk.Label(
+        manual_Param_labelArea, text="수동 입력값", font=("Arial", 14, "bold")
+    )
+    manual_Param_label.pack(side=tk.LEFT, padx=20, pady=10, anchor="w")
+    update_manualParam_common_button = ttk.Button(
+        manual_Param_labelArea,
+        text="Update Common Items",
+        command=lambda: update_manualParamTree_inputCommon(
+            state, manual_Param_treeview_window
+        ),
+    )
+    update_manualParam_common_button.pack(side=tk.RIGHT, padx=20, pady=10, anchor="e")
+
+    manual_Param_treeview_frame = ttk.Frame(section5_window, width=300, height=100)
+    manual_Param_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    manual_Param_treeview_window = create_defaultTreeview(
+        state,
+        manual_Param_treeview_frame,
+        ("항목", "수식 약자", "수동입력값", "단위", "비고", "calc_type"),
+        height=8,
+    )
+    manual_Param_treeview_window.pack(pady=10, fill=tk.BOTH, expand=True)
+
+    manual_Param_treeview_window.bind(
+        "<Double-Button-1>",
+        lambda e: on_click_edit_manual_Param(
+            e,
+            state,
+            manual_Param_treeview_window,
+            calcType_treeview,
+        ),
+    )
+    new_manualParam_text = tk.Text(section5_window, height=2, width=100)
+    new_manualParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
+
+    add_new_manualParam_button = ttk.Button(
+        section5_window,
+        text="Add",
+        command=lambda: add_manualParam(
+            state, calcType_treeview, manual_Param_treeview_window, new_manualParam_text
+        ),
+    )
+    add_new_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    del_selected_manualParam_button = ttk.Button(
+        section5_window,
+        text="Del",
+        command=lambda: remove_manualParam(
+            state, manual_Param_treeview_window, calcType_treeview
+        ),
+    )
+    del_selected_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    state.model_Param_treeview_window = modelParam_treeview_window
+    state.manual_Param_treeview_window = manual_Param_treeview_window
+
 
 # Function to update Treeview items based on target_list
 def update_manualParamTree_inputCommon(state, manual_Param_treeview):
@@ -411,6 +533,42 @@ def on_calcType_select(
                             manualParam_dic["calc_type"],
                         ),
                     )
+
+                try:
+                    state.model_Param_treeview_window.delete(
+                        *state.model_Param_treeview_window.get_children()
+                    )
+                    state.manual_Param_treeview_window.delete(
+                        *state.manual_Param_treeview_window.get_children()
+                    )
+                    for modelParam_dic in calcType_dic["model_params"]:
+                        state.model_Param_treeview_window.insert(
+                            "",
+                            "end",
+                            values=(
+                                modelParam_dic["항목"],
+                                modelParam_dic["수식 약자"],
+                                modelParam_dic["Parameter"],
+                                modelParam_dic["단위"],
+                                modelParam_dic["비고"],
+                                modelParam_dic["calc_type"],
+                            ),
+                        )
+                    for manualParam_dic in calcType_dic["manual_params"]:
+                        state.manual_Param_treeview_window.insert(
+                            "",
+                            "end",
+                            values=(
+                                manualParam_dic["항목"],
+                                manualParam_dic["수식 약자"],
+                                manualParam_dic["수동입력값"],
+                                manualParam_dic["단위"],
+                                manualParam_dic["비고"],
+                                manualParam_dic["calc_type"],
+                            ),
+                        )
+                except:
+                    pass
 
         state.logging_text_widget.write(
             f"[ {selected_itemName} ] 산출타입태그의 세부 항목을 조회합니다.\n"

@@ -19,10 +19,10 @@ from src.views.logging_utils import (
 from src.views.treeview_utils import *
 from src.views.styles import configure_tab_styles
 from src.views.notebook_tabs import (
-    create_notebook_with_tabs,
-    create_team_standard_tab,
+    create_familyType_manage_tab,
     create_project_standard_tab,
-    create_family_linkage_tab,
+    create_team_standard_tab,
+    create_notebook_with_tabs,
 )
 
 
@@ -57,7 +57,7 @@ def main():
     # Create upper-level tabs: Team Standard and Project Standard
     create_team_standard_tab(root, main_notebook, app_state, wm_group_manager)
     create_project_standard_tab(main_notebook, app_state)
-    create_family_linkage_tab(main_notebook, app_state)
+    create_familyType_manage_tab(main_notebook, app_state)
 
     # # Debugging: Print statement to confirm main function is running
     logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")

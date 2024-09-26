@@ -22,6 +22,7 @@ from src.tabs.calc_criteria_tab.utils import (
     on_click_edit_formula,
     on_click_edit_manual_Param,
     on_click_edit_modelParam,
+    on_doubleClick_newWindow,
     remove_calcType,
     remove_formula,
     remove_manualParam,
@@ -292,6 +293,15 @@ def create_calc_criteria_tab(notebook, state):
         ),
     )
 
+    modelParam_label.bind(
+        "<Double-Button-1>",
+        lambda e: on_doubleClick_newWindow(
+            e,
+            state,
+            calcType_treeview,
+        ),
+    )
+
     new_modelParam_text = tk.Text(section4, height=2, width=100)
     new_modelParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
 
@@ -347,6 +357,15 @@ def create_calc_criteria_tab(notebook, state):
             e,
             state,
             manual_Param_treeview,
+            calcType_treeview,
+        ),
+    )
+
+    manual_Param_label.bind(
+        "<Double-Button-1>",
+        lambda e: on_doubleClick_newWindow(
+            e,
+            state,
             calcType_treeview,
         ),
     )

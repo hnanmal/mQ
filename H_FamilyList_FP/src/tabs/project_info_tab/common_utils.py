@@ -58,6 +58,7 @@ def load_project_info(
             loaded_data = json.load(f)
 
         # Save loaded data to state
+        state.project_info_var.set(loaded_data)
         state.project_info = loaded_data
         state["current_loaded_pjt"].set(file_path)
         # print(state.project_info)

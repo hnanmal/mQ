@@ -9,6 +9,7 @@ def initialize_app(logging_text_widget):
     state = AppState(logging_text_widget)
     wm_group_manager = WMGroupManager()
     state.update_wm_group_data(wm_group_manager.get_wm_group_data())
+    state.project_info_ = tk.StringVar()
     return state, wm_group_manager
 
 
