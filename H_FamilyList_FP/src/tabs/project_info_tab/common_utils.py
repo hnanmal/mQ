@@ -5,7 +5,10 @@ from tkinter import ttk
 from tkinter import filedialog
 import json
 
-from src.tabs.familyType_manage_tab.utils import update_combobox_data
+from src.tabs.familyType_manage_tab.utils import (
+    update_checkCanvas_data,
+    update_combobox_data,
+)
 
 
 def refresh_treeview(treeview, data, targetCat):
@@ -85,8 +88,9 @@ def load_project_info(
                     building_data["building_number"],
                 ),
             )
-        update_combobox_data(state.bd_combobox, loaded_data, "building", "Room")
-        update_combobox_data(state.calc_comboBox, loaded_data, "calc", "Room")
+        update_combobox_data(state.bd_combobox_room, loaded_data, "building")
+        update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
+        update_checkCanvas_data(state.checkCanvas_room, loaded_data, "Room")
         state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
 
 

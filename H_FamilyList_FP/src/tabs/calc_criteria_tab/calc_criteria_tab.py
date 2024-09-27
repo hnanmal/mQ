@@ -61,7 +61,7 @@ def create_calc_criteria_tab(notebook, state):
     section4.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
     section5.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-    save_load_btn_frame = ttk.Frame(section0, width=100)
+    save_load_btn_frame = ttk.Frame(section0, width=100, relief="ridge")
     save_load_btn_frame.pack(pady=10, anchor="w")
 
     current_load_label = ttk.Label(

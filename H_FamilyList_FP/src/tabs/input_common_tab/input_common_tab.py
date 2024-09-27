@@ -27,7 +27,7 @@ def create_input_common_tab(notebook, state):
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
-    save_load_btn_frame = ttk.Frame(section0, width=300)
+    save_load_btn_frame = ttk.Frame(section0, width=300, relief="ridge")
     save_load_btn_frame.pack(pady=10, anchor="w")
 
     current_load_label = ttk.Label(

@@ -1,62 +1,45 @@
-# import tkinter as tk
-# from tkinter import ttk, filedialog, messagebox
-# import json
+import tkinter as tk
+from tkinter import ttk
+
+from src.tabs.familyType_manage_tab.checkListbox import SelectableListboxWithCheckboxes
 
 
-# def load_json_data(file_path):
-#     """
-#     Load data from the specified JSON file.
-#     """
-#     try:
-#         with open(file_path, "r") as file:
-#             data = json.load(file)
-#         return data
-#     except Exception as e:
-#         messagebox.showerror("Error", f"Failed to load JSON data: {e}")
-#         return {}
+def toggle_check(item_id):
+    # Toggle the checkbox state
+    if treeview.item(item_id, "tags") == ("checked",):
+        treeview.item(item_id, tags=("unchecked",))
+    else:
+        treeview.item(item_id, tags=("checked",))
+    update_item_text(item_id)
 
 
-# def update_combobox_data(combobox, data):
-#     """
-#     Update the combobox values based on the data loaded from the JSON file.
-#     """
-#     items = data.get("items", [])
-
-#     # Update the combobox values
-#     combobox["values"] = items
-
-#     # Set the default value to the first item if available
-#     if items:
-#         combobox.set(items[0])
-#     else:
-#         combobox.set("")  # Clear the combobox if no items are available
+def update_item_text(item_id):
+    # Update the item text based on the checkbox state
+    if treeview.item(item_id, "tags") == ("checked",):
+        treeview.item(item_id, text=f"[x] {treeview.item(item_id, 'text')[4:]}")
+    else:
+        treeview.item(item_id, text=f"[ ] {treeview.item(item_id, 'text')[4:]}")
 
 
-# def on_load_button_click():
-#     """
-#     Handle the load button click event.
-#     """
-#     # Open a file dialog to select the JSON file
-#     file_path = filedialog.askopenfilename(
-#         title="Open JSON File", filetypes=[("JSON Files", "*.json")]
-#     )
-#     if file_path:
-#         # Load the JSON data and update the combobox
-#         json_data = load_json_data(file_path)
-#         update_combobox_data(combobox, json_data)
+# Create the main window
+root = tk.Tk()
+root.title("Treeview with Checkboxes")
 
+# Setup Treeview
+treeview = ttk.Treeview(root, columns=("Item",), show="tree")
+treeview.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-# # Initialize the main window
-# root = tk.Tk()
-# root.title("Combobox with Dynamic JSON Data")
+# Define the tags for checked/unchecked
+treeview.tag_configure("checked", background="lightgreen")
+treeview.tag_configure("unchecked", background="white")
 
-# # Create a Combobox
-# combobox = ttk.Combobox(root)
-# combobox.pack(pady=10)
+# Add items with checkbox-like labels
+items = ["Apple", "Banana", "Cherry", "Date", "Elderberry"]
+for item in items:
+    item_id = treeview.insert("", "end", text=f"[ ] {item}", tags=("unchecked",))
+    treeview.bind("<Button-1>", lambda e, id=item_id: toggle_check(id))
 
-# # Create a button to load the JSON data
-# load_button = ttk.Button(root, text="Load JSON Data", command=on_load_button_click)
-# load_button.pack(pady=10)
+d = SelectableListboxWithCheckboxes()
 
-# # Run the main loop
-# root.mainloop()
+# Run the application
+root.mainloop()

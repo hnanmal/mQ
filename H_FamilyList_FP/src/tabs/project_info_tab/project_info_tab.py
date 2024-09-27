@@ -59,8 +59,6 @@ def create_project_info_tab(notebook, state):
             state,
             project_name_var,
             project_type_var,
-            building_treeview,
-            room_treeview,
         ),
     )
     save_info_button.pack(side="left", padx=20, pady=20, anchor="w")
