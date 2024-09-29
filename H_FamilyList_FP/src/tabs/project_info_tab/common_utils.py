@@ -90,7 +90,7 @@ def load_project_info(
             )
         update_combobox_data(state.bd_combobox_room, loaded_data, "building")
         update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
-        update_checkCanvas_data(state.checkCanvas_room, loaded_data, "Room")
+        # update_checkCanvas_data(state, state.checkCanvas_room, loaded_data)
         state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
 
 

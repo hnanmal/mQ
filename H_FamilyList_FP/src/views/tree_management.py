@@ -54,10 +54,10 @@ def create_family_standard_tab(root, notebook, state):
 
     # First row: Save, Load, Dropdown, Search box, Search button
     save_button = ttk.Button(
-        button_frame, text="Save", command=lambda: save_treeview(tree)
+        button_frame, text="Save", command=lambda: save_treeview(state, tree)
     )
     load_button = ttk.Button(
-        button_frame, text="Load", command=lambda: load_treeview(tree)
+        button_frame, text="Load", command=lambda: load_treeview(state, tree)
     )
 
     level_options = list(range(1, 11))  # Define levels to expand/collapse
