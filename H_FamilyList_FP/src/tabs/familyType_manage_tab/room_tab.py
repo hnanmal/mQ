@@ -5,29 +5,30 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
-    on_doubleClick_newWindow,
     save_project_roomType_info,
     search_stdTypes,
-    update_checkCanvas_data,
+    update_selected_stdType_label_inRoom,
+    update_stdTypeTree_inRoom,
 )
 from src.tabs.familyType_manage_tab.checkListbox import (
     CheckListCanvas,
 )
+from src.tabs.input_common_tab.utils import create_defaultTreeview
 
 
 def create_room_tab(notebook, state):
     room_tab = ttk.Frame(notebook)
     notebook.add(room_tab, text="Room")
 
-    bigArea1 = ttk.Frame(room_tab, width=500, height=70, relief="ridge")
+    bigArea1 = ttk.Frame(room_tab, width=500, height=70)
     bigArea2 = ttk.Frame(room_tab, width=500, height=1000, relief="ridge")
 
     bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
     bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
-    section1 = ttk.Frame(bigArea2, width=700, height=700, relief="ridge")
-    section2 = ttk.Frame(bigArea2, width=700, height=700, relief="ridge")
+    section1 = ttk.Frame(bigArea2, width=700, height=700)
+    section2 = ttk.Frame(bigArea2, width=1000, height=700, relief="ridge")
     section3 = ttk.Frame(bigArea2, width=700, height=700, relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
@@ -53,13 +54,6 @@ def create_room_tab(notebook, state):
     )
     current_load_label.pack(side="left", padx=10, pady=10)
 
-    def getSelectedItem(event, checkCanvas, data, combobox):
-        print(combobox.get())
-        state.current_selected_building = combobox.get()
-        selected_building = state.current_selected_building
-        update_checkCanvas_data(state, checkCanvas, data, selected_building, cat="Room")
-        return combobox.get()
-
     bd_comboBox = ttk.Combobox(section0)
     bd_comboBox.config(
         state="readonly", height=20
@@ -70,9 +64,7 @@ def create_room_tab(notebook, state):
     state.bd_combobox_room = bd_comboBox
     bd_comboBox.bind(
         "<<ComboboxSelected>>",
-        lambda e: getSelectedItem(
-            e, state.checkCanvas_room, state.project_info, bd_comboBox
-        ),
+        lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
     )
     try:
         print(state.current_selected_building)
@@ -95,23 +87,21 @@ def create_room_tab(notebook, state):
     )
     std_type_label.pack(padx=10, pady=10, anchor="w")
 
-    ### Standard Type List 구간
+    ### Standard Type Treeview 구간
+    stdTypes_treeview = create_defaultTreeview(state, section1, ["StdTypes"], height=15)
+    state.stdTypeTree_inRoom = stdTypes_treeview
 
-    stdTypes_appliedListbox = tk.Listbox(section1, selectmode=tk.SINGLE, height=20)
-    stdTypes_appliedListbox.pack(pady=10, fill=tk.BOTH, expand=True)
-
-    # stdTypes_listbox = tk.Listbox(section1, selectmode=tk.SINGLE, height=20)
-    # stdTypes_listbox.pack(pady=10, fill=tk.BOTH, expand=True)
-
-    # Insert std_type data for Room
-    # state.section1_room_tab = section1
-    # state.checkCanvas_room = CheckListCanvas(state, section1)
-
-    section1.bind(
-        "<Double-Button-1>",
-        lambda e: on_doubleClick_newWindow(
-            e,
-            state,
-            stdTypes_appliedListbox,
+    stdTypes_treeview.bind(
+        "<<TreeviewSelect>>",
+        lambda e: update_selected_stdType_label_inRoom(
+            e, state, stdTypes_treeview, selected_stdType_label
         ),
     )
+
+    ## section2 세부 구성
+    state.selected_stdType_name = tk.StringVar()
+    state.selected_stdType_name.set("Selected Standard Type:                           ")
+    selected_stdType_label = ttk.Label(
+        section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
+    )
+    selected_stdType_label.pack(padx=10, pady=10, anchor="w")

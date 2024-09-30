@@ -4,94 +4,39 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 
+
 # from src.tabs.input_common_tab.utils import create_defaultTreeview
 
 
-def on_doubleClick_newWindow(event, state, calcType_treeview):
-    window = tk.Toplevel()
-    window.geometry("640x800+100+100")
-    window.wm_attributes("-topmost", 1)
+def update_selected_stdType_label_inRoom(
+    event, state, stdTypes_treeview, selected_stdType_label
+):
+    selected_type = stdTypes_treeview.item(stdTypes_treeview.focus())
+    selected_type_name = selected_type.get("values")[0]
 
-    section1_window = ttk.Frame(window, width=800, height=100)
-    section1_window.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
+    state.selected_stdType_name.set("Selected Standard Type: " + selected_type_name)
 
-    std_type_label_pre = ttk.Label(
-        section1_window, text="Standard Type List by standard", font=("Arial", 14)
-    )
-    std_type_label_pre.pack(pady=10, fill=tk.BOTH, expand=True)
 
-    ### search 영역
-    search_var = tk.StringVar()
-    search_label = ttk.Label(section1_window, text="Search", font=("Arial", 11))
-    search_label.pack(padx=5, anchor="w")
-    search_entry = ttk.Entry(section1_window, textvariable=search_var)
-    search_entry.pack(padx=5, anchor="w")
+def update_stdTypeTree_inRoom(event, state, bd_comboBox):
+    def find_stdType_items_inRoom(selectedBuilding=None):
+        res = []
+        if selectedBuilding:
+            for bd_dic in state.project_info["building_list"]:
+                if bd_dic["building_name"] == selectedBuilding:
+                    for room_dic in bd_dic["room_list"]:
+                        res.append(room_dic["finish_type"])
+        else:
+            for bd_dic in state.project_info["building_list"]:
+                for room_dic in bd_dic["room_list"]:
+                    res.append(room_dic["finish_type"])
+        return res
 
-    # Bind the Enter key to trigger search functionality
-    search_entry.bind(
-        "<Return>",
-        lambda event: search_stdTypes(
-            sheet_widget,
-            data,
-            search_var.get(),
-        ),
-    )
+    state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
 
-    # section4_window = ttk.Frame(window, width=800, height=100)
-    # section5_window = ttk.Frame(window, width=800, height=100)
-    # section4_window.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
-    # section5_window.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
-
-    stdTypes_preListbox = tk.Listbox(section1_window, selectmode=tk.SINGLE, height=20)
-    stdTypes_preListbox.pack(padx=5, anchor="w")
-
-    # # Section 4 - Selected Calc types's Model Parameter list
-    # modelParam_label = ttk.Label(
-    #     section4_window, text="모델 Parameter", font=("Arial", 14, "bold")
-    # )
-    # modelParam_label.pack(padx=20, pady=10, anchor="w")
-
-    # modelParam_treeview_frame = ttk.Frame(section4_window, width=300, height=100)
-    # modelParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
-
-    # modelParam_treeview_window = create_defaultTreeview(
-    #     state,
-    #     modelParam_treeview_frame,
-    #     ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
-    #     height=5,
-    # )
-    # modelParam_treeview_window.pack(pady=10, fill=tk.X, expand=True)
-
-    # modelParam_treeview_window.bind(
-    #     "<Double-Button-1>",
-    #     lambda e: on_click_edit_modelParam(
-    #         e,
-    #         state,
-    #         modelParam_treeview_window,
-    #         calcType_treeview,
-    #     ),
-    # )
-
-    # new_modelParam_text = tk.Text(section4_window, height=2, width=100)
-    # new_modelParam_text.pack(side=tk.RIGHT, pady=5, anchor="e")
-
-    # add_new_modelParam_button = ttk.Button(
-    #     section4_window,
-    #     text="Add",
-    #     command=lambda: add_modelParam(
-    #         state, calcType_treeview, modelParam_treeview_window, new_modelParam_text
-    #     ),
-    # )
-    # add_new_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
-
-    # del_selected_modelParam_button = ttk.Button(
-    #     section4_window,
-    #     text="Del",
-    #     command=lambda: remove_modelParam(
-    #         state, modelParam_treeview_window, calcType_treeview
-    #     ),
-    # )
-    # del_selected_modelParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+    stdType_items_inRoom = list(set(find_stdType_items_inRoom(bd_comboBox.get())))
+    for i in stdType_items_inRoom:
+        print(i)
+        state.stdTypeTree_inRoom.insert("", "end", text=i, values=[i])
 
 
 def search_stdTypes():
@@ -99,34 +44,6 @@ def search_stdTypes():
 
 
 def create_stdTypes_listbox():
-    pass
-
-
-def update_checkCanvas_data(
-    state,
-    checkCanvas,
-    data,
-    selected_building,
-    cat=None,
-):
-    """
-    Update the checkCanvas values based on the data loaded from the JSON file.
-    """
-    selected_building = state.current_selected_building
-    if cat == "Room":
-        items = data.get("building_list", [])
-        stdType_names = list(
-            map(
-                lambda x: list(map(lambda y: y["finish_type"], x["room_list"])),
-                filter(
-                    lambda x: x["building_name"] == selected_building,
-                    items,
-                ),
-            )
-        )[0]
-        print(stdType_names)
-        checkCanvas.set_data(state, stdType_names)
-
     pass
 
 

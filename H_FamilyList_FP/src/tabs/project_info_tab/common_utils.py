@@ -6,8 +6,8 @@ from tkinter import filedialog
 import json
 
 from src.tabs.familyType_manage_tab.utils import (
-    update_checkCanvas_data,
     update_combobox_data,
+    update_stdTypeTree_inRoom,
 )
 
 
@@ -90,7 +90,8 @@ def load_project_info(
             )
         update_combobox_data(state.bd_combobox_room, loaded_data, "building")
         update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
-        # update_checkCanvas_data(state, state.checkCanvas_room, loaded_data)
+        # update_stdTypeTree_inRoom(state, state.stdTypeTree_inRoom) ## Room 은 예외적으로 빌딩 선택시 로드되도록 해야 한다.
+
         state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
 
 

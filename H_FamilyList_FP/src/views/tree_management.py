@@ -104,6 +104,9 @@ def create_family_standard_tab(root, notebook, state):
     json_file_path = "resources/defaultTypeTree.json"
     json_data = load_json_data(json_file_path)
     if json_data:
+        ## state 에 defaultTree 저장
+        state.stdTypes_info = json_data
+
         populate_treeview(tree, json_data)
         tree.update_idletasks()
 
