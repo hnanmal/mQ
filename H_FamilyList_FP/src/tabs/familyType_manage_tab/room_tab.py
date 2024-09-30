@@ -100,8 +100,12 @@ def create_room_tab(notebook, state):
 
     ## section2 세부 구성
     state.selected_stdType_name = tk.StringVar()
-    state.selected_stdType_name.set("Selected Standard Type:                           ")
+    state.selected_stdType_name.set(
+        "Selected Standard Type:                           "
+    )
     selected_stdType_label = ttk.Label(
         section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
     )
     selected_stdType_label.pack(padx=10, pady=10, anchor="w")
+
+    # assignWM_treeview_forStdType =
