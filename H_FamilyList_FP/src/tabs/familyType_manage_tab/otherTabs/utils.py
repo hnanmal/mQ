@@ -1,4 +1,4 @@
-def find_stdType_items_inCat(cat):
+def find_stdType_items_inCat(cat, state):
     def find_level_5_items(
         node,
         level=1,

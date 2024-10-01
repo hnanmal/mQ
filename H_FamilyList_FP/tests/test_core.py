@@ -1,45 +1,44 @@
 import tkinter as tk
-from tkinter import ttk
+from tksheet import Sheet
 
-from src.tabs.familyType_manage_tab.checkListbox import SelectableListboxWithCheckboxes
-
-
-def toggle_check(item_id):
-    # Toggle the checkbox state
-    if treeview.item(item_id, "tags") == ("checked",):
-        treeview.item(item_id, tags=("unchecked",))
-    else:
-        treeview.item(item_id, tags=("checked",))
-    update_item_text(item_id)
-
-
-def update_item_text(item_id):
-    # Update the item text based on the checkbox state
-    if treeview.item(item_id, "tags") == ("checked",):
-        treeview.item(item_id, text=f"[x] {treeview.item(item_id, 'text')[4:]}")
-    else:
-        treeview.item(item_id, text=f"[ ] {treeview.item(item_id, 'text')[4:]}")
-
-
-# Create the main window
+# Create main window
 root = tk.Tk()
-root.title("Treeview with Checkboxes")
+root.title("Dynamic Dropdowns in tksheet")
 
-# Setup Treeview
-treeview = ttk.Treeview(root, columns=("Item",), show="tree")
-treeview.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+# Sample dropdown data
+first_cell_dropdown_options = ["Fruit", "Vegetable", "Drink"]
+second_cell_dropdown_options = {
+    "Fruit": ["Apple", "Banana", "Orange"],
+    "Vegetable": ["Carrot", "Broccoli", "Spinach"],
+    "Drink": ["Water", "Juice", "Soda"],
+}
 
-# Define the tags for checked/unchecked
-treeview.tag_configure("checked", background="lightgreen")
-treeview.tag_configure("unchecked", background="white")
+# Create tksheet widget
+sheet = Sheet(root, headers=["Category", "Item"], height=150, width=400)
+sheet.grid(row=0, column=0)
 
-# Add items with checkbox-like labels
-items = ["Apple", "Banana", "Cherry", "Date", "Elderberry"]
-for item in items:
-    item_id = treeview.insert("", "end", text=f"[ ] {item}", tags=("unchecked",))
-    treeview.bind("<Button-1>", lambda e, id=item_id: toggle_check(id))
+sheet.enable_bindings()
 
-d = SelectableListboxWithCheckboxes()
+# Initial data (with empty second column)
+sheet_data = [["", ""], ["", ""], ["", ""]]
+sheet.set_sheet_data(sheet_data)
 
-# Run the application
+# Set dropdown for the first cell in the top row (A1)
+sheet.create_dropdown(0, 0, values=first_cell_dropdown_options)
+
+
+# Function to update the second cell dropdown (B1) based on the first cell selection
+def update_second_cell_dropdown(event=None):
+    selected_value = sheet.get_cell_data(0, 0)  # Get selected value from the first cell
+    if selected_value in second_cell_dropdown_options:
+        # Set the second cell's dropdown based on the first cell's value
+        sheet.create_dropdown(0, 1, values=second_cell_dropdown_options[selected_value])
+        # Optionally clear the value of the second cell when updating the dropdown
+        sheet.set_cell_data(0, 1, "")
+
+
+# Bind event to detect changes in the first cell (A1) and update the second cell
+sheet.extra_bindings([("cell_select", update_second_cell_dropdown)])
+
+# Start the main loop
 root.mainloop()

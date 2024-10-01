@@ -30,11 +30,12 @@ def create_defaultTreeview(state, frame, columns, height=None):
         tree.column(col, width=70, anchor="center")
 
     # Add a scrollbar (optional)
-    # scrollbar_x = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
-    # scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
-    scrollbar_y = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    # scrollbar_y = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    scrollbar_x = ttk.Scrollbar(tree, orient="horizontal", command=tree.xview)
+    scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
+    scrollbar_y = ttk.Scrollbar(tree, orient="vertical", command=tree.yview)
     scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
-    tree.config(yscrollcommand=scrollbar_y.set)
+    tree.config(xscrollcommand=scrollbar_x.set, yscrollcommand=scrollbar_y.set)
 
     # Pack the Treeview into the window
     tree.pack(fill=tk.BOTH, expand=True)

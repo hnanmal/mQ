@@ -3,9 +3,111 @@ import json
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tksheet import Sheet
+
+
+def add_assignRow(event, state, sheet, dropdowns=None):
+    new_row_index = sheet.get_total_rows()  # Get the current total rows
+    sheet.insert_rows(idx=new_row_index)
+    if dropdowns:
+        sheet.create_dropdown(new_row_index, 0, values=dropdowns)
+    sheet.del_row(new_row_index - 1)
+
+
+def dropdown_selected(event, sheet):
+    sheet.set_column_widths(
+        [120, 100, 100, 800, 100, 100, 100],
+    )  # Sets the first column's width to 150 pixels
+    print("!!!")
+
+
+# Function to update the second cell dropdown (B1) based on the first cell selection
+def update_second_cell_dropdown(event, state, sheet):
+    all_row_index = range(sheet.get_total_rows())
+    print(all_row_index)
+    # print(second_dropdowns)
+    # Set the second cell's dropdown based on the first cell's value
+    for idx in all_row_index:
+        selected_value = sheet.get_cell_data(
+            idx, 0
+        )  # Get selected value from the first cell
+        try:
+            current_WM_value = sheet.get_cell_data(
+                idx, 3
+            )  # Get selected value from the first cell
+        except:
+            current_WM_value = None
+        second_dropdowns_obj = state.wm_group_data.get(selected_value)
+        # print(current_WM_value)
+        if not current_WM_value:
+            second_dropdowns = second_dropdowns_obj["matched_items"]
+            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+        elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
+            # print(current_WM_value == second_dropdowns_obj["matched_items"][0])
+            second_dropdowns = second_dropdowns_obj["matched_items"]
+            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+        elif current_WM_value not in second_dropdowns_obj["matched_items"]:
+            second_dropdowns = second_dropdowns_obj["matched_items"]
+            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+        else:
+            pass
+        sheet.horizontal_scrollbar.set(0, 0)  # Reset the scrollbar to the far left
+        state.update_idletasks()  # Ensure GUI updates
+
+    # sheet.set_column_widths(
+    #     [120, 100, 100, 800, 100, 100, 100],
+    # )
+    print("!!!")
+    # Optionally clear the value of the second cell when updating the dropdown
+    # sheet.set_cell_data(0, 1, "")
 
 
 # from src.tabs.input_common_tab.utils import create_defaultTreeview
+def create_assignWMsheet(
+    state, frame, headers=[], height=None, width=None, dropdowns=None
+):
+    sheet = Sheet(frame, headers=headers, height=height, width=width)
+    sheet.enable_bindings(
+        "edit_cell",
+        "single_select",  # Allow single cell selection
+        "row_select",  # Allow row selection
+        "column_select",  # Allow column selection
+        "drag_select",  # Allow drag selection
+        "column_width_resize",
+        "double_click_column_resize",
+        "copy",
+        "ctrl_click_select",
+        "right_click_popup_menu",
+        "rc_insert_row",
+        "rc_delete_row",
+    )
+
+    # sheet_data = [["", ""], ["", ""], ["", ""]]
+
+    sheet.set_options(font=("Arial Narrow", 9, "normal"))  # Font name and size
+    sheet.set_sheet_data()
+    # if dropdowns:
+    #     sheet.create_dropdown(0, 0, values=dropdowns)
+
+    sheet.set_column_widths(
+        [120, 100, 100, 800, 100, 100, 100],
+    )
+
+    # Bind event to detect changes in the first cell (A1) and update the second cell
+    sheet.extra_bindings(
+        [
+            (
+                "rc_insert_row",
+                lambda e: add_assignRow(e, state, sheet, dropdowns),
+            ),
+            (
+                "end_edit_cell",
+                lambda e: update_second_cell_dropdown(e, state, sheet),
+            ),
+        ]
+    )
+
+    return sheet
 
 
 def update_selected_stdType_label_inRoom(

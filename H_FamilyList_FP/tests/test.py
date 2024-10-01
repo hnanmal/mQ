@@ -1,48 +1,86 @@
+from tksheet import (
+    Sheet,
+    num2alpha as n2a,
+)
 import tkinter as tk
-from tksheet import Sheet
 
 
-def on_combo_selected(event):
-    selected_value = sheet.get_cell_data(*sheet.currently_selected())
-    print(f"Selected Value: {selected_value}")
+class demo(tk.Tk):
+    def __init__(self):
+        tk.Tk.__init__(self)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.frame = tk.Frame(self)
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+        self.data = [
+            ["3", "c", "z"],
+            ["1", "a", "x"],
+            ["1", "b", "y"],
+            ["2", "b", "y"],
+            ["2", "c", "z"],
+        ]
+        self.sheet = Sheet(
+            self.frame,
+            data=self.data,
+            column_width=180,
+            theme="dark",
+            height=700,
+            width=1100,
+        )
+        self.sheet.enable_bindings(
+            "copy",
+            "rc_select",
+            "arrowkeys",
+            "double_click_column_resize",
+            "column_width_resize",
+            "column_select",
+            "row_select",
+            "drag_select",
+            "single_select",
+            "select_all",
+        )
+        self.frame.grid(row=0, column=0, sticky="nswe")
+        self.sheet.grid(row=0, column=0, sticky="nswe")
+
+        self.sheet.dropdown(
+            self.sheet.span(n2a(0), header=True, table=False),
+            values=["all", "1", "2", "3"],
+            set_value="all",
+            selection_function=self.header_dropdown_selected,
+            text="Header A Name",
+        )
+        self.sheet.dropdown(
+            self.sheet.span(n2a(1), header=True, table=False),
+            values=["all", "a", "b", "c"],
+            set_value="all",
+            selection_function=self.header_dropdown_selected,
+            text="Header B Name",
+        )
+        self.sheet.dropdown(
+            self.sheet.span(n2a(2), header=True, table=False),
+            values=["all", "x", "y", "z"],
+            set_value="all",
+            selection_function=self.header_dropdown_selected,
+            text="Header C Name",
+        )
+
+    def header_dropdown_selected(self, event=None):
+        hdrs = self.sheet.headers()
+        # this function is run before header cell data is set by dropdown selection
+        # so we have to get the new value from the event
+        hdrs[event.loc] = event.value
+        if all(dd == "all" for dd in hdrs):
+            self.sheet.display_rows("all")
+        else:
+            rows = [
+                rn
+                for rn, row in enumerate(self.data)
+                if all(row[c] == e or e == "all" for c, e in enumerate(hdrs))
+            ]
+            self.sheet.display_rows(rows=rows, all_displayed=False)
+        self.sheet.redraw()
 
 
-# Create the main window
-root = tk.Tk()
-root.title("tksheet with Combobox")
-root.geometry("600x400")
-
-# Create a Sheet widget
-sheet = Sheet(root, headers=["Column A", "Column B", "Column C"], width=600, height=400)
-sheet.pack(expand=True, fill="both")
-
-# Set sheet data
-data = [
-    ["Row1 Col1", "", "Row1 Col3"],
-    ["Row2 Col1", "Dropdown", "Row2 Col3"],
-    ["Row3 Col1", "", "Row3 Col3"],
-]
-sheet.set_sheet_data(data)
-
-# Enable editing and set data type for specific cells
-sheet.enable_bindings(
-    "single_select", "row_select", "column_select", "arrowkeys", "edit_bindings"
-)
-
-# Define dropdown options
-dropdown_options = ["Option 1", "Option 2", "Option 3"]
-
-# Set dropdown options for a specific cell
-sheet.create_dropdown(
-    r=1,  # Row index for dropdown cell
-    c=1,  # Column index for dropdown cell
-    values=dropdown_options,  # Dropdown options
-    set_value=dropdown_options[0],  # Default value
-    redraw=True,  # Redraw sheet to display dropdown
-)
-
-# Bind an event when selection changes
-sheet.bind("<<ComboboxSelected>>", on_combo_selected)
-
-# Start the Tkinter main loop
-root.mainloop()
+app = demo()
+app.mainloop()

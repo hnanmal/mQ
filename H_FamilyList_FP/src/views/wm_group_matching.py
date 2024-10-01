@@ -12,9 +12,11 @@ from src.views.listbox_utils import (
 )
 
 
-def update_listbox_item_styles(listbox, wm_group_manager):
+def update_listbox_item_styles(state, listbox, wm_group_manager):
     """Update the left listbox item styles based on lock status."""
     wm_group_data = wm_group_manager.get_wm_group_data()
+    state.wm_group_data = wm_group_data
+    # print(state.wm_group_data)
 
     for index in range(listbox.size()):
         item_name = listbox.get(index)
@@ -77,7 +79,7 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
             lock_button.config(text="Lock")  # Set button text to 'Lock' when unlocked
 
         # Clear focus and selection after action to ensure no interference
-        update_listbox_item_styles(left_listbox, wm_group_manager)
+        update_listbox_item_styles(state, left_listbox, wm_group_manager)
         # center_listbox.selection_clear(0, tk.END)
 
     """Create the WM Group Matching tab divided into three sections."""
@@ -194,4 +196,4 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
     )
 
     # Initialize the left listbox with the styles reflecting lock status
-    update_listbox_item_styles(left_listbox, wm_group_manager)
+    update_listbox_item_styles(state, left_listbox, wm_group_manager)
