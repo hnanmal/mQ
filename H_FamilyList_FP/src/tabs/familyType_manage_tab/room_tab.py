@@ -23,15 +23,15 @@ def create_room_tab(notebook, state):
     notebook.add(room_tab, text="Room")
 
     bigArea1 = ttk.Frame(room_tab, width=500, height=70)
-    bigArea2 = ttk.Frame(room_tab, width=1200, height=1000, relief="ridge")
+    bigArea2 = ttk.Frame(room_tab, width=1200, height=2000, relief="ridge")
 
     bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
     bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
-    section1 = ttk.Frame(bigArea2, width=700, height=700)
-    section2 = ttk.Frame(bigArea2, width=1200, height=700, relief="ridge")
-    section3 = ttk.Frame(bigArea2, width=500, height=700, relief="ridge")
+    section1 = ttk.Frame(bigArea2, width=700, height=2000)
+    section2 = ttk.Frame(bigArea2, width=1200, height=2000, relief="ridge")
+    section3 = ttk.Frame(bigArea2, width=500, height=2000, relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
@@ -100,7 +100,16 @@ def create_room_tab(notebook, state):
 
     ## section2 세부 구성
     common_width = 1200
-    common_headers = ["물량산출식", "Qty", "WM", "Gauge Code", "Description", "Remark"]
+    common_height = 100
+    common_headers = [
+        "물량산출식",
+        "Qty",
+        "Unit",
+        "WM",
+        "Gauge Code",
+        "Description",
+        "Remark",
+    ]
     state.selected_stdType_name = tk.StringVar()
     state.selected_stdType_name.set("Selected Standard Type: ")
     selected_stdType_label = ttk.Label(
@@ -113,7 +122,7 @@ def create_room_tab(notebook, state):
         state,
         section2,
         ["Floor"] + common_headers,
-        height=150,
+        height=common_height,
         width=common_width,
         dropdowns=floor_dropdowns,
     )
@@ -124,7 +133,7 @@ def create_room_tab(notebook, state):
         state,
         section2,
         ["Base"] + common_headers,
-        height=150,
+        height=common_height,
         width=common_width,
         dropdowns=base_dropdowns,
     )
@@ -135,7 +144,7 @@ def create_room_tab(notebook, state):
         state,
         section2,
         ["Wall"] + common_headers,
-        height=150,
+        height=common_height,
         width=common_width,
         dropdowns=wall_dropdowns,
     )
@@ -146,7 +155,7 @@ def create_room_tab(notebook, state):
         state,
         section2,
         ["Ceiling"] + common_headers,
-        height=150,
+        height=common_height,
         width=common_width,
         dropdowns=ceil_dropdowns,
     )

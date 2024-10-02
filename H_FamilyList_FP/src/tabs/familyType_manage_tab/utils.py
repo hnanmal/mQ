@@ -16,43 +16,45 @@ def add_assignRow(event, state, sheet, dropdowns=None):
 
 def dropdown_selected(event, sheet):
     sheet.set_column_widths(
-        [120, 100, 100, 800, 100, 100, 100],
+        [120, 100, 70, 70, 800, 100, 100, 100],
     )  # Sets the first column's width to 150 pixels
     print("!!!")
 
 
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown(event, state, sheet):
-    all_row_index = range(sheet.get_total_rows())
+    all_row_index = list(range(sheet.get_total_rows()))
     print(all_row_index)
     # print(second_dropdowns)
     # Set the second cell's dropdown based on the first cell's value
-    for idx in all_row_index:
-        selected_value = sheet.get_cell_data(
-            idx, 0
-        )  # Get selected value from the first cell
+
+    def update_row(idx):
+        selected_value = sheet.get_cell_data(idx, 0)
+        print(selected_value)
         try:
             current_WM_value = sheet.get_cell_data(
-                idx, 3
+                idx, 4
             )  # Get selected value from the first cell
         except:
             current_WM_value = None
         second_dropdowns_obj = state.wm_group_data.get(selected_value)
-        # print(current_WM_value)
+
         if not current_WM_value:
             second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+            sheet.create_dropdown(idx, 4, values=second_dropdowns)
         elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
-            # print(current_WM_value == second_dropdowns_obj["matched_items"][0])
             second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+            sheet.create_dropdown(idx, 4, values=second_dropdowns)
         elif current_WM_value not in second_dropdowns_obj["matched_items"]:
             second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(idx, 3, values=second_dropdowns)
+            sheet.create_dropdown(idx, 4, values=second_dropdowns)
         else:
             pass
-        sheet.horizontal_scrollbar.set(0, 0)  # Reset the scrollbar to the far left
-        state.update_idletasks()  # Ensure GUI updates
+
+    for idx in all_row_index:
+        update_row(idx)
+        # sheet.horizontal_scrollbar.set(0, 0)  # Reset the scrollbar to the far left
+        # state.update_idletasks()  # Ensure GUI updates
 
     # sheet.set_column_widths(
     #     [120, 100, 100, 800, 100, 100, 100],
@@ -90,7 +92,7 @@ def create_assignWMsheet(
     #     sheet.create_dropdown(0, 0, values=dropdowns)
 
     sheet.set_column_widths(
-        [120, 100, 100, 800, 100, 100, 100],
+        [120, 100, 70, 70, 800, 100, 100, 100],
     )
 
     # Bind event to detect changes in the first cell (A1) and update the second cell

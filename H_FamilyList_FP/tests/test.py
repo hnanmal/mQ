@@ -1,86 +1,34 @@
-from tksheet import (
-    Sheet,
-    num2alpha as n2a,
-)
 import tkinter as tk
 
 
-class demo(tk.Tk):
-    def __init__(self):
-        tk.Tk.__init__(self)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.frame = tk.Frame(self)
-        self.frame.grid_columnconfigure(0, weight=1)
-        self.frame.grid_rowconfigure(0, weight=1)
-        self.data = [
-            ["3", "c", "z"],
-            ["1", "a", "x"],
-            ["1", "b", "y"],
-            ["2", "b", "y"],
-            ["2", "c", "z"],
-        ]
-        self.sheet = Sheet(
-            self.frame,
-            data=self.data,
-            column_width=180,
-            theme="dark",
-            height=700,
-            width=1100,
-        )
-        self.sheet.enable_bindings(
-            "copy",
-            "rc_select",
-            "arrowkeys",
-            "double_click_column_resize",
-            "column_width_resize",
-            "column_select",
-            "row_select",
-            "drag_select",
-            "single_select",
-            "select_all",
-        )
-        self.frame.grid(row=0, column=0, sticky="nswe")
-        self.sheet.grid(row=0, column=0, sticky="nswe")
-
-        self.sheet.dropdown(
-            self.sheet.span(n2a(0), header=True, table=False),
-            values=["all", "1", "2", "3"],
-            set_value="all",
-            selection_function=self.header_dropdown_selected,
-            text="Header A Name",
-        )
-        self.sheet.dropdown(
-            self.sheet.span(n2a(1), header=True, table=False),
-            values=["all", "a", "b", "c"],
-            set_value="all",
-            selection_function=self.header_dropdown_selected,
-            text="Header B Name",
-        )
-        self.sheet.dropdown(
-            self.sheet.span(n2a(2), header=True, table=False),
-            values=["all", "x", "y", "z"],
-            set_value="all",
-            selection_function=self.header_dropdown_selected,
-            text="Header C Name",
-        )
-
-    def header_dropdown_selected(self, event=None):
-        hdrs = self.sheet.headers()
-        # this function is run before header cell data is set by dropdown selection
-        # so we have to get the new value from the event
-        hdrs[event.loc] = event.value
-        if all(dd == "all" for dd in hdrs):
-            self.sheet.display_rows("all")
-        else:
-            rows = [
-                rn
-                for rn, row in enumerate(self.data)
-                if all(row[c] == e or e == "all" for c, e in enumerate(hdrs))
-            ]
-            self.sheet.display_rows(rows=rows, all_displayed=False)
-        self.sheet.redraw()
+def on_mouse_wheel(event):
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
 
-app = demo()
-app.mainloop()
+root = tk.Tk()
+root.geometry("300x300")
+
+# Create a canvas and attach a scrollbar to it
+canvas = tk.Canvas(root)
+scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
+scrollbar.pack(side="right", fill="y")
+canvas.pack(side="left", fill="both", expand=True)
+
+# Create a frame to hold the widgets inside the canvas
+scrollable_frame = tk.Frame(canvas)
+scrollable_frame.bind(
+    "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+)
+
+# Add the frame to the canvas
+canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+canvas.configure(yscrollcommand=scrollbar.set)
+
+# Bind mouse wheel to scroll
+canvas.bind_all("<MouseWheel>", on_mouse_wheel)
+
+# Add many widgets to the scrollable frame
+for i in range(50):
+    tk.Label(scrollable_frame, text=f"Label {i}").pack()
+
+root.mainloop()
