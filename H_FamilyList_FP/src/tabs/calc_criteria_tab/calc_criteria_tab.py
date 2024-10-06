@@ -51,14 +51,14 @@ def create_calc_criteria_tab(notebook, state):
     section1 = ttk.Frame(bigArea1, width=30, height=200)
     section2 = ttk.Frame(bigArea1, width=100, height=200)
     section3 = ttk.Frame(bigArea1, width=500, height=200)
-    section4 = ttk.Frame(bigArea2, width=500, height=100)
+    section4 = ttk.Frame(bigArea2, width=500, height=200)
     section5 = ttk.Frame(bigArea2, width=500, height=200)
 
     section0.pack(side=tk.TOP, anchor="w", fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.Y, expand=True)
     section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    section4.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
+    section4.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH, expand=True)
     section5.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
     save_load_btn_frame = ttk.Frame(section0, width=100, relief="ridge")
@@ -272,7 +272,7 @@ def create_calc_criteria_tab(notebook, state):
     )
     modelParam_label.pack(padx=20, pady=10, anchor="w")
 
-    modelParam_treeview_frame = ttk.Frame(section4, width=300, height=100)
+    modelParam_treeview_frame = ttk.Frame(section4, width=300, height=150)
     modelParam_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
     modelParam_treeview = create_defaultTreeview(
@@ -281,7 +281,7 @@ def create_calc_criteria_tab(notebook, state):
         ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
         height=5,
     )
-    modelParam_treeview.pack(pady=10, fill=tk.X, expand=True)
+    modelParam_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
     modelParam_treeview.bind(
         "<Double-Button-1>",

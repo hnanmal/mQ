@@ -9,7 +9,12 @@ from tkinter import filedialog
 from src.tabs.project_info_tab.common_utils import on_click_edit
 
 
-def create_defaultTreeview(state, frame, columns, height=None):
+def create_defaultTreeview(
+    state,
+    frame,
+    columns,
+    height=None,
+):
     # Create the Treeview with columns
     tree = (
         ttk.Treeview(frame, columns=columns, show="headings", height=height)
