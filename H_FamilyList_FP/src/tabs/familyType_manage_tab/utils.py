@@ -1,4 +1,5 @@
 # src/tabs/familyType_manage_tab/utils.py
+from itertools import chain
 import json
 import tkinter as tk
 from tkinter import ttk
@@ -21,19 +22,18 @@ def add_assignRow(event, state, sheet, dropdowns=None):
     sheet.del_row(new_row_index - 1)
 
 
-def dropdown_selected(event, sheet):
-    sheet.set_column_widths(
-        [120, 100, 70, 30, 800, 100, 100, 100],
-    )  # Sets the first column's width to 150 pixels
-    print("!!!")
-
-
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
     print(all_row_index)
+
     # print(second_dropdowns)
     # Set the second cell's dropdown based on the first cell's value
+    def update_unitCell_inRow(idx):
+        if sheet.get_cell_data(idx, 4):
+            selected_value = sheet.get_cell_data(idx, 4)
+            unit_info = selected_value.split("... | ...")[-4]
+            sheet.set_cell_data(idx, 3, unit_info)
 
     def update_row(idx):
         selected_value = sheet.get_cell_data(idx, 0)
@@ -60,6 +60,7 @@ def update_second_cell_dropdown(event, state, sheet):
 
     for idx in all_row_index:
         update_row(idx)
+        update_unitCell_inRow(idx)
 
 
 # from src.tabs.input_common_tab.utils import create_defaultTreeview
@@ -101,8 +102,8 @@ def create_assignWMsheet(
                 lambda e: add_assignRow(e, state, sheet, dropdowns),
             ),
             (
-                # "end_edit_cell",
-                "edit_cell",
+                "end_edit_cell",
+                # "edit_cell",
                 lambda e: update_second_cell_dropdown(e, state, sheet),
             ),
         ]
@@ -153,28 +154,33 @@ def update_selected_calcType(
     state,
     calc_comboBox,
     selected_calcType_label,
-    selected_calcType_treeview,
+    selected_calcType_sheetview,
 ):
     if calc_comboBox.get():
-        selected_type = calc_comboBox.get()
-        state.selected_calcType_name.set("Selected Calc Type: " + selected_type)
+        selected_calcType = calc_comboBox.get()
+        state.selected_calcType_name.set("Selected Calc Type: " + selected_calcType)
 
-        selectedCalcDic = list(
-            filter(
-                lambda x: x["type_tag"] == selected_type,
-                state.project_info["calc_types"],
-            )
-        )[0]
-        selectedCalc_model_params = selectedCalcDic["model_params"]
-        selectedCalc_manual_params = selectedCalcDic["manual_params"]
-        selectedCalc_params = selectedCalc_model_params + selectedCalc_manual_params
-        for param_dic in selectedCalc_params:
-            c1 = param_dic["항목"]
-            c2 = param_dic["수식 약자"]
-            c3 = param_dic.get("수동입력값", "byRevit")
-            selected_calcType_treeview.insert("", "end", values=[c1, c2, c3])
     else:
-        state.selected_calcType_name.set("Selected Calc Type:          ")
+        selected_calcType = state.selected_calcType_name.get().split(": ")[-1]
+        print(selected_calcType)
+    selectedCalcDic = list(
+        filter(
+            lambda x: x["type_tag"] == selected_calcType,
+            state.project_info["calc_types"],
+        )
+    )[0]
+    selectedCalc_model_params = selectedCalcDic["model_params"]
+    selectedCalc_manual_params = selectedCalcDic["manual_params"]
+    selectedCalc_params = selectedCalc_model_params + selectedCalc_manual_params
+    selected_calcType_sheetview.set_sheet_data([])
+    paramDatas = []
+    for param_dic in selectedCalc_params:
+        c1 = param_dic["항목"]
+        c2 = param_dic["수식 약자"]
+        c3 = param_dic.get("수동입력값", "byRevit")
+        paramDatas.append([c1, c2, c3])
+        # selected_calcType_sheetview.insert("", "end", values=[c1, c2, c3])
+    selected_calcType_sheetview.set_sheet_data(paramDatas)
 
 
 def update_selected_stdType_label_inRoom(
@@ -232,36 +238,62 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
 
     print(state.project_info["std_types_roomCat"])
 
-    # stdType_items_inRoom = list(set(find_stdType_items_inRoom_atBD(bd_comboBox.get())))
-    # stdType_items_inRoom = find_stdType_items_inRoom_atBD(bd_comboBox.get())
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
     for dic in stdType_items_inRoom:
         print(dic)
         # state.stdTypeTree_inRoom.insert("", "end", text=dic, values=[dic.items()])
         state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
 
-    ##### notApplied_famType_sheetview 업데이트 구간
+    ##### Applied / notApplied_famType_sheetview 업데이트 구간
+    if state.selected_calcType_name.get() != "Selected Calc Type: ":
+        items = state.project_info.get("calc_types", [])
+        calcType_names = list(
+            map(
+                lambda x: x["type_tag"],
+                filter(lambda x: x["category"] == "Room", items),
+            )
+        )
+        state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
+
     current_selected_building = state.bd_combobox_room.get()
     print("!!!" + current_selected_building)
+    applied_famType_sheetview = state.applied_famType_sheetview
     notApplied_famType_sheetview = state.notApplied_famType_sheetview
     notApplied_famType_sheetview.set_sheet_data([])
-    data = list(
-        filter(
-            lambda x: x["building_name"] == current_selected_building,
-            state.project_info["building_list"],
-        )
-    )[0]["room_list"]
-    # print(data)
 
+    data = state.project_info["not_applied_rooms"]
+    # print(data)
+    applied_famType_sheetview.clear()
+    notApplied_famType_sheetview.clear()
     idxs = range(len(data))
+    applies = []
+    notApplies = []
     for rowidx in idxs:
-        notApplied_famType_sheetview.insert_rows()
-        notApplied_famType_sheetview.set_cell_data(
-            rowidx,
-            0,
-            data[rowidx]["room_no"] + "_" + data[rowidx]["room_name"],
-        )
-    notApplied_famType_sheetview.column_width(0, 300)
+        if data[rowidx]["bd_tag"] == current_selected_building:
+            applies.append(
+                [
+                    data[rowidx]["room_no"],
+                    data[rowidx]["room_name"],
+                    data[rowidx]["bd_tag"],
+                    state.selected_calcType_name.get().split(": ")[-1],
+                ]
+            )
+        elif data[rowidx]["bd_tag"] == "":
+            notApplies.append(
+                [
+                    data[rowidx]["room_no"],
+                    data[rowidx]["room_name"],
+                    data[rowidx]["bd_tag"],
+                ]
+            )
+
+    applied_famType_sheetview.set_sheet_data(applies)
+    notApplied_famType_sheetview.set_sheet_data(notApplies)
+
+    applied_famType_sheetview.column_width(0, 30)
+    applied_famType_sheetview.column_width(1, 170)
+    notApplied_famType_sheetview.column_width(0, 30)
+    notApplied_famType_sheetview.column_width(1, 170)
 
 
 def search_stdTypes():
@@ -281,7 +313,7 @@ def update_combobox_data(combobox, data, mode=None, cat=None):
         building_names = list(map(lambda x: x["building_name"], items))
 
         # Update the combobox values
-        combobox["values"] = building_names
+        combobox["values"] = ["프로젝트 공통"] + building_names
 
         # Set the default value to the first item if available
         if building_names:
@@ -302,6 +334,18 @@ def update_combobox_data(combobox, data, mode=None, cat=None):
             combobox.set(calcType_names[0])
         else:
             combobox.set("")  # Clear the combobox if no items are available
+
+
+def update_notAppliedRoom_data(state):
+    if not "not_applied_rooms" in state.project_info:
+        not_applied_rooms = []
+        for bd_dic in state.project_info["building_list"]:
+            bd_tag = bd_dic["building_name"]
+            room_list = bd_dic["room_list"]
+            for room_dic in room_list:
+                room_dic["bd_tag"] = bd_tag
+                not_applied_rooms.append(room_dic)
+        state.project_info["not_applied_rooms"] = not_applied_rooms
 
 
 def save_project_roomType_info(state):

@@ -66,17 +66,11 @@ def create_room_tab(notebook, state):
     bd_comboBox.set(" ")  # 맨 처음 나타낼 값 설정
     bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
     state.bd_combobox_room = bd_comboBox
+    ## 바인딩 맨 아래로 위치 이동됨
     # bd_comboBox.bind(
     #     "<<ComboboxSelected>>",
     #     lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
     # )
-
-    apply_typeToBuilding_btn = ttk.Button(
-        section0,
-        text="현재 선택 타입을 상기 빌딩에 적용하기",
-        command=lambda: apply_typeToBuilding(state),
-    )
-    apply_typeToBuilding_btn.pack(side="left", padx=10, pady=10)
 
     calc_comboBox = ttk.Combobox(section3)
     calc_comboBox.config(
@@ -199,6 +193,7 @@ def create_room_tab(notebook, state):
         section3, textvariable=state.selected_calcType_name, font=("Arial", 11)
     )
     selected_calcType_label.pack(padx=10, pady=10, anchor="w")
+    state.selected_calcType_label = selected_calcType_label
 
     selected_calcType_sheetview = create_tksheet(
         state,
@@ -208,6 +203,7 @@ def create_room_tab(notebook, state):
         mode="calcType",
     )
     selected_calcType_sheetview.pack(padx=10, pady=10, anchor="w")
+    state.selected_calcType_sheetview = selected_calcType_sheetview
 
     applied_famType_label = ttk.Label(
         section3, text="Applied Revit Family Types", font=("Arial", 11)
@@ -217,10 +213,11 @@ def create_room_tab(notebook, state):
     applied_famType_sheetview = create_tksheet(
         state,
         section3,
-        ["famType", "bd_tag", "calc_tag"],
+        ["no", "rooms", "bd_tag", "calc_tag"],
         height=150,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
+    state.applied_famType_sheetview = applied_famType_sheetview
 
     add_del_famType_btn_frame = ttk.Frame(section3, width=200, height=70)
     add_del_famType_btn_frame.pack(padx=10, pady=10, anchor="w")
@@ -246,7 +243,7 @@ def create_room_tab(notebook, state):
     notApplied_famType_sheetview = create_tksheet(
         state,
         section3,
-        ["famType"],
+        ["no", "rooms", "bd_tag"],
         height=150,
         mode="nonAppFamtype",
     )
