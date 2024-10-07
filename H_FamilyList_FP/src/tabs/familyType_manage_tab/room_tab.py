@@ -7,6 +7,7 @@ from tkinter import ttk
 from src.tabs.familyType_manage_tab.utils import (
     create_assignWMsheet,
     create_tksheet,
+    remove_from_appliedRoom_data,
     save_project_roomType_info,
     search_stdTypes,
     update_second_cell_dropdown,
@@ -231,7 +232,7 @@ def create_room_tab(notebook, state):
     del_stdType_btn = ttk.Button(
         add_del_famType_btn_frame,
         text="↓",
-        command=lambda: del_famType_roomCat(state),
+        command=lambda: remove_from_appliedRoom_data(state),
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="e")
 

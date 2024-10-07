@@ -261,7 +261,7 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
     notApplied_famType_sheetview = state.notApplied_famType_sheetview
     notApplied_famType_sheetview.set_sheet_data([])
 
-    data = state.project_info["not_applied_rooms"]
+    data = state.project_info["apply_target_rooms"]
     # print(data)
     applied_famType_sheetview.clear()
     notApplied_famType_sheetview.clear()
@@ -337,7 +337,7 @@ def update_combobox_data(combobox, data, mode=None, cat=None):
 
 
 def update_notAppliedRoom_data(state):
-    if not "not_applied_rooms" in state.project_info:
+    if not "apply_target_rooms" in state.project_info:
         not_applied_rooms = []
         for bd_dic in state.project_info["building_list"]:
             bd_tag = bd_dic["building_name"]
@@ -345,7 +345,32 @@ def update_notAppliedRoom_data(state):
             for room_dic in room_list:
                 room_dic["bd_tag"] = bd_tag
                 not_applied_rooms.append(room_dic)
-        state.project_info["not_applied_rooms"] = not_applied_rooms
+        state.project_info["apply_target_rooms"] = not_applied_rooms
+
+
+def remove_from_appliedRoom_data(state):
+    selected = state.applied_famType_sheetview.get_currently_selected()
+    selectedRow = selected.row
+    roomNo = state.applied_famType_sheetview.get_cell_data(selectedRow, 0)
+    roomName = state.applied_famType_sheetview.get_cell_data(selectedRow, 1)
+
+    for room_dic in state.project_info["apply_target_rooms"]:
+        if room_dic["room_no"] == roomNo and room_dic["room_name"] == roomName:
+            room_dic["bd_tag"] = ""
+
+            state.logging_text_widget.write(str(room_dic))
+    notAppliedRooms = []
+    for room_dic in state.project_info["apply_target_rooms"]:
+        if room_dic["bd_tag"] == "":
+            notAppliedRooms.append(
+                [
+                    room_dic["room_no"],
+                    room_dic["room_name"],
+                    room_dic["bd_tag"],
+                ]
+            )
+    state.notApplied_famType_sheetview.set_sheet_data(notAppliedRooms)
+    state.applied_famType_sheetview.delete_row(selectedRow)
 
 
 def save_project_roomType_info(state):
