@@ -5,19 +5,18 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
+    add_to_appliedRoom_data,
     create_assignWMsheet,
     create_tksheet,
+    on_click_stdTypeLabel,
+    open_excel_locally,
     remove_from_appliedRoom_data,
     save_project_roomType_info,
-    search_stdTypes,
-    update_second_cell_dropdown,
     update_selected_calcType,
     update_selected_stdType_label_inRoom,
     update_stdTypeTree_inRoom,
 )
-from src.tabs.familyType_manage_tab.checkListbox import (
-    CheckListCanvas,
-)
+
 from src.tabs.input_common_tab.utils import create_defaultTreeview
 
 
@@ -35,8 +34,8 @@ def create_room_tab(notebook, state):
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
     section1 = ttk.Frame(bigArea2, width=700, height=2000)
-    section2 = ttk.Frame(bigArea2, width=1200, height=2000, relief="ridge")
-    section3 = ttk.Frame(bigArea2, width=500, height=2000, relief="ridge")
+    section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="ridge")
+    section3 = ttk.Frame(bigArea2, width=650, height=2000, relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
@@ -95,9 +94,13 @@ def create_room_tab(notebook, state):
     # bigArea2 세부 구성
     ## section1 세부 구성
     std_type_label = ttk.Label(
-        section1, text="Using Standard Type List", font=("Arial", 14)
+        section1, text="Using Standard Type List\n(Room Finish)", font=("Arial", 12)
     )
     std_type_label.pack(padx=10, pady=10, anchor="w")
+    std_type_label.bind(
+        "<Double-Button-1>",
+        open_excel_locally,
+    )
 
     ### Standard Type Treeview 구간
     stdTypes_treeview = create_defaultTreeview(
@@ -107,7 +110,10 @@ def create_room_tab(notebook, state):
 
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
-        lambda e: update_selected_stdType_label_inRoom(
+        # lambda e: update_selected_stdType_label_inRoom(
+        #     e, state, stdTypes_treeview, selected_stdType_label
+        # ),
+        lambda e: on_click_stdTypeLabel(
             e, state, stdTypes_treeview, selected_stdType_label
         ),
     )
@@ -214,7 +220,7 @@ def create_room_tab(notebook, state):
     applied_famType_sheetview = create_tksheet(
         state,
         section3,
-        ["no", "rooms", "bd_tag", "calc_tag"],
+        ["no", "rooms", "stdType_tag", "bd_tag", "calc_tag"],
         height=150,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
@@ -225,7 +231,7 @@ def create_room_tab(notebook, state):
     add_famType_btn = ttk.Button(
         add_del_famType_btn_frame,
         text="↑",
-        command=lambda: add_famType_roomCat(state),
+        command=lambda: add_to_appliedRoom_data(state),
     )
     add_famType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
@@ -244,7 +250,7 @@ def create_room_tab(notebook, state):
     notApplied_famType_sheetview = create_tksheet(
         state,
         section3,
-        ["no", "rooms", "bd_tag"],
+        ["no", "rooms", "stdType_tag", "bd_tag"],
         height=150,
         mode="nonAppFamtype",
     )

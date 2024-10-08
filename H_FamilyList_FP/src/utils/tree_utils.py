@@ -20,6 +20,7 @@ def enable_tree_item_editing(tree, item, column):
 
     entry.bind("<Return>", save_edit)
     entry.bind("<FocusOut>", lambda event: entry.destroy())
+    # entry.bind("<FocusOut>", lambda event: save_edit)
     entry.focus()
 
 

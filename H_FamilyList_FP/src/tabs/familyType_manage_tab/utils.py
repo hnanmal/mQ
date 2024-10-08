@@ -5,6 +5,13 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tksheet import Sheet
+import os
+
+
+def open_excel_locally(event):
+    # excel_file_path = r"C:\Users\YourUsername\OneDrive\path_to_your_excel_file.xlsx"
+    excel_file_path = r"https://henginmc6eaoutlook.sharepoint.com/:x:/s/jhjh/EZqbVAjwsydHj3KLQbQjBmgBl4tCkAORZoM1EHeSHjRP1Q?e=vinJaI"
+    os.startfile(excel_file_path)
 
 
 def add_assignRow(event, state, sheet, dropdowns=None):
@@ -179,7 +186,6 @@ def update_selected_calcType(
         c2 = param_dic["수식 약자"]
         c3 = param_dic.get("수동입력값", "byRevit")
         paramDatas.append([c1, c2, c3])
-        # selected_calcType_sheetview.insert("", "end", values=[c1, c2, c3])
     selected_calcType_sheetview.set_sheet_data(paramDatas)
 
 
@@ -194,8 +200,19 @@ def update_selected_stdType_label_inRoom(
     else:
         state.selected_stdType_name.set("Selected Standard Type: ")
 
+    # return selected_type_name
+
 
 def update_stdTypeTree_inRoom(event, state, bd_comboBox):
+
+    update_selected_calcType(
+        event,
+        state,
+        state.calc_comboBox_room,
+        state.selected_calcType_label,
+        state.selected_calcType_sheetview,
+    )
+
     def find_unique_dic(dics):
         criteria = []
         res = []
@@ -240,68 +257,8 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
 
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
     for dic in stdType_items_inRoom:
-        print(dic)
         # state.stdTypeTree_inRoom.insert("", "end", text=dic, values=[dic.items()])
         state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
-
-    ##### Applied / notApplied_famType_sheetview 업데이트 구간
-    if state.selected_calcType_name.get() != "Selected Calc Type: ":
-        items = state.project_info.get("calc_types", [])
-        calcType_names = list(
-            map(
-                lambda x: x["type_tag"],
-                filter(lambda x: x["category"] == "Room", items),
-            )
-        )
-        state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
-
-    current_selected_building = state.bd_combobox_room.get()
-    print("!!!" + current_selected_building)
-    applied_famType_sheetview = state.applied_famType_sheetview
-    notApplied_famType_sheetview = state.notApplied_famType_sheetview
-    notApplied_famType_sheetview.set_sheet_data([])
-
-    data = state.project_info["apply_target_rooms"]
-    # print(data)
-    applied_famType_sheetview.clear()
-    notApplied_famType_sheetview.clear()
-    idxs = range(len(data))
-    applies = []
-    notApplies = []
-    for rowidx in idxs:
-        if data[rowidx]["bd_tag"] == current_selected_building:
-            applies.append(
-                [
-                    data[rowidx]["room_no"],
-                    data[rowidx]["room_name"],
-                    data[rowidx]["bd_tag"],
-                    state.selected_calcType_name.get().split(": ")[-1],
-                ]
-            )
-        elif data[rowidx]["bd_tag"] == "":
-            notApplies.append(
-                [
-                    data[rowidx]["room_no"],
-                    data[rowidx]["room_name"],
-                    data[rowidx]["bd_tag"],
-                ]
-            )
-
-    applied_famType_sheetview.set_sheet_data(applies)
-    notApplied_famType_sheetview.set_sheet_data(notApplies)
-
-    applied_famType_sheetview.column_width(0, 30)
-    applied_famType_sheetview.column_width(1, 170)
-    notApplied_famType_sheetview.column_width(0, 30)
-    notApplied_famType_sheetview.column_width(1, 170)
-
-
-def search_stdTypes():
-    pass
-
-
-def create_stdTypes_listbox():
-    pass
 
 
 def update_combobox_data(combobox, data, mode=None, cat=None):
@@ -337,28 +294,141 @@ def update_combobox_data(combobox, data, mode=None, cat=None):
 
 
 def update_notAppliedRoom_data(state):
-    if not "apply_target_rooms" in state.project_info:
+    # if not "apply_target_rooms" in state.project_info:
+    print(state.project_info.get("apply_target_rooms"))
+    if not state.project_info.get("apply_target_rooms"):
         not_applied_rooms = []
         for bd_dic in state.project_info["building_list"]:
             bd_tag = bd_dic["building_name"]
             room_list = bd_dic["room_list"]
             for room_dic in room_list:
+                room_dic["stdType_tag"] = ""
                 room_dic["bd_tag"] = bd_tag
+                room_dic["calc_tag"] = ""
                 not_applied_rooms.append(room_dic)
         state.project_info["apply_target_rooms"] = not_applied_rooms
+        # print(not_applied_rooms)
+    # elif "apply_target_rooms" in state.project_info:
+    #     pass
+
+
+def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_label):
+    update_selected_stdType_label_inRoom(
+        event, state, stdTypes_treeview, selected_stdType_label
+    )
+    ##### Applied / notApplied_famType_sheetview 우측 영역 업데이트 구간
+
+    if state.selected_calcType_name.get() != "Selected Calc Type: ":
+        items = state.project_info.get("calc_types", [])
+        calcType_names = list(
+            map(
+                lambda x: x["type_tag"],
+                filter(lambda x: x["category"] == "Room", items),
+            )
+        )
+        state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
+
+    selected_building = state.bd_combobox_room.get()
+    state.selected_building = selected_building
+    current_selected_stdType = stdTypes_treeview.item(stdTypes_treeview.focus())
+    selected_type_name = current_selected_stdType.get("values")[0]
+    print("!!!" + selected_building)
+    applied_famType_sheetview = state.applied_famType_sheetview
+    notApplied_famType_sheetview = state.notApplied_famType_sheetview
+    notApplied_famType_sheetview.set_sheet_data([])
+
+    apply_target_rooms = state.project_info["apply_target_rooms"]
+    # print(data)
+    applied_famType_sheetview.clear()
+    notApplied_famType_sheetview.clear()
+    idxs = range(len(apply_target_rooms))
+    applies = []
+    not_applies = []
+    for rowidx in idxs:
+        if (
+            apply_target_rooms[rowidx]["bd_tag"] == selected_building
+            and apply_target_rooms[rowidx]["stdType_tag"] == selected_type_name
+        ):
+            # apply_target_rooms[rowidx][
+            #     "calc_tag"
+            # ] = state.selected_calcType_name.get().split(": ")[-1]
+            applies.append(
+                [
+                    apply_target_rooms[rowidx]["room_no"],
+                    apply_target_rooms[rowidx]["room_name"],
+                    apply_target_rooms[rowidx]["stdType_tag"],
+                    apply_target_rooms[rowidx]["bd_tag"],
+                    apply_target_rooms[rowidx]["calc_tag"],
+                ]
+            )
+        elif apply_target_rooms[rowidx]["calc_tag"] == "":
+            not_applies.append(
+                [
+                    apply_target_rooms[rowidx]["room_no"],
+                    apply_target_rooms[rowidx]["room_name"],
+                    apply_target_rooms[rowidx]["stdType_tag"],
+                    apply_target_rooms[rowidx]["bd_tag"],
+                ]
+            )
+
+    applied_famType_sheetview.set_sheet_data(applies)
+    notApplied_famType_sheetview.set_sheet_data(not_applies)
+
+    applied_famType_sheetview.column_width(0, 30)
+    applied_famType_sheetview.column_width(1, 170)
+    notApplied_famType_sheetview.column_width(0, 30)
+    notApplied_famType_sheetview.column_width(1, 170)
+
+
+def add_to_appliedRoom_data(state):
+    selected_item = state.notApplied_famType_sheetview.get_currently_selected()
+    selectedRow = selected_item.row
+    roomNo = state.notApplied_famType_sheetview.get_cell_data(selectedRow, 0)
+    roomName = state.notApplied_famType_sheetview.get_cell_data(selectedRow, 1)
+
+    for room_dic in state.project_info["apply_target_rooms"]:
+        if room_dic["room_no"] == roomNo and room_dic["room_name"] == roomName:
+            room_dic["stdType_tag"] = state.selected_stdType_name.get().split(": ")[-1]
+            room_dic["bd_tag"] = state.selected_building
+            room_dic["calc_tag"] = state.selected_calcType_name.get().split(": ")[-1]
+
+            state.logging_text_widget.write(str(room_dic))
+
+    appliedRooms = state.applied_famType_sheetview.get_sheet_data()
+    for room_dic in state.project_info["apply_target_rooms"]:
+        if room_dic["room_no"] == roomNo and room_dic["room_name"] == roomName:
+            appliedRooms.append(
+                [
+                    room_dic["room_no"],
+                    room_dic["room_name"],
+                    room_dic["stdType_tag"],
+                    room_dic["bd_tag"],
+                    room_dic["calc_tag"],
+                ]
+            )
+    state.applied_famType_sheetview.set_sheet_data(appliedRooms)
+    state.notApplied_famType_sheetview.delete_row(selectedRow)
+
+    state.applied_famType_sheetview.column_width(0, 30)
+    state.applied_famType_sheetview.column_width(1, 170)
+    state.notApplied_famType_sheetview.column_width(0, 30)
+    state.notApplied_famType_sheetview.column_width(1, 170)
 
 
 def remove_from_appliedRoom_data(state):
-    selected = state.applied_famType_sheetview.get_currently_selected()
-    selectedRow = selected.row
+    selected_item = state.applied_famType_sheetview.get_currently_selected()
+    selectedRow = selected_item.row
     roomNo = state.applied_famType_sheetview.get_cell_data(selectedRow, 0)
     roomName = state.applied_famType_sheetview.get_cell_data(selectedRow, 1)
 
     for room_dic in state.project_info["apply_target_rooms"]:
         if room_dic["room_no"] == roomNo and room_dic["room_name"] == roomName:
+            room_dic["stdType_tag"] = ""
             room_dic["bd_tag"] = ""
+            room_dic["calc_tag"] = ""
 
             state.logging_text_widget.write(str(room_dic))
+
     notAppliedRooms = []
     for room_dic in state.project_info["apply_target_rooms"]:
         if room_dic["bd_tag"] == "":
@@ -366,11 +436,18 @@ def remove_from_appliedRoom_data(state):
                 [
                     room_dic["room_no"],
                     room_dic["room_name"],
+                    room_dic["stdType_tag"],
                     room_dic["bd_tag"],
                 ]
             )
+    # print(notAppliedRooms)
     state.notApplied_famType_sheetview.set_sheet_data(notAppliedRooms)
     state.applied_famType_sheetview.delete_row(selectedRow)
+
+    state.applied_famType_sheetview.column_width(0, 30)
+    state.applied_famType_sheetview.column_width(1, 170)
+    state.notApplied_famType_sheetview.column_width(0, 30)
+    state.notApplied_famType_sheetview.column_width(1, 170)
 
 
 def save_project_roomType_info(state):

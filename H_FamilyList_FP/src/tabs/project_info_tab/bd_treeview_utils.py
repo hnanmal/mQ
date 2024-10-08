@@ -96,8 +96,12 @@ def on_building_select(
                     room_treeview.insert(
                         "",
                         "end",
-                        text=room_dic["room_no"],
-                        values=(room_dic["room_name"], room_dic["finish_type"]),
+                        # text=room_dic["room_no"],
+                        values=(
+                            room_dic["room_no"],
+                            room_dic["room_name"],
+                            room_dic["finish_type"],
+                        ),
                     )
 
         state.logging_text_widget.write(

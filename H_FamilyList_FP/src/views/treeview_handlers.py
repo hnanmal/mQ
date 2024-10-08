@@ -31,19 +31,19 @@ def create_treeview(parent, state):
     # Create a tree view widget with a hierarchical number column.
     tree = ttk.Treeview(
         tree_frame,
-        columns=("name", "description"),
+        columns=("number", "name", "description"),
         show="tree headings",
         yscrollcommand=v_scrollbar.set,
         xscrollcommand=h_scroll.set,
     )
 
     # Set up the columns
-    tree.heading("#0", text="Number", anchor="w")
+    tree.heading("number", text="Number", anchor="w")
     tree.heading("name", text="Name", anchor="w")
     tree.heading("description", text="Description", anchor="w")
 
     # Configure the columns
-    tree.column("#0", width=220, minwidth=220, stretch=False, anchor="w")
+    tree.column("number", width=220, minwidth=220, stretch=False, anchor="w")
     tree.column("name", width=200, anchor="w")
     tree.column("description", width=300, anchor="w")
 
