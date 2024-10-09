@@ -25,6 +25,8 @@ def create_room_tab(notebook, state):
     notebook.add(room_tab, text="Room")
     state.selected_calcType_name = tk.StringVar()
     state.selected_calcType_name.set("Selected Calc Type:          ")
+    state.wmBunches_room = {}
+    state.project_info["std_wm_assign"] = {}
 
     bigArea1 = ttk.Frame(room_tab, width=500, height=70)
     bigArea2 = ttk.Frame(room_tab, width=1200, height=2000, relief="ridge")
@@ -138,13 +140,15 @@ def create_room_tab(notebook, state):
     common_height = 140
     common_headers = [
         "물량산출식",
-        "Qty",
+        # "Qty",
         "Unit",
-        "WM",
         "Gauge Code",
+        "WM",
         "Description",
         "Remark",
     ]
+    state.common_headers = ["wmGrp"] + common_headers
+    state.common_widths = [120, 100, 30, 75, 800, 100, 100]
     state.selected_stdType_name = tk.StringVar()
     state.selected_stdType_name.set("Selected Standard Type: ")
     selected_stdType_label = ttk.Label(
@@ -153,6 +157,7 @@ def create_room_tab(notebook, state):
     selected_stdType_label.pack(padx=10, pady=10, anchor="w")
 
     floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
+    state.floor_dropdowns = floor_dropdowns
     assignWM_sheetview_forStdType_forFloor = create_assignWMsheet(
         state,
         section2,
@@ -162,8 +167,12 @@ def create_room_tab(notebook, state):
         dropdowns=floor_dropdowns,
     )
     assignWM_sheetview_forStdType_forFloor.pack(padx=5, pady=2, anchor="w")
+    state.assignWM_sheetview_forStdType_forFloor = (
+        assignWM_sheetview_forStdType_forFloor
+    )
 
     base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
+    state.base_dropdowns = base_dropdowns
     assignWM_sheetview_forStdType_forBase = create_assignWMsheet(
         state,
         section2,
@@ -173,8 +182,10 @@ def create_room_tab(notebook, state):
         dropdowns=base_dropdowns,
     )
     assignWM_sheetview_forStdType_forBase.pack(padx=5, pady=2, anchor="w")
+    state.assignWM_sheetview_forStdType_forBase = assignWM_sheetview_forStdType_forBase
 
     wall_dropdowns = list(filter(lambda x: "벽" in x, state.wm_group_data))
+    state.wall_dropdowns = wall_dropdowns
     assignWM_sheetview_forStdType_forWall = create_assignWMsheet(
         state,
         section2,
@@ -184,8 +195,10 @@ def create_room_tab(notebook, state):
         dropdowns=wall_dropdowns,
     )
     assignWM_sheetview_forStdType_forWall.pack(padx=5, pady=2, anchor="w")
+    state.assignWM_sheetview_forStdType_forWall = assignWM_sheetview_forStdType_forWall
 
     ceil_dropdowns = list(filter(lambda x: "천장" in x, state.wm_group_data))
+    state.ceil_dropdowns = ceil_dropdowns
     assignWM_sheetview_forStdType_forCeiling = create_assignWMsheet(
         state,
         section2,
@@ -195,6 +208,9 @@ def create_room_tab(notebook, state):
         dropdowns=ceil_dropdowns,
     )
     assignWM_sheetview_forStdType_forCeiling.pack(padx=5, pady=2, anchor="w")
+    state.assignWM_sheetview_forStdType_forCeiling = (
+        assignWM_sheetview_forStdType_forCeiling
+    )
 
     selected_calcType_label = ttk.Label(
         section3, textvariable=state.selected_calcType_name, font=("Arial", 11)

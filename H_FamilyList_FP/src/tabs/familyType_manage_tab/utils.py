@@ -14,6 +14,34 @@ def open_excel_locally(event):
     os.startfile(excel_file_path)
 
 
+def on_change_wmSheet(event, state, sheet):
+    # update_second_cell_dropdown(event, state, sheet)
+
+    selected_stdType_name = state.selected_stdType_name.get().split(": ")[-1]
+    sheet_kind = sheet.headers()[0]
+    print(sheet_kind)
+
+    wmBunches = []
+    for row in sheet.get_sheet_data():
+        wm_row_dic = dict(zip(state.common_headers, row))
+        wmBunches.append(wm_row_dic)
+
+    # state.wmBunches_room = {}
+    if state.project_info["std_wm_assign"][selected_stdType_name]:
+        state.project_info["std_wm_assign"][selected_stdType_name][
+            sheet_kind
+        ] = wmBunches
+    else:
+        state.wmBunches_room.update({sheet_kind: wmBunches})
+
+        # state.project_info["std_wm_assign"] = {}
+        state.project_info["std_wm_assign"].update(
+            {selected_stdType_name: state.wmBunches_room}
+        )
+
+    state.logging_text_widget.write(("\n").join(list(map(str, wmBunches))))
+
+
 def add_assignRow(event, state, sheet, dropdowns=None):
     new_row_index = sheet.get_total_rows()  # Get the current total rows
     if state.stdTypeTree_inRoom.selection():
@@ -32,7 +60,7 @@ def add_assignRow(event, state, sheet, dropdowns=None):
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
-    print(all_row_index)
+    # print(all_row_index)
 
     # print(second_dropdowns)
     # Set the second cell's dropdown based on the first cell's value
@@ -40,18 +68,20 @@ def update_second_cell_dropdown(event, state, sheet):
         if sheet.get_cell_data(idx, 4):
             selected_value = sheet.get_cell_data(idx, 4)
             unit_info = selected_value.split("... | ...")[-4]
-            sheet.set_cell_data(idx, 3, unit_info)
+            sheet.set_cell_data(idx, 2, unit_info)
 
     def update_row(idx):
         selected_value = sheet.get_cell_data(idx, 0)
-        print(selected_value)
+        # print(selected_value)
         try:
             current_WM_value = sheet.get_cell_data(
                 idx, 4
             )  # Get selected value from the first cell
         except:
             current_WM_value = None
-        second_dropdowns_obj = state.wm_group_data.get(selected_value)
+        second_dropdowns_obj = state.wm_group_data.get(
+            selected_value, {"matched_items": []}
+        )
         # map(lambda x: x.split("... | ..."), second_dropdowns_obj["matched_items"])
         if not current_WM_value:
             second_dropdowns = second_dropdowns_obj["matched_items"]
@@ -97,9 +127,7 @@ def create_assignWMsheet(
     sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
     sheet.set_sheet_data()
 
-    sheet.set_column_widths(
-        [120, 100, 70, 30, 800, 100, 100, 100],
-    )
+    sheet.set_column_widths(state.common_widths)
 
     # Bind event to detect changes in the first cell (A1) and update the second cell
     sheet.extra_bindings(
@@ -110,7 +138,11 @@ def create_assignWMsheet(
             ),
             (
                 "end_edit_cell",
-                # "edit_cell",
+                # lambda e: update_second_cell_dropdown(e, state, sheet),
+                lambda e: on_change_wmSheet(e, state, sheet),
+            ),
+            (
+                "cell_select",
                 lambda e: update_second_cell_dropdown(e, state, sheet),
             ),
         ]
@@ -169,7 +201,7 @@ def update_selected_calcType(
 
     else:
         selected_calcType = state.selected_calcType_name.get().split(": ")[-1]
-        print(selected_calcType)
+        # print(selected_calcType)
     selectedCalcDic = list(
         filter(
             lambda x: x["type_tag"] == selected_calcType,
@@ -253,7 +285,7 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
 
     state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
 
-    print(state.project_info["std_types_roomCat"])
+    # print(state.project_info["std_types_roomCat"])
 
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
     for dic in stdType_items_inRoom:
@@ -313,9 +345,71 @@ def update_notAppliedRoom_data(state):
 
 
 def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_label):
+    WMsheets = [
+        state.assignWM_sheetview_forStdType_forFloor,
+        state.assignWM_sheetview_forStdType_forBase,
+        state.assignWM_sheetview_forStdType_forWall,
+        state.assignWM_sheetview_forStdType_forCeiling,
+    ]
+
+    def init_WMsheetviews(state, sheet):
+        sheet.set_sheet_data([])
+        sheet.set_column_widths(state.common_widths)
+
+    for wmsheet in WMsheets:
+        init_WMsheetviews(state, wmsheet)
+    selected_building = state.bd_combobox_room.get()
+    state.selected_building = selected_building
+    current_selected_stdType = stdTypes_treeview.item(stdTypes_treeview.focus())
+    selected_type_name = current_selected_stdType.get("values")[0]
+
     update_selected_stdType_label_inRoom(
         event, state, stdTypes_treeview, selected_stdType_label
     )
+
+    ##### assignWM_sheetview 영역 업데이트 구간
+    def set_first_cell_forSheet(sheet, data, dropdowns):
+        # sheet.set_sheet_data([])
+        sheet.update_idletasks()
+        sheet.set_sheet_data(data)
+        sheet.set_column_widths(state.common_widths)
+        for idx in list(range(len(data))):
+            firstCell = data[idx][0]
+            sheet.create_dropdown(idx, 0, values=state.floor_dropdowns)
+            sheet.set_cell_data(
+                idx,
+                0,
+                firstCell,
+            )
+
+    if state.project_info["std_wm_assign"][selected_type_name]:
+        data = state.project_info["std_wm_assign"][selected_type_name]
+        floor_data = list(map(lambda x: list(x.values()), data["Floor"]))
+        base_data = list(map(lambda x: list(x.values()), data["Base"]))
+        wall_data = list(map(lambda x: list(x.values()), data["Wall"]))
+        ceiling_data = list(map(lambda x: list(x.values()), data["Ceiling"]))
+
+        set_first_cell_forSheet(
+            state.assignWM_sheetview_forStdType_forFloor,
+            floor_data,
+            state.floor_dropdowns,
+        )
+        set_first_cell_forSheet(
+            state.assignWM_sheetview_forStdType_forBase,
+            base_data,
+            state.base_dropdowns,
+        )
+        set_first_cell_forSheet(
+            state.assignWM_sheetview_forStdType_forWall,
+            wall_data,
+            state.wall_dropdowns,
+        )
+        set_first_cell_forSheet(
+            state.assignWM_sheetview_forStdType_forCeiling,
+            ceiling_data,
+            state.ceil_dropdowns,
+        )
+
     ##### Applied / notApplied_famType_sheetview 우측 영역 업데이트 구간
 
     if state.selected_calcType_name.get() != "Selected Calc Type: ":
@@ -328,17 +422,14 @@ def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_labe
         )
         state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
 
-    selected_building = state.bd_combobox_room.get()
-    state.selected_building = selected_building
-    current_selected_stdType = stdTypes_treeview.item(stdTypes_treeview.focus())
-    selected_type_name = current_selected_stdType.get("values")[0]
     print("!!!" + selected_building)
+
     applied_famType_sheetview = state.applied_famType_sheetview
     notApplied_famType_sheetview = state.notApplied_famType_sheetview
     notApplied_famType_sheetview.set_sheet_data([])
 
     apply_target_rooms = state.project_info["apply_target_rooms"]
-    # print(data)
+
     applied_famType_sheetview.clear()
     notApplied_famType_sheetview.clear()
     idxs = range(len(apply_target_rooms))
