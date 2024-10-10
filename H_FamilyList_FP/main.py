@@ -30,7 +30,7 @@ def main():
 
     # Initialize the main Tkinter window
     root = tk.Tk()
-    root.title("H Family List")
+    root.title("H_bimNote")
     root.geometry("1400x900")
 
     # Open the window in full screen
@@ -61,6 +61,7 @@ def main():
 
     # # Debugging: Print statement to confirm main function is running
     logging_text_widget.write("안녕하세요. 어플리케이션이 시작 되었습니다.\n")
+    main_notebook.select(1)
 
     # Start the main loop
     root.mainloop()

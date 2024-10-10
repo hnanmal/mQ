@@ -471,6 +471,7 @@ def on_cat_select(
         state.logging_text_widget.write(
             f"[ {selected_itemName} ] 카테고리의 산출타입태그를 조회합니다.\n"
         )
+    return calcType_treeview
 
 
 def on_calcType_select(

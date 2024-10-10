@@ -14,7 +14,7 @@ from src.tabs.project_info_tab.common_utils import (
     load_project_info,
     save_project_info,
 )
-from src.views.treeview_handlers import create_treeview
+from src.views.treeview_handlers import create_treeview_forPjinfo
 from src.tabs.project_info_tab.room_treeview_utils import (
     add_item_in_roomTree,
     remove_item_in_roomTree,
@@ -169,7 +169,7 @@ def create_project_info_tab(notebook, state):
     room_treeview_frame = ttk.Frame(section2, width=300)
     room_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)
 
-    room_treeview = create_treeview(project_info_tab, state)
+    room_treeview = create_treeview_forPjinfo(project_info_tab, state)
     room_treeview.pack(pady=10, fill=tk.BOTH, expand=True)
 
     building_treeview.bind(

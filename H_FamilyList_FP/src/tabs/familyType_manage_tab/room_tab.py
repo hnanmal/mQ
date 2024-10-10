@@ -9,6 +9,7 @@ from src.tabs.familyType_manage_tab.utils import (
     create_assignWMsheet,
     create_tksheet,
     on_click_stdTypeLabel,
+    open_calcType_view,
     open_excel_locally,
     remove_from_appliedRoom_data,
     save_project_roomType_info,
@@ -18,6 +19,7 @@ from src.tabs.familyType_manage_tab.utils import (
 )
 
 from src.tabs.input_common_tab.utils import create_defaultTreeview
+from src.views.tooltips import CreateToolTip
 
 
 def create_room_tab(notebook, state):
@@ -29,15 +31,15 @@ def create_room_tab(notebook, state):
     state.project_info["std_wm_assign"] = {}
 
     bigArea1 = ttk.Frame(room_tab, width=500, height=70)
-    bigArea2 = ttk.Frame(room_tab, width=1200, height=2000, relief="ridge")
+    bigArea2 = ttk.Frame(room_tab, width=1200, height=2000)  # , relief="ridge")
 
     bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
     bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
     section1 = ttk.Frame(bigArea2, width=700, height=2000)
-    section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="ridge")
-    section3 = ttk.Frame(bigArea2, width=650, height=2000, relief="ridge")
+    section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="groove")
+    section3 = ttk.Frame(bigArea2, width=650, height=2000)  # , relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
@@ -99,6 +101,12 @@ def create_room_tab(notebook, state):
         section1, text="Using Standard Type List\n(Room Finish)", font=("Arial", 12)
     )
     std_type_label.pack(padx=10, pady=10, anchor="w")
+
+    std_type_label_ttp = CreateToolTip(
+        std_type_label,
+        "더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다",
+    )
+
     std_type_label.bind(
         "<Double-Button-1>",
         open_excel_locally,
@@ -155,6 +163,19 @@ def create_room_tab(notebook, state):
         section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
     )
     selected_stdType_label.pack(padx=10, pady=10, anchor="w")
+    selected_stdType_label_ttp = CreateToolTip(
+        selected_stdType_label,
+        """
+>> 좌측에서 선택된 스탠다드 타입에 할당할 WM 를 지정할 수 있습니다.
+------------------------------
+* WM 항목을 추가하려면 시트 영역에서 우측 버튼을 클릭하여 'insert row' 메뉴를 클릭하십시오.
+* 우측의 Selected Calc Type 정보를 참조하여 물량산출식 열을 채워 주십시오.
+------------------------------
+* 기존 저장된 항목을 수정하려면 셀을 더블 클릭하여 편집하면 됩니다.
+* 현재 상태를 저장하려면 좌측 최상단의 'Save Project Info' 버튼을 누르십시오.
+------------------------------
+        """,
+    )
 
     floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
     state.floor_dropdowns = floor_dropdowns
@@ -217,6 +238,11 @@ def create_room_tab(notebook, state):
     )
     selected_calcType_label.pack(padx=10, pady=10, anchor="w")
     state.selected_calcType_label = selected_calcType_label
+
+    selected_calcType_label.bind(
+        "<Double-Button-1>",
+        lambda e: open_calcType_view(e, state),
+    )
 
     selected_calcType_sheetview = create_tksheet(
         state,

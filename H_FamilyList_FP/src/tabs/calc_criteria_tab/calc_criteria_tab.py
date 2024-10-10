@@ -3,12 +3,13 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import json
+import time
 
 # from src.tabs.project_info_tab.common_utils import save_project_info
 from src.tabs.input_common_tab.utils import (
-    add_common_param,
+    # add_common_param,
     create_defaultTreeview,
-    save_project_common_info,
+    # save_project_common_info,
 )
 from src.tabs.project_info_tab.common_utils import on_click_edit, refresh_treeview
 from src.tabs.calc_criteria_tab.utils import (
@@ -32,11 +33,16 @@ from src.tabs.calc_criteria_tab.utils import (
 )
 
 
-def create_calc_criteria_tab(notebook, state):
+def create_calc_criteria_tab(notebook, state, mode=None):
     state.edited_value = tk.StringVar(value="Initial Value")
     """Create the '공통 정보 입력' tab with two sections."""
     calc_criteria_tab = ttk.Frame(notebook)
-    notebook.add(calc_criteria_tab, text="산출 기준")
+    if mode == None:
+        notebook.add(calc_criteria_tab, text="산출 기준")
+    elif mode == "newWindow_room":
+        calc_criteria_tab.pack(
+            side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True
+        )
 
     # s = ttk.Style()
     # s.configure("new.TFrame", background="#7AC5CD")
@@ -390,3 +396,35 @@ def create_calc_criteria_tab(notebook, state):
         ),
     )
     del_selected_manualParam_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+    ######## mode==newWindow인 경우
+    def select_item_by_value(treeview, column, value):
+        # Iterate over all items in the treeview
+        for child in treeview.get_children():
+            # Get the value of the specified column for the current item
+            item_value = treeview.item(child, "values")[column]
+            # print(item_value)
+            # If the value matches, select the item
+            # print(item_value == value)
+            if item_value == value:
+                treeview.selection_set(child)
+                # treeview.focus(child)
+                # treeview.see(child)  # Scroll to the selected item if needed
+                break  # Exit after the first match is found
+
+    if mode == "newWindow_room":
+        select_item_by_value(cat_treeview, column=0, value="Room")
+        calcType_tree = on_cat_select(
+            None,
+            state,
+            cat_treeview,
+            selected_Cat_label,
+            selected_calcType_label,
+            calcType_treeview,
+            stdFormula_treeview,
+            modelParam_treeview,
+            manual_Param_treeview,
+        )
+        state.calcType_treeview = calcType_tree
+        # selected_calcType = state.selected_calcType_name.get().split(": ")[-1]
+        # select_item_by_value(calcType_tree, column=0, value=selected_calcType)
