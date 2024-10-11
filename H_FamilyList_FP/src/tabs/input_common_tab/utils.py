@@ -32,7 +32,7 @@ def create_defaultTreeview(
 
     # # Define the column properties (width, alignment)
     for col in columns:
-        tree.column(col, width=70, anchor="center")
+        tree.column(col, width=70, anchor="w")
 
     # Add a scrollbar (optional)
     # scrollbar_y = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)

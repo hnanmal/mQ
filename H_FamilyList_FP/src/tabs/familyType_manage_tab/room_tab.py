@@ -5,9 +5,12 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
+    add_room_to_apply_target_rooms,
+    add_stdType_roomCat,
     add_to_appliedRoom_data,
     create_assignWMsheet,
     create_tksheet,
+    del_stdType_roomCat,
     on_click_stdTypeLabel,
     open_calcType_view,
     open_excel_locally,
@@ -23,6 +26,44 @@ from src.views.tooltips import CreateToolTip
 
 
 def create_room_tab(notebook, state):
+    # bgcolorForApply = "#e4dae6"
+    # bgcolorForApply = "#EEE5A2"
+    bgcolorForApply = "#e8e1ae"
+    style = ttk.Style()
+    style.configure(
+        "Custom.TLabel",
+        foreground="black",
+        background=bgcolorForApply,
+        font=("Arial", 11),
+    )
+    style.configure(
+        "Custom.TFrame",
+        foreground="black",  # Normal text
+        background=bgcolorForApply,
+    )
+    style.map(
+        "Custom.TFrame",
+        background=[("selected", "lightblue")],  # Background when selected
+        highlightcolor=[("selected", "darkblue")],
+    )
+
+    style.configure(
+        "Custom.Treeview",
+        background="white",  # Normal background
+        foreground="black",  # Normal text
+        fieldbackground="white",  # Entry box background
+        bordercolor="blue",  # Border color if needed
+        borderwidth=1,
+        font=("Arial Narrow", 9),
+    )
+    style.map(
+        "Custom.Treeview",
+        # background=[("selected", "lightblue")],  # Background when selected
+        background=[("selected", bgcolorForApply)],  # Background when selected
+        foreground=[("selected", "blue")],  # Text color when selected
+        highlightcolor=[("selected", "darkblue")],
+    )
+
     room_tab = ttk.Frame(notebook)
     notebook.add(room_tab, text="Room")
     state.selected_calcType_name = tk.StringVar()
@@ -62,13 +103,26 @@ def create_room_tab(notebook, state):
     )
     current_load_label.pack(side="left", padx=10, pady=10)
 
-    bd_comboBox = ttk.Combobox(section0)
+    ## 빌딩 콤보박스
+    bd_comboBox_frame = ttk.Frame(section0, style="Custom.TFrame")
+    bd_comboBox_frame.pack(padx=10, pady=10)
+
+    bd_comboBox = ttk.Combobox(bd_comboBox_frame)
     bd_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
     bd_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
     bd_comboBox.set(" ")  # 맨 처음 나타낼 값 설정
     bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
+    bd_comboBox_ttp = CreateToolTip(
+        bd_comboBox,
+        """
+>> 레빗 패밀리 타입을 할당할 프로젝트의 건물을 선택하는 곳입니다.
+------------------------------
+* 할당하려는 레빗 패밀리 타입이 프로젝트의 모든 건물에 공통으로 적용된다면
+  '프로젝트 공통'을 선택해 주세요
+        """,
+    )
     state.bd_combobox_room = bd_comboBox
     ## 바인딩 맨 아래로 위치 이동됨
     # bd_comboBox.bind(
@@ -76,13 +130,26 @@ def create_room_tab(notebook, state):
     #     lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
     # )
 
-    calc_comboBox = ttk.Combobox(section3)
+    ## calc combo box 영역
+
+    calc_comboBox_frame = ttk.Frame(section3, style="Custom.TFrame")
+    calc_comboBox_frame.pack(padx=5, pady=5)
+
+    calc_comboBox = ttk.Combobox(calc_comboBox_frame)
     calc_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
     calc_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
     calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
     calc_comboBox.pack(padx=10, pady=10, anchor="n")
+    calc_comboBox_ttp = CreateToolTip(
+        calc_comboBox,
+        """
+>> 현재 카테고리에서 지정 가능한 산출 타입을 선택하는 드롭다운 메뉴입니다.
+------------------------------
+* !! Revit 타입을 스탠다드 항목에 할당할때, 반드시 산출 타입을 확인해 주세요 !!
+        """,
+    )
     calc_comboBox.bind(
         "<<ComboboxSelected>>",
         lambda e: update_selected_calcType(
@@ -104,7 +171,9 @@ def create_room_tab(notebook, state):
 
     std_type_label_ttp = CreateToolTip(
         std_type_label,
-        "더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다",
+        """
+더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다
+        """,
     )
 
     std_type_label.bind(
@@ -116,23 +185,29 @@ def create_room_tab(notebook, state):
     stdTypes_treeview = create_defaultTreeview(
         state, section1, ["stdTypes", "building_tag"], height=15
     )
+    stdTypes_treeview.config(
+        style="Custom.Treeview",
+        selectmode="browse",
+    )
+    stdTypes_treeview.column("stdTypes", width=150)
     state.stdTypeTree_inRoom = stdTypes_treeview
 
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
-        # lambda e: update_selected_stdType_label_inRoom(
-        #     e, state, stdTypes_treeview, selected_stdType_label
-        # ),
         lambda e: on_click_stdTypeLabel(
             e, state, stdTypes_treeview, selected_stdType_label
         ),
     )
+
+    new_stdType_text = tk.Text(section1, height=4, width=30)
+    new_stdType_text.pack(pady=5, anchor="w")
+
     add_del_btn_frame = ttk.Frame(section1, width=200, height=70)
     add_del_btn_frame.pack(padx=10, pady=10, anchor="w")
     add_stdType_btn = ttk.Button(
         add_del_btn_frame,
         text="add stdType",
-        command=lambda: add_stdType_roomCat(state),
+        command=lambda: add_stdType_roomCat(state, new_stdType_text),
     )
     add_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
@@ -173,7 +248,6 @@ def create_room_tab(notebook, state):
 ------------------------------
 * 기존 저장된 항목을 수정하려면 셀을 더블 클릭하여 편집하면 됩니다.
 * 현재 상태를 저장하려면 좌측 최상단의 'Save Project Info' 버튼을 누르십시오.
-------------------------------
         """,
     )
 
@@ -238,7 +312,18 @@ def create_room_tab(notebook, state):
     )
     selected_calcType_label.pack(padx=10, pady=10, anchor="w")
     state.selected_calcType_label = selected_calcType_label
-
+    selected_calcType_label_ttp = CreateToolTip(
+        selected_calcType_label,
+        """
+>> 위에서 선택된 산출 타입에 대한 수식 약자들이 참조용으로 제공됩니다.
+------------------------------
+* 항목과 수식약자 열을 참조하여 WM 항목 별 물량산출식을 작성해 주세요.
+* 더블 클릭하면 별도의 새 창으로 산출 타입을 조회 할 수 있습니다.
+  (새 창에서는 산출타입 내용 편집 가능)
+------------------------------
+* !! Revit 타입을 스탠다드 항목에 할당할때, 반드시 산출 타입을 확인해 주세요 !!
+        """,
+    )
     selected_calcType_label.bind(
         "<Double-Button-1>",
         lambda e: open_calcType_view(e, state),
@@ -254,21 +339,29 @@ def create_room_tab(notebook, state):
     selected_calcType_sheetview.pack(padx=10, pady=10, anchor="w")
     state.selected_calcType_sheetview = selected_calcType_sheetview
 
+    apply_frame = ttk.Frame(section3, style="Custom.TFrame")
+    apply_frame.pack(padx=5, pady=5)
+
     applied_famType_label = ttk.Label(
-        section3, text="Applied Revit Family Types", font=("Arial", 11)
+        apply_frame,
+        text="Applied Revit Family Types",
+        font=("Arial", 11, "bold"),
+        style="Custom.TLabel",
     )
     applied_famType_label.pack(padx=10, pady=10, anchor="w")
 
     applied_famType_sheetview = create_tksheet(
         state,
-        section3,
+        apply_frame,
         ["no", "rooms", "stdType_tag", "bd_tag", "calc_tag"],
         height=150,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
     state.applied_famType_sheetview = applied_famType_sheetview
 
-    add_del_famType_btn_frame = ttk.Frame(section3, width=200, height=70)
+    add_del_famType_btn_frame = ttk.Frame(
+        apply_frame, width=200, height=70, style="Custom.TFrame"
+    )
     add_del_famType_btn_frame.pack(padx=10, pady=10, anchor="w")
     add_famType_btn = ttk.Button(
         add_del_famType_btn_frame,
@@ -285,19 +378,33 @@ def create_room_tab(notebook, state):
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="e")
 
     notApplied_famType_label = ttk.Label(
-        section3, text="Not Applied Revit Family Types", font=("Arial", 11)
+        apply_frame,
+        text="Not Applied Revit Family Types",
+        font=("Arial", 11),
+        style="Custom.TLabel",
     )
     notApplied_famType_label.pack(padx=10, pady=10, anchor="w")
 
     notApplied_famType_sheetview = create_tksheet(
         state,
-        section3,
+        apply_frame,
         ["no", "rooms", "stdType_tag", "bd_tag"],
         height=150,
         mode="nonAppFamtype",
     )
     notApplied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
     state.notApplied_famType_sheetview = notApplied_famType_sheetview
+    notApplied_famType_sheetview.extra_bindings(
+        [
+            (
+                "end_edit_cell",
+                # lambda e: update_second_cell_dropdown(e, state, sheet),
+                lambda e: add_room_to_apply_target_rooms(
+                    e, state, notApplied_famType_sheetview
+                ),
+            ),
+        ]
+    )
 
     bd_comboBox.bind(
         "<<ComboboxSelected>>",

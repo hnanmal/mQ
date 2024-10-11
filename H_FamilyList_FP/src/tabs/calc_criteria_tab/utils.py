@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import filedialog
 
 from src.tabs.input_common_tab.utils import create_defaultTreeview
+from src.tabs.project_info_tab.common_utils import load_project_info
 
 
 def on_doubleClick_newWindow(event, state, calcType_treeview):
@@ -847,3 +848,13 @@ def save_project_calcType_info(state):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)
     state.logging_text_widget.write(f"Project Info saved to {file_path}\n")
+
+    load_project_info(
+        state,
+        state.project_name_var,
+        state.project_type_var,
+        state.building_treeview,
+        state.earth_treeview,
+        state.steel_treeview,
+        file_path_arg=file_path,
+    )

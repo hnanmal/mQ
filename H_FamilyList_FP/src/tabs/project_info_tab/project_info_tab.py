@@ -133,6 +133,7 @@ def create_project_info_tab(notebook, state):
     )
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     building_treeview.config(yscrollcommand=scrollbar.set)
+    state.building_treeview = building_treeview
 
     new_building_text = tk.Text(section1, height=4, width=30)
     new_building_text.pack(pady=5, anchor="w")

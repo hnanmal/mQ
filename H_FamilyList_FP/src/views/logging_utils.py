@@ -29,7 +29,8 @@ def setup_logging_frame(root):
     logging_frame.pack(fill=tk.X, side=tk.BOTTOM, pady=5)
 
     # Create a Text widget for logging output
-    log_text = tk.Text(logging_frame, height=8, wrap="word", state="normal")
+    # log_text = tk.Text(logging_frame, height=8, wrap="word", state="normal")
+    log_text = tk.Text(logging_frame, height=6, wrap="word", state="normal")
     log_text.pack(fill=tk.BOTH, expand=True)
 
     # Redirect print statements to the logging area

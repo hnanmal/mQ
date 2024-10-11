@@ -30,6 +30,59 @@ def refresh_treeview(treeview, data, targetCat):
         )
 
 
+# Load Project Info Button
+def load_project_info(
+    state,
+    project_name_var,
+    project_type_var,
+    building_treeview,
+    earth_treeview,
+    steel_treeview,
+    file_path_arg=None,
+):
+    state.project_name_var = project_name_var
+    state.project_type_var = project_type_var
+    if file_path_arg:
+        file_path = file_path_arg
+    else:
+        file_path = filedialog.askopenfilename(filetypes=[("HPJT files", "*.hpjt")])
+        # if file_path:
+    with open(file_path, "r", encoding="utf-8") as f:
+        loaded_data = json.load(f)
+
+    # Save loaded data to state
+    state.project_info = loaded_data
+    state["current_loaded_pjt"].set(file_path)
+    # print(state.project_info)
+
+    # Update the Treeview with loaded data
+    refresh_treeview(earth_treeview, loaded_data, "earth")
+    refresh_treeview(steel_treeview, loaded_data, "steel")
+
+    # Populate UI fields from project_info
+    project_name_var.set(loaded_data.get("project_name", ""))
+    project_type_var.set(loaded_data.get("project_type", ""))
+
+    # Clear and populate the building treeview
+    building_treeview.delete(*building_treeview.get_children())
+    for building_data in loaded_data.get("building_list", []):
+        building_treeview.insert(
+            "",
+            "end",
+            values=(
+                building_data["building_name"],
+                building_data["building_number"],
+            ),
+        )
+
+    update_notAppliedRoom_data(state)
+    update_combobox_data(state.bd_combobox_room, loaded_data, "building")
+    update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
+    # update_stdTypeTree_inRoom(state, state.stdTypeTree_inRoom) ## Room 은 예외적으로 빌딩 선택시 로드되도록 해야 한다.
+
+    state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
+
+
 def save_project_info(
     state,
     project_name_var,
@@ -50,53 +103,15 @@ def save_project_info(
         json.dump(project_info_, f, ensure_ascii=False, indent=4)
     state.logging_text_widget.write(f"Project Info saved to {file_path}\n")
 
-
-# Load Project Info Button
-def load_project_info(
-    state,
-    project_name_var,
-    project_type_var,
-    building_treeview,
-    earth_treeview,
-    steel_treeview,
-):
-
-    file_path = filedialog.askopenfilename(filetypes=[("HPJT files", "*.hpjt")])
-    if file_path:
-        with open(file_path, "r", encoding="utf-8") as f:
-            loaded_data = json.load(f)
-
-        # Save loaded data to state
-        state.project_info = loaded_data
-        state["current_loaded_pjt"].set(file_path)
-        # print(state.project_info)
-
-        # Update the Treeview with loaded data
-        refresh_treeview(earth_treeview, loaded_data, "earth")
-        refresh_treeview(steel_treeview, loaded_data, "steel")
-
-        # Populate UI fields from project_info
-        project_name_var.set(loaded_data.get("project_name", ""))
-        project_type_var.set(loaded_data.get("project_type", ""))
-
-        # Clear and populate the building treeview
-        building_treeview.delete(*building_treeview.get_children())
-        for building_data in loaded_data.get("building_list", []):
-            building_treeview.insert(
-                "",
-                "end",
-                values=(
-                    building_data["building_name"],
-                    building_data["building_number"],
-                ),
-            )
-
-        update_notAppliedRoom_data(state)
-        update_combobox_data(state.bd_combobox_room, loaded_data, "building")
-        update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
-        # update_stdTypeTree_inRoom(state, state.stdTypeTree_inRoom) ## Room 은 예외적으로 빌딩 선택시 로드되도록 해야 한다.
-
-        state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
+    load_project_info(
+        state,
+        project_name_var,
+        project_type_var,
+        state.building_treeview,
+        state.earth_treeview,
+        state.steel_treeview,
+        file_path_arg=file_path,
+    )
 
 
 # Function to handle in-place editing
