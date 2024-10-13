@@ -62,7 +62,7 @@ def create_treeview(parent, state):
     )
 
     # Bind the right-click event
-    tree.bind("<Button-3>", lambda event: on_right_click(event, tree))
+    tree.bind("<Button-3>", lambda event: on_right_click(event, state, tree))
 
     tree.bind("<Control-c>", lambda event: handle_copy(tree, event, state))
     tree.bind("<Control-v>", lambda event: handle_paste(tree, event, state))
@@ -119,7 +119,7 @@ def create_treeview_forPjinfo(parent, state):
     )
 
     # Bind the right-click event
-    tree.bind("<Button-3>", lambda event: on_right_click(event, tree))
+    tree.bind("<Button-3>", lambda event: on_right_click(event, state, tree))
 
     tree.bind("<Control-c>", lambda event: handle_copy(tree, event, state))
     tree.bind("<Control-v>", lambda event: handle_paste(tree, event, state))
@@ -128,11 +128,11 @@ def create_treeview_forPjinfo(parent, state):
     return tree
 
 
-def on_right_click(event, tree):
+def on_right_click(event, state, tree):
     item = tree.identify_row(event.y)
     column = tree.identify_column(event.x)
     if item and column:
-        menu = generate_context_menu(tree, item, column)
+        menu = generate_context_menu(state, tree, item, column)
         menu.post(event.x_root, event.y_root)
 
 

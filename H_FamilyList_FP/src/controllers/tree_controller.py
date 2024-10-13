@@ -77,7 +77,7 @@ def add_item(tree, state):
     )
 
 
-def remove_item(tree, state):
+def remove_item(tree, state, item=None):
     """Remove the selected items from the Treeview based on the highest level and renumber the remaining items."""
     logging_text_widget = state.logging_text_widget
     selected_items = tree.selection()

@@ -19,6 +19,7 @@ from src.tabs.project_info_tab.room_treeview_utils import (
     add_item_in_roomTree,
     remove_item_in_roomTree,
 )
+from src.views.tooltips import CreateToolTip
 
 
 def create_project_info_tab(notebook, state):
@@ -166,6 +167,26 @@ def create_project_info_tab(notebook, state):
         section2, text="Room Treeview with Finish Type", font=("Arial", 14)
     )
     room_treview_label.pack(padx=20, pady=10, anchor="w")
+    room_treview_label.config(cursor="question_arrow")
+    room_treview_label_ttp = CreateToolTip(
+        room_treview_label,
+        """
+>> Revit Summary(by Dynamo)의 Room 정보를 복사하여 붙여넣는 구간입니다.
+------------------------------
+* 이곳의 입력은 필수가 아니며, 레빗 모델링 내 룸 정보를 간편하게 붙여넣는 구간입니다.
+======================
+F91 / B35 / W02A / C95A
+101 CENTRAL CONTROL ROOM
+102 MEETING ROOM
+103 ENGINEERING ROOM
+======================
+위와 같은 형식의 텍스트를 Revit Summary 에서 복사하여 붙여넣으면
+자동으로 룸 넘버, 룸 이름, 룸 피니시 타입의 순서로 정리되어 항목이 추가 됩니다.
+
+* 여기서 룸 정보를 입력하지 않더라도, 패밀리타입관리 > Room 탭에서
+  사용자가 임의로 룸 피니시 타입을 생성하고, 룸을 추가할 수 있습니다.
+        """,
+    )
 
     room_treeview_frame = ttk.Frame(section2, width=300)
     room_treeview_frame.pack(pady=10, fill=tk.BOTH, expand=True)

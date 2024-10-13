@@ -5,11 +5,11 @@ from src.controllers.tree_controller import remove_item
 from src.utils.tree_utils import enable_tree_item_editing
 
 
-def generate_context_menu(tree, item, column):
+def generate_context_menu(state, tree, item, column):
     menu = tk.Menu(tree, tearoff=0)
     actions = {
         "Edit": lambda: enable_tree_item_editing(tree, item, column),
-        "Delete": lambda: remove_item(tree, item),
+        "Delete": lambda: remove_item(tree, state, item),
         # Additional actions...
     }
 

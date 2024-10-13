@@ -63,8 +63,12 @@ def add_item_in_roomTree(state, building_treeview, room_treeview, new_room_text)
             room_treeview.insert(
                 "",
                 "end",
-                text=new_room["room_no"],
-                values=(new_room["room_name"], new_room["finish_type"]),
+                # text=new_room["room_no"],
+                values=(
+                    new_room["room_no"],
+                    new_room["room_name"],
+                    new_room["finish_type"],
+                ),
             )
             for idx, state_building in enumerate(state.project_info["building_list"]):
                 if (

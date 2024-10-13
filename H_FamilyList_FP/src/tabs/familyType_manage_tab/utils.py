@@ -5,8 +5,86 @@ import json
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import simpledialog
 from tksheet import Sheet
 import os
+
+
+def on_right_click_stdTypetree_roomTab(event, state, tree):
+    item = tree.identify_row(event.y)
+    column = tree.identify_column(event.x)
+    if item and column:
+        menu = generate_context_menu_room(state, tree, item, column)
+        menu.post(event.x_root, event.y_root)
+
+
+def generate_context_menu_room(state, tree, item, column):
+    menu = tk.Menu(tree, tearoff=0)
+    actions = {
+        "Edit": lambda: enable_tree_item_editing_room(state, tree, item, column),
+        "Delete": lambda: del_stdType_roomCat(state),
+        # Additional actions...
+    }
+
+    for label, command in actions.items():
+        menu.add_command(label=label, command=command)
+
+    return menu
+
+
+def enable_tree_item_editing_room(state, tree, item, column):
+    """Enable editing for the specified column of the treeview item."""
+    x, y, width, height = tree.bbox(item, column)
+    entry = tk.Entry(tree, width=width)
+
+    oldType_name = tree.item(item, "values")[0]
+    oldBd_tag = tree.item(item, "values")[1]
+
+    def save_edit(event, column):
+        new_value = entry.get()
+        tree.set(item, column=column, value=new_value)
+        entry.destroy()
+
+        if column == "#1":
+            for std_dic in state.project_info["std_types_roomCat"]:
+                if (
+                    std_dic["finish_type"] == oldType_name
+                    and std_dic["building_tag"] == oldBd_tag
+                ):
+                    std_dic["finish_type"] = new_value
+
+            ## 변한 키이름을 state.project_info["std_wm_assign"]에 연동
+            state.project_info["std_wm_assign"][new_value] = state.project_info[
+                "std_wm_assign"
+            ].pop(oldType_name)
+
+            ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
+            for room_dic in state.project_info["apply_target_rooms"]:
+                if room_dic["stdType_tag"] == oldType_name:
+                    room_dic["stdType_tag"] = new_value
+
+        elif column == "#2":
+            for std_dic in state.project_info["std_types_roomCat"]:
+                if (
+                    std_dic["finish_type"] == oldType_name
+                    and std_dic["building_tag"] == oldBd_tag
+                ):
+                    std_dic["building_tag"] = new_value
+
+            # ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
+            # for room_dic in state.project_info["apply_target_rooms"]:
+            #     if room_dic["stdType_tag"] == oldType_name:
+            #         room_dic["bd_tag"] = new_value
+
+    # Get the current text in the cell
+    current_value = tree.item(item, "values")[int(column[1:]) - 1]
+
+    entry.insert(0, current_value)
+    entry.place(x=x, y=y, width=width, height=height)
+
+    entry.bind("<Return>", lambda e: save_edit(e, column))
+    entry.bind("<FocusOut>", lambda event: entry.destroy())
+    entry.focus()
 
 
 def open_excel_locally(event):
@@ -331,6 +409,7 @@ def add_stdType_roomCat(state, new_stdType_text):
 
 def del_stdType_roomCat(state):
     selected_stdTypes = state.stdTypeTree_inRoom.selection()
+    selected_building = state.selected_building
     for selected_stdType in selected_stdTypes:
         selected_stdType_name = state.stdTypeTree_inRoom.item(
             selected_stdType, "values"
@@ -338,6 +417,14 @@ def del_stdType_roomCat(state):
         state.logging_text_widget.write(
             f"remove [ {selected_stdType_name} ] Standard Type.\n"
         )
+        for room_dic in state.project_info["apply_target_rooms"]:
+            if (
+                room_dic["stdType_tag"] == selected_stdType_name
+                and room_dic["bd_tag"] == selected_building
+            ):
+                room_dic["stdType_tag"] = ""
+                room_dic["bd_tag"] = ""
+                room_dic["calc_tag"] = ""
 
         for stdType_dic in state.project_info["std_types_roomCat"]:
             if stdType_dic["finish_type"] == selected_stdType_name:
@@ -386,20 +473,12 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
     if not state.project_info.get("std_types_roomCat"):
         find_all_stdType_items_inRoom()
 
-    def find_stdType_items_inRoom_atBD(selectedBuilding):
-        res = []
-        if selectedBuilding:
-            for stdType_dic in state.project_info["std_types_roomCat"]:
-                if stdType_dic["building_tag"] == selectedBuilding:
-                    # res.append(stdType_dic["finish_type"])
-                    res.append(stdType_dic)
-        return res
-
     state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
-    # if state.project_info["std_types_roomCat"]:
+
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
+
     for dic in stdType_items_inRoom:
-        # state.stdTypeTree_inRoom.insert("", "end", text=dic, values=[dic.items()])
+        print(dic)
         state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
 
 

@@ -12,6 +12,7 @@ from src.tabs.familyType_manage_tab.utils import (
     create_tksheet,
     del_stdType_roomCat,
     on_click_stdTypeLabel,
+    on_right_click_stdTypetree_roomTab,
     open_calcType_view,
     open_excel_locally,
     remove_from_appliedRoom_data,
@@ -81,11 +82,21 @@ def create_room_tab(notebook, state):
     section1 = ttk.Frame(bigArea2, width=700, height=2000)
     section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="groove")
     section3 = ttk.Frame(bigArea2, width=650, height=2000)  # , relief="ridge")
+    # section2 = ttk.Frame(bigArea2, width=500, height=2000, relief="groove")
+    # section3 = ttk.Frame(bigArea2, width=900, height=2000)  # , relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
-    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section1.pack(
+        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
+    )
+    section2.pack(
+        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
+    )
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    # section0.pack_propagate(False)
+    # section1.pack_propagate(False)
+    section2.pack_propagate(False)
+    section3.pack_propagate(False)
 
     # bigArea1 세부 구성
     save_load_btn_frame = ttk.Frame(section0, width=100, height=70, relief="ridge")
@@ -141,7 +152,8 @@ def create_room_tab(notebook, state):
     )  # 콤보 박스에 사용자가 직접 입력 불가
     calc_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
     calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
-    calc_comboBox.pack(padx=10, pady=10, anchor="n")
+    # calc_comboBox.pack(padx=10, pady=10, anchor="n")
+    calc_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="n")
     calc_comboBox_ttp = CreateToolTip(
         calc_comboBox,
         """
@@ -167,6 +179,7 @@ def create_room_tab(notebook, state):
     std_type_label = ttk.Label(
         section1, text="Using Standard Type List\n(Room Finish)", font=("Arial", 12)
     )
+    std_type_label.config(cursor="question_arrow")
     std_type_label.pack(padx=10, pady=10, anchor="w")
 
     std_type_label_ttp = CreateToolTip(
@@ -196,6 +209,12 @@ def create_room_tab(notebook, state):
         "<<TreeviewSelect>>",
         lambda e: on_click_stdTypeLabel(
             e, state, stdTypes_treeview, selected_stdType_label
+        ),
+    )
+    stdTypes_treeview.bind(
+        "<Button-3>",
+        lambda event: on_right_click_stdTypetree_roomTab(
+            event, state, stdTypes_treeview
         ),
     )
 
@@ -237,6 +256,7 @@ def create_room_tab(notebook, state):
     selected_stdType_label = ttk.Label(
         section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
     )
+    selected_stdType_label.config(cursor="question_arrow")
     selected_stdType_label.pack(padx=10, pady=10, anchor="w")
     selected_stdType_label_ttp = CreateToolTip(
         selected_stdType_label,
@@ -310,6 +330,7 @@ def create_room_tab(notebook, state):
     selected_calcType_label = ttk.Label(
         section3, textvariable=state.selected_calcType_name, font=("Arial", 11)
     )
+    selected_calcType_label.config(cursor="question_arrow")
     selected_calcType_label.pack(padx=10, pady=10, anchor="w")
     state.selected_calcType_label = selected_calcType_label
     selected_calcType_label_ttp = CreateToolTip(
@@ -340,7 +361,7 @@ def create_room_tab(notebook, state):
     state.selected_calcType_sheetview = selected_calcType_sheetview
 
     apply_frame = ttk.Frame(section3, style="Custom.TFrame")
-    apply_frame.pack(padx=5, pady=5)
+    apply_frame.pack(padx=5, pady=5, anchor="w")
 
     applied_famType_label = ttk.Label(
         apply_frame,
@@ -348,7 +369,18 @@ def create_room_tab(notebook, state):
         font=("Arial", 11, "bold"),
         style="Custom.TLabel",
     )
+    applied_famType_label.config(cursor="question_arrow")
     applied_famType_label.pack(padx=10, pady=10, anchor="w")
+
+    applied_famType_label_ttp = CreateToolTip(
+        applied_famType_label,
+        """
+>> 현재 선택된 Standard Type에 산출WM항목을 연결할 레빗패밀리를 등록하는 구역입니다.
+
+* 신규 룸을 추가하고 싶으면 아래의 Not Applied 영역에서 우측 버튼>insert row 를 통해
+  새로운 룸의 번호와 이름을 기입하고, [↑] 버튼을 눌러주시면 Applied 영역에 추가 됩니다.
+        """,
+    )
 
     applied_famType_sheetview = create_tksheet(
         state,
@@ -405,6 +437,9 @@ def create_room_tab(notebook, state):
             ),
         ]
     )
+    notApplied_famType_sheetview.set_options(header_bg="#ededed")
+    notApplied_famType_sheetview.set_options(index_bg="#ededed")
+    notApplied_famType_sheetview.set_options(table_bg="#f7f7f7")
 
     bd_comboBox.bind(
         "<<ComboboxSelected>>",
