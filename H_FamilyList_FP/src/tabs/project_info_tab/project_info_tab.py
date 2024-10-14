@@ -64,7 +64,19 @@ def create_project_info_tab(notebook, state):
     )
     save_info_button.pack(side="left", padx=20, pady=20, anchor="w")
 
-    load_info_button = ttk.Button(
+    # load_info_button = ttk.Button(
+    #     save_load_btn_frame,
+    #     text="Load Project Info",
+    #     command=lambda: load_project_info(
+    #         state,
+    #         project_name_var,
+    #         project_type_var,
+    #         building_treeview,
+    #         state.earth_treeview,
+    #         state.steel_treeview,
+    #     ),
+    # )
+    load_info_button = tk.Button(
         save_load_btn_frame,
         text="Load Project Info",
         command=lambda: load_project_info(
@@ -75,6 +87,11 @@ def create_project_info_tab(notebook, state):
             state.earth_treeview,
             state.steel_treeview,
         ),
+        relief="groove",
+        overrelief="solid",
+        bd=2,
+        bg="#e8e1ae",
+        fg="blue",
     )
     load_info_button.pack(side="left", padx=30, pady=10, anchor="w")
 

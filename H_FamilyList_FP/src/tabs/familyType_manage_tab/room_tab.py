@@ -11,7 +11,7 @@ from src.tabs.familyType_manage_tab.utils import (
     create_assignWMsheet,
     create_tksheet,
     del_stdType_roomCat,
-    on_click_stdTypeLabel,
+    on_click_stdType_treeItem,
     on_right_click_stdTypetree_roomTab,
     open_calcType_view,
     open_excel_locally,
@@ -71,6 +71,7 @@ def create_room_tab(notebook, state):
     state.selected_calcType_name.set("Selected Calc Type:          ")
     state.wmBunches_room = {}
     state.project_info["std_wm_assign"] = {}
+    # state.selected_stdType_idx = 0
 
     bigArea1 = ttk.Frame(room_tab, width=500, height=70)
     bigArea2 = ttk.Frame(room_tab, width=1200, height=2000)  # , relief="ridge")
@@ -122,7 +123,7 @@ def create_room_tab(notebook, state):
     bd_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    bd_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
+    bd_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
     bd_comboBox.set(" ")  # 맨 처음 나타낼 값 설정
     bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
     bd_comboBox_ttp = CreateToolTip(
@@ -144,16 +145,16 @@ def create_room_tab(notebook, state):
     ## calc combo box 영역
 
     calc_comboBox_frame = ttk.Frame(section3, style="Custom.TFrame")
-    calc_comboBox_frame.pack(padx=5, pady=5)
+    calc_comboBox_frame.pack(padx=5, pady=5, anchor="nw")
 
     calc_comboBox = ttk.Combobox(calc_comboBox_frame)
     calc_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    calc_comboBox.config(cursor="bottom_side")  # 콤보 박스 마우스 커서
+    calc_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
     calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
     # calc_comboBox.pack(padx=10, pady=10, anchor="n")
-    calc_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="n")
+    calc_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
     calc_comboBox_ttp = CreateToolTip(
         calc_comboBox,
         """
@@ -186,6 +187,9 @@ def create_room_tab(notebook, state):
         std_type_label,
         """
 더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다
+------------------------------
+
+룸 카테고리 스탠다드 아이템들을 선택하면 우측 영역에서 타입별 WM 을 할당할 수 있습니다.
         """,
     )
 
@@ -196,7 +200,10 @@ def create_room_tab(notebook, state):
 
     ### Standard Type Treeview 구간
     stdTypes_treeview = create_defaultTreeview(
-        state, section1, ["stdTypes", "building_tag"], height=15
+        state,
+        section1,
+        ["stdTypes", "building_tag"],
+        height=10,
     )
     stdTypes_treeview.config(
         style="Custom.Treeview",
@@ -207,7 +214,7 @@ def create_room_tab(notebook, state):
 
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
-        lambda e: on_click_stdTypeLabel(
+        lambda e: on_click_stdType_treeItem(
             e, state, stdTypes_treeview, selected_stdType_label
         ),
     )
@@ -218,7 +225,7 @@ def create_room_tab(notebook, state):
         ),
     )
 
-    new_stdType_text = tk.Text(section1, height=4, width=30)
+    new_stdType_text = tk.Text(section1, height=2, width=30)
     new_stdType_text.pack(pady=5, anchor="w")
 
     add_del_btn_frame = ttk.Frame(section1, width=200, height=70)
@@ -238,8 +245,8 @@ def create_room_tab(notebook, state):
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     ## section2 세부 구성
-    common_width = 1200
-    common_height = 140
+    common_width = 1300
+    common_height = 160
     common_headers = [
         "물량산출식",
         # "Qty",
@@ -285,6 +292,7 @@ def create_room_tab(notebook, state):
     state.assignWM_sheetview_forStdType_forFloor = (
         assignWM_sheetview_forStdType_forFloor
     )
+    # assignWM_sheetview_forStdType_forFloor.
 
     base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
     state.base_dropdowns = base_dropdowns

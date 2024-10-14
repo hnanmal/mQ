@@ -101,14 +101,14 @@ def open_calcType_view(event, state):
         for child in treeview.get_children():
             # Get the value of the specified column for the current item
             item_value = treeview.item(child, "values")[column]
-            print(item_value)
+            # print(item_value)
             # If the value matches, select the item
-            print(item_value == value)
+            # print(item_value == value)
             if item_value == value:
                 treeview.focus(child)
                 treeview.selection_set(child)  ## 제대로 작동 안함. 확인 필요
                 treeview.event_generate("<<TreeviewSelect>>")
-                print(treeview.event_generate("<<TreeviewSelect>>"))
+                # print(treeview.event_generate("<<TreeviewSelect>>"))
                 treeview.see(child)  # Scroll to the selected item if needed
                 break  # Exit after the first match is found
 
@@ -227,7 +227,7 @@ def update_second_cell_dropdown(event, state, sheet):
             selected_value, {"matched_items": []}
         )
         # map(lambda x: x.split("... | ..."), second_dropdowns_obj["matched_items"])
-        print(current_WM_value == second_dropdowns_obj["matched_items"][0])
+        # print(current_WM_value == second_dropdowns_obj["matched_items"][0])
         if not current_WM_value:
             second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(idx, 4, values=second_dropdowns)
@@ -276,6 +276,8 @@ def create_assignWMsheet(
 
     sheet.header_font(("Arial", 9, "normal"))
     sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
+    # sheet.set_options(vertical_scroll_borderwidth=5)  # Font name and size
+    # sheet.set_options(horizontal_scroll_borderwidth=5)  # Font name and size
     sheet.set_sheet_data()
 
     sheet.set_column_widths(state.common_widths)
@@ -363,7 +365,7 @@ def update_selected_calcType(
     selectedCalc_model_params = selectedCalcDic["model_params"]
     selectedCalc_manual_params = selectedCalcDic["manual_params"]
     selectedCalc_params = selectedCalc_model_params + selectedCalc_manual_params
-    selected_calcType_sheetview.set_sheet_data([])
+    selected_calcType_sheetview.set_sheet_data()
     paramDatas = []
     for param_dic in selectedCalc_params:
         c1 = param_dic["항목"]
@@ -378,6 +380,7 @@ def update_selected_stdType_label_inRoom(
 ):
     if stdTypes_treeview.focus():
         selected_type = stdTypes_treeview.item(stdTypes_treeview.focus())
+        state.selected_stdType = selected_type
         selected_type_name = selected_type.get("values")[0]
 
         state.selected_stdType_name.set("Selected Standard Type: " + selected_type_name)
@@ -473,9 +476,9 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
     if not state.project_info.get("std_types_roomCat"):
         find_all_stdType_items_inRoom()
 
-    state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
-
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
+
+    state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
 
     for dic in stdType_items_inRoom:
         print(dic)
@@ -532,7 +535,7 @@ def update_notAppliedRoom_data(state):
     #     pass
 
 
-def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_label):
+def on_click_stdType_treeItem(event, state, stdTypes_treeview, selected_stdType_label):
     WMsheets = [
         state.assignWM_sheetview_forStdType_forFloor,
         state.assignWM_sheetview_forStdType_forBase,
@@ -541,8 +544,11 @@ def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_labe
     ]
 
     def init_WMsheetviews(state, sheet):
-        sheet.set_sheet_data([])
+        hdrs = sheet.headers()
+        sheet.reset()
+        sheet.set_sheet_data()
         sheet.set_column_widths(state.common_widths)
+        sheet.set_header_data(hdrs)
 
     for wmsheet in WMsheets:
         init_WMsheetviews(state, wmsheet)
@@ -626,7 +632,7 @@ def on_click_stdTypeLabel(event, state, stdTypes_treeview, selected_stdType_labe
 
     applied_famType_sheetview = state.applied_famType_sheetview
     notApplied_famType_sheetview = state.notApplied_famType_sheetview
-    notApplied_famType_sheetview.set_sheet_data([])
+    notApplied_famType_sheetview.set_sheet_data()
 
     apply_target_rooms = state.project_info["apply_target_rooms"]
 

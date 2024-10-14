@@ -1,16 +1,22 @@
-# tests/test_views.py
+import tkinter as tk
 
-import unittest
-from src.views.ui import create_main_window
+# Create the main application window
+root = tk.Tk()
+root.title("Resizable Frames Example")
 
-class TestUI(unittest.TestCase):
-    def test_create_main_window(self):
-        state = None  # Use mock or test state
-        root, notebook = create_main_window(state)
-        self.assertIsNotNone(root)
-        self.assertIsNotNone(notebook)
+# Create a PanedWindow (horizontal orientation)
+paned_window = tk.PanedWindow(root, orient=tk.HORIZONTAL)
+paned_window.pack(fill=tk.BOTH, expand=True)
 
-    # Add more tests as needed
+# Create three frames
+frame1 = tk.Frame(paned_window, bg="lightblue", width=200, height=400)
+frame2 = tk.Frame(paned_window, bg="lightgreen", width=200, height=400)
+frame3 = tk.Frame(paned_window, bg="lightcoral", width=200, height=400)
 
-if __name__ == "__main__":
-    unittest.main()
+# Add the frames to the PanedWindow
+paned_window.add(frame1)
+paned_window.add(frame2)
+paned_window.add(frame3)
+
+# Start the Tkinter event loop
+root.mainloop()

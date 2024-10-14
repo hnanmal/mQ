@@ -78,6 +78,7 @@ def load_project_info(
     update_notAppliedRoom_data(state)
     update_combobox_data(state.bd_combobox_room, loaded_data, "building")
     update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
+    update_stdTypeTree_inRoom(None, state, state.bd_combobox_room)
     # update_stdTypeTree_inRoom(state, state.stdTypeTree_inRoom) ## Room 은 예외적으로 빌딩 선택시 로드되도록 해야 한다.
 
     state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")

@@ -44,21 +44,30 @@ def create_calc_criteria_tab(notebook, state, mode=None):
             side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True
         )
 
-    # s = ttk.Style()
-    # s.configure("new.TFrame", background="#7AC5CD")
+    main_paned_window = tk.PanedWindow(
+        calc_criteria_tab,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+        # cursor="sb_h_double_arrow",
+    )
+    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     # Divide the tab into three sections (frames)
-    bigArea1 = ttk.Frame(calc_criteria_tab, width=500, height=200)
-    bigArea2 = ttk.Frame(calc_criteria_tab, width=300, height=200)
-    bigArea1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    bigArea2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    bigArea1 = ttk.Frame(main_paned_window, width=500, height=200)
+    bigArea2 = ttk.Frame(main_paned_window, width=300, height=200)
+    bigArea3 = ttk.Frame(main_paned_window, width=300, height=200)
+    # Add big areas to the PanedWindow
+    main_paned_window.add(bigArea1, stretch="always")
+    main_paned_window.add(bigArea2, stretch="always")
+    main_paned_window.add(bigArea3, stretch="always")
 
     section0 = ttk.Frame(bigArea1, height=70)
     section1 = ttk.Frame(bigArea1, width=30, height=200)
     section2 = ttk.Frame(bigArea1, width=100, height=200)
-    section3 = ttk.Frame(bigArea1, width=500, height=200)
-    section4 = ttk.Frame(bigArea2, width=500, height=200)
-    section5 = ttk.Frame(bigArea2, width=500, height=200)
+    section3 = ttk.Frame(bigArea2, width=500, height=200)
+    section4 = ttk.Frame(bigArea3, width=500, height=200)
+    section5 = ttk.Frame(bigArea3, width=500, height=200)
 
     section0.pack(side=tk.TOP, anchor="w", fill=tk.X)
     section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.Y, expand=True)

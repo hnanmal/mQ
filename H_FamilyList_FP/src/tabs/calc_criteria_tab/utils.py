@@ -15,7 +15,7 @@ def on_doubleClick_newWindow(event, state, calcType_treeview):
 
     section4_window = ttk.Frame(window, width=800, height=100)
     section5_window = ttk.Frame(window, width=800, height=100)
-    section4_window.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X, expand=True)
+    section4_window.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH, expand=True)
     section5_window.pack(side=tk.BOTTOM, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
     # Section 4 - Selected Calc types's Model Parameter list
@@ -33,7 +33,7 @@ def on_doubleClick_newWindow(event, state, calcType_treeview):
         ("항목", "수식 약자", "Parameter", "단위", "비고", "calc_type"),
         height=5,
     )
-    modelParam_treeview_window.pack(pady=10, fill=tk.X, expand=True)
+    modelParam_treeview_window.pack(pady=10, fill=tk.BOTH, expand=True)
 
     modelParam_treeview_window.bind(
         "<Double-Button-1>",
