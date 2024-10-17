@@ -140,6 +140,7 @@ def on_change_wmSheet(event, state, sheet):
         state.project_info["std_wm_assign"][selected_stdType_name][
             sheet_kind
         ] = wmBunches
+        print(wmBunches)
     else:
         state.wmBunches_room.update({sheet_kind: wmBunches})
 
@@ -164,6 +165,21 @@ def add_assignRow(event, state, sheet, dropdowns=None):
             ":: !!!스탠다드 타입을 선택하셔야 동작합니다!!! ::"
         )
     sheet.del_row(new_row_index - 1)
+
+
+def del_assignRow(event, state, sheet, dropdowns=None):
+    new_row_index = sheet.get_total_rows()  # Get the current total rows
+    selected_row_index = sheet.get_currently_selected().row()
+    if state.stdTypeTree_inRoom.selection():
+        # sheet.delete_rows(idx=selected_row_index)
+        if dropdowns:
+            sheet.create_dropdown(new_row_index, 0, values=dropdowns)
+            sheet.set_cell_data(new_row_index, 0, "")
+    else:
+        # new_row_index = sheet.get_total_rows()
+        state.logging_text_widget.write(
+            ":: !!!스탠다드 타입을 선택하셔야 동작합니다!!! ::"
+        )
 
 
 def add_room_to_apply_target_rooms(event, state, sheet):
@@ -270,6 +286,7 @@ def create_assignWMsheet(
         "right_click_popup_menu",
         "rc_insert_row",
         "rc_delete_row",
+        "arrowkeys",
     )
 
     # sheet_data = [["", ""], ["", ""], ["", ""]]
@@ -288,6 +305,10 @@ def create_assignWMsheet(
             (
                 "rc_insert_row",
                 lambda e: add_assignRow(e, state, sheet, dropdowns),
+            ),
+            (
+                "rc_delete_row",
+                lambda e: on_change_wmSheet(e, state, sheet),
             ),
             (
                 "end_edit_cell",
@@ -323,6 +344,7 @@ def create_tksheet(
         "right_click_popup_menu",
         "rc_insert_row",
         "rc_delete_row",
+        "arrowkeys",
     )
 
     # sheet_data = [["", ""], ["", ""], ["", ""]]
@@ -436,7 +458,10 @@ def del_stdType_roomCat(state):
         state.stdTypeTree_inRoom.delete(selected_stdType)
 
 
-def update_stdTypeTree_inRoom(event, state, bd_comboBox):
+def update_stdTypeTree_inRoom(event, state, bd_comboBox, mode=None):
+    state.selected_building = bd_comboBox.get()
+    print(type(state.selected_building))
+    print(state.selected_building)
 
     update_selected_calcType(
         event,
@@ -478,14 +503,18 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox):
 
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
 
-    state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
+    if mode == "loading" and not state.selected_stdType:
+        state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
 
-    for dic in stdType_items_inRoom:
-        print(dic)
-        state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
+        for dic in stdType_items_inRoom:
+            print(dic)
+            state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
+    # elif selected_building and selected_stdType:
+    #     state.stdTypeTree_inRoom.selection_set(state.selected_stdType)
+    #     pass
 
 
-def update_combobox_data(combobox, data, mode=None, cat=None):
+def update_combobox_data(state, combobox, data, mode=None, cat=None):
     """
     Update the combobox values based on the data loaded from the JSON file.
     """
@@ -497,7 +526,15 @@ def update_combobox_data(combobox, data, mode=None, cat=None):
         combobox["values"] = ["프로젝트 공통"] + building_names
 
         # Set the default value to the first item if available
-        if building_names:
+        if building_names and state.selected_building != "대상 빌딩 선택":
+            try:
+                combobox.set(state.selected_building)
+            except:
+                pass
+            print(type(state.selected_building))
+            print(state.selected_building)
+            pass
+        elif building_names and not state.selected_building:
             combobox.set("대상 빌딩 선택")
         else:
             combobox.set("")  # Clear the combobox if no items are available
@@ -552,9 +589,10 @@ def on_click_stdType_treeItem(event, state, stdTypes_treeview, selected_stdType_
 
     for wmsheet in WMsheets:
         init_WMsheetviews(state, wmsheet)
-    selected_building = state.bd_combobox_room.get()
-    state.selected_building = selected_building
+    # selected_building = state.bd_combobox_room.get()
+    selected_building = state.selected_building
     current_selected_stdType = stdTypes_treeview.item(stdTypes_treeview.focus())
+    state.selected_stdType = current_selected_stdType
     selected_type_name = current_selected_stdType.get("values")[0]
 
     update_selected_stdType_label_inRoom(

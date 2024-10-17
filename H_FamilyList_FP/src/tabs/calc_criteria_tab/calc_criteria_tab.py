@@ -49,7 +49,6 @@ def create_calc_criteria_tab(notebook, state, mode=None):
         orient=tk.HORIZONTAL,
         sashwidth=7,
         bg="#e3e3e3",
-        # cursor="sb_h_double_arrow",
     )
     main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 

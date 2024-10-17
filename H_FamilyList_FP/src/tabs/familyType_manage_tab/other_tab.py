@@ -25,7 +25,8 @@ from src.tabs.input_common_tab.utils import create_defaultTreeview
 from src.views.tooltips import CreateToolTip
 
 
-def create_room_tab(notebook, state):
+def create_otherCat_tab(notebook, state, tab_name):
+    state[tab_name] = {}
     # bgcolorForApply = "#e4dae6"
     # bgcolorForApply = "#EEE5A2"
     bgcolorForApply = "#e8e1ae"
@@ -64,37 +65,23 @@ def create_room_tab(notebook, state):
         highlightcolor=[("selected", "darkblue")],
     )
 
-    room_tab = ttk.Frame(notebook)
-    notebook.add(room_tab, text="Room")
+    tab = ttk.Frame(notebook)
+    notebook.add(tab, text=tab_name)
 
-    main_paned_window = tk.PanedWindow(
-        room_tab,
-        orient=tk.HORIZONTAL,
-        sashwidth=7,
-        bg="#e3e3e3",
-    )
-    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    state[tab_name]["selected_calcType_name"] = tk.StringVar()
+    state[tab_name]["selected_calcType_name"].set("Selected Calc Type:          ")
+    state[tab_name]["wmBunches_room"] = {}
+    # state.project_info["std_wm_assign" + "_" + tab_name] = {}
+    # state[tab_name]["selected_building"] = None
+    state[tab_name]["selected_stdType"] = None
+    state[tab_name]["selected_calcType_label"] = None
+    state[tab_name]["selected_calcType_sheetview"] = None
 
-    state.selected_calcType_name = tk.StringVar()
-    state.selected_calcType_name.set("Selected Calc Type:          ")
-    state.wmBunches_room = {}
-    state.project_info["std_wm_assign"] = {}
-    state.selected_building = None
-    state.selected_stdType = None
-    state.selected_calcType_label = None
-    state.selected_calcType_sheetview = None
-    # state.selected_stdType_idx = 0
+    bigArea1 = ttk.Frame(tab, width=500, height=70)
+    bigArea2 = ttk.Frame(tab, width=1200, height=2000)  # , relief="ridge")
 
-    bigArea1 = ttk.Frame(main_paned_window, width=500, height=70)
-    bigArea2 = ttk.Frame(
-        main_paned_window, width=1200, height=2000
-    )  # , relief="ridge")
-
-    # bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
-    # bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-
-    main_paned_window.add(bigArea1, stretch="always")
-    main_paned_window.add(bigArea2, stretch="always")
+    bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
+    bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
     section1 = ttk.Frame(bigArea2, width=700, height=2000)
@@ -111,6 +98,10 @@ def create_room_tab(notebook, state):
         side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
     )
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    # section0.pack_propagate(False)
+    # section1.pack_propagate(False)
+    section2.pack_propagate(False)
+    section3.pack_propagate(False)
 
     # bigArea1 세부 구성
     save_load_btn_frame = ttk.Frame(section0, width=100, height=70, relief="ridge")
@@ -137,6 +128,7 @@ def create_room_tab(notebook, state):
     bd_combo_label.pack(side="left", padx=10, pady=10, anchor="w")
 
     bd_comboBox = ttk.Combobox(bd_comboBox_frame)
+    # bd_comboBox = state.bd_combobox_room
     bd_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
@@ -152,7 +144,7 @@ def create_room_tab(notebook, state):
   '프로젝트 공통'을 선택해 주세요
         """,
     )
-    state.bd_combobox_room = bd_comboBox
+    state[tab_name]["bd_combobox"] = bd_comboBox
     ## 바인딩 맨 아래로 위치 이동됨
     # bd_comboBox.bind(
     #     "<<ComboboxSelected>>",
@@ -195,13 +187,13 @@ def create_room_tab(notebook, state):
             selected_calcType_sheetview,
         ),
     )
-    state.calc_comboBox_room = calc_comboBox
+    state[tab_name]["calc_comboBox"] = calc_comboBox
 
     # bigArea2 세부 구성
     ## section1 세부 구성
     std_type_label = ttk.Label(
         section1,
-        text="2. 스탠다드 타입 확인\n(Room Finish)",
+        text="2. 스탠다드 타입 확인",
         font=("Arial", 12),
         style="Custom.TLabel",
     )
@@ -211,18 +203,14 @@ def create_room_tab(notebook, state):
     std_type_label_ttp = CreateToolTip(
         std_type_label,
         """
-더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다
-------------------------------
-
-룸 카테고리 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
-Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
+카테고리 별 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
         """,
     )
-
-    std_type_label.bind(
-        "<Double-Button-1>",
-        open_excel_locally,
-    )
+    # 더블 클릭 시 표준 구성도 새창 기능
+    # std_type_label.bind(
+    #     "<Double-Button-1>",
+    #     open_excel_locally,
+    # )
 
     ### Standard Type Treeview 구간
     stdTypes_treeview = create_defaultTreeview(
@@ -236,7 +224,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         selectmode="browse",
     )
     stdTypes_treeview.column("stdTypes", width=150)
-    state.stdTypeTree_inRoom = stdTypes_treeview
+    state[tab_name]["stdTypeTree"] = stdTypes_treeview
 
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
@@ -284,12 +272,14 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         "Description",
         "Remark",
     ]
-    state.common_headers = ["wmGrp"] + common_headers
-    state.common_widths = [120, 100, 30, 75, 800, 100, 100]
-    state.selected_stdType_name = tk.StringVar()
-    state.selected_stdType_name.set("Selected Standard Type: ")
+    state[tab_name]["common_headers"] = ["wmGrp"] + common_headers
+    state[tab_name]["common_widths"] = [120, 100, 30, 75, 800, 100, 100]
+    state[tab_name]["selected_stdType_name"] = tk.StringVar()
+    state[tab_name]["selected_stdType_name"].set("Selected Standard Type: ")
     selected_stdType_label = ttk.Label(
-        section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
+        section2,
+        textvariable=state[tab_name]["selected_stdType_name"],
+        font=("Arial", 12),
     )
     selected_stdType_label.config(cursor="question_arrow")
     selected_stdType_label.pack(padx=10, pady=10, anchor="w")
@@ -307,7 +297,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
     )
 
     floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
-    state.floor_dropdowns = floor_dropdowns
+    state[tab_name]["floor_dropdowns"] = floor_dropdowns
     assignWM_sheetview_forStdType_forFloor = create_assignWMsheet(
         state,
         section2,
@@ -317,13 +307,13 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         dropdowns=floor_dropdowns,
     )
     assignWM_sheetview_forStdType_forFloor.pack(padx=5, pady=2, anchor="w")
-    state.assignWM_sheetview_forStdType_forFloor = (
-        assignWM_sheetview_forStdType_forFloor
-    )
+    state[tab_name][
+        "assignWM_sheetview_forStdType_forFloor"
+    ] = assignWM_sheetview_forStdType_forFloor
     # assignWM_sheetview_forStdType_forFloor.
 
     base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
-    state.base_dropdowns = base_dropdowns
+    state[tab_name]["base_dropdowns"] = base_dropdowns
     assignWM_sheetview_forStdType_forBase = create_assignWMsheet(
         state,
         section2,
@@ -333,10 +323,12 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         dropdowns=base_dropdowns,
     )
     assignWM_sheetview_forStdType_forBase.pack(padx=5, pady=2, anchor="w")
-    state.assignWM_sheetview_forStdType_forBase = assignWM_sheetview_forStdType_forBase
+    state[tab_name][
+        "assignWM_sheetview_forStdType_forBase"
+    ] = assignWM_sheetview_forStdType_forBase
 
     wall_dropdowns = list(filter(lambda x: "벽" in x, state.wm_group_data))
-    state.wall_dropdowns = wall_dropdowns
+    state[tab_name]["wall_dropdowns"] = wall_dropdowns
     assignWM_sheetview_forStdType_forWall = create_assignWMsheet(
         state,
         section2,
@@ -346,10 +338,12 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         dropdowns=wall_dropdowns,
     )
     assignWM_sheetview_forStdType_forWall.pack(padx=5, pady=2, anchor="w")
-    state.assignWM_sheetview_forStdType_forWall = assignWM_sheetview_forStdType_forWall
+    state[tab_name][
+        "assignWM_sheetview_forStdType_forWall"
+    ] = assignWM_sheetview_forStdType_forWall
 
     ceil_dropdowns = list(filter(lambda x: "천장" in x, state.wm_group_data))
-    state.ceil_dropdowns = ceil_dropdowns
+    state[tab_name]["ceil_dropdowns"] = ceil_dropdowns
     assignWM_sheetview_forStdType_forCeiling = create_assignWMsheet(
         state,
         section2,
@@ -359,16 +353,18 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         dropdowns=ceil_dropdowns,
     )
     assignWM_sheetview_forStdType_forCeiling.pack(padx=5, pady=2, anchor="w")
-    state.assignWM_sheetview_forStdType_forCeiling = (
-        assignWM_sheetview_forStdType_forCeiling
-    )
+    state[tab_name][
+        "assignWM_sheetview_forStdType_forCeiling"
+    ] = assignWM_sheetview_forStdType_forCeiling
 
     selected_calcType_label = ttk.Label(
-        section3, textvariable=state.selected_calcType_name, font=("Arial", 11)
+        section3,
+        textvariable=state[tab_name]["selected_calcType_name"],
+        font=("Arial", 11),
     )
     selected_calcType_label.config(cursor="question_arrow")
     selected_calcType_label.pack(padx=10, pady=10, anchor="w")
-    state.selected_calcType_label = selected_calcType_label
+    state[tab_name]["selected_calcType_label"] = selected_calcType_label
     selected_calcType_label_ttp = CreateToolTip(
         selected_calcType_label,
         """
@@ -394,7 +390,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         mode="calcType",
     )
     selected_calcType_sheetview.pack(padx=10, pady=10, anchor="w")
-    state.selected_calcType_sheetview = selected_calcType_sheetview
+    state[tab_name]["selected_calcType_sheetview"] = selected_calcType_sheetview
 
     apply_frame = ttk.Frame(section3, style="Custom.TFrame")
     apply_frame.pack(padx=5, pady=5, anchor="w")
@@ -425,7 +421,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         height=150,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
-    state.applied_famType_sheetview = applied_famType_sheetview
+    state[tab_name]["applied_famType_sheetview"] = applied_famType_sheetview
 
     add_del_famType_btn_frame = ttk.Frame(
         apply_frame, width=200, height=70, style="Custom.TFrame"
@@ -461,7 +457,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         mode="nonAppFamtype",
     )
     notApplied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
-    state.notApplied_famType_sheetview = notApplied_famType_sheetview
+    state[tab_name]["notApplied_famType_sheetview"] = notApplied_famType_sheetview
     notApplied_famType_sheetview.extra_bindings(
         [
             (

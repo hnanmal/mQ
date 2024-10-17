@@ -11,6 +11,10 @@ from src.tabs.familyType_manage_tab.utils import (
     update_selected_calcType,
     update_stdTypeTree_inRoom,
 )
+from src.tabs.familyType_manage_tab.otherTabs.utils import (
+    update_combobox_data_other,
+    update_stdTypeTree_otherCat,
+)
 
 
 def refresh_treeview(treeview, data, targetCat):
@@ -76,10 +80,17 @@ def load_project_info(
         )
 
     update_notAppliedRoom_data(state)
-    update_combobox_data(state.bd_combobox_room, loaded_data, "building")
-    update_combobox_data(state.calc_comboBox_room, loaded_data, "calc", "Room")
-    update_stdTypeTree_inRoom(None, state, state.bd_combobox_room)
-    # update_stdTypeTree_inRoom(state, state.stdTypeTree_inRoom) ## Room 은 예외적으로 빌딩 선택시 로드되도록 해야 한다.
+    update_combobox_data(state, state.bd_combobox_room, loaded_data, "building")
+    update_combobox_data(state, state.calc_comboBox_room, loaded_data, "calc", "Room")
+    update_stdTypeTree_inRoom(None, state, state.bd_combobox_room, "loading")
+
+    update_combobox_data_other(state, loaded_data, "Floors")
+    update_stdTypeTree_otherCat(None, state, "Floors", "loading")
+
+    print(state.selected_building)
+    # if state.selected_building:
+    #     state.bd_combobox_room.set(state.selected_building)
+    state.bd_combobox_room.set(state.selected_building)
 
     state.logging_text_widget.write(f"Project Info loaded from {file_path}\n")
 

@@ -9,6 +9,7 @@ from src.tabs.project_info_tab.project_info_tab import create_project_info_tab
 from src.tabs.input_common_tab.input_common_tab import create_input_common_tab
 from src.tabs.calc_criteria_tab.calc_criteria_tab import create_calc_criteria_tab
 from src.tabs.familyType_manage_tab.room_tab import create_room_tab
+from src.tabs.familyType_manage_tab.other_tab import create_otherCat_tab
 
 
 def create_notebook_with_tabs(root, state):
@@ -70,11 +71,12 @@ def create_familyType_manage_tab(notebook, state):
     project_notebook.pack(fill="both", expand=True)
 
     create_room_tab(project_notebook, state)
+    create_otherCat_tab(project_notebook, state, "Floors")
 
     # Create the "프로젝트 정보 입력" tab
     other_tab_names = [
         # "Room",
-        "Floors",
+        # "Floors",
         "Roofs",
         "Walls_Ext",
         "Walls_Int",
