@@ -1,4 +1,300 @@
 from src.tabs.familyType_manage_tab.utils import update_selected_calcType
+import tkinter as tk
+from tksheet import Sheet
+
+
+def update_selected_stdType_label_allCat(
+    event,
+    state,
+    stdTypes_treeview,
+    tab_name=None,
+):
+    if stdTypes_treeview.focus():
+        print("FFFF")
+        selected_type = stdTypes_treeview.item(stdTypes_treeview.focus())
+        state[tab_name]["selected_stdType"] = selected_type
+        selected_type_name = selected_type.get("values")[0]
+
+        state[tab_name]["selected_stdType_name"].set(
+            "Selected Standard Type: " + selected_type_name
+        )
+    else:
+        state[tab_name]["selected_stdType_name"].set("Selected Standard Type: ")
+
+
+def on_click_stdType_treeItem_allCat(
+    event,
+    state,
+    stdTypes_treeview,
+    tab_name=None,
+):
+    print("FdfdfF")
+    WMsheet = state[tab_name]["assignWM_sheetview_forStdType"]
+
+    def init_WMsheetviews(state, sheet):
+        hdrs = sheet.headers()
+        sheet.reset()
+        sheet.set_sheet_data()
+        sheet.set_column_widths(state.common_widths)
+        sheet.set_header_data(hdrs)
+
+    init_WMsheetviews(state, WMsheet)
+    # selected_building = state.bd_combobox_room.get()
+    selected_building = state.selected_building
+    current_selected_stdType = stdTypes_treeview.item(stdTypes_treeview.focus())
+    state[tab_name]["selected_stdType"] = current_selected_stdType
+    selected_type_name = current_selected_stdType.get("values")[0]
+
+    update_selected_stdType_label_allCat(
+        event, state, stdTypes_treeview, tab_name=tab_name
+    )
+
+    ##### assignWM_sheetview 영역 업데이트 구간
+    def set_first_cell_forSheet(sheet, data, dropdowns):
+        # sheet.set_sheet_data([])
+        sheet.update_idletasks()
+        sheet.set_sheet_data(data)
+        sheet.set_column_widths(state.common_widths)
+        for idx in list(range(len(data))):
+            firstCell = data[idx][0]
+            sheet.create_dropdown(idx, 0, values=state.floor_dropdowns)
+            sheet.set_cell_data(
+                idx,
+                0,
+                firstCell,
+            )
+
+    # if not state.project_info["std_wm_assign"].get(selected_type_name):
+    #     state.project_info["std_wm_assign"][selected_type_name] = {
+    #         "Floor": [],
+    #         "Base": [],
+    #         "Wall": [],
+    #         "Ceiling": [],
+    #     }
+    # else:
+    #     pass
+
+    # data = state.project_info["std_wm_assign"][selected_type_name]
+    # floor_data = list(map(lambda x: list(x.values()), data["Floor"]))
+
+    data = state.project_info["std_wm_assign_allCat"][tab_name][selected_type_name]
+
+    selected_stdType_wmGrpData = data
+
+    set_first_cell_forSheet(
+        state[tab_name]["assignWM_sheetview_forStdType"],
+        floor_data,
+        state.floor_dropdowns,
+    )
+
+    ##### combobox update ######
+    state.calc_comboBox_room.update_idletasks()
+
+    ##### Applied / notApplied_famType_sheetview 우측 영역 업데이트 구간
+
+    if state.selected_calcType_name.get() != "Selected Calc Type: ":
+        items = state.project_info.get("calc_types", [])
+        calcType_names = list(
+            map(
+                lambda x: x["type_tag"],
+                filter(lambda x: x["category"] == "Room", items),
+            )
+        )
+        state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
+
+    print("!!!" + selected_building)
+
+    applied_famType_sheetview = state.applied_famType_sheetview
+    notApplied_famType_sheetview = state.notApplied_famType_sheetview
+    notApplied_famType_sheetview.set_sheet_data()
+
+    apply_target_rooms = state.project_info["apply_target_rooms"]
+
+    applied_famType_sheetview.clear()
+    notApplied_famType_sheetview.clear()
+    idxs = range(len(apply_target_rooms))
+    applies = []
+    not_applies = []
+    for rowidx in idxs:
+        if (
+            apply_target_rooms[rowidx]["bd_tag"] == selected_building
+            and apply_target_rooms[rowidx]["stdType_tag"] == selected_type_name
+        ):
+            # apply_target_rooms[rowidx][
+            #     "calc_tag"
+            # ] = state.selected_calcType_name.get().split(": ")[-1]
+            applies.append(
+                [
+                    apply_target_rooms[rowidx]["room_no"],
+                    apply_target_rooms[rowidx]["room_name"],
+                    apply_target_rooms[rowidx]["stdType_tag"],
+                    apply_target_rooms[rowidx]["bd_tag"],
+                    apply_target_rooms[rowidx]["calc_tag"],
+                ]
+            )
+        elif apply_target_rooms[rowidx]["calc_tag"] == "":
+            not_applies.append(
+                [
+                    apply_target_rooms[rowidx]["room_no"],
+                    apply_target_rooms[rowidx]["room_name"],
+                    apply_target_rooms[rowidx]["stdType_tag"],
+                    apply_target_rooms[rowidx]["bd_tag"],
+                ]
+            )
+
+    applied_famType_sheetview.set_sheet_data(applies)
+    notApplied_famType_sheetview.set_sheet_data(not_applies)
+
+    applied_famType_sheetview.column_width(0, 30)
+    applied_famType_sheetview.column_width(1, 170)
+    notApplied_famType_sheetview.column_width(0, 30)
+    notApplied_famType_sheetview.column_width(1, 170)
+
+
+def update_selected_calcType_allCat(
+    event,
+    state,
+    calc_comboBox,
+    selected_calcType_sheetview,
+    tab_name=None,
+):
+    if calc_comboBox.get():
+        selected_calcType = calc_comboBox.get()
+        state[tab_name]["selected_calcType_name"].set(
+            "Selected Calc Type: " + selected_calcType
+        )
+
+    else:
+        selected_calcType = (
+            state[tab_name]["selected_calcType_name"].get().split(": ")[-1]
+        )
+    selectedCalcDic = list(
+        filter(
+            lambda x: x["type_tag"] == selected_calcType,
+            state.project_info["calc_types"],
+        )
+    )[0]
+    selectedCalc_model_params = selectedCalcDic["model_params"]
+    selectedCalc_manual_params = selectedCalcDic["manual_params"]
+    selectedCalc_params = selectedCalc_model_params + selectedCalc_manual_params
+    selected_calcType_sheetview.set_sheet_data()
+    paramDatas = []
+    for param_dic in selectedCalc_params:
+        c1 = param_dic["항목"]
+        c2 = param_dic["수식 약자"]
+        c3 = param_dic.get("수동입력값", "byRevit")
+        paramDatas.append([c1, c2, c3])
+    selected_calcType_sheetview.set_sheet_data(paramDatas)
+
+
+def open_calcType_view_allCat(event, state, tab_name):
+    from src.tabs.calc_criteria_tab.calc_criteria_tab import create_calc_criteria_tab
+
+    def select_item_by_value(treeview, column, value):
+        # Iterate over all items in the treeview
+        for child in treeview.get_children():
+            # Get the value of the specified column for the current item
+            item_value = treeview.item(child, "values")[column]
+            # print(item_value)
+            # If the value matches, select the item
+            # print(item_value == value)
+            if item_value == value:
+                treeview.focus(child)
+                treeview.selection_set(child)  ## 제대로 작동 안함. 확인 필요
+                treeview.event_generate("<<TreeviewSelect>>")
+                # print(treeview.event_generate("<<TreeviewSelect>>"))
+                treeview.see(child)  # Scroll to the selected item if needed
+                break  # Exit after the first match is found
+
+    window = tk.Toplevel()
+    window.geometry("1280x800+100+100")
+    window.wm_attributes("-topmost", 1)
+
+    create_calc_criteria_tab(window, state, mode="newWindow_room")
+    selected_calcType = state[tab_name]["selected_calcType_name"].get().split(": ")[-1]
+
+    select_item_by_value(state.cat_treeview, column=0, value=tab_name)
+    select_item_by_value(
+        state.calcType_treeview, column=0, value=selected_calcType.strip()
+    )
+
+
+def create_tksheet_stdTypeWM(
+    state, frame, headers=[], data=[], tab_name=None, height=None, width=None, mode=None
+):
+
+    sheet = Sheet(frame, headers=headers, height=height, width=width)
+    sheet.enable_bindings(
+        "edit_cell",
+        "single_select",  # Allow single cell selection
+        "drag_select",
+        "row_select",  # Allow row selection
+        "column_select",  # Allow column selection
+        "drag_select",  # Allow drag selection
+        "column_width_resize",
+        "double_click_column_resize",
+        "copy",
+        "ctrl_click_select",
+        "right_click_popup_menu",
+        "rc_insert_row",
+        "rc_delete_row",
+        "arrowkeys",
+    )
+    sheet.header_font(("Arial", 9, "normal"))
+    sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
+
+    sheet.set_sheet_data()
+    sheet.set_column_widths(state[tab_name]["common_widths"])
+
+    sheet.extra_bindings(
+        [
+            (
+                "rc_insert_row",
+                lambda e: add_assignRow(e, state, sheet, dropdowns),
+            ),
+            (
+                "rc_delete_row",
+                lambda e: on_change_wmSheet(e, state, sheet),
+            ),
+            (
+                "end_edit_cell",
+                # lambda e: update_second_cell_dropdown(e, state, sheet),
+                lambda e: on_change_wmSheet(e, state, sheet),
+            ),
+            (
+                "cell_select",
+                lambda e: update_second_cell_dropdown(e, state, sheet),
+            ),
+        ]
+    )
+
+    return sheet
+
+
+def create_tksheet_revitWM(
+    state, frame, headers=[], data=[], height=None, width=None, mode=None
+):
+
+    sheet = Sheet(frame, headers=headers, height=height, width=width)
+    sheet.enable_bindings(
+        "edit_cell",
+        "single_select",  # Allow single cell selection
+        "drag_select",
+        "row_select",  # Allow row selection
+        "column_select",  # Allow column selection
+        "drag_select",  # Allow drag selection
+        "column_width_resize",
+        "double_click_column_resize",
+        "copy",
+        "ctrl_click_select",
+        "right_click_popup_menu",
+        "rc_insert_row",
+        "rc_delete_row",
+        "arrowkeys",
+    )
+    sheet.header_font(("Arial", 9, "normal"))
+    sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
+    return sheet
 
 
 def update_combobox_data_other(state, data, tab_name=None):
@@ -53,12 +349,12 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
     print(type(state.selected_building))
     print(state.selected_building)
 
-    update_selected_calcType(
+    update_selected_calcType_allCat(
         event,
         state,
         state[tab_name]["calc_comboBox"],
-        state[tab_name]["selected_calcType_label"],
         state[tab_name]["selected_calcType_sheetview"],
+        tab_name=tab_name,
     )
 
     def find_stdType_items_inCat(cat, state):
@@ -71,11 +367,28 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
 
             # Check if the current node is a level 5 item by counting dots in 'number'
             if node.get("number", "").count(".") == 4:
+                # Initialize the wmGrp list to store level 7 item names
+                wmGrps = []
+
+                # Define a helper function to find all level 7 items under the current level 5 item
+                def find_level_7_names(sub_node, sub_level):
+                    # Check if the current level is 7 (3 levels deeper than level 5)
+                    if sub_level == 7:
+                        wmGrps.append(sub_node.get("name"))
+                    # If there are children, continue to traverse deeper
+                    if "children" in sub_node:
+                        for child in sub_node["children"]:
+                            find_level_7_names(child, sub_level + 1)
+
+                # Find all level 7 item names under this level 5 item
+                find_level_7_names(node, level)
+
                 level_5_items.append(
                     {
                         "name": node.get("name"),
                         "number": node.get("number"),
                         "description": node.get("description"),
+                        "wmGrps": wmGrps,
                     }
                 )
 
@@ -83,28 +396,33 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             if "children" in node:
                 for child in node["children"]:
                     level_5_items.extend(find_level_5_items(child, level + 1))
-
+            # print(level_5_items)
             return level_5_items
 
         lv_5_items = []
         for root_node in state.stdTypes_info:
             if root_node["name"] == cat:
                 lv_5_items.extend(find_level_5_items(root_node))
-        state.project_info["std_types"] = list(
-            map(
-                lambda x: {
-                    "std_type": x["name"],
-                    "building_tag": "",
-                },
-                lv_5_items,
+
+        state.project_info["std_types"] = {
+            tab_name: list(
+                map(
+                    lambda x: {
+                        "std_type": x["name"],
+                        "building_tag": "",
+                        "cat_tag": tab_name,
+                        "wmGrps": x["wmGrps"],
+                    },
+                    lv_5_items,
+                )
             )
-        )
+        }
         return lv_5_items
 
     if not state.project_info.get("std_types"):
         find_stdType_items_inCat(tab_name, state)
 
-    stdType_items = state.project_info["std_types"]
+    stdType_items = state.project_info["std_types"][tab_name]
 
     if mode == "loading" and not state.selected_stdType:
         state[tab_name]["stdTypeTree"].delete(
@@ -114,6 +432,3 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
         for dic in stdType_items:
             print(dic)
             state[tab_name]["stdTypeTree"].insert("", "end", values=list(dic.values()))
-    # elif selected_building and selected_stdType:
-    #     state.stdTypeTree_inRoom.selection_set(state.selected_stdType)
-    #     pass

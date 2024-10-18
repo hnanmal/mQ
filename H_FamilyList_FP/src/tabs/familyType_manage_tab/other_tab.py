@@ -23,6 +23,13 @@ from src.tabs.familyType_manage_tab.utils import (
 
 from src.tabs.input_common_tab.utils import create_defaultTreeview
 from src.views.tooltips import CreateToolTip
+from src.tabs.familyType_manage_tab.otherTabs.utils import (
+    create_tksheet_revitWM,
+    create_tksheet_stdTypeWM,
+    on_click_stdType_treeItem_allCat,
+    open_calcType_view_allCat,
+    update_selected_calcType_allCat,
+)
 
 
 def create_otherCat_tab(notebook, state, tab_name):
@@ -77,18 +84,30 @@ def create_otherCat_tab(notebook, state, tab_name):
     state[tab_name]["selected_calcType_label"] = None
     state[tab_name]["selected_calcType_sheetview"] = None
 
-    bigArea1 = ttk.Frame(tab, width=500, height=70)
-    bigArea2 = ttk.Frame(tab, width=1200, height=2000)  # , relief="ridge")
+    main_paned_window = tk.PanedWindow(
+        tab,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+
+    bigArea1 = ttk.Frame(main_paned_window, width=500, height=70)
+    bigArea2 = ttk.Frame(main_paned_window, width=1200, height=2000)
+    bigArea3 = ttk.Frame(main_paned_window, width=700, height=2000)
 
     bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
     bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    bigArea3.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+
+    main_paned_window.add(bigArea1, stretch="always")
+    main_paned_window.add(bigArea2, stretch="always")
+    main_paned_window.add(bigArea3, stretch="always")
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
-    section1 = ttk.Frame(bigArea2, width=700, height=2000)
+    section1 = ttk.Frame(bigArea1, width=700, height=2000)
     section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="groove")
-    section3 = ttk.Frame(bigArea2, width=650, height=2000)  # , relief="ridge")
-    # section2 = ttk.Frame(bigArea2, width=500, height=2000, relief="groove")
-    # section3 = ttk.Frame(bigArea2, width=900, height=2000)  # , relief="ridge")
+    section3 = ttk.Frame(bigArea3, width=650, height=2000)
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
     section1.pack(
@@ -98,10 +117,6 @@ def create_otherCat_tab(notebook, state, tab_name):
         side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
     )
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-    # section0.pack_propagate(False)
-    # section1.pack_propagate(False)
-    section2.pack_propagate(False)
-    section3.pack_propagate(False)
 
     # bigArea1 세부 구성
     save_load_btn_frame = ttk.Frame(section0, width=100, height=70, relief="ridge")
@@ -120,11 +135,12 @@ def create_otherCat_tab(notebook, state, tab_name):
     current_load_label.pack(side="left", padx=10, pady=10)
 
     ## 빌딩 콤보박스
-    bd_comboBox_frame = ttk.Frame(section0, style="Custom.TFrame")
-    bd_comboBox_frame.pack(padx=10, pady=10)
+    bd_comboBox_frame = ttk.Frame(section2, style="Custom.TFrame")
+    bd_comboBox_frame.pack(padx=10, pady=10, anchor="nw")
     bd_combo_label = ttk.Label(
         bd_comboBox_frame, text="1. 작업대상 빌딩 확인", style="Custom.TLabel"
     )
+    bd_combo_label.config(cursor="question_arrow")
     bd_combo_label.pack(side="left", padx=10, pady=10, anchor="w")
 
     bd_comboBox = ttk.Combobox(bd_comboBox_frame)
@@ -132,11 +148,10 @@ def create_otherCat_tab(notebook, state, tab_name):
     bd_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    bd_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
     bd_comboBox.set(" ")  # 맨 처음 나타낼 값 설정
     bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
-    bd_comboBox_ttp = CreateToolTip(
-        bd_comboBox,
+    bd_comboLabel_ttp = CreateToolTip(
+        bd_combo_label,
         """
 >> 레빗 패밀리 타입을 할당할 프로젝트의 건물을 선택하는 곳입니다.
 ------------------------------
@@ -151,6 +166,7 @@ def create_otherCat_tab(notebook, state, tab_name):
     #     lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
     # )
 
+    ##################################
     ## calc combo box 영역
 
     calc_comboBox_frame = ttk.Frame(section3, style="Custom.TFrame")
@@ -159,18 +175,18 @@ def create_otherCat_tab(notebook, state, tab_name):
     calc_combo_label = ttk.Label(
         calc_comboBox_frame, text="3. 산출 타입 확인", style="Custom.TLabel"
     )
+    calc_combo_label.config(cursor="question_arrow")
     calc_combo_label.pack(side="left", padx=10, pady=10, anchor="w")
 
     calc_comboBox = ttk.Combobox(calc_comboBox_frame)
     calc_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    calc_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
     calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
     # calc_comboBox.pack(padx=10, pady=10, anchor="n")
     calc_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
-    calc_comboBox_ttp = CreateToolTip(
-        calc_comboBox,
+    calc_comboLabel_ttp = CreateToolTip(
+        calc_combo_label,
         """
 >> 현재 카테고리에서 지정 가능한 산출 타입을 선택하는 드롭다운 메뉴입니다.
 ------------------------------
@@ -179,12 +195,12 @@ def create_otherCat_tab(notebook, state, tab_name):
     )
     calc_comboBox.bind(
         "<<ComboboxSelected>>",
-        lambda e: update_selected_calcType(
+        lambda e: update_selected_calcType_allCat(
             e,
             state,
             calc_comboBox,
-            selected_calcType_label,
             selected_calcType_sheetview,
+            tab_name=tab_name,
         ),
     )
     state[tab_name]["calc_comboBox"] = calc_comboBox
@@ -216,20 +232,20 @@ def create_otherCat_tab(notebook, state, tab_name):
     stdTypes_treeview = create_defaultTreeview(
         state,
         section1,
-        ["stdTypes", "building_tag"],
+        ["stdTypes", "building_tag", "cat_tag", "wmGrps"],
         height=10,
     )
     stdTypes_treeview.config(
         style="Custom.Treeview",
         selectmode="browse",
     )
-    stdTypes_treeview.column("stdTypes", width=150)
+    stdTypes_treeview.column("stdTypes", width=200)
     state[tab_name]["stdTypeTree"] = stdTypes_treeview
 
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
-        lambda e: on_click_stdType_treeItem(
-            e, state, stdTypes_treeview, selected_stdType_label
+        lambda e: on_click_stdType_treeItem_allCat(
+            e, state, stdTypes_treeview, tab_name=tab_name
         ),
     )
     stdTypes_treeview.bind(
@@ -239,29 +255,27 @@ def create_otherCat_tab(notebook, state, tab_name):
         ),
     )
 
-    # update_stdTypeTree_inRoom(None, state, bd_comboBox)
-
     new_stdType_text = tk.Text(section1, height=2, width=30)
     new_stdType_text.pack(pady=5, anchor="w")
 
     add_del_btn_frame = ttk.Frame(section1, width=200, height=70)
-    add_del_btn_frame.pack(padx=10, pady=10, anchor="w")
+    add_del_btn_frame.pack(anchor="w")
     add_stdType_btn = ttk.Button(
         add_del_btn_frame,
-        text="add stdType",
+        text="Add stdType",
         command=lambda: add_stdType_roomCat(state, new_stdType_text),
     )
     add_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     del_stdType_btn = ttk.Button(
         add_del_btn_frame,
-        text="del stdType",
+        text="Del stdType",
         command=lambda: del_stdType_roomCat(state),
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     ## section2 세부 구성
-    common_width = 1300
+    common_width = 2000
     common_height = 160
     common_headers = [
         "물량산출식",
@@ -276,6 +290,7 @@ def create_otherCat_tab(notebook, state, tab_name):
     state[tab_name]["common_widths"] = [120, 100, 30, 75, 800, 100, 100]
     state[tab_name]["selected_stdType_name"] = tk.StringVar()
     state[tab_name]["selected_stdType_name"].set("Selected Standard Type: ")
+
     selected_stdType_label = ttk.Label(
         section2,
         textvariable=state[tab_name]["selected_stdType_name"],
@@ -296,67 +311,50 @@ def create_otherCat_tab(notebook, state, tab_name):
         """,
     )
 
-    floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
-    state[tab_name]["floor_dropdowns"] = floor_dropdowns
-    assignWM_sheetview_forStdType_forFloor = create_assignWMsheet(
+    #########stdType_wm_label#####################
+    stdType_wm_label = ttk.Label(section2, text="Standard Type's WorkMaster")
+    stdType_wm_label.pack(padx=10, pady=10, anchor="w")
+    ##############################################
+
+    # floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
+    # state[tab_name]["floor_dropdowns"] = floor_dropdowns
+    assignWM_sheetview_forStdType = create_tksheet_stdTypeWM(
         state,
         section2,
-        ["Floor"] + common_headers,
-        height=common_height,
+        ["wmGrp"] + common_headers,
+        tab_name=tab_name,
+        height=450,
         width=common_width,
-        dropdowns=floor_dropdowns,
     )
-    assignWM_sheetview_forStdType_forFloor.pack(padx=5, pady=2, anchor="w")
-    state[tab_name][
-        "assignWM_sheetview_forStdType_forFloor"
-    ] = assignWM_sheetview_forStdType_forFloor
-    # assignWM_sheetview_forStdType_forFloor.
+    assignWM_sheetview_forStdType.pack(padx=5, pady=2, anchor="w")
+    state[tab_name]["assignWM_sheetview_forStdType"] = assignWM_sheetview_forStdType
 
-    base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
-    state[tab_name]["base_dropdowns"] = base_dropdowns
-    assignWM_sheetview_forStdType_forBase = create_assignWMsheet(
+    #########rvtType_wm_label#####################
+    rvtType_labelFrame = ttk.Frame(section2)
+    rvtType_labelFrame.pack(padx=10, pady=10, anchor="w")
+    rvtType_wm_label = ttk.Label(
+        rvtType_labelFrame,
+        text="Selected Revit Type's additional WorkMaster (Option) : ",
+    )
+    rvtType_wm_label.pack(side=tk.LEFT)
+
+    selected_rvtType_name_label = ttk.Label(rvtType_labelFrame, text="H_xxxx")
+    selected_rvtType_name_label.pack(side=tk.LEFT)
+    ##############################################
+
+    # base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
+    # state[tab_name]["base_dropdowns"] = base_dropdowns
+    assignWM_sheetview_forRvtType = create_tksheet_revitWM(
         state,
         section2,
-        ["Base"] + common_headers,
+        ["wmGrp"] + common_headers,
         height=common_height,
         width=common_width,
-        dropdowns=base_dropdowns,
     )
-    assignWM_sheetview_forStdType_forBase.pack(padx=5, pady=2, anchor="w")
-    state[tab_name][
-        "assignWM_sheetview_forStdType_forBase"
-    ] = assignWM_sheetview_forStdType_forBase
+    assignWM_sheetview_forRvtType.pack(padx=5, pady=2, anchor="w")
+    state[tab_name]["assignWM_sheetview_forRvtType"] = assignWM_sheetview_forRvtType
 
-    wall_dropdowns = list(filter(lambda x: "벽" in x, state.wm_group_data))
-    state[tab_name]["wall_dropdowns"] = wall_dropdowns
-    assignWM_sheetview_forStdType_forWall = create_assignWMsheet(
-        state,
-        section2,
-        ["Wall"] + common_headers,
-        height=common_height,
-        width=common_width,
-        dropdowns=wall_dropdowns,
-    )
-    assignWM_sheetview_forStdType_forWall.pack(padx=5, pady=2, anchor="w")
-    state[tab_name][
-        "assignWM_sheetview_forStdType_forWall"
-    ] = assignWM_sheetview_forStdType_forWall
-
-    ceil_dropdowns = list(filter(lambda x: "천장" in x, state.wm_group_data))
-    state[tab_name]["ceil_dropdowns"] = ceil_dropdowns
-    assignWM_sheetview_forStdType_forCeiling = create_assignWMsheet(
-        state,
-        section2,
-        ["Ceiling"] + common_headers,
-        height=common_height,
-        width=common_width,
-        dropdowns=ceil_dropdowns,
-    )
-    assignWM_sheetview_forStdType_forCeiling.pack(padx=5, pady=2, anchor="w")
-    state[tab_name][
-        "assignWM_sheetview_forStdType_forCeiling"
-    ] = assignWM_sheetview_forStdType_forCeiling
-
+    ####################
     selected_calcType_label = ttk.Label(
         section3,
         textvariable=state[tab_name]["selected_calcType_name"],
@@ -379,13 +377,14 @@ def create_otherCat_tab(notebook, state, tab_name):
     )
     selected_calcType_label.bind(
         "<Double-Button-1>",
-        lambda e: open_calcType_view(e, state),
+        lambda e: open_calcType_view_allCat(e, state, tab_name),
     )
 
     selected_calcType_sheetview = create_tksheet(
         state,
         section3,
         ["항목", "수식약자", "적용값"],
+        width=700,
         height=150,
         mode="calcType",
     )
@@ -417,8 +416,9 @@ def create_otherCat_tab(notebook, state, tab_name):
     applied_famType_sheetview = create_tksheet(
         state,
         apply_frame,
-        ["no", "rooms", "stdType_tag", "bd_tag", "calc_tag"],
-        height=150,
+        ["revit_type", "stdType_tag", "bd_tag", "calc_tag"],
+        width=700,
+        height=200,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
     state[tab_name]["applied_famType_sheetview"] = applied_famType_sheetview
@@ -441,37 +441,41 @@ def create_otherCat_tab(notebook, state, tab_name):
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="e")
 
-    notApplied_famType_label = ttk.Label(
+    revit_famType_input_label = ttk.Label(
         apply_frame,
-        text="Not Applied Revit Family Types",
+        text="Revit Family Types Input Area",
         font=("Arial", 11),
         style="Custom.TLabel",
     )
-    notApplied_famType_label.pack(padx=10, pady=10, anchor="w")
+    revit_famType_input_label.pack(padx=10, pady=10, anchor="w")
 
-    notApplied_famType_sheetview = create_tksheet(
-        state,
-        apply_frame,
-        ["no", "rooms", "stdType_tag", "bd_tag"],
-        height=150,
-        mode="nonAppFamtype",
-    )
-    notApplied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
-    state[tab_name]["notApplied_famType_sheetview"] = notApplied_famType_sheetview
-    notApplied_famType_sheetview.extra_bindings(
-        [
-            (
-                "end_edit_cell",
-                # lambda e: update_second_cell_dropdown(e, state, sheet),
-                lambda e: add_room_to_apply_target_rooms(
-                    e, state, notApplied_famType_sheetview
-                ),
-            ),
-        ]
-    )
-    notApplied_famType_sheetview.set_options(header_bg="#ededed")
-    notApplied_famType_sheetview.set_options(index_bg="#ededed")
-    notApplied_famType_sheetview.set_options(table_bg="#f7f7f7")
+    revit_famType_input = tk.Text(apply_frame, height=100, width=100)
+    revit_famType_input.pack(padx=10, pady=10, anchor="w")
+
+    # notApplied_famType_sheetview = create_tksheet(
+    #     state,
+    #     apply_frame,
+    #     ["no", "rooms", "stdType_tag", "bd_tag"],
+    #     width=700,
+    #     height=150,
+    #     mode="nonAppFamtype",
+    # )
+    # notApplied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
+    # state[tab_name]["notApplied_famType_sheetview"] = notApplied_famType_sheetview
+    # notApplied_famType_sheetview.extra_bindings(
+    #     [
+    #         (
+    #             "end_edit_cell",
+    #             # lambda e: update_second_cell_dropdown(e, state, sheet),
+    #             lambda e: add_room_to_apply_target_rooms(
+    #                 e, state, notApplied_famType_sheetview
+    #             ),
+    #         ),
+    #     ]
+    # )
+    # notApplied_famType_sheetview.set_options(header_bg="#ededed")
+    # notApplied_famType_sheetview.set_options(index_bg="#ededed")
+    # notApplied_famType_sheetview.set_options(table_bg="#f7f7f7")
 
     bd_comboBox.bind(
         "<<ComboboxSelected>>",

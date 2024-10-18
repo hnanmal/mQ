@@ -115,6 +115,8 @@ def create_calc_criteria_tab(notebook, state, mode=None):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     cat_treeview.config(yscrollcommand=scrollbar.set)
 
+    state.cat_treeview = cat_treeview
+
     default_cat_list = [
         "Room",
         "Floors",

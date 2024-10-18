@@ -67,14 +67,6 @@ def create_room_tab(notebook, state):
     room_tab = ttk.Frame(notebook)
     notebook.add(room_tab, text="Room")
 
-    main_paned_window = tk.PanedWindow(
-        room_tab,
-        orient=tk.HORIZONTAL,
-        sashwidth=7,
-        bg="#e3e3e3",
-    )
-    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
-
     state.selected_calcType_name = tk.StringVar()
     state.selected_calcType_name.set("Selected Calc Type:          ")
     state.wmBunches_room = {}
@@ -83,25 +75,31 @@ def create_room_tab(notebook, state):
     state.selected_stdType = None
     state.selected_calcType_label = None
     state.selected_calcType_sheetview = None
-    # state.selected_stdType_idx = 0
+
+    main_paned_window = tk.PanedWindow(
+        room_tab,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     bigArea1 = ttk.Frame(main_paned_window, width=500, height=70)
-    bigArea2 = ttk.Frame(
-        main_paned_window, width=1200, height=2000
-    )  # , relief="ridge")
+    bigArea2 = ttk.Frame(main_paned_window, width=1200, height=2000)
+    bigArea3 = ttk.Frame(main_paned_window, width=700, height=2000)
 
-    # bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
-    # bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    bigArea1.pack(padx=10, pady=10, anchor="w", fill=tk.X, expand=True)
+    bigArea2.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    bigArea3.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     main_paned_window.add(bigArea1, stretch="always")
     main_paned_window.add(bigArea2, stretch="always")
+    main_paned_window.add(bigArea3, stretch="always")
 
     section0 = ttk.Frame(bigArea1, width=200, height=70)
-    section1 = ttk.Frame(bigArea2, width=700, height=2000)
-    section2 = ttk.Frame(bigArea2, width=1150, height=2000, relief="groove")
-    section3 = ttk.Frame(bigArea2, width=650, height=2000)  # , relief="ridge")
-    # section2 = ttk.Frame(bigArea2, width=500, height=2000, relief="groove")
-    # section3 = ttk.Frame(bigArea2, width=900, height=2000)  # , relief="ridge")
+    section1 = ttk.Frame(bigArea1, width=700, height=2000)
+    section2 = ttk.Frame(bigArea2, width=2000, height=2000, relief="groove")
+    section3 = ttk.Frame(bigArea3, width=650, height=2000)  # , relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
     section1.pack(
@@ -129,22 +127,23 @@ def create_room_tab(notebook, state):
     current_load_label.pack(side="left", padx=10, pady=10)
 
     ## 빌딩 콤보박스
-    bd_comboBox_frame = ttk.Frame(section0, style="Custom.TFrame")
-    bd_comboBox_frame.pack(padx=10, pady=10)
+    bd_comboBox_frame = ttk.Frame(section2, style="Custom.TFrame")
+    bd_comboBox_frame.pack(padx=10, pady=10, anchor="nw")
     bd_combo_label = ttk.Label(
         bd_comboBox_frame, text="1. 작업대상 빌딩 확인", style="Custom.TLabel"
     )
+    bd_combo_label.config(cursor="question_arrow")
     bd_combo_label.pack(side="left", padx=10, pady=10, anchor="w")
 
     bd_comboBox = ttk.Combobox(bd_comboBox_frame)
     bd_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    bd_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
+
     bd_comboBox.set(" ")  # 맨 처음 나타낼 값 설정
     bd_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
-    bd_comboBox_ttp = CreateToolTip(
-        bd_comboBox,
+    bd_comboLabel_ttp = CreateToolTip(
+        bd_combo_label,
         """
 >> 레빗 패밀리 타입을 할당할 프로젝트의 건물을 선택하는 곳입니다.
 ------------------------------
@@ -159,6 +158,7 @@ def create_room_tab(notebook, state):
     #     lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
     # )
 
+    ##################################
     ## calc combo box 영역
 
     calc_comboBox_frame = ttk.Frame(section3, style="Custom.TFrame")
@@ -167,18 +167,18 @@ def create_room_tab(notebook, state):
     calc_combo_label = ttk.Label(
         calc_comboBox_frame, text="3. 산출 타입 확인", style="Custom.TLabel"
     )
+    calc_combo_label.config(cursor="question_arrow")
     calc_combo_label.pack(side="left", padx=10, pady=10, anchor="w")
 
     calc_comboBox = ttk.Combobox(calc_comboBox_frame)
     calc_comboBox.config(
         state="readonly", height=20
     )  # 콤보 박스에 사용자가 직접 입력 불가
-    calc_comboBox.config(cursor="question_arrow")  # 콤보 박스 마우스 커서
     calc_comboBox.set("산출 타입 선택")  # 맨 처음 나타낼 값 설정
     # calc_comboBox.pack(padx=10, pady=10, anchor="n")
     calc_comboBox.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
-    calc_comboBox_ttp = CreateToolTip(
-        calc_comboBox,
+    calc_comboLabel_ttp = CreateToolTip(
+        calc_combo_label,
         """
 >> 현재 카테고리에서 지정 가능한 산출 타입을 선택하는 드롭다운 메뉴입니다.
 ------------------------------
@@ -235,7 +235,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         style="Custom.Treeview",
         selectmode="browse",
     )
-    stdTypes_treeview.column("stdTypes", width=150)
+    stdTypes_treeview.column("stdTypes", width=200)
     state.stdTypeTree_inRoom = stdTypes_treeview
 
     stdTypes_treeview.bind(
@@ -251,29 +251,27 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         ),
     )
 
-    # update_stdTypeTree_inRoom(None, state, bd_comboBox)
-
     new_stdType_text = tk.Text(section1, height=2, width=30)
     new_stdType_text.pack(pady=5, anchor="w")
 
     add_del_btn_frame = ttk.Frame(section1, width=200, height=70)
-    add_del_btn_frame.pack(padx=10, pady=10, anchor="w")
+    add_del_btn_frame.pack(anchor="w")
     add_stdType_btn = ttk.Button(
         add_del_btn_frame,
-        text="add stdType",
+        text="Add stdType",
         command=lambda: add_stdType_roomCat(state, new_stdType_text),
     )
     add_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     del_stdType_btn = ttk.Button(
         add_del_btn_frame,
-        text="del stdType",
+        text="Del stdType",
         command=lambda: del_stdType_roomCat(state),
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     ## section2 세부 구성
-    common_width = 1300
+    common_width = 2000
     common_height = 160
     common_headers = [
         "물량산출식",
@@ -320,7 +318,6 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
     state.assignWM_sheetview_forStdType_forFloor = (
         assignWM_sheetview_forStdType_forFloor
     )
-    # assignWM_sheetview_forStdType_forFloor.
 
     base_dropdowns = list(filter(lambda x: "걸레받이" in x, state.wm_group_data))
     state.base_dropdowns = base_dropdowns
@@ -390,6 +387,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         state,
         section3,
         ["항목", "수식약자", "적용값"],
+        width=700,
         height=150,
         mode="calcType",
     )
@@ -422,7 +420,8 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         state,
         apply_frame,
         ["no", "rooms", "stdType_tag", "bd_tag", "calc_tag"],
-        height=150,
+        width=700,
+        height=200,
     )
     applied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
     state.applied_famType_sheetview = applied_famType_sheetview
@@ -452,11 +451,22 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         style="Custom.TLabel",
     )
     notApplied_famType_label.pack(padx=10, pady=10, anchor="w")
+    notApplied_famType_label.config(cursor="question_arrow")
+    notApplied_famType_label_ttp = CreateToolTip(
+        notApplied_famType_label,
+        """
+>> 'Project Standard > 프로젝트 정보 입력' 탭에서 입력한 Room 중, 아직 Std 할당이 이루어지지 않은 룸들의 목록입니다.
+------------------------------
+* 현재 선택된 std 항목으로 할당하려면 ↑ 버튼을 클릭하세요.
+* 'Project Standard > 프로젝트 정보 입력'에서 입력하지 않은 룸을 임의로 추가하려면 '우측버튼 > insert row' 후에 'no'와 'rooms' 항목을 작성한뒤 ↑ 버튼을 클릭하세요.
+        """,
+    )
 
     notApplied_famType_sheetview = create_tksheet(
         state,
         apply_frame,
         ["no", "rooms", "stdType_tag", "bd_tag"],
+        width=700,
         height=150,
         mode="nonAppFamtype",
     )
