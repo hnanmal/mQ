@@ -22,10 +22,15 @@ def create_sub_tab(notebook, name):
     return tab
 
 
-def create_family_standard_tab(root, notebook, state):
+def create_family_standard_tab(root, notebook, state, mode=None):
     """Create and configure the Family Standard Configuration tab."""
-    tab = create_sub_tab(notebook, "Family Standard Configuration Diagram")
-    notebook.add(tab, text="패밀리 표준 구성도")
+
+    if mode == None:
+        tab = create_sub_tab(notebook, "Family Standard Configuration Diagram")
+        notebook.add(tab, text="패밀리 표준 구성도")
+    elif mode == "newWindow":
+        tab = ttk.Frame(root)
+        tab.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     # Create a frame for all the buttons (Save, Load, Add, Remove, Undo, Search)
     button_frame = ttk.Frame(tab)

@@ -49,7 +49,7 @@ def load_project_info(
     if file_path_arg:
         file_path = file_path_arg
     else:
-        file_path = filedialog.askopenfilename(filetypes=[("HPJT files", "*.hpjt")])
+        file_path = filedialog.askopenfilename(filetypes=[("BNOTE files", "*.bnote")])
         # if file_path:
     with open(file_path, "r", encoding="utf-8") as f:
         loaded_data = json.load(f)
@@ -108,8 +108,8 @@ def save_project_info(
     # Save to file
     # file_path = f"{project_info_['project_name']}_pjt_info.json"
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".hpjt",  # Default file extension
-        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
+        defaultextension=".bnote",  # Default file extension
+        filetypes=[("BNOTE files", "*.bnote"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)

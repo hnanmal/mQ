@@ -5,29 +5,24 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
-    add_room_to_apply_target_rooms,
-    add_stdType_roomCat,
     add_to_appliedRoom_data,
-    create_assignWMsheet,
     create_tksheet,
-    del_stdType_roomCat,
-    on_click_stdType_treeItem,
     on_right_click_stdTypetree_roomTab,
-    open_calcType_view,
-    open_excel_locally,
     remove_from_appliedRoom_data,
     save_project_roomType_info,
-    update_selected_calcType,
     update_stdTypeTree_inRoom,
 )
 
 from src.tabs.input_common_tab.utils import create_defaultTreeview
 from src.views.tooltips import CreateToolTip
 from src.tabs.familyType_manage_tab.otherTabs.utils import (
+    add_stdType_allCat,
     create_tksheet_revitWM,
     create_tksheet_stdTypeWM,
+    del_stdType_allCat,
     on_click_stdType_treeItem_allCat,
     open_calcType_view_allCat,
+    open_teamSTDtree_view_allCat,
     update_selected_calcType_allCat,
 )
 
@@ -77,10 +72,10 @@ def create_otherCat_tab(notebook, state, tab_name):
 
     state[tab_name]["selected_calcType_name"] = tk.StringVar()
     state[tab_name]["selected_calcType_name"].set("Selected Calc Type:          ")
-    state[tab_name]["wmBunches_room"] = {}
-    # state.project_info["std_wm_assign" + "_" + tab_name] = {}
-    # state[tab_name]["selected_building"] = None
+    state[tab_name]["wmBunches"] = {}
     state[tab_name]["selected_stdType"] = None
+    state[tab_name]["selected_rvtType_name"] = tk.StringVar()
+    state[tab_name]["selected_rvtType_name"].set("선택없음")
     state[tab_name]["selected_calcType_label"] = None
     state[tab_name]["selected_calcType_sheetview"] = None
 
@@ -110,12 +105,8 @@ def create_otherCat_tab(notebook, state, tab_name):
     section3 = ttk.Frame(bigArea3, width=650, height=2000)
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
-    section1.pack(
-        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
-    )
-    section2.pack(
-        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
-    )
+    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     # bigArea1 세부 구성
@@ -219,14 +210,16 @@ def create_otherCat_tab(notebook, state, tab_name):
     std_type_label_ttp = CreateToolTip(
         std_type_label,
         """
-카테고리 별 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
+>> 카테고리 별 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
+------------------------------
+* 이곳을 더블클릭하면 'Team Standard > 패밀리표준구성도' 탭이 새창에서 열립니다.
         """,
     )
     # 더블 클릭 시 표준 구성도 새창 기능
-    # std_type_label.bind(
-    #     "<Double-Button-1>",
-    #     open_excel_locally,
-    # )
+    std_type_label.bind(
+        "<Double-Button-1>",
+        lambda e: open_teamSTDtree_view_allCat(e, state),
+    )
 
     ### Standard Type Treeview 구간
     stdTypes_treeview = create_defaultTreeview(
@@ -263,14 +256,14 @@ def create_otherCat_tab(notebook, state, tab_name):
     add_stdType_btn = ttk.Button(
         add_del_btn_frame,
         text="Add stdType",
-        command=lambda: add_stdType_roomCat(state, new_stdType_text),
+        command=lambda: add_stdType_allCat(state, new_stdType_text, tab_name),
     )
     add_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     del_stdType_btn = ttk.Button(
         add_del_btn_frame,
         text="Del stdType",
-        command=lambda: del_stdType_roomCat(state),
+        command=lambda: del_stdType_allCat(state, tab_name),
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
@@ -297,7 +290,7 @@ def create_otherCat_tab(notebook, state, tab_name):
         font=("Arial", 12),
     )
     selected_stdType_label.config(cursor="question_arrow")
-    selected_stdType_label.pack(padx=10, pady=10, anchor="w")
+    selected_stdType_label.pack(padx=10, anchor="w")
     selected_stdType_label_ttp = CreateToolTip(
         selected_stdType_label,
         """
@@ -338,7 +331,9 @@ def create_otherCat_tab(notebook, state, tab_name):
     )
     rvtType_wm_label.pack(side=tk.LEFT)
 
-    selected_rvtType_name_label = ttk.Label(rvtType_labelFrame, text="H_xxxx")
+    selected_rvtType_name_label = ttk.Label(
+        rvtType_labelFrame, textvariable=state[tab_name]["selected_rvtType_name"]
+    )
     selected_rvtType_name_label.pack(side=tk.LEFT)
     ##############################################
 
@@ -348,6 +343,7 @@ def create_otherCat_tab(notebook, state, tab_name):
         state,
         section2,
         ["wmGrp"] + common_headers,
+        tab_name=tab_name,
         height=common_height,
         width=common_width,
     )
@@ -416,7 +412,7 @@ def create_otherCat_tab(notebook, state, tab_name):
     applied_famType_sheetview = create_tksheet(
         state,
         apply_frame,
-        ["revit_type", "stdType_tag", "bd_tag", "calc_tag"],
+        ["rvt_type", "stdType_tag", "bd_tag", "calc_tag"],
         width=700,
         height=200,
     )

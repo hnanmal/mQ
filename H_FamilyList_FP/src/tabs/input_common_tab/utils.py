@@ -109,8 +109,8 @@ def save_project_common_info(state, earth_treeview, steel_treeview):
     # Save to file
     # file_path = f"{project_info_['project_name']}_pjt_info.json"
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".hpjt",  # Default file extension
-        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
+        defaultextension=".bnote",  # Default file extension
+        filetypes=[("BNOTE files", "*.bnote"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)

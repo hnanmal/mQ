@@ -102,12 +102,8 @@ def create_room_tab(notebook, state):
     section3 = ttk.Frame(bigArea3, width=650, height=2000)  # , relief="ridge")
 
     section0.pack(side=tk.TOP, anchor="w")  # , fill=tk.X)
-    section1.pack(
-        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
-    )
-    section2.pack(
-        side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=False
-    )
+    section1.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+    section2.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
     section3.pack(side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
 
     # bigArea1 세부 구성
@@ -211,10 +207,10 @@ def create_room_tab(notebook, state):
     std_type_label_ttp = CreateToolTip(
         std_type_label,
         """
-더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다
+>> 더블 클릭하시면 'BIM 팀표준설계정보' 엑셀파일(Interior Finish Style)을 Edge브라우저로 실행합니다
 ------------------------------
 
-룸 카테고리 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
+* 룸 카테고리 스탠다드 아이템들을 선택하면 우측 영역에서 각 타입별 WM 을 할당할 수 있습니다.
 Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         """,
     )
@@ -290,7 +286,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         section2, textvariable=state.selected_stdType_name, font=("Arial", 12)
     )
     selected_stdType_label.config(cursor="question_arrow")
-    selected_stdType_label.pack(padx=10, pady=10, anchor="w")
+    selected_stdType_label.pack(padx=10, anchor="w")
     selected_stdType_label_ttp = CreateToolTip(
         selected_stdType_label,
         """
@@ -303,6 +299,11 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
 * 현재 상태를 저장하려면 좌측 최상단의 'Save Project Info' 버튼을 누르십시오.
         """,
     )
+
+    #########stdType_wm_label#####################
+    stdType_wm_label = ttk.Label(section2, text="Standard Type's WorkMaster")
+    stdType_wm_label.pack(padx=10, pady=10, anchor="w")
+    ##############################################
 
     floor_dropdowns = list(filter(lambda x: "바닥" in x, state.wm_group_data))
     state.floor_dropdowns = floor_dropdowns

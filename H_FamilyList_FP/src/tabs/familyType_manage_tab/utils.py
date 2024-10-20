@@ -167,21 +167,6 @@ def add_assignRow(event, state, sheet, dropdowns=None):
     sheet.del_row(new_row_index - 1)
 
 
-def del_assignRow(event, state, sheet, dropdowns=None):
-    new_row_index = sheet.get_total_rows()  # Get the current total rows
-    selected_row_index = sheet.get_currently_selected().row()
-    if state.stdTypeTree_inRoom.selection():
-        # sheet.delete_rows(idx=selected_row_index)
-        if dropdowns:
-            sheet.create_dropdown(new_row_index, 0, values=dropdowns)
-            sheet.set_cell_data(new_row_index, 0, "")
-    else:
-        # new_row_index = sheet.get_total_rows()
-        state.logging_text_widget.write(
-            ":: !!!스탠다드 타입을 선택하셔야 동작합니다!!! ::"
-        )
-
-
 def add_room_to_apply_target_rooms(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
 
@@ -666,7 +651,9 @@ def on_click_stdType_treeItem(event, state, stdTypes_treeview, selected_stdType_
         )
         state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
 
-    print("!!!" + selected_building)
+    state.logging_text_widget.write(
+        "::: 현재 작업 빌딩 : " + selected_building + " :::"
+    )
 
     applied_famType_sheetview = state.applied_famType_sheetview
     notApplied_famType_sheetview = state.notApplied_famType_sheetview
@@ -817,8 +804,8 @@ def save_project_roomType_info(state):
     project_info_ = state.project_info
 
     file_path = filedialog.asksaveasfilename(
-        defaultextension=".hpjt",  # Default file extension
-        filetypes=[("HPJT files", "*.hpjt"), ("All files", "*.*")],
+        defaultextension=".bnote",  # Default file extension
+        filetypes=[("BNOTE files", "*.bnote"), ("All files", "*.*")],
     )
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(project_info_, f, ensure_ascii=False, indent=4)
