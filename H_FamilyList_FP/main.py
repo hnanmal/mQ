@@ -49,6 +49,7 @@ def main():
     # app_state.current_loaded_pjt = tk.StringVar()
     app_state["current_loaded_pjt"] = tk.StringVar()
     app_state["current_loaded_pjt"].set("project file not loaded yet")
+    app_state.root = root
 
     # Create the notebook (tab container)
     main_notebook = create_notebook_with_tabs(root, app_state)

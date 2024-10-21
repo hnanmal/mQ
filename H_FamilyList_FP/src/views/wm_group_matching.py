@@ -9,6 +9,7 @@ from src.views.listbox_utils import (
     add_selected_row_to_listbox,
     display_level_6_items_list,
     remove_selected_items_from_listbox,
+    update_level_6_items_list,
 )
 
 
@@ -176,6 +177,15 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
         ),
     )
     lock_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+    left_list_update_btn = ttk.Button(
+        section1,
+        text="refresh",
+        command=lambda: update_level_6_items_list(
+            state, section1, left_listbox, on_select_item
+        ),
+    )
+    left_list_update_btn.pack()
 
     # Display the level 6 items in Section 1 as a Listbox and get the listbox instance
     left_listbox = display_level_6_items_list(state, section1, on_select_item)

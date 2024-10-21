@@ -17,12 +17,14 @@ from src.tabs.input_common_tab.utils import create_defaultTreeview
 from src.views.tooltips import CreateToolTip
 from src.tabs.familyType_manage_tab.otherTabs.utils import (
     add_stdType_allCat,
+    add_to_appliedRvtType_data,
     create_tksheet_revitWM,
     create_tksheet_stdTypeWM,
     del_stdType_allCat,
     on_click_stdType_treeItem_allCat,
     open_calcType_view_allCat,
     open_teamSTDtree_view_allCat,
+    remove_from_appliedRvtType_data,
     update_selected_calcType_allCat,
 )
 
@@ -74,6 +76,8 @@ def create_otherCat_tab(notebook, state, tab_name):
     state[tab_name]["selected_calcType_name"].set("Selected Calc Type:          ")
     state[tab_name]["wmBunches"] = {}
     state[tab_name]["selected_stdType"] = None
+    state[tab_name]["selected_stdType_name"] = tk.StringVar()
+    state[tab_name]["selected_stdType_name"].set("Selected Standard Type: ")
     state[tab_name]["selected_rvtType_name"] = tk.StringVar()
     state[tab_name]["selected_rvtType_name"].set("선택없음")
     state[tab_name]["selected_calcType_label"] = None
@@ -281,8 +285,6 @@ def create_otherCat_tab(notebook, state, tab_name):
     ]
     state[tab_name]["common_headers"] = ["wmGrp"] + common_headers
     state[tab_name]["common_widths"] = [120, 100, 30, 75, 800, 100, 100]
-    state[tab_name]["selected_stdType_name"] = tk.StringVar()
-    state[tab_name]["selected_stdType_name"].set("Selected Standard Type: ")
 
     selected_stdType_label = ttk.Label(
         section2,
@@ -392,7 +394,7 @@ def create_otherCat_tab(notebook, state, tab_name):
 
     applied_famType_label = ttk.Label(
         apply_frame,
-        text="4. 레빗 패밀리 할당",
+        text="4. 레빗 패밀리 할당 현황",
         font=("Arial", 11, "bold"),
         style="Custom.TLabel",
     )
@@ -426,14 +428,18 @@ def create_otherCat_tab(notebook, state, tab_name):
     add_famType_btn = ttk.Button(
         add_del_famType_btn_frame,
         text="↑",
-        command=lambda: add_to_appliedRoom_data(state),
+        command=lambda: add_to_appliedRvtType_data(
+            state, revit_famType_input, tab_name=tab_name
+        ),
     )
     add_famType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="w")
 
     del_stdType_btn = ttk.Button(
         add_del_famType_btn_frame,
         text="↓",
-        command=lambda: remove_from_appliedRoom_data(state),
+        command=lambda: remove_from_appliedRvtType_data(
+            state, revit_famType_input, tab_name=tab_name
+        ),
     )
     del_stdType_btn.pack(side=tk.LEFT, padx=10, pady=10, anchor="e")
 

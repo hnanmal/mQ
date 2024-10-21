@@ -72,6 +72,46 @@ def remove_selected_items_from_listbox(listbox):
         listbox.delete(item)
 
 
+def update_level_6_items_list(state, parent, listbox, on_select_item):
+    """Display level 6 items from defaultTypeTree.json in a Listbox with a scrollbar."""
+    file_path = "resources/defaultTypeTree.json"
+    tree_data = load_json_data(file_path)
+
+    if tree_data:
+        level_6_items = collect_level_6_items(tree_data)
+
+        # Create a frame to hold the Listbox and scrollbar
+        # listbox_frame = ttk.Frame(parent)
+        # listbox_frame.pack(fill=tk.BOTH, expand=True)
+
+        # scrollbar = ttk.Scrollbar(listbox_frame)
+        # scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Create the Listbox and attach the scrollbar
+        listbox = listbox
+        listbox.delete(0, tk.END)
+        # listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # scrollbar.config(command=listbox.yview)
+        # Add level 6 items to the Listbox
+        for item in level_6_items:
+            is_locked = not state.get_lock_status(item)
+            state.set_lock_status(item, is_locked)
+            listbox.insert(tk.END, item)
+
+        # Bind the selection event
+        def on_listbox_select(event):
+            selected_index = listbox.curselection()
+            if selected_index:
+                selected_item = listbox.get(selected_index)
+                on_select_item(selected_item)
+
+        # listbox.bind("<<ListboxSelect>>", on_listbox_select)
+        # Force a refresh to apply styles immediately
+        listbox.update_idletasks()
+
+        return listbox  # Return the listbox widget
+
+
 def display_level_6_items_list(state, parent, on_select_item):
     """Display level 6 items from defaultTypeTree.json in a Listbox with a scrollbar."""
     file_path = "resources/defaultTypeTree.json"

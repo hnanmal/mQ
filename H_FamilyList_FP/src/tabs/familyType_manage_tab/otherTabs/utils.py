@@ -2,6 +2,7 @@ from src.tabs.familyType_manage_tab.utils import update_selected_calcType
 import tkinter as tk
 from tksheet import Sheet
 from copy import copy
+from copy import deepcopy
 
 
 def add_stdType_allCat(state, new_stdType_text, tab_name):
@@ -40,18 +41,21 @@ def del_stdType_allCat(state, tab_name):
         )
 
         # 룸 이외 카테고리용으로 수정 필요
-        # for room_dic in state.project_info["apply_target_rooms"]:
-        #     if (
-        #         room_dic["stdType_tag"] == selected_stdType_name
-        #         and room_dic["bd_tag"] == selected_building
-        #     ):
-        #         room_dic["stdType_tag"] = ""
-        #         room_dic["bd_tag"] = ""
-        #         room_dic["calc_tag"] = ""
+        for idx, rvtType_dic in enumerate(
+            state.project_info["apply_target_rvtTypes"][tab_name]
+        ):
+            if (
+                rvtType_dic["stdType_tag"] == selected_stdType_name
+                and rvtType_dic["bd_tag"] == selected_building
+            ):
+                del state.project_info["apply_target_rvtTypes"][tab_name][idx]
+                # rvtType_dic["stdType_tag"] = ""
+                # rvtType_dic["bd_tag"] = ""
+                # rvtType_dic["calc_tag"] = ""
 
         for stdType_dic in state.project_info["std_types"][tab_name]:
             if stdType_dic["std_type"] == selected_stdType_name:
-                state.project_info["std_types_roomCat"].remove(stdType_dic)
+                state.project_info["std_types"][tab_name].remove(stdType_dic)
 
         state[tab_name]["stdTypeTree"].delete(selected_stdType)
 
@@ -165,57 +169,44 @@ def on_click_stdType_treeItem_allCat(
                 filter(lambda x: x["category"] == tab_name, items),
             )
         )
-        state.selected_calcType_name.set("Selected Calc Type: " + calcType_names[0])
+        state[tab_name]["selected_calcType_name"].set(
+            "Selected Calc Type: " + calcType_names[0]
+        )
 
     state.logging_text_widget.write(
         "::: 현재 작업 빌딩 : " + selected_building + " :::"
     )
 
-    applied_famType_sheetview = state.applied_famType_sheetview
-    notApplied_famType_sheetview = state.notApplied_famType_sheetview
-    notApplied_famType_sheetview.set_sheet_data()
+    applied_famType_sheetview = state[tab_name]["applied_famType_sheetview"]
 
-    apply_target_rooms = state.project_info["apply_target_rooms"]
+    apply_target_rvtTypes = state.project_info["apply_target_rvtTypes"][tab_name]
 
     applied_famType_sheetview.clear()
-    notApplied_famType_sheetview.clear()
-    idxs = range(len(apply_target_rooms))
+
+    idxs = range(len(apply_target_rvtTypes))
     applies = []
     not_applies = []
     for rowidx in idxs:
         if (
-            apply_target_rooms[rowidx]["bd_tag"] == selected_building
-            and apply_target_rooms[rowidx]["stdType_tag"] == selected_type_name
+            apply_target_rvtTypes[rowidx]["bd_tag"] == selected_building
+            and apply_target_rvtTypes[rowidx]["stdType_tag"] == selected_type_name
         ):
             # apply_target_rooms[rowidx][
             #     "calc_tag"
             # ] = state.selected_calcType_name.get().split(": ")[-1]
             applies.append(
                 [
-                    apply_target_rooms[rowidx]["room_no"],
-                    apply_target_rooms[rowidx]["room_name"],
-                    apply_target_rooms[rowidx]["stdType_tag"],
-                    apply_target_rooms[rowidx]["bd_tag"],
-                    apply_target_rooms[rowidx]["calc_tag"],
-                ]
-            )
-        elif apply_target_rooms[rowidx]["calc_tag"] == "":
-            not_applies.append(
-                [
-                    apply_target_rooms[rowidx]["room_no"],
-                    apply_target_rooms[rowidx]["room_name"],
-                    apply_target_rooms[rowidx]["stdType_tag"],
-                    apply_target_rooms[rowidx]["bd_tag"],
+                    apply_target_rvtTypes[rowidx]["rvtType_name"],
+                    apply_target_rvtTypes[rowidx]["stdType_tag"],
+                    apply_target_rvtTypes[rowidx]["bd_tag"],
+                    apply_target_rvtTypes[rowidx]["calc_tag"],
                 ]
             )
 
     applied_famType_sheetview.set_sheet_data(applies)
-    notApplied_famType_sheetview.set_sheet_data(not_applies)
 
-    applied_famType_sheetview.column_width(0, 30)
-    applied_famType_sheetview.column_width(1, 170)
-    notApplied_famType_sheetview.column_width(0, 30)
-    notApplied_famType_sheetview.column_width(1, 170)
+    applied_famType_sheetview.column_width(0, 170)
+    applied_famType_sheetview.column_width(1, 150)
 
 
 def update_selected_calcType_allCat(
@@ -366,7 +357,7 @@ def on_change_wmSheet_allCat(event, state, sheet, tab_name, mode=None):
             wm_row_dic = dict(zip(state[tab_name]["common_headers"], row))
             wmBunches.append(wm_row_dic)
         # print(wmBunches)
-        print(state.project_info["std_wm_assign_allCat"])
+        # print(state.project_info["std_wm_assign_allCat"])
 
         # state.wmBunches_room = {}
         if state.project_info["std_wm_assign_allCat"][tab_name].get(
@@ -376,14 +367,14 @@ def on_change_wmSheet_allCat(event, state, sheet, tab_name, mode=None):
                 selected_stdType_name
             ] = wmBunches
             # print(wmBunches)
-            print(state.project_info["std_wm_assign_allCat"])
+            # print(state.project_info["std_wm_assign_allCat"])
         else:
             # state.wmBunches_room.update({sheet_kind: wmBunches})
             # state.project_info["std_wm_assign"] = {}
             state.project_info["std_wm_assign_allCat"][tab_name].update(
                 {selected_stdType_name: wmBunches}
             )
-            print(state.project_info["std_wm_assign_allCat"])
+            # print(state.project_info["std_wm_assign_allCat"])
 
         # state.logging_text_widget.write(("\n").join(list(map(str, wmBunches))))
     elif mode == "rvtType":
@@ -683,3 +674,100 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
         for dic in stdType_items:
             print(dic)
             state[tab_name]["stdTypeTree"].insert("", "end", values=list(dic.values()))
+
+
+def add_to_appliedRvtType_data(state, revit_famType_input, tab_name=None):
+    # selected_items = state.notApplied_famType_sheetview.get_currently_selected()
+    input_items = list(
+        map(
+            lambda x: x.strip(),
+            revit_famType_input.get("1.0", tk.END).strip().split("\n"),
+        )
+    )
+    print(input_items)
+
+    def add_oneRow(input_item):
+        # selectedRow = input_item[0]
+        rvt_type = input_item
+        if not state.project_info.get("apply_target_rvtTypes"):
+            state.project_info["apply_target_rvtTypes"] = {tab_name: []}
+
+        if rvt_type not in state.project_info["apply_target_rvtTypes"][tab_name]:
+            state.project_info["apply_target_rvtTypes"][tab_name].append(
+                {
+                    "rvtType_name": rvt_type,
+                    "stdType_tag": state[tab_name]["selected_stdType_name"]
+                    .get()
+                    .split(": ")[-1],
+                    "bd_tag": state.selected_building,
+                    "calc_tag": state[tab_name]["selected_calcType_name"]
+                    .get()
+                    .split(": ")[-1],
+                    "rvt_only_wm": [],
+                }
+            )
+
+        applied_rvtTypes = state[tab_name]["applied_famType_sheetview"].get_sheet_data()
+        for rvtType_dic in state.project_info["apply_target_rvtTypes"][tab_name]:
+            if rvtType_dic["rvtType_name"] == rvt_type:
+                applied_rvtTypes.append(
+                    [
+                        rvtType_dic["rvtType_name"],
+                        rvtType_dic["stdType_tag"],
+                        rvtType_dic["bd_tag"],
+                        rvtType_dic["calc_tag"],
+                    ]
+                )
+        state[tab_name]["applied_famType_sheetview"].set_sheet_data(applied_rvtTypes)
+
+    if state.selected_building == "대상 빌딩 선택":
+        print(state.selected_building)
+        state.logging_text_widget.write("!!! 화면 상단에서 빌딩을 선택해 주세요 !!!")
+    elif not state[tab_name]["selected_rvtType_name"].get():
+        state.logging_text_widget.write("!!! 스탠다드 타입을 선택해 주세요 !!!")
+    else:
+        for input_item in input_items:
+            add_oneRow(input_item)
+
+    revit_famType_input.delete("1.0", tk.END)
+    state[tab_name]["applied_famType_sheetview"].column_width(0, 170)
+    state[tab_name]["applied_famType_sheetview"].column_width(1, 150)
+
+
+def remove_from_appliedRvtType_data(state, revit_famType_input, tab_name=None):
+    selected_items = list(
+        state[tab_name]["applied_famType_sheetview"].get_selected_cells()
+    )
+
+    def remove_oneRow(selected_item):
+        # selectedRow = selected_item.row
+        selectedRow = selected_item[0]
+        rvt_type = state[tab_name]["applied_famType_sheetview"].get_cell_data(
+            selectedRow, 0
+        )
+        print(rvt_type)
+        # removed_items.append(rvt_type)
+        copied_rvt_type = deepcopy(rvt_type)
+        for idx, rvtType_dic in enumerate(
+            state.project_info["apply_target_rvtTypes"][tab_name]
+        ):
+            if rvtType_dic["rvtType_name"] == rvt_type:
+                state.logging_text_widget.write(str(rvtType_dic))
+                del state.project_info["apply_target_rvtTypes"][tab_name][idx]
+
+        return copied_rvt_type
+
+    removed_items = []
+    for selected_item in selected_items:
+        removed = remove_oneRow(selected_item)
+        removed_items.append(removed)
+
+    removed_texts = "\n".join(removed_items)
+    # print(removed_items)
+    revit_famType_input.insert("1.0", removed_texts)
+    # print(selected_items)
+    selected_items_rows = list(map(lambda x: x[0], selected_items))
+    state[tab_name]["applied_famType_sheetview"].delete_rows(selected_items_rows)
+
+    state.applied_famType_sheetview.column_width(0, 170)
+    state.applied_famType_sheetview.column_width(1, 150)

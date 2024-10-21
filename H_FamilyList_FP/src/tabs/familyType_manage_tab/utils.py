@@ -744,8 +744,11 @@ def add_to_appliedRoom_data(state):
     else:
         for selected_item in selected_items:
             add_oneRow(selected_item)
-        for selected_item in list(reversed(selected_items)):
-            state.notApplied_famType_sheetview.delete_row(selected_item[0])
+
+        selected_items_rows = list(map(lambda x: x[0], selected_items))
+        state.notApplied_famType_sheetview.delete_rows(selected_items_rows)
+        # for selected_item in list(reversed(selected_items)):
+        #     state.notApplied_famType_sheetview.delete_row(selected_item[0])
 
     state.applied_famType_sheetview.column_width(0, 30)
     state.applied_famType_sheetview.column_width(1, 170)
@@ -788,9 +791,11 @@ def remove_from_appliedRoom_data(state):
 
     for selected_item in selected_items:
         remove_oneRow(selected_item)
-    # for selected_item in list(reversed(selected_items)):
-    for selected_item in selected_items:
-        state.applied_famType_sheetview.delete_row(selected_item[0])
+
+    selected_items_rows = list(map(lambda x: x[0], selected_items))
+    state.applied_famType_sheetview.delete_rows(selected_items_rows)
+    # for selected_item in selected_items:
+    #     state.applied_famType_sheetview.delete_row(selected_item[0])
 
     state.applied_famType_sheetview.column_width(0, 30)
     state.applied_famType_sheetview.column_width(1, 170)

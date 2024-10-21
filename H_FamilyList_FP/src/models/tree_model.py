@@ -3,8 +3,10 @@
 import json
 import os
 from tkinter import filedialog
+from src.controllers.logic import initialize_app
 from src.controllers.tree_controller import extract_treeview_data
 from src.views.treeview_utils import populate_treeview
+from src.views.logging_utils import setup_logging_frame
 
 
 def load_json_data(file_path):
@@ -52,3 +54,6 @@ def load_treeview(state, tree):
         if new_data:
             state.stdType_info = tree
             populate_treeview(tree, new_data)
+
+    logging_text_widget = setup_logging_frame(state.root)
+    initialize_app(logging_text_widget)

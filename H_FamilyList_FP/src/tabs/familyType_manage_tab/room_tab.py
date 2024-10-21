@@ -400,7 +400,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
 
     applied_famType_label = ttk.Label(
         apply_frame,
-        text="4. 레빗 패밀리 할당",
+        text="4. 레빗 패밀리 할당 현황",
         font=("Arial", 11, "bold"),
         style="Custom.TLabel",
     )
