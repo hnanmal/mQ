@@ -24,10 +24,10 @@ def create_tksheet_commonWM(
         "rc_delete_row",
         "arrowkeys",
     )
-    sheet.header_font(("Arial", 9, "normal"))
-    sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
+    sheet.header_font(("Arial", 10, "normal"))
+    sheet.set_options(font=("Arial Narrow", 10, "normal"))  # Font name and size
 
-    sheet.set_sheet_data()
+    sheet.set_sheet_data(data)
     # sheet.set_column_widths(state[tab_name]["common_widths"])
 
     # sheet.extra_bindings(
