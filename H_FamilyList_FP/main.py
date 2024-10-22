@@ -31,6 +31,7 @@ def main():
     # Initialize the main Tkinter window
     root = tk.Tk()
     root.title("H_bimNote")
+    root.iconbitmap("resources/favicon_io/favicon.ico")
     root.geometry("1400x900")
 
     # Open the window in full screen

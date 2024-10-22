@@ -31,6 +31,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['resources\\favicon_io\\favicon.ico'],
 )
 coll = COLLECT(
     exe,
