@@ -250,7 +250,7 @@ def open_teamSTDtree_view_allCat(event, state):
 
     window = tk.Toplevel()
     window.geometry("1280x800+100+100")
-    window.wm_attributes("-topmost", 1)
+    window.wm_attributes("-topmost", False)
 
     # create_calc_criteria_tab(window, state, mode="newWindow_room")
     create_family_standard_tab(window, None, state, mode="newWindow")
@@ -277,7 +277,7 @@ def open_calcType_view_allCat(event, state, tab_name):
 
     window = tk.Toplevel()
     window.geometry("1280x800+100+100")
-    window.wm_attributes("-topmost", 1)
+    window.wm_attributes("-topmost", False)
 
     create_calc_criteria_tab(window, state, mode="newWindow_room")
     selected_calcType = state[tab_name]["selected_calcType_name"].get().split(": ")[-1]

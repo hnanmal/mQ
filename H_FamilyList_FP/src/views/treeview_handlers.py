@@ -16,6 +16,13 @@ from src.utils.tree_utils import extract_treeview_data
 
 def create_treeview(parent, state):
     """Create a tree view widget with a hierarchical number column and a vertical scrollbar."""
+
+    # Function to scroll to the selected item when the spacebar is pressed
+    def scroll_to_selected_item(event, tree):
+        selected_item = tree.selection()
+        if selected_item:
+            tree.see(selected_item[0])  # Ensure the selected item is visible
+
     # Create a frame to hold the treeview and scrollbar
     tree_frame = ttk.Frame(parent)
     tree_frame.pack(fill=tk.BOTH, expand=True)
@@ -60,6 +67,8 @@ def create_treeview(parent, state):
         "<<TreeviewSelect>>",
         lambda event: on_item_select(event, state),
     )
+
+    tree.bind("<space>", lambda e: scroll_to_selected_item(e, tree))
 
     # Bind the right-click event
     tree.bind("<Button-3>", lambda event: on_right_click(event, state, tree))

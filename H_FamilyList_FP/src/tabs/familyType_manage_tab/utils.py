@@ -114,7 +114,7 @@ def open_calcType_view(event, state):
 
     window = tk.Toplevel()
     window.geometry("1280x800+100+100")
-    window.wm_attributes("-topmost", 1)
+    window.wm_attributes("-topmost", False)
 
     create_calc_criteria_tab(window, state, mode="newWindow_room")
     selected_calcType = state.selected_calcType_name.get().split(": ")[-1]
