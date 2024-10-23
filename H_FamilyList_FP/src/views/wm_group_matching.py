@@ -87,6 +87,14 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
     wm_group_matching_tab = ttk.Frame(notebook)
     notebook.add(wm_group_matching_tab, text="WM Group Matching")
 
+    main_paned_window = tk.PanedWindow(
+        wm_group_matching_tab,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    main_paned_window.pack(padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True)
+
     # Create three frames for the sections
     section1 = ttk.Frame(wm_group_matching_tab, width=300, height=200)
     section2 = ttk.Frame(wm_group_matching_tab, width=400, height=200)  # Fixed size
@@ -96,7 +104,11 @@ def create_wm_group_matching_tab(notebook, state, wm_group_manager):
     section2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     section3.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-    section2.pack_propagate(False)  # Prevent section2 from resizing
+    main_paned_window.add(section1, stretch="always")
+    main_paned_window.add(section2, stretch="always")
+    main_paned_window.add(section3, stretch="always")
+
+    # section2.pack_propagate(False)  # Prevent section2 from resizing
 
     # Create a label in Section 2 to display the selected item's name
     section2_label = ttk.Label(

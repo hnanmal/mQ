@@ -1,4 +1,5 @@
 # src/tabs/familyType_manage_tab/utils.py
+from src.utils.fp_utils import *
 from itertools import chain
 from copy import copy
 import json
@@ -211,7 +212,7 @@ def update_second_cell_dropdown(event, state, sheet):
     def update_unitCell_inRow(idx):
         if sheet.get_cell_data(idx, 4):
             selected_value = sheet.get_cell_data(idx, 4)
-            unit_info = selected_value.split("... | ...")[-4]
+            unit_info = selected_value.split(" | ")[-4]
             sheet.set_cell_data(idx, 2, unit_info)
 
     def update_row(idx):
@@ -228,19 +229,26 @@ def update_second_cell_dropdown(event, state, sheet):
             selected_value, {"matched_items": []}
         )
         # map(lambda x: x.split("... | ..."), second_dropdowns_obj["matched_items"])
-        # print(current_WM_value == second_dropdowns_obj["matched_items"][0])
+        second_dropdowns = go(
+            second_dropdowns_obj["matched_items"],
+            map(lambda x: x.split("... | ...")),
+            map(lambda x: filter(lambda y: y != "0", x)),
+            map(lambda x: filter(lambda y: y != "", x)),
+            map(lambda x: " | ".join(x)),
+            list,
+        )
         if not current_WM_value:
-            second_dropdowns = second_dropdowns_obj["matched_items"]
+            # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(idx, 4, values=second_dropdowns)
         elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
-            second_dropdowns = second_dropdowns_obj["matched_items"]
+            # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(idx, 4, values=second_dropdowns)
         elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
-            second_dropdowns = second_dropdowns_obj["matched_items"]
+            # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(idx, 4, values=second_dropdowns)
             sheet.set_cell_data(idx, 4, current_WM_value)
         elif current_WM_value not in second_dropdowns_obj["matched_items"]:
-            second_dropdowns = second_dropdowns_obj["matched_items"]
+            # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(idx, 4, values=second_dropdowns)
             # sheet.set_cell_data(idx, 4, current_WM_value)
         else:
@@ -259,6 +267,7 @@ def create_assignWMsheet(
     sheet = Sheet(frame, headers=headers, height=height, width=width)
     sheet.enable_bindings(
         "edit_cell",
+        "delete",
         "single_select",  # Allow single cell selection
         "drag_select",
         "row_select",  # Allow row selection
@@ -267,6 +276,7 @@ def create_assignWMsheet(
         "column_width_resize",
         "double_click_column_resize",
         "copy",
+        "paste",
         "ctrl_click_select",
         "right_click_popup_menu",
         "rc_insert_row",
@@ -317,6 +327,7 @@ def create_tksheet(
     sheet = Sheet(frame, headers=headers, height=height, width=width)
     sheet.enable_bindings(
         "edit_cell",
+        "delete",
         "single_select",  # Allow single cell selection
         "drag_select",
         "row_select",  # Allow row selection
@@ -325,6 +336,7 @@ def create_tksheet(
         "column_width_resize",
         "double_click_column_resize",
         "copy",
+        "paste",
         "ctrl_click_select",
         "right_click_popup_menu",
         "rc_insert_row",
