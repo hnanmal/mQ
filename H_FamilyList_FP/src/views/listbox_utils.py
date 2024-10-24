@@ -60,7 +60,7 @@ def add_selected_row_to_listbox(sheet_widget, listbox):
                 if row_data:
                     str_row_data = list(map(str, row_data))
                     # listbox.insert(tk.END, f"Row {row_index}: {row_data}")
-                    listbox.insert(tk.END, "... | ...".join(str_row_data))
+                    listbox.insert(tk.END, " | ".join(str_row_data))
             except (ValueError, TypeError) as e:
                 print(f"Error processing row {row_index}: {e}")
 

@@ -59,8 +59,8 @@ def create_wm_common_tab(notebook, state, mode=None):
     wmCat_combo_label.pack(side="left", anchor="w")
 
     # Define the dropdown values for the headers
-    state.wmCat_col_widths = [150, 100, 30, 75, 1300, 100, 100]
-    state.wmCat_row_heights = 27
+    state.wmCat_col_widths = [70, 180, 30, 75, 1250, 170, 100]
+    state.wmCat_row_heights = 35
 
     wmCat_dropdown_values = ["RC공통", "철골공통", "조적공통", "마감공통"]
 
@@ -89,14 +89,15 @@ def create_wm_common_tab(notebook, state, mode=None):
         collect_level_6_items(state.stdTypes_info, level=0, current_items=None),
         filter(lambda x: "공통|" in x),
         sorted,
-        map(lambda x: [x]),
+        map(lambda x: ["", x]),
         list,
     )
     state.common_wm_data = common_wm_data
 
     common_headers = [
+        "분류",
         "wmGrp",
-        "물량산출식",
+        # "물량산출식",
         "Unit",
         "Gauge Code",
         "WM",
@@ -114,3 +115,4 @@ def create_wm_common_tab(notebook, state, mode=None):
     )
     state.commonWM_sheet = commonWM_sheet
     commonWM_sheet.pack()
+    # commonWM_sheet.dropdown
