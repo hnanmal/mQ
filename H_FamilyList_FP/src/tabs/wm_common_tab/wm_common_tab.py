@@ -12,7 +12,8 @@ def create_wm_common_tab(notebook, state, mode=None):
     """Create the '공통 WM 입력' tab with two sections."""
     wm_common_tab = ttk.Frame(notebook)
     if mode == None:
-        notebook.add(wm_common_tab, text="공통 WM 입력")
+        # notebook.add(wm_common_tab, text="공통 WM 입력")
+        notebook.add(wm_common_tab, text="프로젝트 주요 Spec 지정")
     elif mode == "newWindow_room":
         wm_common_tab.pack(
             side=tk.LEFT, padx=10, pady=10, anchor="w", fill=tk.BOTH, expand=True

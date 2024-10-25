@@ -126,13 +126,12 @@ def open_calcType_view(event, state):
 
 def on_change_wmSheet(event, state, sheet):
     # update_second_cell_dropdown(event, state, sheet)
-
     selected_stdType_name = state.selected_stdType_name.get().split(": ")[-1]
     sheet_kind = sheet.headers()[0]
     print(sheet_kind)
 
     wmBunches = []
-    for row in sheet.get_sheet_data():
+    for idx, row in enumerate(sheet.get_sheet_data()):
         wm_row_dic = dict(zip(state.common_headers, row))
         wmBunches.append(wm_row_dic)
 
@@ -221,7 +220,10 @@ def update_second_cell_dropdown(event, state, sheet):
             sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
 
     def update_descriptionCell_inRow(row_idx):
-        if sheet.get_cell_data(row_idx, WM_col_idx):
+        if (
+            sheet.get_cell_data(row_idx, WM_col_idx)
+            and sheet.get_cell_data(row_idx, desc_col_idx) == ""
+        ):
             selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
             desc_info_list = go(
                 selected_value.split(" | "),
@@ -259,16 +261,17 @@ def update_second_cell_dropdown(event, state, sheet):
         if not current_WM_value:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            update_unitCell_inRow(idx)
-            print("~~!!~~")
-            update_descriptionCell_inRow(idx)
+            update_unitCell_inRow(row_idx)
+            update_descriptionCell_inRow(row_idx)
         elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+            update_descriptionCell_inRow(row_idx)
         elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
             sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
+            update_descriptionCell_inRow(row_idx)
         elif current_WM_value not in second_dropdowns_obj["matched_items"]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
@@ -296,6 +299,7 @@ def create_assignWMsheet(
         "column_select",  # Allow column selection
         "drag_select",  # Allow drag selection
         "column_width_resize",
+        "row_height_resize",
         "double_click_column_resize",
         "copy",
         "paste",
@@ -308,12 +312,12 @@ def create_assignWMsheet(
 
     # sheet_data = [["", ""], ["", ""], ["", ""]]
 
-    sheet.header_font(("Arial", 9, "normal"))
-    sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
-    # sheet.set_options(vertical_scroll_borderwidth=5)  # Font name and size
-    # sheet.set_options(horizontal_scroll_borderwidth=5)  # Font name and size
-    sheet.set_sheet_data()
+    sheet.header_font(("Arial", 7, "normal"))
+    sheet.set_options(
+        font=("Arial Narrow", 8, "normal"), default_row_height=35
+    )  # Font name and size
 
+    sheet.set_sheet_data()
     sheet.set_column_widths(state.common_widths)
 
     # Bind event to detect changes in the first cell (A1) and update the second cell
@@ -356,6 +360,7 @@ def create_tksheet(
         "column_select",  # Allow column selection
         "drag_select",  # Allow drag selection
         "column_width_resize",
+        "row_height_resize",
         "double_click_column_resize",
         "copy",
         "paste",
@@ -368,7 +373,7 @@ def create_tksheet(
 
     # sheet_data = [["", ""], ["", ""], ["", ""]]
 
-    sheet.header_font(("Arial", 9, "normal"))
+    sheet.header_font(("Arial", 7, "normal"))
     sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
     sheet.set_sheet_data()
     if mode == "nonAppFamtype":

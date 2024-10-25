@@ -189,7 +189,7 @@ def on_click_stdType_treeItem_allCat(
     if state.project_info["apply_target_rvtTypes"].get(tab_name):
         apply_target_rvtTypes = state.project_info["apply_target_rvtTypes"][tab_name]
     else:
-        state.project_info["apply_target_rvtTypes"] = {tab_name: {}}
+        state.project_info["apply_target_rvtTypes"] = {tab_name: []}
         apply_target_rvtTypes = state.project_info["apply_target_rvtTypes"][tab_name]
 
     applied_famType_sheetview.clear()
@@ -317,7 +317,10 @@ def update_second_cell_dropdown_allCat(event, state, sheet):
             sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
 
     def update_descriptionCell_inRow(row_idx):
-        if sheet.get_cell_data(row_idx, WM_col_idx):
+        if (
+            sheet.get_cell_data(row_idx, WM_col_idx)
+            and sheet.get_cell_data(row_idx, desc_col_idx) == ""
+        ):
             selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
             desc_info_list = go(
                 selected_value.split(" | "),
@@ -358,13 +361,39 @@ def update_second_cell_dropdown_allCat(event, state, sheet):
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
             update_unitCell_inRow(row_idx)
             update_descriptionCell_inRow(row_idx)
+        elif "공통|" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
+            common_WM_values = list(
+                chain(*state.project_info["common_items_info"].values())
+            )
+            # print(common_WM_values)
+            tgt_common_WM_value = go(
+                common_WM_values,
+                filter(lambda x: x.get("wmGrp")),
+                filter(
+                    lambda x: x["wmGrp"] == sheet.get_cell_data(row_idx, wmGrp_col_idx)
+                ),
+                list,
+                lambda x: x[0],
+                lambda x: x.values(),
+                list,
+            )[1:]
+            tgt_common_WM_value.insert(1, "")
+            # print(tgt_common_WM_value)
+            for col_idx, x in enumerate(tgt_common_WM_value):
+                if col_idx != 1:
+                    sheet.set_cell_data(row_idx, col_idx, x)
+                    sheet.del_dropdown(row_idx, WM_col_idx)
+
+            # sheet.set_cell_data(row_idx, WM_col_idx, tgt_common_WM_value)
         elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+            update_descriptionCell_inRow(row_idx)
         elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
             sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
+            update_descriptionCell_inRow(row_idx)
         elif current_WM_value not in second_dropdowns_obj["matched_items"]:
             # second_dropdowns = second_dropdowns_obj["matched_items"]
             sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
@@ -484,6 +513,7 @@ def create_tksheet_stdTypeWM(
         "column_select",  # Allow column selection
         "drag_select",  # Allow drag selection
         "column_width_resize",
+        "row_height_resize",
         "double_click_column_resize",
         "copy",
         "paste",
@@ -493,8 +523,10 @@ def create_tksheet_stdTypeWM(
         "rc_delete_row",
         "arrowkeys",
     )
-    sheet.header_font(("Arial", 9, "normal"))
-    sheet.set_options(font=("Arial Narrow", 8, "normal"))  # Font name and size
+    sheet.header_font(("Arial", 7, "normal"))
+    sheet.set_options(
+        font=("Arial Narrow", 8, "normal"), default_row_height=35
+    )  # Font name and size
 
     sheet.set_sheet_data()
     sheet.set_column_widths(state[tab_name]["common_widths"])
@@ -542,6 +574,7 @@ def create_tksheet_revitWM(
         "column_select",  # Allow column selection
         "drag_select",  # Allow drag selection
         "column_width_resize",
+        "row_height_resize",
         "double_click_column_resize",
         "copy",
         "paste",

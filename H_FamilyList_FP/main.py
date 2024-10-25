@@ -2,13 +2,6 @@
 import tkinter as tk
 from tkinter import ttk
 
-# import sys
-# from src.views.ui import (
-#     create_notebook_with_tabs,
-#     create_project_standard_tab,
-#     create_team_standard_tab,
-# )
-
 from src.controllers.logic import initialize_app
 
 # from src.controllers.event_dispatcher import dispatch_event
@@ -32,10 +25,17 @@ def main():
     root = tk.Tk()
     root.title("H_bimNote")
     root.iconbitmap("resources/favicon_io/favicon.ico")
-    root.geometry("1400x900")
+    # root.geometry("1400x900")
+    m = root.maxsize()
+    # root.geometry("1400x900".format(*m))
+    root.geometry(
+        "{}x{}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight())
+    )
 
     # Open the window in full screen
+    # root.attributes("-fullscreen", True)
     root.state("zoomed")  # Maximizes the window while keeping window controls visible
+    # root.state()
 
     configure_tab_styles()  # Configure the tab style
     # Set up the logging area and get the logging text widget

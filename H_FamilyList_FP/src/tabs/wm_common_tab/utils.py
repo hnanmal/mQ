@@ -6,6 +6,39 @@ from tksheet import Sheet
 from copy import copy
 
 
+def on_change_commonWM_sheet(event, state, sheet):
+    selected_class = state.wmCat_comboBox.get()
+    state.logging_text_widget.write(
+        "[ " + selected_class + " ] 데이터 변경 감지\n시트데이터 뭉치 재취합"
+    )
+    sheet_headers = sheet.headers()  # [1:]
+    print(sheet_headers)
+
+    if state.project_info.get("common_items_info"):
+        pass
+    else:
+        state.project_info["common_items_info"] = {
+            "RC공통": [],
+            "철골공통": [],
+            "조적공통": [],
+            "마감공통": [],
+        }
+        state.logging_text_widget.write(str(state.project_info["common_items_info"]))
+
+    wmBunches = []
+    for row in sheet.get_sheet_data():
+        # wm_row_dic = dict(zip(sheet_headers, row[1:]))
+        wm_row_dic = dict(zip(sheet_headers, row))
+        # print(wm_row_dic)
+        wmBunches.append(wm_row_dic)
+    # print(wmBunches)
+
+    if state.project_info["common_items_info"].get(selected_class):
+        state.project_info["common_items_info"][selected_class] = wmBunches
+    else:
+        state.project_info["common_items_info"].update({selected_class: wmBunches})
+
+
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown_allCat(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
@@ -36,8 +69,29 @@ def update_second_cell_dropdown_allCat(event, state, sheet):
                 ),  # 가운데 조건이 공백특수문자인듯?
                 list,
             )
-            desc_info = "\n".join(desc_info_list)
-            sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
+            extHeavy = go(
+                state.project_info["common_info"]["steel"],
+                filter(lambda x: "Extra Heavy" in x["항목"]),
+                map(lambda x: x["입력값"]),
+                list,
+                lambda x: x[0],
+            )
+            extLight = go(
+                state.project_info["common_info"]["steel"],
+                filter(lambda x: "Extra Light" in x["항목"]),
+                map(lambda x: x["입력값"]),
+                list,
+                lambda x: x[0],
+            )
+            if "제작-Extra Heavy" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
+                desc_info = f"Material: (   )\nWeight≥( {extHeavy} )KG/M"
+                sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
+            elif "제작-Extra Light" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
+                desc_info = f"Material: (   )\nWeight≥( {extLight} )KG/M"
+                sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
+            else:
+                desc_info = "\n".join(desc_info_list)
+                sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
 
     def update_row(row_idx):
         sheet.del_dropdown(row_idx, WM_col_idx)
@@ -98,6 +152,17 @@ def update_second_cell_dropdown_allCat(event, state, sheet):
 
 
 def on_select_wmCatCombo(event, state):
+    if state.project_info.get("common_items_info"):
+        pass
+    else:
+        state.project_info["common_items_info"] = {
+            "RC공통": [],
+            "철골공통": [],
+            "조적공통": [],
+            "마감공통": [],
+        }
+        state.logging_text_widget.write(str(state.project_info["common_items_info"]))
+
     sheet = state.commonWM_sheet
     all_row_index = list(range(sheet.get_total_rows()))
 
@@ -105,11 +170,11 @@ def on_select_wmCatCombo(event, state):
     # sheet.delete_dropdown("E")
     # print(dir(sheet))
 
-    selected_kind = state.wmCat_comboBox.get()
+    selected_class = state.wmCat_comboBox.get()
 
     filtered_data = go(
         state.common_wm_data,
-        filter(lambda x: selected_kind in str(x)),
+        filter(lambda x: selected_class in str(x)),
         # map(lambda x: ["", x]),
         list,
     )
@@ -151,12 +216,17 @@ def on_select_wmCatCombo(event, state):
     }
 
     grped_data = []
-    for grp_name in grp_names[selected_kind]:
+    for grp_name in grp_names[selected_class]:
         grped_data.append(["[" + grp_name + "]"])
         tmp = []
-        if grp_name != "토공":
+        if grp_name != "토공" and grp_name != "콘크리트":
             for i in filtered_data:
                 if grp_name in i[1]:
+                    tmp.append(i)
+            grped_data.extend(sorted(tmp))
+        elif grp_name == "콘크리트":
+            for i in filtered_data:
+                if grp_name in i[1] or "수화열" in i[1]:
                     tmp.append(i)
             grped_data.extend(sorted(tmp))
         else:
@@ -170,8 +240,17 @@ def on_select_wmCatCombo(event, state):
                     tmp.append(i)
             grped_data.extend(sorted(tmp))
 
-    # sheet.set_sheet_data(filtered_data)
-    sheet.set_sheet_data(grped_data)
+    if state.project_info["common_items_info"][selected_class]:
+        datas = go(
+            state.project_info.get("common_items_info")[selected_class],
+            map(lambda x: list(x.values())),
+            list,
+        )
+        # print(datas)
+        sheet.set_sheet_data(datas)
+    else:
+        # sheet.set_sheet_data(filtered_data)
+        sheet.set_sheet_data(grped_data)
     sheet.set_column_widths(state.wmCat_col_widths)
     sheet.set_all_row_heights(state.wmCat_row_heights)
 
@@ -198,8 +277,10 @@ def create_tksheet_commonWM(
         "column_select",  # Allow column selection
         "drag_select",  # Allow drag selection
         "column_width_resize",
+        "row_height_resize",
         "double_click_column_resize",
         "copy",
+        "paste",
         "ctrl_click_select",
         "right_click_popup_menu",
         # "rc_insert_row",
@@ -226,13 +307,14 @@ def create_tksheet_commonWM(
             #         e, state, sheet, tab_name, mode="stdType"
             #     ),
             # ),
-            # (
-            #     "end_edit_cell",
-            #     # lambda e: update_second_cell_dropdown(e, state, sheet),
-            #     lambda e: on_change_wmSheet_allCat(
-            #         e, state, sheet, tab_name, mode="stdType"
-            #     ),
-            # ),
+            (
+                "end_edit_cell",
+                lambda e: on_change_commonWM_sheet(
+                    e,
+                    state,
+                    sheet,
+                ),
+            ),
             (
                 "cell_select",
                 lambda e: update_second_cell_dropdown_allCat(e, state, sheet),
