@@ -201,87 +201,114 @@ def add_room_to_apply_target_rooms(event, state, sheet):
             )
 
 
+def update_unitCell_inRow(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    if sheet.get_cell_data(row_idx, WM_col_idx):
+        selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
+        unit_info = selected_value.split(" | ")[-4]
+        sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
+
+
+def update_descriptionCell_inRow(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    if (
+        sheet.get_cell_data(row_idx, WM_col_idx)
+        and sheet.get_cell_data(row_idx, desc_col_idx) == ""
+    ):
+        selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
+        desc_info_list = go(
+            selected_value.split(" | "),
+            # filter(lambda x: ("(   )" in x) or ("(  )" in x)),
+            filter(
+                lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+            ),  # 가운데 조건이 공백특수문자인듯?
+            list,
+        )
+        desc_info = "\n".join(desc_info_list)
+        sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
+
+
+def fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx):
+    if "공통|" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
+        common_WM_values = list(
+            chain(*state.project_info["common_items_info"].values())
+        )
+        # print(common_WM_values)
+        tgt_common_WM_value = go(
+            common_WM_values,
+            filter(lambda x: x.get("wmGrp")),
+            filter(lambda x: x["wmGrp"] == sheet.get_cell_data(row_idx, wmGrp_col_idx)),
+            list,
+            lambda x: x[0],
+            lambda x: x.values(),
+            list,
+        )[1:]
+        tgt_common_WM_value.insert(1, "")
+        # print(tgt_common_WM_value)
+        for col_idx, x in enumerate(tgt_common_WM_value):
+            if col_idx != 1:  ## 산출수식 초기화 방지
+                sheet.set_cell_data(row_idx, col_idx, x)
+                sheet.del_dropdown(row_idx, WM_col_idx)  ## 공통 항목은 드롭다운 제거
+    else:
+        pass
+
+
+def update_row(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    selected_value = sheet.get_cell_data(row_idx, wmGrp_col_idx)
+    # print(type(selected_value))
+    # print(selected_value)
+    try:
+        current_WM_value = copy(
+            sheet.get_cell_data(row_idx, WM_col_idx)
+        )  # Get selected value from the first cell
+    except:
+        current_WM_value = None
+    # print(current_WM_value)
+    second_dropdowns_obj = state.wm_group_data.get(
+        selected_value, {"matched_items": []}
+    )
+    second_dropdowns = go(
+        second_dropdowns_obj["matched_items"],
+        map(lambda x: x.split(" | ")),
+        map(lambda x: filter(lambda y: y != "0", x)),
+        map(lambda x: filter(lambda y: y != "", x)),
+        map(lambda x: " | ".join(x)),
+        list,
+    )
+
+    if not current_WM_value:
+        # second_dropdowns = second_dropdowns_obj["matched_items"]
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_unitCell_inRow(state, sheet, row_idx)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value not in second_dropdowns_obj["matched_items"]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    else:
+        update_descriptionCell_inRow(row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        pass
+
+
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
     print(all_row_index)
 
-    WM_col_idx = 4
-    unit_col_idx = 2
-    wmGrp_col_idx = 0
-    desc_col_idx = WM_col_idx + 1
-
-    # print(second_dropdowns)
-    # Set the second cell's dropdown based on the first cell's value
-    def update_unitCell_inRow(row_idx):
-        if sheet.get_cell_data(row_idx, WM_col_idx):
-            selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
-            unit_info = selected_value.split(" | ")[-4]
-            sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
-
-    def update_descriptionCell_inRow(row_idx):
-        if (
-            sheet.get_cell_data(row_idx, WM_col_idx)
-            and sheet.get_cell_data(row_idx, desc_col_idx) == ""
-        ):
-            selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
-            desc_info_list = go(
-                selected_value.split(" | "),
-                # filter(lambda x: ("(   )" in x) or ("(  )" in x)),
-                filter(
-                    lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
-                ),  # 가운데 조건이 공백특수문자인듯?
-                list,
-            )
-            desc_info = "\n".join(desc_info_list)
-            sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
-
-    def update_row(row_idx):
-        selected_value = sheet.get_cell_data(row_idx, wmGrp_col_idx)
-        # print(selected_value)
-        try:
-            current_WM_value = copy(
-                sheet.get_cell_data(row_idx, WM_col_idx)
-            )  # Get selected value from the first cell
-        except:
-            current_WM_value = None
-        print(current_WM_value)
-        second_dropdowns_obj = state.wm_group_data.get(
-            selected_value, {"matched_items": []}
-        )
-        # map(lambda x: x.split("... | ..."), second_dropdowns_obj["matched_items"])
-        second_dropdowns = go(
-            second_dropdowns_obj["matched_items"],
-            map(lambda x: x.split(" | ")),
-            map(lambda x: filter(lambda y: y != "0", x)),
-            map(lambda x: filter(lambda y: y != "", x)),
-            map(lambda x: " | ".join(x)),
-            list,
-        )
-        if not current_WM_value:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            update_unitCell_inRow(row_idx)
-            update_descriptionCell_inRow(row_idx)
-        elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            update_descriptionCell_inRow(row_idx)
-        elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
-            update_descriptionCell_inRow(row_idx)
-        elif current_WM_value not in second_dropdowns_obj["matched_items"]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            # sheet.set_cell_data(idx, 4, current_WM_value)
-        else:
-            pass
-
     for idx in all_row_index:
-        update_row(idx)
-        # update_unitCell_inRow(idx)
+        update_row(state, sheet, idx)
 
 
 # from src.tabs.input_common_tab.utils import create_defaultTreeview
@@ -629,14 +656,15 @@ def on_click_stdType_treeItem(event, state, stdTypes_treeview, selected_stdType_
         sheet.update_idletasks()
         sheet.set_sheet_data(data)
         sheet.set_column_widths(state.common_widths)
-        for idx in list(range(len(data))):
-            firstCell = data[idx][0]
-            sheet.create_dropdown(idx, 0, values=state.floor_dropdowns)
+        for row_idx in list(range(len(data))):
+            firstCell = data[row_idx][0]
+            sheet.create_dropdown(row_idx, 0, values=state.floor_dropdowns)
             sheet.set_cell_data(
-                idx,
+                row_idx,
                 0,
                 firstCell,
             )
+            update_row(state, sheet, row_idx)
 
     if not state.project_info["std_wm_assign"].get(selected_type_name):
         state.project_info["std_wm_assign"][selected_type_name] = {

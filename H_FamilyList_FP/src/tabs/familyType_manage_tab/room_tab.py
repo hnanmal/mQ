@@ -76,6 +76,13 @@ def create_room_tab(notebook, state):
     state.selected_calcType_label = None
     state.selected_calcType_sheetview = None
 
+    WM_col_idx = 4
+    unit_col_idx = 2
+    wmGrp_col_idx = 0
+    desc_col_idx = WM_col_idx + 1
+    idxes = [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx]
+    state.idxes = idxes
+
     main_paned_window = tk.PanedWindow(
         room_tab,
         orient=tk.HORIZONTAL,

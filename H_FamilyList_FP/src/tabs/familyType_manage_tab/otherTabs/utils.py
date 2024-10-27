@@ -6,6 +6,107 @@ from copy import copy
 from copy import deepcopy
 
 
+def update_unitCell_inRow(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    if sheet.get_cell_data(row_idx, WM_col_idx):
+        selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
+        unit_info = selected_value.split(" | ")[-4]
+        sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
+
+
+def update_descriptionCell_inRow(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    if (
+        sheet.get_cell_data(row_idx, WM_col_idx)
+        and sheet.get_cell_data(row_idx, desc_col_idx) == ""
+    ):
+        selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
+        desc_info_list = go(
+            selected_value.split(" | "),
+            # filter(lambda x: ("(   )" in x) or ("(  )" in x)),
+            filter(
+                lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+            ),  # 가운데 조건이 공백특수문자인듯?
+            list,
+        )
+        desc_info = "\n".join(desc_info_list)
+        sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
+
+
+def fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx):
+    if "공통|" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
+        common_WM_values = list(
+            chain(*state.project_info["common_items_info"].values())
+        )
+        # print(common_WM_values)
+        tgt_common_WM_value = go(
+            common_WM_values,
+            filter(lambda x: x.get("wmGrp")),
+            filter(lambda x: x["wmGrp"] == sheet.get_cell_data(row_idx, wmGrp_col_idx)),
+            list,
+            lambda x: x[0],
+            lambda x: x.values(),
+            list,
+        )[1:]
+        tgt_common_WM_value.insert(1, "")
+        # print(tgt_common_WM_value)
+        for col_idx, x in enumerate(tgt_common_WM_value):
+            if col_idx != 1:  ## 산출수식 초기화 방지
+                sheet.set_cell_data(row_idx, col_idx, x)
+                sheet.del_dropdown(row_idx, WM_col_idx)  ## 공통 항목은 드롭다운 제거
+    else:
+        pass
+
+
+def update_row(state, sheet, row_idx):
+    [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+    selected_value = sheet.get_cell_data(row_idx, wmGrp_col_idx)
+    # print(type(selected_value))
+    # print(selected_value)
+    try:
+        current_WM_value = copy(
+            sheet.get_cell_data(row_idx, WM_col_idx)
+        )  # Get selected value from the first cell
+    except:
+        current_WM_value = None
+    # print(current_WM_value)
+    second_dropdowns_obj = state.wm_group_data.get(
+        selected_value, {"matched_items": []}
+    )
+    second_dropdowns = go(
+        second_dropdowns_obj["matched_items"],
+        map(lambda x: x.split(" | ")),
+        map(lambda x: filter(lambda y: y != "0", x)),
+        map(lambda x: filter(lambda y: y != "", x)),
+        map(lambda x: " | ".join(x)),
+        list,
+    )
+
+    if not current_WM_value:
+        # second_dropdowns = second_dropdowns_obj["matched_items"]
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_unitCell_inRow(state, sheet, row_idx)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    elif current_WM_value not in second_dropdowns_obj["matched_items"]:
+        sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+    else:
+        update_descriptionCell_inRow(row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        pass
+
+
 def add_stdType_allCat(state, new_stdType_text, tab_name):
     stdType_input = new_stdType_text.get("1.0", tk.END).strip()
     if stdType_input:
@@ -140,14 +241,8 @@ def on_click_stdType_treeItem_allCat(
         sheet.update_idletasks()
         sheet.set_sheet_data(data)
         sheet.set_column_widths(state[tab_name]["common_widths"])
-        # for idx in list(range(len(data))):
-        #     firstCell = data[idx][0]
-        #     sheet.create_dropdown(idx, 0, values=state.floor_dropdowns)
-        #     sheet.set_cell_data(
-        #         idx,
-        #         0,
-        #         firstCell,
-        #     )
+        for row_idx in list(range(len(data))):
+            update_row(state, sheet, row_idx)
 
     if not state.project_info.get("std_wm_assign_allCat"):
         state.project_info["std_wm_assign_allCat"] = {}
@@ -158,7 +253,7 @@ def on_click_stdType_treeItem_allCat(
             selected_type_name
         ]
         data = list(map(lambda x: list(x.values()), data_dic))
-        print(data)
+        # print(data)
         set_data_forSheet(
             state[tab_name]["assignWM_sheetview_forStdType"],
             data,
@@ -302,107 +397,9 @@ def open_calcType_view_allCat(event, state, tab_name):
 # Function to update the second cell dropdown (B1) based on the first cell selection
 def update_second_cell_dropdown_allCat(event, state, sheet):
     all_row_index = list(range(sheet.get_total_rows()))
-    # print(all_row_index)
-    WM_col_idx = 4
-    unit_col_idx = 2
-    wmGrp_col_idx = 0
-    desc_col_idx = WM_col_idx + 1
-
-    # print(second_dropdowns)
-    # Set the second cell's dropdown based on the first cell's value
-    def update_unitCell_inRow(row_idx):
-        if sheet.get_cell_data(row_idx, WM_col_idx):
-            selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
-            unit_info = selected_value.split(" | ")[-4]
-            sheet.set_cell_data(row_idx, unit_col_idx, unit_info)
-
-    def update_descriptionCell_inRow(row_idx):
-        if (
-            sheet.get_cell_data(row_idx, WM_col_idx)
-            and sheet.get_cell_data(row_idx, desc_col_idx) == ""
-        ):
-            selected_value = sheet.get_cell_data(row_idx, WM_col_idx)
-            desc_info_list = go(
-                selected_value.split(" | "),
-                # filter(lambda x: ("(   )" in x) or ("(  )" in x)),
-                filter(
-                    lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
-                ),  # 가운데 조건이 공백특수문자인듯?
-                list,
-            )
-            desc_info = "\n".join(desc_info_list)
-            sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
-
-    def update_row(row_idx):
-        selected_value = sheet.get_cell_data(row_idx, wmGrp_col_idx)
-        # print(type(selected_value))
-        # print(selected_value)
-        try:
-            current_WM_value = copy(
-                sheet.get_cell_data(row_idx, WM_col_idx)
-            )  # Get selected value from the first cell
-        except:
-            current_WM_value = None
-        # print(current_WM_value)
-        second_dropdowns_obj = state.wm_group_data.get(
-            selected_value, {"matched_items": []}
-        )
-        second_dropdowns = go(
-            second_dropdowns_obj["matched_items"],
-            map(lambda x: x.split(" | ")),
-            map(lambda x: filter(lambda y: y != "0", x)),
-            map(lambda x: filter(lambda y: y != "", x)),
-            map(lambda x: " | ".join(x)),
-            list,
-        )
-
-        if not current_WM_value:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            update_unitCell_inRow(row_idx)
-            update_descriptionCell_inRow(row_idx)
-        elif "공통|" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
-            common_WM_values = list(
-                chain(*state.project_info["common_items_info"].values())
-            )
-            # print(common_WM_values)
-            tgt_common_WM_value = go(
-                common_WM_values,
-                filter(lambda x: x.get("wmGrp")),
-                filter(
-                    lambda x: x["wmGrp"] == sheet.get_cell_data(row_idx, wmGrp_col_idx)
-                ),
-                list,
-                lambda x: x[0],
-                lambda x: x.values(),
-                list,
-            )[1:]
-            tgt_common_WM_value.insert(1, "")
-            # print(tgt_common_WM_value)
-            for col_idx, x in enumerate(tgt_common_WM_value):
-                if col_idx != 1:
-                    sheet.set_cell_data(row_idx, col_idx, x)
-                    sheet.del_dropdown(row_idx, WM_col_idx)
-
-            # sheet.set_cell_data(row_idx, WM_col_idx, tgt_common_WM_value)
-        elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            update_descriptionCell_inRow(row_idx)
-        elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
-            update_descriptionCell_inRow(row_idx)
-        elif current_WM_value not in second_dropdowns_obj["matched_items"]:
-            # second_dropdowns = second_dropdowns_obj["matched_items"]
-            sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
-            # sheet.set_cell_data(idx, 4, current_WM_value)
-        else:
-            pass
 
     for idx in all_row_index:
-        update_row(idx)
+        update_row(state, sheet, idx)
         # update_unitCell_inRow(idx)
 
 
@@ -416,66 +413,45 @@ def on_change_wmSheet_allCat(event, state, sheet, tab_name, mode=None):
         print(selected_stdType_name)
         state.logging_text_widget.write(selected_stdType_name)
 
-        # sheet_kind = sheet.headers()[0]
-        # print(sheet_kind)
-
         wmBunches = []
         for row in sheet.get_sheet_data():
             wm_row_dic = dict(zip(state[tab_name]["common_headers"], row))
             wmBunches.append(wm_row_dic)
-        # print(wmBunches)
-        # print(state.project_info["std_wm_assign_allCat"])
 
-        # state.wmBunches_room = {}
         if state.project_info["std_wm_assign_allCat"][tab_name].get(
             selected_stdType_name
         ):
             state.project_info["std_wm_assign_allCat"][tab_name][
                 selected_stdType_name
             ] = wmBunches
-            # print(wmBunches)
-            # print(state.project_info["std_wm_assign_allCat"])
+
         else:
-            # state.wmBunches_room.update({sheet_kind: wmBunches})
-            # state.project_info["std_wm_assign"] = {}
             state.project_info["std_wm_assign_allCat"][tab_name].update(
                 {selected_stdType_name: wmBunches}
             )
-            # print(state.project_info["std_wm_assign_allCat"])
-
         # state.logging_text_widget.write(("\n").join(list(map(str, wmBunches))))
+
     elif mode == "rvtType":
 
         selected_rvtType_name = state[tab_name]["selected_rvtType_name"].get()
         print(selected_rvtType_name)
         state.logging_text_widget.write(selected_rvtType_name)
 
-        # sheet_kind = sheet.headers()[0]
-        # print(sheet_kind)
-
         wmBunches = []
         for row in sheet.get_sheet_data():
             wm_row_dic = dict(zip(state[tab_name]["common_headers"], row))
             wmBunches.append(wm_row_dic)
-        # print(wmBunches)
 
-        # state.wmBunches_room = {}
         if state.project_info["apply_target_rvtTypes"][tab_name].get(
             selected_rvtType_name
         ):
             state.project_info["apply_target_rvtTypes"][tab_name][
                 selected_rvtType_name
             ] = wmBunches
-            # print(wmBunches)
-            print(state.project_info["apply_target_rvtTypes"])
         else:
-            # state.wmBunches_room.update({sheet_kind: wmBunches})
-            # state.project_info["std_wm_assign"] = {}
             state.project_info["apply_target_rvtTypes"][tab_name].update(
                 {selected_rvtType_name: wmBunches}
             )
-            print(state.project_info["apply_target_rvtTypes"])
-
         # state.logging_text_widget.write(("\n").join(list(map(str, wmBunches))))
 
 
@@ -739,16 +715,86 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
     if not state.project_info.get("std_types"):
         find_stdType_items_inCat(tab_name, state)
 
-    stdType_items = state.project_info["std_types"][tab_name]
+    assigned_from_apply_target = go(
+        state.project_info["apply_target_rvtTypes"][tab_name],
+        map(lambda dic: dic["stdType_tag"]),
+        lambda x: set(x),
+        list,
+    )
 
-    if mode == "loading" and not state.selected_stdType:
+    stdType_items = state.project_info["std_types"][tab_name]
+    assigned_stdType_items = go(
+        stdType_items,
+        filter(lambda dic: dic["std_type"] in assigned_from_apply_target),
+    )
+
+    not_assigned_stdType_items = go(
+        stdType_items,
+        filter(lambda dic: dic["std_type"] not in assigned_from_apply_target),
+    )
+
+    if mode == "loading":  # and not state.selected_stdType:
         state[tab_name]["stdTypeTree"].delete(
             *state[tab_name]["stdTypeTree"].get_children()
         )
 
-        for dic in stdType_items:
+        for dic in assigned_stdType_items:
             print(dic)
-            state[tab_name]["stdTypeTree"].insert("", "end", values=list(dic.values()))
+            state[tab_name]["stdTypeTree"].insert(
+                "",
+                "end",
+                values=list(dic.values()),
+            )
+        for dic in not_assigned_stdType_items:
+            print(dic)
+            state[tab_name]["stdTypeTree"].insert(
+                "",
+                "end",
+                values=list(dic.values()),
+                tag="highlight",
+            )
+    elif state[tab_name]["bd_combobox"].get():
+        state[tab_name]["stdTypeTree"].delete(
+            *state[tab_name]["stdTypeTree"].get_children()
+        )
+
+        assigned_from_apply_target_forBD = go(
+            state.project_info["apply_target_rvtTypes"][tab_name],
+            filter(lambda dic: dic["bd_tag"] == state[tab_name]["bd_combobox"].get()),
+            map(lambda dic: dic["stdType_tag"]),
+            lambda x: set(x),
+            list,
+        )
+
+        assigned_stdType_items_forBD = go(
+            stdType_items,
+            filter(lambda dic: dic["std_type"] in assigned_from_apply_target_forBD),
+            list,
+        )
+        not_assigned_stdType_items_forBD = go(
+            stdType_items,
+            filter(lambda dic: dic["std_type"] not in assigned_from_apply_target_forBD),
+            list,
+        )
+        for dic in assigned_stdType_items_forBD:
+            print(dic)
+            state[tab_name]["stdTypeTree"].insert(
+                "",
+                "end",
+                values=list(dic.values()),
+            )
+        for dic in not_assigned_stdType_items_forBD:
+            print(dic)
+            state[tab_name]["stdTypeTree"].insert(
+                "",
+                "end",
+                values=list(dic.values()),
+                tag="highlight",
+            )
+
+    state[tab_name]["stdTypeTree"].tag_configure(
+        "highlight", background="#bababa"
+    )  # Light red background for highlight
 
 
 def add_to_appliedRvtType_data(state, revit_famType_input, tab_name=None):

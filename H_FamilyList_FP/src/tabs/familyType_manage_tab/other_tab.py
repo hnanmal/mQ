@@ -26,6 +26,7 @@ from src.tabs.familyType_manage_tab.otherTabs.utils import (
     open_teamSTDtree_view_allCat,
     remove_from_appliedRvtType_data,
     update_selected_calcType_allCat,
+    update_stdTypeTree_otherCat,
 )
 
 
@@ -82,6 +83,13 @@ def create_otherCat_tab(notebook, state, tab_name):
     state[tab_name]["selected_rvtType_name"].set("선택없음")
     state[tab_name]["selected_calcType_label"] = None
     state[tab_name]["selected_calcType_sheetview"] = None
+
+    WM_col_idx = 4
+    unit_col_idx = 2
+    wmGrp_col_idx = 0
+    desc_col_idx = WM_col_idx + 1
+    idxes = [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx]
+    state.idxes = idxes
 
     main_paned_window = tk.PanedWindow(
         tab,
@@ -481,5 +489,5 @@ def create_otherCat_tab(notebook, state, tab_name):
 
     bd_comboBox.bind(
         "<<ComboboxSelected>>",
-        lambda e: update_stdTypeTree_inRoom(e, state, bd_comboBox),
+        lambda e: update_stdTypeTree_otherCat(e, state, tab_name),
     )
