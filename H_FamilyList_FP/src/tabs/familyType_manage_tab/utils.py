@@ -552,17 +552,85 @@ def update_stdTypeTree_inRoom(event, state, bd_comboBox, mode=None):
     if not state.project_info.get("std_types_roomCat"):
         find_all_stdType_items_inRoom()
 
+    assigned_from_apply_target_rooms = go(
+        state.project_info["apply_target_rooms"],
+        map(lambda dic: dic["stdType_tag"]),
+        lambda x: set(x),
+        list,
+    )
+
     stdType_items_inRoom = state.project_info["std_types_roomCat"]
 
-    if mode == "loading" and not state.selected_stdType:
+    assigned_stdType_items = go(
+        stdType_items_inRoom,
+        filter(lambda dic: dic["finish_type"] in assigned_from_apply_target_rooms),
+    )
+
+    not_assigned_stdType_items = go(
+        stdType_items_inRoom,
+        filter(lambda dic: dic["finish_type"] not in assigned_from_apply_target_rooms),
+    )
+
+    if mode == "loading":  # and not state.selected_stdType:
         state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
 
-        for dic in stdType_items_inRoom:
-            print(dic)
-            state.stdTypeTree_inRoom.insert("", "end", values=list(dic.values()))
-    # elif selected_building and selected_stdType:
-    #     state.stdTypeTree_inRoom.selection_set(state.selected_stdType)
-    #     pass
+        for dic in assigned_stdType_items:
+            # print(dic)
+            state.stdTypeTree_inRoom.insert(
+                "",
+                "end",
+                values=list(dic.values()),
+            )
+        for dic in not_assigned_stdType_items:
+            # print(dic)
+            state.stdTypeTree_inRoom.insert(
+                "",
+                "end",
+                values=list(dic.values()),
+                tag="highlight",
+            )
+    elif bd_comboBox.get():
+        state.stdTypeTree_inRoom.delete(*state.stdTypeTree_inRoom.get_children())
+
+        assigned_from_apply_target_forBD = go(
+            state.project_info["apply_target_rooms"],
+            filter(lambda dic: dic["bd_tag"] == bd_comboBox.get()),
+            map(lambda dic: dic["stdType_tag"]),
+            lambda x: set(x),
+            list,
+        )
+
+        assigned_stdType_items_forBD = go(
+            stdType_items_inRoom,
+            filter(lambda dic: dic["finish_type"] in assigned_from_apply_target_forBD),
+            list,
+        )
+        not_assigned_stdType_items_forBD = go(
+            stdType_items_inRoom,
+            filter(
+                lambda dic: dic["finish_type"] not in assigned_from_apply_target_forBD
+            ),
+            list,
+        )
+        for dic in assigned_stdType_items_forBD:
+            # print(dic)
+            state.stdTypeTree_inRoom.insert(
+                "",
+                "end",
+                values=list(dic.values()),
+            )
+        for dic in not_assigned_stdType_items_forBD:
+            # print(dic)
+            state.stdTypeTree_inRoom.insert(
+                "",
+                "end",
+                values=list(dic.values()),
+                tag="highlight",
+            )
+
+    state.stdTypeTree_inRoom.tag_configure(
+        "highlight", background="#e3e3e3"
+    )  # Light red background for highlight
 
 
 def update_combobox_data(state, combobox, data, mode=None, cat=None):

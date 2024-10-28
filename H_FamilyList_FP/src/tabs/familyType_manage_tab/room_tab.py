@@ -286,7 +286,7 @@ Floor, Skirt, Wall, Ceiling 으로 구분되어 있습니다.
         "Remark",
     ]
     state.common_headers = ["wmGrp"] + common_headers
-    state.common_widths = [120, 100, 30, 30, 800, 170, 100]
+    state.common_widths = [125, 95, 30, 30, 800, 170, 100]
     state.selected_stdType_name = tk.StringVar()
     state.selected_stdType_name.set("Selected Standard Type: ")
     selected_stdType_label = ttk.Label(

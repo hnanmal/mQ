@@ -38,32 +38,29 @@ def on_change_commonWM_sheet(event, state, sheet):
     else:
         state.project_info["common_items_info"].update({selected_class: wmBunches})
 
-    # ## 변경사항 전역 업데이트
-    # common_WM_values_atClass = go(
-    #     state.project_info["common_items_info"][selected_class],
-    #     filter(lambda x: x.get("wmGrp")),
-    # )
-    # cats = state.project_info["std_wm_assign_allCat"].keys()
+    ## 변경사항 전역 업데이트
+    common_WM_values_atClass = go(
+        state.project_info["common_items_info"][selected_class],
+        filter(lambda x: x.get("wmGrp")),
+        list,
+    )
 
-    # def update_stdType_wms(stdTypes_dic_inCat, common_item_dic):
-    #     for stdType, stdType_dics in stdTypes_dic_inCat:
-    #         for stdType_dic in stdType_dics:
-    #             if stdType_dic["wmGrp"] == common_item_dic["wmGrp"]:
-    #                 for stdType_dic_key in stdType_dic.keys():
-    #                     stdType_dic[stdType_dic_key] = common_item_dic[stdType_dic_key]
-    #     stdTypes_dic_inCat
-    #     return stdTypes_dic_inCat
+    def update_stdType_wms(std_wm_assign_allCat, common_WM_values_atClass):
+        state.logging_text_widget.write("변경사항 전역 업데이트 시작!")
+        for tab_name in std_wm_assign_allCat:
+            for stdType_name in std_wm_assign_allCat[tab_name]:
+                for wm_dic in std_wm_assign_allCat[tab_name][stdType_name]:
+                    for comm_dic in common_WM_values_atClass:
+                        if wm_dic["wmGrp"] in comm_dic["wmGrp"]:
+                            wm_dic["Unit"] = comm_dic["Unit"]
+                            wm_dic["Gauge Code"] = comm_dic["Gauge Code"]
+                            wm_dic["WM"] = comm_dic["WM"]
+                            wm_dic["Description"] = comm_dic["Description"]
+        state.logging_text_widget.write("변경사항 전역 업데이트 완료!")
 
-    # for cat in cats:
-    #     for common_item_dic in common_WM_values_atClass:
-    #         new_stdTypes_dic_inCat = []
-    #         for stdTypes_dic_inCat in state.project_info["std_wm_assign_allCat"][cat]:
-    #             print("!!update_stdType_wms")
-    #             new_stdTypes_dic_inCat.append(
-    #                 update_stdType_wms(stdTypes_dic_inCat, common_item_dic)
-    #             )
-    #         state.project_info["std_wm_assign_allCat"][cat] = new_stdTypes_dic_inCat
-    #         print(state.project_info["std_wm_assign_allCat"][cat])
+    update_stdType_wms(
+        state.project_info["std_wm_assign_allCat"], common_WM_values_atClass
+    )
 
 
 # Function to update the second cell dropdown (B1) based on the first cell selection
@@ -101,14 +98,14 @@ def update_second_cell_dropdown_allCat(event, state, sheet):
                 filter(lambda x: "Extra Heavy" in x["항목"]),
                 map(lambda x: x["입력값"]),
                 list,
-                lambda x: x[0],
+                lambda x: x[0] if len(x) > 0 else "",
             )
             extLight = go(
                 state.project_info["common_info"]["steel"],
                 filter(lambda x: "Extra Light" in x["항목"]),
                 map(lambda x: x["입력값"]),
                 list,
-                lambda x: x[0],
+                lambda x: x[0] if len(x) > 0 else "",
             )
             if "제작-Extra Heavy" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
                 desc_info = f"Material: (   )\nWeight≥( {extHeavy} )KG/M"

@@ -74,6 +74,7 @@ def create_familyType_manage_tab(notebook, state):
 
     create_room_tab(project_notebook, state)
     create_otherCat_tab(project_notebook, state, "Floors")
+    # create_otherCat_tab(project_notebook, state, "Roofs")
 
     # Create the "프로젝트 정보 입력" tab
     other_tab_names = [

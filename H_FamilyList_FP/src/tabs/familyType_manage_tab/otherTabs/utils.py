@@ -695,10 +695,12 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             if root_node["name"] == cat:
                 lv_5_items.extend(find_level_5_items(root_node))
         if state.project_info.get("std_types").get(tab_name):
-            pass
+            print(f"std_types 하위 {tab_name} 키 존재!")
         else:
-            state.project_info["std_types"] = {
-                tab_name: list(
+            print(f"std_types 하위 {tab_name} 키 미 존재! 키 신규 생성")
+            state.project_info["std_types"][tab_name] = []
+            state.project_info["std_types"][tab_name].append(
+                list(
                     map(
                         lambda x: {
                             "std_type": x["name"],
@@ -709,11 +711,15 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
                         lv_5_items,
                     )
                 )
-            }
+            )
+
         return lv_5_items
 
-    if not state.project_info.get("std_types"):
-        find_stdType_items_inCat(tab_name, state)
+    # if not state.project_info.get("std_types"):
+    #     find_stdType_items_inCat(tab_name, state)
+    # if not state.project_info["std_types"].get(tab_name):
+    #     find_stdType_items_inCat(tab_name, state)
+    find_stdType_items_inCat(tab_name, state)
 
     assigned_from_apply_target = go(
         state.project_info["apply_target_rvtTypes"][tab_name],
@@ -723,6 +729,7 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
     )
 
     stdType_items = state.project_info["std_types"][tab_name]
+
     assigned_stdType_items = go(
         stdType_items,
         filter(lambda dic: dic["std_type"] in assigned_from_apply_target),
@@ -739,14 +746,14 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
         )
 
         for dic in assigned_stdType_items:
-            print(dic)
+            # print(dic)
             state[tab_name]["stdTypeTree"].insert(
                 "",
                 "end",
                 values=list(dic.values()),
             )
         for dic in not_assigned_stdType_items:
-            print(dic)
+            # print(dic)
             state[tab_name]["stdTypeTree"].insert(
                 "",
                 "end",
@@ -777,14 +784,14 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             list,
         )
         for dic in assigned_stdType_items_forBD:
-            print(dic)
+            # print(dic)
             state[tab_name]["stdTypeTree"].insert(
                 "",
                 "end",
                 values=list(dic.values()),
             )
         for dic in not_assigned_stdType_items_forBD:
-            print(dic)
+            # print(dic)
             state[tab_name]["stdTypeTree"].insert(
                 "",
                 "end",
@@ -793,7 +800,7 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             )
 
     state[tab_name]["stdTypeTree"].tag_configure(
-        "highlight", background="#bababa"
+        "highlight", background="#e3e3e3"
     )  # Light red background for highlight
 
 

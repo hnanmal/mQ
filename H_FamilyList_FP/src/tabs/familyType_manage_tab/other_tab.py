@@ -292,7 +292,7 @@ def create_otherCat_tab(notebook, state, tab_name):
         "Remark",
     ]
     state[tab_name]["common_headers"] = ["wmGrp"] + common_headers
-    state[tab_name]["common_widths"] = [120, 100, 30, 30, 800, 170, 100]
+    state[tab_name]["common_widths"] = [125, 95, 30, 30, 800, 170, 100]
 
     selected_stdType_label = ttk.Label(
         section2,
