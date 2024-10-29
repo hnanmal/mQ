@@ -87,6 +87,9 @@ def load_project_info(
     update_combobox_data_other(state, loaded_data, "Floors")
     update_stdTypeTree_otherCat(None, state, "Floors", "loading")
 
+    update_combobox_data_other(state, loaded_data, "Roofs")
+    update_stdTypeTree_otherCat(None, state, "Roofs", "loading")
+
     print(state.selected_building)
     # if state.selected_building:
     #     state.bd_combobox_room.set(state.selected_building)

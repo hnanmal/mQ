@@ -6,6 +6,85 @@ from copy import copy
 from copy import deepcopy
 
 
+def on_right_click_stdTypetree_otherTab(event, state, tree, tab_name):
+    item = tree.identify_row(event.y)
+    column = tree.identify_column(event.x)
+    if item and column:
+        menu = generate_context_menu_otherTab(state, tree, item, column, tab_name)
+        menu.post(event.x_root, event.y_root)
+
+
+def generate_context_menu_otherTab(state, tree, item, column, tab_name):
+    menu = tk.Menu(tree, tearoff=0)
+    actions = {
+        "Edit": lambda: enable_tree_item_editing_otherTab(
+            state, tree, item, column, tab_name
+        ),
+        "Delete": lambda: del_stdType_allCat(state),
+        # Additional actions...
+    }
+
+    for label, command in actions.items():
+        menu.add_command(label=label, command=command)
+
+    return menu
+
+
+def enable_tree_item_editing_otherTab(state, tree, item, column, tab_name):
+    """Enable editing for the specified column of the treeview item."""
+    x, y, width, height = tree.bbox(item, column)
+    entry = tk.Entry(tree, width=width)
+
+    oldType_name = tree.item(item, "values")[0]
+    oldBd_tag = tree.item(item, "values")[1]
+
+    def save_edit(event, column):
+        new_value = entry.get()
+        tree.set(item, column=column, value=new_value)
+        entry.destroy()
+
+        if column == "#2":
+            for std_dic in state.project_info["std_types"][tab_name]:
+                if (
+                    std_dic["std_type"] == oldType_name
+                    and std_dic["building_tag"] == oldBd_tag
+                ):
+                    std_dic["std_type"] = new_value
+
+            ## 변한 키이름을 state.project_info["std_wm_assign"]에 연동
+            state.project_info["std_wm_assign_allCat"][tab_name][new_value] = (
+                state.project_info["std_wm_assign_allCat"].pop(oldType_name)
+            )
+
+            ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
+            for rvtType_dic in state.project_info["apply_target_rvtTypes"][tab_name]:
+                if rvtType_dic["stdType_tag"] == oldType_name:
+                    rvtType_dic["stdType_tag"] = new_value
+
+        elif column == "#3":
+            for std_dic in state.project_info["std_types"][tab_name]:
+                if (
+                    std_dic["std_type"] == oldType_name
+                    and std_dic["building_tag"] == oldBd_tag
+                ):
+                    std_dic["building_tag"] = new_value
+
+            # ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
+            # for room_dic in state.project_info["apply_target_rooms"]:
+            #     if room_dic["stdType_tag"] == oldType_name:
+            #         room_dic["bd_tag"] = new_value
+
+    # Get the current text in the cell
+    current_value = tree.item(item, "values")[int(column[1:]) - 1]
+
+    entry.insert(0, current_value)
+    entry.place(x=x, y=y, width=width, height=height)
+
+    entry.bind("<Return>", lambda e: save_edit(e, column))
+    entry.bind("<FocusOut>", lambda event: entry.destroy())
+    entry.focus()
+
+
 def update_unitCell_inRow(state, sheet, row_idx):
     [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
     if sheet.get_cell_data(row_idx, WM_col_idx):
@@ -116,6 +195,7 @@ def add_stdType_allCat(state, new_stdType_text, tab_name):
                 stdType_name = stdType.strip()
                 state.project_info["std_types"][tab_name].append(
                     {
+                        "parent_type": "",
                         "std_type": stdType_name,
                         "building_tag": "",
                         "cat_tag": tab_name,
@@ -218,7 +298,7 @@ def on_click_stdType_treeItem_allCat(
     state[tab_name]["selected_stdType"] = current_selected_stdType
 
     if current_selected_stdType.get("values"):
-        selected_type_name = current_selected_stdType.get("values")[0]
+        selected_type_name = current_selected_stdType.get("values")[1]
         if state.project_info["std_wm_assign_allCat"].get(tab_name):
             if state.project_info["std_wm_assign_allCat"][tab_name].get(
                 selected_type_name
@@ -318,10 +398,11 @@ def on_click_stdType_treeItem_allCat(
 def update_selected_calcType_allCat(
     event,
     state,
-    calc_comboBox,
+    # calc_comboBox,
     selected_calcType_sheetview,
     tab_name=None,
 ):
+    calc_comboBox = state[tab_name]["calc_comboBox"]
     if calc_comboBox.get():
         selected_calcType = calc_comboBox.get()
         state[tab_name]["selected_calcType_name"].set(
@@ -643,7 +724,7 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
     update_selected_calcType_allCat(
         event,
         state,
-        state[tab_name]["calc_comboBox"],
+        # state[tab_name]["calc_comboBox"],
         state[tab_name]["selected_calcType_sheetview"],
         tab_name=tab_name,
     )
@@ -690,19 +771,25 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             # print(level_5_items)
             return level_5_items
 
+        print("find_stdType_items_inCat 작동확인")
+
         lv_5_items = []
         for root_node in state.stdTypes_info:
             if root_node["name"] == cat:
                 lv_5_items.extend(find_level_5_items(root_node))
-        if state.project_info.get("std_types").get(tab_name):
+        # print(lv_5_items)
+
+        if state.project_info["std_types"].get(tab_name):
             print(f"std_types 하위 {tab_name} 키 존재!")
+            # print(state.project_info["std_types"][tab_name])
         else:
             print(f"std_types 하위 {tab_name} 키 미 존재! 키 신규 생성")
             state.project_info["std_types"][tab_name] = []
-            state.project_info["std_types"][tab_name].append(
+            state.project_info["std_types"][tab_name].extend(
                 list(
                     map(
                         lambda x: {
+                            "parent_type": "",
                             "std_type": x["name"],
                             "building_tag": "",
                             "cat_tag": tab_name,
@@ -712,6 +799,7 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
                     )
                 )
             )
+            # print(state.project_info["std_types"][tab_name])
 
         return lv_5_items
 
@@ -720,6 +808,9 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
     # if not state.project_info["std_types"].get(tab_name):
     #     find_stdType_items_inCat(tab_name, state)
     find_stdType_items_inCat(tab_name, state)
+
+    if not state.project_info["apply_target_rvtTypes"].get(tab_name):
+        state.project_info["apply_target_rvtTypes"][tab_name] = []
 
     assigned_from_apply_target = go(
         state.project_info["apply_target_rvtTypes"][tab_name],
@@ -765,13 +856,18 @@ def update_stdTypeTree_otherCat(event, state, tab_name, mode=None):
             *state[tab_name]["stdTypeTree"].get_children()
         )
 
-        assigned_from_apply_target_forBD = go(
-            state.project_info["apply_target_rvtTypes"][tab_name],
-            filter(lambda dic: dic["bd_tag"] == state[tab_name]["bd_combobox"].get()),
-            map(lambda dic: dic["stdType_tag"]),
-            lambda x: set(x),
-            list,
-        )
+        try:
+            assigned_from_apply_target_forBD = go(
+                state.project_info["apply_target_rvtTypes"][tab_name],
+                filter(
+                    lambda dic: dic["bd_tag"] == state[tab_name]["bd_combobox"].get()
+                ),
+                map(lambda dic: dic["stdType_tag"]),
+                lambda x: set(x),
+                list,
+            )
+        except:
+            assigned_from_apply_target_forBD = []
 
         assigned_stdType_items_forBD = go(
             stdType_items,

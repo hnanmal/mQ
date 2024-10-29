@@ -24,6 +24,7 @@ def handle_tab_click(event, notebook, state):
         state, state.calc_comboBox_room, state.project_info, "calc", "Room"
     )
     update_combobox_data_other(state, state.project_info, "Floors")
+    update_combobox_data_other(state, state.project_info, "Roofs")
 
     # Set the clicked tab in the state (optional)
     state.set_current_tab(clicked_tab_name)

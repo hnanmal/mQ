@@ -5,12 +5,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.tabs.familyType_manage_tab.utils import (
-    add_to_appliedRoom_data,
     create_tksheet,
-    on_right_click_stdTypetree_roomTab,
-    remove_from_appliedRoom_data,
     save_project_roomType_info,
-    update_stdTypeTree_inRoom,
 )
 
 from src.tabs.input_common_tab.utils import create_defaultTreeview
@@ -22,6 +18,7 @@ from src.tabs.familyType_manage_tab.otherTabs.utils import (
     create_tksheet_stdTypeWM,
     del_stdType_allCat,
     on_click_stdType_treeItem_allCat,
+    on_right_click_stdTypetree_otherTab,
     open_calcType_view_allCat,
     open_teamSTDtree_view_allCat,
     remove_from_appliedRvtType_data,
@@ -196,17 +193,17 @@ def create_otherCat_tab(notebook, state, tab_name):
 * !! Revit 타입을 스탠다드 항목에 할당할때, 반드시 산출 타입을 확인해 주세요 !!
         """,
     )
+    state[tab_name]["calc_comboBox"] = calc_comboBox
     calc_comboBox.bind(
         "<<ComboboxSelected>>",
         lambda e: update_selected_calcType_allCat(
             e,
             state,
-            calc_comboBox,
+            # calc_comboBox,
             selected_calcType_sheetview,
             tab_name=tab_name,
         ),
     )
-    state[tab_name]["calc_comboBox"] = calc_comboBox
 
     # bigArea2 세부 구성
     ## section1 세부 구성
@@ -237,7 +234,7 @@ def create_otherCat_tab(notebook, state, tab_name):
     stdTypes_treeview = create_defaultTreeview(
         state,
         section1,
-        ["stdTypes", "building_tag", "cat_tag", "wmGrps"],
+        ["parent", "stdTypes", "building_tag", "cat_tag", "wmGrps"],
         height=10,
     )
     stdTypes_treeview.config(
@@ -250,13 +247,19 @@ def create_otherCat_tab(notebook, state, tab_name):
     stdTypes_treeview.bind(
         "<<TreeviewSelect>>",
         lambda e: on_click_stdType_treeItem_allCat(
-            e, state, stdTypes_treeview, tab_name=tab_name
+            e,
+            state,
+            stdTypes_treeview,
+            tab_name=tab_name,
         ),
     )
     stdTypes_treeview.bind(
         "<Button-3>",
-        lambda event: on_right_click_stdTypetree_roomTab(
-            event, state, stdTypes_treeview
+        lambda event: on_right_click_stdTypetree_otherTab(
+            event,
+            state,
+            stdTypes_treeview,
+            tab_name=tab_name,
         ),
     )
 
@@ -461,31 +464,6 @@ def create_otherCat_tab(notebook, state, tab_name):
 
     revit_famType_input = tk.Text(apply_frame, height=100, width=100)
     revit_famType_input.pack(padx=10, pady=10, anchor="w")
-
-    # notApplied_famType_sheetview = create_tksheet(
-    #     state,
-    #     apply_frame,
-    #     ["no", "rooms", "stdType_tag", "bd_tag"],
-    #     width=700,
-    #     height=150,
-    #     mode="nonAppFamtype",
-    # )
-    # notApplied_famType_sheetview.pack(padx=10, pady=10, anchor="w")
-    # state[tab_name]["notApplied_famType_sheetview"] = notApplied_famType_sheetview
-    # notApplied_famType_sheetview.extra_bindings(
-    #     [
-    #         (
-    #             "end_edit_cell",
-    #             # lambda e: update_second_cell_dropdown(e, state, sheet),
-    #             lambda e: add_room_to_apply_target_rooms(
-    #                 e, state, notApplied_famType_sheetview
-    #             ),
-    #         ),
-    #     ]
-    # )
-    # notApplied_famType_sheetview.set_options(header_bg="#ededed")
-    # notApplied_famType_sheetview.set_options(index_bg="#ededed")
-    # notApplied_famType_sheetview.set_options(table_bg="#f7f7f7")
 
     bd_comboBox.bind(
         "<<ComboboxSelected>>",
