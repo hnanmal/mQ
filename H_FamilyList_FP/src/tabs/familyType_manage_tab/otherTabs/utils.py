@@ -17,10 +17,11 @@ def on_right_click_stdTypetree_otherTab(event, state, tree, tab_name):
 def generate_context_menu_otherTab(state, tree, item, column, tab_name):
     menu = tk.Menu(tree, tearoff=0)
     actions = {
+        "Create SubType": lambda: create_subStdType_allCat(state, tab_name),
         "Edit": lambda: enable_tree_item_editing_otherTab(
             state, tree, item, column, tab_name
         ),
-        "Delete": lambda: del_stdType_allCat(state),
+        "Delete": lambda: del_stdType_allCat(state, tab_name),
         # Additional actions...
     }
 
@@ -35,8 +36,8 @@ def enable_tree_item_editing_otherTab(state, tree, item, column, tab_name):
     x, y, width, height = tree.bbox(item, column)
     entry = tk.Entry(tree, width=width)
 
-    oldType_name = tree.item(item, "values")[0]
-    oldBd_tag = tree.item(item, "values")[1]
+    oldType_name = tree.item(item, "values")[1]
+    oldBd_tag = tree.item(item, "values")[2]
 
     def save_edit(event, column):
         new_value = entry.get()
@@ -51,9 +52,9 @@ def enable_tree_item_editing_otherTab(state, tree, item, column, tab_name):
                 ):
                     std_dic["std_type"] = new_value
 
-            ## 변한 키이름을 state.project_info["std_wm_assign"]에 연동
+            ## 변한 키이름을 state.project_info["std_wm_assign_allCat"][tab_name]에 연동
             state.project_info["std_wm_assign_allCat"][tab_name][new_value] = (
-                state.project_info["std_wm_assign_allCat"].pop(oldType_name)
+                state.project_info["std_wm_assign_allCat"][tab_name].pop(oldType_name)
             )
 
             ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
@@ -69,11 +70,6 @@ def enable_tree_item_editing_otherTab(state, tree, item, column, tab_name):
                 ):
                     std_dic["building_tag"] = new_value
 
-            # ## 변한 키이름을 state.project_info["apply_target_rooms"]에 연동
-            # for room_dic in state.project_info["apply_target_rooms"]:
-            #     if room_dic["stdType_tag"] == oldType_name:
-            #         room_dic["bd_tag"] = new_value
-
     # Get the current text in the cell
     current_value = tree.item(item, "values")[int(column[1:]) - 1]
 
@@ -83,6 +79,76 @@ def enable_tree_item_editing_otherTab(state, tree, item, column, tab_name):
     entry.bind("<Return>", lambda e: save_edit(e, column))
     entry.bind("<FocusOut>", lambda event: entry.destroy())
     entry.focus()
+
+
+def search_all_tree_items(tree, parent="", col_idx=0, value_to_find=""):
+    matching_items = []
+
+    # Iterate over all children of the given parent item
+    children = tree.get_children(parent)
+    for child in children:
+        # Get the values for each item
+        item_values = tree.item(child, "values")
+        # Check if the value in "Column 2" matches the search value
+        if item_values[col_idx] == value_to_find:
+            matching_items.append(item_values)
+
+        # Recursively search children of the current item
+        matching_items.extend(
+            search_all_tree_items(
+                tree, child, col_idx=col_idx, value_to_find=value_to_find
+            )
+        )
+
+    return matching_items
+
+
+def find_tree_items(tree, col_idx=0, value_to_find=""):
+    matches = search_all_tree_items(tree, col_idx=col_idx, value_to_find=value_to_find)
+    print("Items with 'x' in Column 2:")
+    for match in matches:
+        print(match)
+    # return matches
+
+
+def create_subStdType_allCat(state, tab_name):
+    stdType_tree = state[tab_name]["stdTypeTree"]
+    selected_stdType = stdType_tree.selection()[0]
+    selected_stdType_name = stdType_tree.item(selected_stdType, "values")[1]
+
+    cnt = len(
+        search_all_tree_items(
+            stdType_tree, col_idx=0, value_to_find=selected_stdType_name
+        )
+    )
+
+    subType_name = selected_stdType_name + f"_copy{cnt+1}"
+
+    parent_wmGrps = go(
+        state.project_info["std_types"][tab_name],
+        filter(lambda x: x["std_type"] == selected_stdType_name),
+        map(lambda x: x["wmGrps"]),
+        list,
+    )[0]
+
+    state.project_info["std_types"][tab_name].append(
+        {
+            "parent_type": selected_stdType_name,
+            "std_type": subType_name,
+            "building_tag": "",
+            "cat_tag": tab_name,
+            "wmGrps": parent_wmGrps,
+        }
+    )
+
+    stdType_tree.insert(
+        selected_stdType,
+        "end",
+        values=(selected_stdType_name, subType_name, "", tab_name, parent_wmGrps),
+        # open=True,
+    )
+    stdType_tree.item(selected_stdType, open=True)
+    pass
 
 
 def update_unitCell_inRow(state, sheet, row_idx):
@@ -112,7 +178,11 @@ def update_descriptionCell_inRow(state, sheet, row_idx):
         sheet.set_cell_data(row_idx, desc_col_idx, desc_info)
 
 
-def fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx):
+def fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name):
+    stdType_tree = state[tab_name]["stdTypeTree"]
+    selected_stdType = stdType_tree.selection()[0]
+    selected_stdType_name = stdType_tree.item(selected_stdType, "values")[1]
+
     if "공통|" in sheet.get_cell_data(row_idx, wmGrp_col_idx):
         common_WM_values = list(
             chain(*state.project_info["common_items_info"].values())
@@ -131,14 +201,26 @@ def fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx):
         # print(tgt_common_WM_value)
         for col_idx, x in enumerate(tgt_common_WM_value):
             if col_idx != 1:  ## 산출수식 초기화 방지
-                sheet.set_cell_data(row_idx, col_idx, x)
-                sheet.del_dropdown(row_idx, WM_col_idx)  ## 공통 항목은 드롭다운 제거
+                if (
+                    stdType_tree.item(selected_stdType, "values")[0] == ""
+                ):  # sub_stdType 처리
+                    sheet.set_cell_data(row_idx, col_idx, x)
+                    sheet.del_dropdown(
+                        row_idx, WM_col_idx
+                    )  ## 공통 항목은 드롭다운 제거
+                else:
+                    pass
     else:
         pass
 
 
-def update_row(state, sheet, row_idx):
+def update_row(state, sheet, row_idx, tab_name=None):
     [WM_col_idx, unit_col_idx, wmGrp_col_idx, desc_col_idx] = state.idxes
+
+    stdType_tree = state[tab_name]["stdTypeTree"]
+    selected_stdType = stdType_tree.selection()[0]
+    selected_stdType_name = stdType_tree.item(selected_stdType, "values")[1]
+
     selected_value = sheet.get_cell_data(row_idx, wmGrp_col_idx)
     # print(type(selected_value))
     # print(selected_value)
@@ -166,23 +248,23 @@ def update_row(state, sheet, row_idx):
         sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
         update_unitCell_inRow(state, sheet, row_idx)
         update_descriptionCell_inRow(state, sheet, row_idx)
-        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name)
     elif current_WM_value == second_dropdowns_obj["matched_items"][0]:
         sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
         update_descriptionCell_inRow(state, sheet, row_idx)
-        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name)
     elif current_WM_value != second_dropdowns_obj["matched_items"][0]:
         sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
         sheet.set_cell_data(row_idx, WM_col_idx, current_WM_value)
         update_descriptionCell_inRow(state, sheet, row_idx)
-        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name)
     elif current_WM_value not in second_dropdowns_obj["matched_items"]:
         sheet.create_dropdown(row_idx, WM_col_idx, values=second_dropdowns)
         update_descriptionCell_inRow(state, sheet, row_idx)
-        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name)
     else:
-        update_descriptionCell_inRow(row_idx)
-        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx)
+        update_descriptionCell_inRow(state, sheet, row_idx)
+        fill_wm(state, sheet, row_idx, wmGrp_col_idx, WM_col_idx, tab_name)
         pass
 
 
@@ -217,7 +299,7 @@ def del_stdType_allCat(state, tab_name):
     for selected_stdType in selected_stdTypes:
         selected_stdType_name = state[tab_name]["stdTypeTree"].item(
             selected_stdType, "values"
-        )[0]
+        )[1]
         state.logging_text_widget.write(
             f"remove [ {selected_stdType_name} ] Standard Type.\n"
         )
@@ -251,7 +333,7 @@ def update_selected_stdType_label_allCat(
     if stdTypes_treeview.focus():
         selected_type = stdTypes_treeview.item(stdTypes_treeview.focus())
         state[tab_name]["selected_stdType"] = selected_type
-        selected_type_name = selected_type.get("values")[0]
+        selected_type_name = selected_type.get("values")[1]
 
         state[tab_name]["selected_stdType_name"].set(
             "Selected Standard Type: " + selected_type_name
@@ -322,7 +404,7 @@ def on_click_stdType_treeItem_allCat(
         sheet.set_sheet_data(data)
         sheet.set_column_widths(state[tab_name]["common_widths"])
         for row_idx in list(range(len(data))):
-            update_row(state, sheet, row_idx)
+            update_row(state, sheet, row_idx, tab_name=tab_name)
 
     if not state.project_info.get("std_wm_assign_allCat"):
         state.project_info["std_wm_assign_allCat"] = {}
@@ -476,11 +558,11 @@ def open_calcType_view_allCat(event, state, tab_name):
 
 
 # Function to update the second cell dropdown (B1) based on the first cell selection
-def update_second_cell_dropdown_allCat(event, state, sheet):
+def update_second_cell_dropdown_allCat(event, state, sheet, tab_name=None):
     all_row_index = list(range(sheet.get_total_rows()))
 
     for idx in all_row_index:
-        update_row(state, sheet, idx)
+        update_row(state, sheet, idx, tab_name=tab_name)
         # update_unitCell_inRow(idx)
 
 
@@ -609,7 +691,7 @@ def create_tksheet_stdTypeWM(
             ),
             (
                 "cell_select",
-                lambda e: update_second_cell_dropdown_allCat(e, state, sheet),
+                lambda e: update_second_cell_dropdown_allCat(e, state, sheet, tab_name),
             ),
         ]
     )
@@ -661,7 +743,7 @@ def create_tksheet_revitWM(
             ),
             (
                 "cell_select",
-                lambda e: update_second_cell_dropdown_allCat(e, state, sheet),
+                lambda e: update_second_cell_dropdown_allCat(e, state, sheet, tab_name),
             ),
         ]
     )

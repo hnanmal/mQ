@@ -52,6 +52,7 @@ def create_otherCat_tab(notebook, state, tab_name):
 
     style.configure(
         "Custom.Treeview",
+        indent=100,
         background="white",  # Normal background
         foreground="black",  # Normal text
         fieldbackground="white",  # Entry box background
@@ -65,6 +66,7 @@ def create_otherCat_tab(notebook, state, tab_name):
         background=[("selected", bgcolorForApply)],  # Background when selected
         foreground=[("selected", "blue")],  # Text color when selected
         highlightcolor=[("selected", "darkblue")],
+        # indent=100,
     )
 
     tab = ttk.Frame(notebook)
@@ -234,7 +236,7 @@ def create_otherCat_tab(notebook, state, tab_name):
     stdTypes_treeview = create_defaultTreeview(
         state,
         section1,
-        ["parent", "stdTypes", "building_tag", "cat_tag", "wmGrps"],
+        ["#", "stdTypes", "building_tag", "cat_tag", "wmGrps"],
         height=10,
     )
     stdTypes_treeview.config(
@@ -242,6 +244,7 @@ def create_otherCat_tab(notebook, state, tab_name):
         selectmode="browse",
     )
     stdTypes_treeview.column("stdTypes", width=200)
+    # stdTypes_treeview.column("#", width=0, stretch=tk.NO)
     state[tab_name]["stdTypeTree"] = stdTypes_treeview
 
     stdTypes_treeview.bind(
