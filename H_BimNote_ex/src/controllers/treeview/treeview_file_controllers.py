@@ -14,7 +14,7 @@ def save_treeview(state, tree):
     )
     state.stdType_info = tree
     if save_path:
-        tree_data = extract_treeview_data(tree)
+        tree_data = extract_treeview_data(tree, heads=state.stdTypeTree_heads)
         save_json_data(save_path, tree_data)
 
 
@@ -25,7 +25,7 @@ def load_treeview(state, tree):
         new_data = load_json_data(load_path)
         if new_data:
             state.stdType_info = tree
-            populate_treeview(tree, new_data)
+            populate_treeview(tree, new_data, heads=state.stdTypeTree_heads)
 
-    logging_text_widget = setup_logging_frame(state.root)
-    initialize_app(logging_text_widget)
+    # logging_text_widget = setup_logging_frame(state.root)
+    # initialize_app(logging_text_widget)

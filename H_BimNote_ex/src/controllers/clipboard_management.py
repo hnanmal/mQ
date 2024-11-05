@@ -11,7 +11,9 @@ def copy_to_clipboard(tree, selected_items, state):
     clipboard_data = []  # 리스트로 초기화
     for item_id in selected_items:
         try:
-            item_data = extract_treeview_data(tree, item_id)  # 개별 아이템 처리
+            item_data = extract_treeview_data(
+                tree, item_id, state.stdTypeTree_heads
+            )  # 개별 아이템 처리
             # item_data = tree.item(item_id)  # 개별 아이템 처리
             print(f"Extracted item data: {item_data}")
             clipboard_data.append(item_data)
@@ -27,15 +29,15 @@ def copy_to_clipboard(tree, selected_items, state):
         print("No valid items to copy.")
 
 
-def paste_from_clipboard(tree, target_item, clipboard_data):
+def paste_from_clipboard(state, tree, target_item, clipboard_data):
     # state.set_clipboard_data(clipboard_data)
     """클립보드에서 데이터를 붙여넣음."""
     if clipboard_data:
-        paste_treeview_items(tree, target_item, clipboard_data)
+        paste_treeview_items(state, tree, target_item, clipboard_data)
         print(f"Pasted items: {clipboard_data}")  # 디버깅 출력
 
 
-def paste_external_data(tree, target_items, paste_to):
+def paste_external_data(tree, target_items, paste_to, heads):
     clipboard_text = tk.Tk().clipboard_get()
     clipboard_lines = clipboard_text.splitlines()
 
@@ -43,8 +45,11 @@ def paste_external_data(tree, target_items, paste_to):
         if i >= len(clipboard_lines):
             break
         current_values = list(tree.item(item, "values"))
-        if paste_to == "name":
-            current_values[0] = clipboard_lines[i]
-        elif paste_to == "description":
-            current_values[1] = clipboard_lines[i]
+        # if paste_to == "name":
+        #     current_values[0] = clipboard_lines[i]
+        # elif paste_to == "description":
+        #     current_values[1] = clipboard_lines[i]
+        for idx, head in enumerate(heads):
+            if head == paste_to:
+                current_values[idx] = clipboard_lines[i]
         tree.item(item, values=tuple(current_values))

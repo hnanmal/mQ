@@ -61,9 +61,9 @@ def swap_items(tree, item1, item2):
     renumber_treeview_items(tree, parent)
 
 
-def insert_item_with_indentation(tree, parent, item_data, index):
+def insert_item_with_indentation(state, tree, parent, item_data, index):
     """Insert an item with proper indentation and styling based on its level."""
-
+    heads = state.stdTypeTree_head
     # item_data 디버깅 출력
     print(f"Inserting item_data: {item_data}, type: {type(item_data)}")
 
@@ -90,13 +90,13 @@ def insert_item_with_indentation(tree, parent, item_data, index):
         parent,
         index,
         text=item_data["number"],
-        values=(indented_name, item_data["description"]),
+        values=[indented_name].extend(item_data.get(head, "") for head in heads),
         tags=(tag,),
     )
 
     # Recursively insert any children
     for child in item_data.get("children", []):
-        insert_item_with_indentation(tree, new_item, child, "end")
+        insert_item_with_indentation(state, tree, new_item, child, "end")
 
     # Force a refresh to apply styles immediately
     tree.update_idletasks()
@@ -104,17 +104,32 @@ def insert_item_with_indentation(tree, parent, item_data, index):
     return new_item
 
 
-def extract_treeview_data(tree, item_id=None):
+def extract_treeview_data(tree, item_id=None, heads=None):
     """Extract data from the Treeview to save in JSON format."""
+
+    if heads:
+        heads = heads
+    else:
+        heads = [tree.heading(col, "text") for col in tree["columns"]]
 
     def extract_items(item_id):
         item_values = tree.item(item_id, "values")
+        print(item_values)
         item_data = {
-            "number": tree.item(item_id, "text"),  # Save the number
-            "name": item_values[0].strip(),  # Strip any indentation before saving
-            "description": item_values[1],  # Save the description as is
-            # "children": [],
+            "number": tree.item(item_id, "text"),
+            "children": [],
         }
+        for idx, head in enumerate(heads):
+            if idx == 0:
+                item_data[head] = item_values[0].strip()
+            else:
+                item_data[head] = item_values[idx]
+        # item_data = {
+        #     "number": tree.item(item_id, "text"),  # Save the number
+        #     "name": item_values[0].strip(),  # Strip any indentation before saving
+        #     "description": item_values[1],  # Save the description as is
+        #     # "children": [],
+        # }
         children = tree.get_children(item_id)
         if children:
             item_data["children"] = [extract_items(child) for child in children]
@@ -128,17 +143,17 @@ def extract_treeview_data(tree, item_id=None):
         return [extract_items(item) for item in root_items]
 
 
-def copy_treeview_items(tree, selected_items):
+def copy_treeview_items(state, tree, selected_items):
     """Copy selected items and their children."""
     copied_items = []
     for item in selected_items:
         # item_data = extract_treeview_data(tree, item)
-        item_data = extract_treeview_data(tree, item)
+        item_data = extract_treeview_data(tree, item, heads=state.stdTypeTree_heads)
         copied_items.append(item_data)
     return copied_items
 
 
-def paste_treeview_items(tree, target_item, copied_items):
+def paste_treeview_items(state, tree, target_item, copied_items):
     """Paste copied items as children of the target item."""
     print(f"Pasting items to target: {target_item}")  # 디버깅 로그 추가
     for item_data in copied_items:
@@ -147,11 +162,11 @@ def paste_treeview_items(tree, target_item, copied_items):
             # f"Inserting item {item_data['name']} under {target_item}"
             f"item_data: {item_data}, type: {type(item_data)}"
         )  # 디버깅 로그 추가
-        insert_item_with_indentation(tree, target_item, item_data, "end")
+        insert_item_with_indentation(state, tree, target_item, item_data, "end")
     renumber_treeview_items(tree, target_item)
 
 
-def add_item(tree, state):
+def add_item(tree, state, heads=None):
     # from src.controllers.event_controllers import dispatch_event
 
     """Add a new item to the tree view with proper indentation based on its level."""
@@ -176,10 +191,14 @@ def add_item(tree, state):
 
     # Apply indentation based on the level
     indented_name = "  " * (level + 1) + new_item_text
-
+    values_ = [indented_name]
+    values_.extend("" for head in heads[1:])
     # Insert the new item under the selected parent with the indented name
     new_item = tree.insert(
-        parent, "end", values=(indented_name, "New Description"), tags=(tag,)
+        parent,
+        "end",
+        values=values_,
+        tags=(tag,),
     )
 
     # Apply styles after adding the item
@@ -239,7 +258,7 @@ def remove_item(tree, state, item=None):
 
     for item_id in items_to_delete:
         parent_id = tree.parent(item_id)
-        item_data = extract_treeview_data(tree, item_id)
+        item_data = extract_treeview_data(tree, item_id, heads=state.stdTypeTree_heads)
 
         # Get the index of the item among its siblings
         siblings = tree.get_children(parent_id)
@@ -279,7 +298,9 @@ def undo_operation(state, tree):
             last_operation[2],
             last_operation[3],
         )
-        new_item = insert_item_with_indentation(tree, parent_id, item_data, item_index)
+        new_item = insert_item_with_indentation(
+            state, tree, parent_id, item_data, item_index
+        )
 
         # Reapply the tags
         item_level = calculate_level(tree, new_item)
@@ -292,7 +313,7 @@ def undo_operation(state, tree):
         for operation in undo_operations:
             parent_id, item_data, item_index = operation[1], operation[2], operation[3]
             new_item = insert_item_with_indentation(
-                tree, parent_id, item_data, item_index
+                state, tree, parent_id, item_data, item_index
             )
 
             # Reapply the tags

@@ -5,7 +5,7 @@ from src.controllers.clipboard_management import (
     paste_from_clipboard,
 )
 from src.views.context_menu import generate_context_menu
-from src.views.dialogs import ask_paste_location
+from src.views.dialogs import ask_paste_location_stdTypeTree
 from src.views.styles import configure_tree_styles
 from src.views.treeview.tree_tag_manage import determine_tag_by_level
 
@@ -56,16 +56,18 @@ def handle_paste(tree, event, state):
             print("Pasting within TreeView")  # 디버깅 라인
             # paste_from_clipboard(tree, selected_items[0])
             for target_item in selected_items:
-                paste_from_clipboard(tree, selected_items, clipboard_data)
+                paste_from_clipboard(state, tree, selected_items, clipboard_data)
         else:
             # 외부 소스에서 데이터 붙여넣기
             print("Pasting from external source")  # 디버깅 라인
             paste_target_items = selected_items
-            paste_to = (
-                ask_paste_location()
+            paste_to = ask_paste_location_stdTypeTree(
+                state, state.stdTypeTree_heads
             )  # 붙여넣기 위치 선택 (Name 또는 Description)
             if paste_to:
-                paste_external_data(tree, paste_target_items, paste_to)
+                paste_external_data(
+                    tree, paste_target_items, paste_to, state.stdTypeTree_heads
+                )
 
 
 search_state = {"last_search": None, "last_match": None}
@@ -122,7 +124,7 @@ def search_treeview(tree, search_text):
     print("No more matches found.")
 
 
-def populate_treeview(tree, data, parent="", level=0):
+def populate_treeview(tree, data, parent="", level=0, heads=None):
     """Populate the Treeview widget with JSON data."""
 
     def insert_items(parent, items, level):
@@ -131,12 +133,15 @@ def populate_treeview(tree, data, parent="", level=0):
             tag = determine_tag_by_level(level)
 
             # Add indentation based on the level
-            indented_name = "  " * level + item["name"]
+            indented_name = "  " * level + item["StdType"]
+            values_ = [indented_name]
+            values_.extend("" for head in heads[1:])
+            print(values_)
             node_id = tree.insert(
                 parent,
                 "end",
                 text=item["number"],
-                values=(indented_name, item.get("description", "")),
+                values=values_,
                 tags=(tag,),
             )
             children = item.get("children", [])

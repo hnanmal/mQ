@@ -47,17 +47,7 @@ def create_family_standard_tab(root, notebook, state, mode=None):
     tree = create_treeview(
         tab,
         state,
-        heads=[
-            "No",
-            "StdType",
-            "Description",
-            "G-WM 1",
-            "G-WM 2",
-            "G-WM 3",
-            "G-WM 4",
-            "S-WM 1",
-            "표준산출식",
-        ],
+        heads=state.stdTypeTree_heads,
     )
 
     # # Bind dragging events
@@ -113,7 +103,9 @@ def create_family_standard_tab(root, notebook, state, mode=None):
 
     # Second row: Add Item, Remove Item, and Undo buttons
     add_button = ttk.Button(
-        button_frame, text="Add Item", command=lambda: add_item(tree, state)
+        button_frame,
+        text="Add Item",
+        command=lambda: add_item(tree, state, state.stdTypeTree_heads),
     )
     remove_button = ttk.Button(
         button_frame, text="Remove Item", command=lambda: remove_item(tree, state)
@@ -133,7 +125,7 @@ def create_family_standard_tab(root, notebook, state, mode=None):
         ## state 에 defaultTree 저장
         state.stdTypes_info = json_data
 
-        populate_treeview(tree, json_data)
+        populate_treeview(tree, json_data, heads=state.stdTypeTree_heads)
         tree.update_idletasks()
 
     # Automatically expand the tree to level 5

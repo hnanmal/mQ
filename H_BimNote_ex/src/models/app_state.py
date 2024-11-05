@@ -1,20 +1,6 @@
-GWM_headers = [
-    "G-WM",
-    "ITEM",
-    "WM_code",
-    "Work Master",
-    "Spec",
-    "Unit",
-]
-
-
 class AppState:
     def __init__(self, logging_text_widget):
-        self._observers = []
         self._state = {}
-
-        self.GWM_headers = GWM_headers
-
         self.current_tab = None
         self.previous_tab = None  # Track the previous tab
         self.config = None
@@ -24,22 +10,6 @@ class AppState:
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
         self.project_info = None  # Loaded project data
         self.undo_stack = []
-
-    ################### 옵저버 관련 #################################
-    def add_observer(self, observer):
-        if callable(observer) and observer not in self._observers:
-            self._observers.append(observer)
-
-    def notify_observers(self):
-        for observer in self._observers:
-            observer(self)  # 각 옵저버 함수 호출 시 상태 객체 전달
-
-    # 상태 업데이트 함수
-    def update_project_info(self, new_data):
-        self.project_info.update(new_data)
-        self.notify_observers()
-
-    ################### 옵저버 관련 #################################
 
     def __getitem__(self, key):
         return self._state.get(key)

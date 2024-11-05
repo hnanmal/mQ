@@ -44,11 +44,7 @@ def create_treeview(parent, state, heads=None):
             xscrollcommand=h_scroll.set,
         )
         for idx, head in enumerate(heads):
-            # tree.heading(idx, text=head, anchor="w")
-            if idx == 0:
-                pass
-            else:
-                tree.heading(idx, text=head, anchor="w")
+            tree.heading(idx, text=head, anchor="w")
     else:
         tree = ttk.Treeview(
             tree_frame,
