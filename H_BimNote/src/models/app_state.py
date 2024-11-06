@@ -1,18 +1,21 @@
+from src.models.observer_manager import ObserverManager
+
+
 GWM_headers = [
+    "분류",
     "G-WM",
     "ITEM",
-    "WM_code",
-    "Work Master",
-    "Spec",
-    "Unit",
+    # "WM_code",
+    # "Work Master",
+    # "Spec",
+    # "Unit",
 ]
 
 
 class AppState:
     def __init__(self, logging_text_widget):
-        self._observers = []
-        self._state = {}
-
+        self._state = {}  ## 필요 없으면 나중에 삭제
+        self.observer_manager = ObserverManager()
         self.GWM_headers = GWM_headers
 
         self.current_tab = None
@@ -22,22 +25,25 @@ class AppState:
         self.lock_status = {}
         self.logging_text_widget = logging_text_widget
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
-        self.project_info = None  # Loaded project data
+        # self.project_info = None  # Loaded project data
+        self.project_info = {}
         self.undo_stack = []
 
     ################### 옵저버 관련 #################################
-    def add_observer(self, observer):
-        if callable(observer) and observer not in self._observers:
-            self._observers.append(observer)
+    # 상태 업데이트 함수
+    def update_S_GWM_data(self, new_data):
+        print("update_sheet_data_start")
 
-    def notify_observers(self):
-        for observer in self._observers:
-            observer(self)  # 각 옵저버 함수 호출 시 상태 객체 전달
+        # self.project_info["GWM"] = new_data
+        self.project_info.update({"S-GWM": new_data})
+        self.observer_manager.notify_observers(self)
+
+        print("update_sheet_data_end")
 
     # 상태 업데이트 함수
     def update_project_info(self, new_data):
         self.project_info.update(new_data)
-        self.notify_observers()
+        self.observer_manager.notify_observers(self)
 
     ################### 옵저버 관련 #################################
 

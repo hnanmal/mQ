@@ -1,6 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, simpledialog, filedialog, Menu
+import json
 
+from src.core.file_utils import save_to_json
 from src.models.app_state import AppState
 from src.views.logging_utils import setup_logging_frame
 
@@ -43,14 +45,28 @@ def define_styles():
 def initialize_app(root):
     logging_text_widget = setup_logging_frame(root)
     state = AppState(logging_text_widget)
-    state.add_observer(root)
     state.root = root
+
+    state.defaultextension = ".bnote"
+    state.filetypes = [("BNOTE files", "*.bnote")]
 
     root.title("H_BimNote")
     root.geometry("1400x900+100+100")
     root.state("zoomed")
 
     define_styles()
+
+    menubar = Menu(root)
+    root.config(menu=menubar)
+
+    # 파일 메뉴 추가
+    file_menu = Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="File", menu=file_menu)
+    file_menu.add_command(
+        label="Save to JSON", command=lambda: save_to_json(state)
+    )  # save_to_json)
+    file_menu.add_separator()
+    file_menu.add_command(label="Exit", command=root.quit)
 
     paned_window = tk.PanedWindow(
         root,

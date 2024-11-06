@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.controllers.tksheet.sheet_utils import on_paste_cells, on_sheet_data_change
 from src.views.tksheet.sheet_utils import create_tksheet
 
 
@@ -37,16 +38,36 @@ def create_wmGrp_tab(state, subtab_notebook):
         section1,
         headers=state.GWM_headers,
         data=[
-            [1, 2],
-            [1, 2],
+            ["", ""],
         ],
+        # * 100,
         tab_name=None,
         height=2000,
         width=600,
         mode=None,
     )
-
+    GWM_sheet.kind = "GWM"
     GWM_sheet.pack(padx=5, pady=2, anchor="w")
+
+    # tksheet의 셀 데이터 변경 이벤트 바인딩
+    GWM_sheet.extra_bindings(
+        [
+            ("end_edit_cell", lambda e: on_sheet_data_change(e, state, GWM_sheet)),
+            ("begin_paste", lambda e: on_paste_cells(e, state, GWM_sheet)),
+            ("end_paste", lambda e: on_sheet_data_change(e, state, GWM_sheet)),
+        ]
+    )
+
+    def update_sheet(e, state, sheet):
+        # 상태 변경 시 tksheet를 업데이트
+        sheet.set_sheet_data(
+            state.project_info["GWM"],
+            # reset_col_positions=True,
+            # reset_row_positions=True,
+        )
+
+    # 옵저버 함수 등록
+    state.observer_manager.add_observer(lambda e: update_sheet(e, state, GWM_sheet))
 
     # Place tksheet in G-WM tab
     sheet2 = create_tksheet(
