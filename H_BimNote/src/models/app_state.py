@@ -26,6 +26,7 @@ class AppState:
         self.logging_text_widget = logging_text_widget
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
         # self.project_info = None  # Loaded project data
+        self.team_std_info = {}
         self.project_info = {}
         self.undo_stack = []
 
@@ -35,10 +36,15 @@ class AppState:
         print("update_sheet_data_start")
 
         # self.project_info["GWM"] = new_data
-        self.project_info.update({"S-GWM": new_data})
+        self.team_std_info.update({"S-GWM": new_data})
         self.observer_manager.notify_observers(self)
 
         print("update_sheet_data_end")
+
+    # 상태 업데이트 함수
+    def update_team_standard_info(self, new_data):
+        self.team_std_info.update(new_data)
+        self.observer_manager.notify_observers(self)
 
     # 상태 업데이트 함수
     def update_project_info(self, new_data):

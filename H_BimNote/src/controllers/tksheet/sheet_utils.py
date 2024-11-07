@@ -21,7 +21,7 @@ def on_sheet_data_change(event, state, sheet):
     state.update_S_GWM_data(new_data)
     print("on_sheet_data_change_end")
 
-    # print("dd", state.project_info)
+    # print("dd", state.team_std_info)
 
 
 def on_paste_cells(event, state, sheet):
