@@ -9,11 +9,12 @@ class ObserverManager:
         else:
             print("Error: Observer is not callable")
 
-    def notify_observers(self, state):
+    def notify_observers(self):
         if not self._observers:
             print("Warning: No observers registered")
         for observer in self._observers:
             try:
-                observer(state)
+                print(f"Notifying observer")
+                observer(self)
             except Exception as e:
                 print(f"Error notifying observer {observer}: {e}")
