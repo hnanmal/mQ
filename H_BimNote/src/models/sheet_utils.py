@@ -10,26 +10,11 @@ def convert_SGWMsheet_data_to_dict(sheet_data):
         elif row[1]:  # Sub-level parent
             current_sub_parent = row[1]
             sheet_data_dict[current_parent][current_sub_parent] = []
+            sheet_data_dict[current_parent][current_sub_parent].append(row[2])
         elif row[2]:  # Children
             sheet_data_dict[current_parent][current_sub_parent].append(row[2])
 
     return sheet_data_dict
-
-
-# def convert_dict_to_SGWMsheet_data(sheet_data_dict):
-#     sheet_data = []
-
-#     for parent, sub_dict in sheet_data_dict.items():
-#         # 최상위 항목을 리스트에 추가
-#         sheet_data.append([parent, None, None])
-#         for sub_parent, children in sub_dict.items():
-#             # 중간 항목을 리스트에 추가
-#             sheet_data.append([None, sub_parent, None])
-#             for child in children:
-#                 # 하위 항목들을 리스트에 추가
-#                 sheet_data.append([None, None, child])
-
-#     return sheet_data
 
 
 def convert_dict_to_SGWMsheet_data(sheet_data_dict):

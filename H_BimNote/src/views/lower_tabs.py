@@ -16,7 +16,7 @@ from src.views.tksheet.sheet_utils import (
 
 def create_stdGWM_tab(state, subtab_notebook):
     stdGWM_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(stdGWM_tab, text="Standard Work Master : Group (G-WM)")
+    subtab_notebook.add(stdGWM_tab, text="Standard Work Master : Group (Std G-WM)")
 
     tab_common_area = ttk.Frame(
         stdGWM_tab,
