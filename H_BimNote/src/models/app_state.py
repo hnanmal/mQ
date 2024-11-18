@@ -24,6 +24,7 @@ class AppState:
         self.previous_tab = None  # Track the previous tab
         self.config = None
         self.selected_stdGWM_item = tk.StringVar()
+        self.std_edit_mode = tk.StringVar(value="locked")
 
         self.wm_group_data = {}
         self.lock_status = {}
@@ -37,20 +38,31 @@ class AppState:
     ################### 옵저버 관련 #################################
     ## 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
     def updateDB_S_GWM_data(self, new_data):
-        print("update_sheet_data_start")
+        self.log_widget.write("update_S_GWM_data_start\n")
 
         # self.project_info["GWM"] = new_data
         self.team_std_info.update({"std-GWM": new_data})
         # self.observer_manager.notify_observers()
 
-        print("update_sheet_data_end")
+        self.log_widget.write("update_S_GWM_data_end\n")
+
+    def updateDB_WMs_data(self, new_data):
+        self.log_widget.write("update_WMs_data_start\n")
+
+        # self.project_info["GWM"] = new_data
+        self.team_std_info.update({"WMs": new_data})
+        # self.observer_manager.notify_observers()
+
+        self.log_widget.write("update_WMs_data_end\n")
 
     # 통합 상태 업데이트 함수
-    def update_team_standard_info(self, new_data):
-        new_SGWM_data = new_data.get("std-GWM")
-
-        self.updateDB_S_GWM_data(new_SGWM_data)
-        # self.team_std_info.update(new_data)
+    def update_team_standard_info(self, new_data, data_kind=None):
+        if data_kind == "std-GWM":
+            new_SGWM_data = new_data.get(data_kind)
+            self.updateDB_S_GWM_data(new_SGWM_data)
+        elif data_kind == "WMs":
+            new_WMs_data = new_data
+            self.updateDB_WMs_data(new_WMs_data)
 
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         self.observer_manager.notify_observers()

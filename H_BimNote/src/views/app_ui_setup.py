@@ -84,4 +84,7 @@ def initialize_app(root):
     notebook = ttk.Notebook(paned_window, style="Main.TNotebook")
     paned_window.add(notebook)
 
+    # print("starting log widget\n")
+    state.log_widget.write("starting log widget\n")
+
     return notebook, state

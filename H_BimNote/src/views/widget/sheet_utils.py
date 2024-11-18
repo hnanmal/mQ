@@ -2,29 +2,53 @@ import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
 
-from src.controllers.tksheet.sheet_utils import toggle_sheet_mode
+from src.models.sheet_utils import parse_Json_toSheet
+from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 
 
-def on_cell_select(event, sheet):
+def updateWidget_stdGWM_sheet(event, state, sheet):
+    # 상태 변경 시 tksheet를 업데이트
+    data_forSheet = parse_Json_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
+    sheet.set_sheet_data(
+        data_forSheet,
+        # reset_col_positions=True,
+        # reset_row_positions=True,
+    )
+
+
+def updateWidget_WMs_sheet(event, state, sheet):
+    # Updating tksheet in the UI
+    data_forSheet = state.team_std_info["WMs"]
+    sheet.set_sheet_data(data_forSheet)
+
+
+def updateWidget_matching_listbox(event, state, listbox):
+    pass
+
+
+def on_cell_select(event, state, sheet, color="#fffec0"):
     # 선택된 셀의 위치 가져오기
     selected_cells = list(sheet.get_selected_cells())
-    # print(selected_cells)
-    # print(type(selected_cells))
-    if selected_cells:
-        # 선택된 셀의 첫 번째 셀 위치로부터 행 번호 추출
-        selected_row = selected_cells[0][0]
 
+    if selected_cells:
         # 기존 스타일 초기화
         sheet.dehighlight_rows()
 
         # 선택된 행 강조 표시 (예: 노란색으로 설정)
+        selected_rows = list(map(lambda x: x[0], selected_cells))
+        print(selected_rows)
+
         sheet.highlight_rows(
-            rows=[selected_row], bg="yellow", fg="black", highlight_index=True
+            rows=selected_rows, bg=color, fg="black", highlight_index=True
         )
+
+    state.log_widget.write(
+        f"선택 발생! 외애애애애애엥 [{sheet.kind}]시트, [{selected_cells}] 에서 선택 발생!!!!"
+    )
 
 
 def on_cell_select_stdGWMsheet(event, state, sheet):
-    on_cell_select(event, sheet)
+    on_cell_select(event, state, sheet, color="yellow")
 
     selected_cells = list(sheet.get_selected_cells())
 
@@ -101,7 +125,7 @@ def create_tksheet(
     else:
         sheet.extra_bindings(
             [
-                ("cell_select", lambda e: on_cell_select(e, sheet)),
+                ("drag_select_cells", lambda e: on_cell_select(e, state, sheet)),
             ]
         )
 
@@ -113,7 +137,7 @@ def create_tksheet(
 
 def add_edit_mode_radio_buttons(state, sheet, parent_frame):
     """편집 모드 전환 라디오 버튼을 추가하는 함수"""
-    edit_mode = tk.StringVar(value="locked")  # 기본은 잠금 모드로 설정
+    # edit_mode = tk.StringVar(value="locked")  # 기본은 잠금 모드로 설정
 
     frame = tk.Frame(parent_frame)
     frame.pack(anchor="w")
@@ -122,17 +146,17 @@ def add_edit_mode_radio_buttons(state, sheet, parent_frame):
     radio_locked = ttk.Radiobutton(
         frame,
         text="Locked Mode",
-        variable=edit_mode,
+        variable=state.std_edit_mode,
         value="locked",
-        command=lambda: toggle_sheet_mode(state, sheet, edit_mode),
+        command=lambda: toggle_stdGWM_widget_mode(state, sheet, state.std_edit_mode),
     )
 
     radio_edit = ttk.Radiobutton(
         frame,
         text="Edit Mode",
-        variable=edit_mode,
+        variable=state.std_edit_mode,
         value="edit",
-        command=lambda: toggle_sheet_mode(state, sheet, edit_mode),
+        command=lambda: toggle_stdGWM_widget_mode(state, sheet, state.std_edit_mode),
     )
 
     radio_locked.pack(side="left", padx=10, pady=10)
@@ -140,7 +164,7 @@ def add_edit_mode_radio_buttons(state, sheet, parent_frame):
     # radio_locked.select()
 
     # 초기 상태를 라디오 버튼의 값에 맞춰서 설정
-    toggle_sheet_mode(state, sheet, edit_mode)
+    toggle_stdGWM_widget_mode(state, sheet, state.std_edit_mode)
 
 
 def populate_tksheet(state, sheet):
