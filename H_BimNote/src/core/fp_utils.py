@@ -1,3 +1,5 @@
+# src/core/fp_utils.py
+
 ################Module For Functional Programing#########################
 from functools import reduce
 from itertools import chain
@@ -27,6 +29,13 @@ def dictDeleteKeys(dic, keys):
     for k in keys:
         del dic[k]
     return dic
+
+
+def update_nested_dict(dictionary, keys, value):
+    current_dict = dictionary
+    for key in keys[:-1]:
+        current_dict = current_dict.setdefault(key, {})
+    current_dict[keys[-1]] = value
 
 
 def flat(a):

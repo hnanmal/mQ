@@ -1,14 +1,16 @@
+# src/views/widget/sheet_utils.py
+
 import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
 
-from src.models.sheet_utils import parse_Json_toSheet
+from src.models.sheet_utils import parse_DB_toSheet
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 
 
 def updateWidget_stdGWM_sheet(event, state, sheet):
     # 상태 변경 시 tksheet를 업데이트
-    data_forSheet = parse_Json_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
+    data_forSheet = parse_DB_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
     sheet.set_sheet_data(
         data_forSheet,
         # reset_col_positions=True,

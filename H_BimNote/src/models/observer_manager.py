@@ -1,3 +1,6 @@
+# src/models/observer_manager.py
+
+
 class ObserverManager:
     def __init__(self):
         self._observers = []
@@ -9,12 +12,12 @@ class ObserverManager:
         else:
             print("Error: Observer is not callable")
 
-    def notify_observers(self):
+    def notify_observers(self, state):
         if not self._observers:
             print("Warning: No observers registered")
         for observer in self._observers:
             try:
                 print(f"Notifying observer")
-                observer(self)
+                observer(state)
             except Exception as e:
                 print(f"Error notifying observer {observer}: {e}")

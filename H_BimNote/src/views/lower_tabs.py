@@ -4,7 +4,7 @@ from tkinter import ttk
 
 from src.controllers.widget.sheet_utils import (
     on_paste_cells,
-    on_sheet_data_change,
+    on_stdGWM_sheet_data_change,
 )
 from src.views.widget.sheet_utils import (
     add_edit_mode_radio_buttons,
@@ -14,6 +14,7 @@ from src.views.widget.sheet_utils import (
     updateWidget_stdGWM_sheet,
 )
 from src.views.widget.listbox_utils import create_listbox
+from src.views.widget.treeview_utils import TeamStd_GWMTreeView
 
 
 def create_stdGWM_tab(state, subtab_notebook):
@@ -69,14 +70,6 @@ def create_stdGWM_tab(state, subtab_notebook):
         size=12,
         # weight="bold",
     )
-    sheet_label = tk.Label(
-        tab_common_area,
-        text="Group Work Master",
-        font=stdGWM_tab_font,
-        # width=10,
-        # height=5,
-    )
-    sheet_label.pack(padx=5, pady=5, anchor="w")
 
     # Place tksheet in G-WM tab
 
@@ -105,12 +98,23 @@ def create_stdGWM_tab(state, subtab_notebook):
     # tksheet의 셀 데이터 변경 이벤트 바인딩
     stdGWM_sheet.extra_bindings(
         [
-            ("end_edit_cell", lambda e: on_sheet_data_change(e, state, stdGWM_sheet)),
-            ("begin_paste", lambda e: on_paste_cells(e, state, stdGWM_sheet)),
-            ("end_paste", lambda e: on_sheet_data_change(e, state, stdGWM_sheet)),
+            (
+                "end_edit_cell",
+                lambda e: on_stdGWM_sheet_data_change(e, state, stdGWM_sheet),
+            ),
+            (
+                "begin_paste",
+                lambda e: on_paste_cells(e, state, stdGWM_sheet),
+            ),
+            (
+                "end_paste",
+                lambda e: on_stdGWM_sheet_data_change(e, state, stdGWM_sheet),
+            ),
         ]
     )
     state.stdGWM_sheet = stdGWM_sheet
+
+    stdGWM_treeview = TeamStd_GWMTreeView(state, section1)
 
     ##############################################################
     ## section 2###########
@@ -224,7 +228,7 @@ def create_stdGWM_tab(state, subtab_notebook):
         lambda e: updateWidget_WMs_sheet(e, state, WMs_sheet),
     )
 
-    add_edit_mode_radio_buttons(state, stdGWM_sheet, section1)
-    stdGWM_sheet.pack(padx=5, pady=2, anchor="w")
+    # add_edit_mode_radio_buttons(state, stdGWM_sheet, section1)
+    # stdGWM_sheet.pack(padx=5, pady=2, anchor="w")
 
     return stdGWM_tab

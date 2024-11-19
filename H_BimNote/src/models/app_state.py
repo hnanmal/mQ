@@ -1,3 +1,5 @@
+# src/models/app_state.py
+
 from src.models.observer_manager import ObserverManager
 
 
@@ -40,9 +42,7 @@ class AppState:
     def updateDB_S_GWM_data(self, new_data):
         self.log_widget.write("update_S_GWM_data_start\n")
 
-        # self.project_info["GWM"] = new_data
         self.team_std_info.update({"std-GWM": new_data})
-        # self.observer_manager.notify_observers()
 
         self.log_widget.write("update_S_GWM_data_end\n")
 
@@ -65,7 +65,7 @@ class AppState:
             self.updateDB_WMs_data(new_WMs_data)
 
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-        self.observer_manager.notify_observers()
+        self.observer_manager.notify_observers(self)
 
     # 통합 상태 업데이트 함수
     def update_project_info(self, new_data):

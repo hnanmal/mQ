@@ -1,16 +1,18 @@
+# src/controllers/widget/sheet_utils.py
+
 import tkinter as tk
 
-from src.models.sheet_utils import parse_sheet_toJson
+from src.models.sheet_utils import parse_widget_toDB
 from src.core.fp_utils import *
 
 
 # tksheet 데이터가 변경될 때 호출되는 콜백 정의 (이 위치에 배치)
-def on_sheet_data_change(event, state, sheet):
+def on_stdGWM_sheet_data_change(event, state, sheet):
 
     print("on_sheet_data_change_start")
 
     # Get all data from tksheet
-    new_data = parse_sheet_toJson(sheet)
+    new_data = parse_widget_toDB(state, sheet)
 
     # Update the state with new data
     state.updateDB_S_GWM_data(new_data)

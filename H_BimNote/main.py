@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.core.file_utils import load_from_excel, load_from_json
+from src.controllers.db_update_manager import DBUpdateManager
+from src.core.file_utils import load_from_json
 from src.views.upper_tab import (
     create_project_apply_tab,
     create_project_standard_tab,
@@ -13,6 +14,8 @@ from src.views.app_ui_setup import initialize_app
 def main():
     root = tk.Tk()
     notebook, state = initialize_app(root)
+
+    state.db_manager = DBUpdateManager(state)
     # state.log_widget.write("!!!")
     # Create parent tabs within the notebook
     create_team_standard_tab(state, notebook)

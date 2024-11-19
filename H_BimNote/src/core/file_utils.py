@@ -1,3 +1,5 @@
+# src/core/file_utils.py
+
 import json
 from tkinter import filedialog, ttk
 
