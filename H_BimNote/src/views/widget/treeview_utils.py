@@ -57,14 +57,15 @@ class TeamStd_GWMTreeView(BaseTreeView):
         hdr_widths = [127, 60, 100]
         self.setup_columns(headers, hdr_widths)
 
-        self.setTitle_and_packing()
+        self.set_title_and_packing()
         # Add itself as an observer to the state
         self.state.observer_manager.add_observer(self.update)
 
-        # Bind the click event to the tree view
-        self.tree.bind("<ButtonRelease-1>", self.on_item_selected)
+        # Bind the selection event
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self.on_select(e))
+        self.tree.bind("<KeyRelease>", lambda e: self.on_key_release(e))
 
-    def setTitle_and_packing(self):
+    def set_title_and_packing(self):
         self.set_treeview_style()
 
         title_font = tk.font.Font(
@@ -95,6 +96,7 @@ class TeamStd_GWMTreeView(BaseTreeView):
                 parent_id, "end", text=classification, values=(classification, "", "")
             )
             self.tree.item(class_id, open=True)  # Automatically expand this level
+            self.unselectable_items.add(class_id)
 
             for gwm, items in sub_dict.items():
                 # Insert the G-WM level
@@ -102,6 +104,7 @@ class TeamStd_GWMTreeView(BaseTreeView):
                     class_id, "end", text=gwm, values=("", gwm, "")
                 )
                 self.tree.item(gwm_id, open=True)  # Automatically expand this level
+                self.unselectable_items.add(gwm_id)
 
                 for item in items:
                     # Insert the Item level
@@ -141,28 +144,18 @@ class TeamStd_GWMTreeView(BaseTreeView):
             # self.load_DB_data(state.team_std_info["std-GWM"])
             self.insert_data_with_levels(state.team_std_info["std-GWM"])
 
-    # def on_item_selected(self, event):
-    #     state = self.state
-    #     """Handle item selection in the tree view."""
-    #     selected_item = self.tree.focus()  # Get the selected item
-    #     item_values = self.tree.item(selected_item, "values")
+    def on_select(self, event):
+        self.on_item_selected(event)
 
-    #     # If the 'Item' column has a value, update the variable
-    #     if item_values and item_values[2]:
-    #         # Extract values from the tree view item and format them
-    #         classification = item_values[0] if item_values[0] else "N/A"
-    #         gwm = item_values[1] if item_values[1] else "N/A"
-    #         item = item_values[2]
-
-    #         # Set the formatted value in the selected item variable
-    #         formatted_value = f"{classification} | {gwm} | {item}"
-
-    #         state.selected_stdGWM_item.set(formatted_value)
-    #         print(f"Selected Item: {state.selected_stdGWM_item.get()}")
+    def on_key_release(self, event):
+        # This event is triggered when an arrow key is released
+        if event.keysym in ["Up", "Down"]:
+            self.on_item_selected()
 
     def on_item_selected(self, event):
         """Handle item selection and update the selected item's value in the state."""
         selected_item = self.tree.focus()
+
         item_values = self.tree.item(selected_item, "values")
 
         # Collect all parent items to build the full path
