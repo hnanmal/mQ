@@ -62,12 +62,13 @@ def convert_dict_to_SGWMsheet_data(db):
             for idx, child in enumerate(children):
                 # 하위 항목들을 리스트에 추가
                 if idx == 0:
-                    sheet_data.append([None, sub_parent, list(child.keys())[0]])
+                    # sheet_data.append([None, sub_parent, list(child.keys())[0]])
+                    sheet_data.append([None, sub_parent, child])
                 elif idx == len(children) - 1:
-                    sheet_data.append([None, None, list(child.keys())[0]])
+                    sheet_data.append([None, None, child])
                     sheet_data.append([None, None, None])
                 else:
-                    sheet_data.append([None, None, list(child.keys())[0]])
+                    sheet_data.append([None, None, child])
 
     return sheet_data
 

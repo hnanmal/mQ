@@ -27,7 +27,7 @@ def main():
     # load_from_excel(state, "resource/WorkMaster_DB.xlsx")
 
     ## 어플리케이션 시작시 메시지
-    state.log_widget.write("어서오세요!")
+    state.log_widget.write("어서오세요!\n")
 
     root.mainloop()
 

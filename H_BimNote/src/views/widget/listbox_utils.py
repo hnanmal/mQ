@@ -5,6 +5,32 @@ import tkinter.font
 from tkinter import ttk
 
 
+class BaseListBox:
+    def __init__(self, state, parent):
+        self.state = state
+        self.listbox = tk.Listbox(parent, selectmode=tk.EXTENDED)
+        self.listbox.pack(expand=True, fill="both")
+        self.state.observer_manager.add_observer(self.update_listbox)
+        self.listbox.bind("<<ListboxSelect>>", self.on_listbox_edit)
+
+    def update_listbox(self, state):
+        """Updates the listbox whenever the state changes."""
+        selected_tree_item = state.selected_tree_item
+        if selected_tree_item:
+            self.listbox.delete(0, tk.END)  # Clear existing items
+            for item in state.get_matching(selected_tree_item):
+                self.listbox.insert(tk.END, item)
+
+    def on_listbox_edit(self, event):
+        """Update state based on listbox edits."""
+        selected_tree_item = self.state.selected_tree_item
+        if selected_tree_item:
+            current_items = [
+                self.listbox.get(idx) for idx in range(self.listbox.size())
+            ]
+            self.state.update_matching(selected_tree_item, current_items)
+
+
 def create_listbox(state, frame):
     # Create a frame to hold the Listbox and scrollbar
     listbox_frame = ttk.Frame(frame)

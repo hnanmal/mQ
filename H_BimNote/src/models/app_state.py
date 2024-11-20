@@ -38,7 +38,7 @@ class AppState:
         self.undo_stack = []
 
     ################### 옵저버 관련 #################################
-    ## 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
+    # 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
     def updateDB_S_GWM_data(self, new_data):
         self.log_widget.write("update_S_GWM_data_start\n")
 
@@ -55,6 +55,28 @@ class AppState:
 
         self.log_widget.write("update_WMs_data_end\n")
 
+    def update_stdGWM_matching(self, listbox_items):
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            self.selected_stdGWM_item.get().split(" | ")
+        )
+        # print(type(self.selected_stdGWM_item.get()))
+        self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
+            selected_item_name
+        ] = listbox_items
+        self.observer_manager.notify_observers(self)
+
+    def get_stdGWM_matching(self):
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            self.selected_stdGWM_item.get().split(" | ")
+        )
+
+        return (
+            self.team_std_info.get("std-GWM")
+            .get(grand_parent_item_name)
+            .get(parent_item_name)
+            .get(selected_item_name)
+        )
+
     # 통합 상태 업데이트 함수
     def update_team_standard_info(self, new_data, data_kind=None):
         if data_kind == "std-GWM":
@@ -67,48 +89,48 @@ class AppState:
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         self.observer_manager.notify_observers(self)
 
-    # 통합 상태 업데이트 함수
-    def update_project_info(self, new_data):
-        self.project_info.update(new_data)
-        self.observer_manager.notify_observers(self)
+    # # 통합 상태 업데이트 함수
+    # def update_project_info(self, new_data):
+    #     self.project_info.update(new_data)
+    #     self.observer_manager.notify_observers(self)
 
-    ################### 옵저버 관련 #################################
+    # ################### 옵저버 관련 #################################
 
-    def __getitem__(self, key):
-        return self._state.get(key)
+    # def __getitem__(self, key):
+    #     return self._state.get(key)
 
-    def __setitem__(self, key, value):
-        self._state[key] = value
+    # def __setitem__(self, key, value):
+    #     self._state[key] = value
 
-    # Add getter and setter for clipboard_data
-    def get_clipboard_data(self):
-        return self.clipboard_data
+    # # Add getter and setter for clipboard_data
+    # def get_clipboard_data(self):
+    #     return self.clipboard_data
 
-    def get_current_tab(self):
-        """Return the currently selected tab."""
-        return self.current_tab
+    # def get_current_tab(self):
+    #     """Return the currently selected tab."""
+    #     return self.current_tab
 
-    def set_clipboard_data(self, data):
-        self.clipboard_data = data
+    # def set_clipboard_data(self, data):
+    #     self.clipboard_data = data
 
-    def set_current_tab(self, tab_name):
-        self.current_tab = tab_name
+    # def set_current_tab(self, tab_name):
+    #     self.current_tab = tab_name
 
-    def load_config(self, config_data):
-        self.config = config_data
+    # def load_config(self, config_data):
+    #     self.config = config_data
 
-    def update_wm_group_data(self, data):
-        self.wm_group_data = data
+    # def update_wm_group_data(self, data):
+    #     self.wm_group_data = data
 
-    def set_lock_status(self, item_name, status):
-        self.lock_status[item_name] = status
+    # def set_lock_status(self, item_name, status):
+    #     self.lock_status[item_name] = status
 
-    def get_lock_status(self, item_name):
-        return self.lock_status.get(item_name, False)
+    # def get_lock_status(self, item_name):
+    #     return self.lock_status.get(item_name, False)
 
-    # Method to get and set previous tab
-    def get_previous_tab(self):
-        return self.previous_tab
+    # # Method to get and set previous tab
+    # def get_previous_tab(self):
+    #     return self.previous_tab
 
-    def set_previous_tab(self, tab_name):
-        self.previous_tab = tab_name
+    # def set_previous_tab(self, tab_name):
+    #     self.previous_tab = tab_name
