@@ -180,21 +180,22 @@ class TeamStd_GWMmatching_TreeView:
     def update(self, e):
         """Update the TreeView whenever the state changes."""
         print("TeamStd_GWMmatching_TreeView > update 메소드 시작")
-        try:
-            self.state.selected_stdGWM_item.get().split(" | ")
+        print(self.state.selected_stdGWM_item.get())
+        # try:
+        #     self.state.selected_stdGWM_item.get().split(" | ")
 
-            # grand_parent_item_name, parent_item_name, selected_item_name = (
-            #     self.state.selected_stdGWM_item.get().split(" | ")
-            # )
-            # if "std-GWM" in self.state.team_std_info:
-            #     self.treeview.clear_treeview()
-            #     data = self.state.team_std_info["std-GWM"][grand_parent_item_name][
-            #         parent_item_name
-            #     ][selected_item_name]
-            #     self.treeview.insert_data(data)
-        except:
-            print("TeamStd_GWMmatching_TreeView > update 메소드 진입 안됩니다~")
-            pass
+        #     grand_parent_item_name, parent_item_name, selected_item_name = (
+        #         self.state.selected_stdGWM_item.get().split(" | ")
+        #     )
+        #     if "std-GWM" in self.state.team_std_info:
+        #         self.treeview.clear_treeview()
+        #         data = self.state.team_std_info["std-GWM"][grand_parent_item_name][
+        #             parent_item_name
+        #         ][selected_item_name]
+        #         self.treeview.insert_data(data)
+        # except:
+        #     print("TeamStd_GWMmatching_TreeView > update 메소드 진입 안됩니다~")
+        #     pass
 
     def set_title(self, parent):
         title_font = tk.font.Font(family="맑은 고딕", size=12)
@@ -202,36 +203,4 @@ class TeamStd_GWMmatching_TreeView:
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
-        selected_item_id = self.treeview.tree.focus()
-        # item_values = self.treeview.tree.item(selected_item, "values")
-
-        # Collect all parent items to build the full path
-        # current_item = selected_item
-        parent_item_id = self.treeview.tree.parent(selected_item_id)
-        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-        selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
-        parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-        grand_parent_item_name = self.treeview.tree.item(
-            grand_parent_item_id, "values"
-        )[-3]
-
-        formatted_value = " | ".join(
-            [
-                grand_parent_item_name,
-                parent_item_name,
-                selected_item_name,
-            ]
-        )
-
-        self.state.selected_stdGWM_item.set(formatted_value)
-        # print(f"Selected Item: {self.state.selected_stdGWM_item.get()}")
-
-        # ## 리스트뷰 업데이트 관련
-        # if selected_item_id:
-        #     # Fetch matched list items from state
-        #     matching_list_items = self.state.team_std_info[grand_parent_item_name][
-        #         parent_item_name
-        #     ][selected_item_name]
-        #     # Notify observers to update the list view
-        #     self.state.selected_tree_item = selected_item_id
-        #     self.state.update_matching(selected_item_id, matching_list_items)
+        pass

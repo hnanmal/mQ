@@ -26,6 +26,9 @@ class AppState:
         self.previous_tab = None  # Track the previous tab
         self.config = None
         self.selected_stdGWM_item = tk.StringVar()
+        # Set up a trace to call the observer whenever the value changes
+        self.selected_stdGWM_item.trace_add("write", self._notify_selected_change)
+
         self.std_edit_mode = tk.StringVar(value="locked")
 
         self.wm_group_data = {}
@@ -36,6 +39,9 @@ class AppState:
         self.team_std_info = {}
         self.project_info = {}
         self.undo_stack = []
+
+    def _notify_selected_change(self, *args):
+        self.observer_manager.notify_observers(self)
 
     ################### 옵저버 관련 #################################
     # 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트

@@ -8,19 +8,19 @@ from src.models.sheet_utils import parse_DB_toSheet
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 
 
-def updateWidget_stdGWM_sheet(event, state, sheet):
-    # 상태 변경 시 tksheet를 업데이트
-    data_forSheet = parse_DB_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
-    sheet.set_sheet_data(
-        data_forSheet,
-        # reset_col_positions=True,
-        # reset_row_positions=True,
-    )
+# def updateWidget_stdGWM_sheet(event, state, sheet):
+#     # 상태 변경 시 tksheet를 업데이트
+#     data_forSheet = parse_DB_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
+#     sheet.set_sheet_data(
+#         data_forSheet,
+#         # reset_col_positions=True,
+#         # reset_row_positions=True,
+#     )
 
 
 def updateWidget_WMs_sheet(event, state, sheet):
     # Updating tksheet in the UI
-    data_forSheet = state.team_std_info["WMs"]
+    data_forSheet = state.team_std_info.get("WMs", [])
     sheet.set_sheet_data(data_forSheet)
 
 
