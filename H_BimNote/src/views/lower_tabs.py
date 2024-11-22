@@ -6,9 +6,11 @@ from tkinter import ttk
 #     on_paste_cells,
 #     on_stdGWM_sheet_data_change,
 # )
+from src.controllers.widget.widgets import handle_add_button_press
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
     create_tksheet,
+    on_cell_select_WMsSheet,
     # on_cell_select_stdGWMsheet,
     updateWidget_WMs_sheet,
     # updateWidget_stdGWM_sheet,
@@ -49,24 +51,27 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     section1 = ttk.Frame(
         stdGWM_tab_paned_area,
-        width=400,
+        width=1000,
         height=2000,
     )
     section2 = ttk.Frame(
         stdGWM_tab_paned_area,
-        width=800,
+        width=1500,
         height=2000,
     )
     section3 = ttk.Frame(
         stdGWM_tab_paned_area,
-        width=800,
+        width=600,
         height=2000,
     )
+    # section1.pack(fill=tk.BOTH, expand=True, anchor="w")
+    # section2.pack(fill=tk.BOTH, expand=True, anchor="e")
+    # section3.pack(fill=tk.BOTH, expand=True, anchor="e")
+    stdGWM_tab_paned_window.add(section1, minsize=400)
+    stdGWM_tab_paned_window.add(section2, minsize=400)
+    stdGWM_tab_paned_window.add(section3, minsize=600)
 
-    stdGWM_tab_paned_window.add(section1)
-    stdGWM_tab_paned_window.add(section2)
-    stdGWM_tab_paned_window.add(section3)
-    stdGWM_tab_paned_window.paneconfigure(section2, width=600)
+    # stdGWM_tab_paned_window.paneconfigure(section2, width=600)
 
     # common 영역 라벨링
     stdGWM_tab_font = tk.font.Font(
@@ -125,7 +130,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     ## section 2###########
     seleted_item_label_area = ttk.Frame(
         section2,
-        width=1000,
+        width=600,
     )
     seleted_item_label_area.pack(side=tk.TOP, anchor="w")
 
@@ -147,31 +152,35 @@ def create_stdGWM_tab(state, subtab_notebook):
     seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
     seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
 
-    std_matching_listbox_area = ttk.Frame(
+    std_matching_widget_area = ttk.Frame(
         section2,
-        width=1500,
+        width=600,
     )
-    std_matching_listbox_area.pack(side=tk.LEFT, anchor="w")
+    std_matching_widget_area.pack(side=tk.LEFT, anchor="w")
 
     # std_matching_listbox = create_listbox(state, std_matching_listbox_area)
     # state.std_matching_listbox = std_matching_listbox
 
     std_matching_treeview = TeamStd_GWMmatching_TreeView(
-        state, std_matching_listbox_area
+        state, std_matching_widget_area
     )
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
+    std_matching_treeview.treeview.tree.config(height=800)
+    state.std_matching_treeview = std_matching_treeview
 
     std_matching_btn_area = ttk.Frame(
-        std_matching_listbox_area,
-        # width=100,
+        section2,
+        width=100,
     )
-    std_matching_btn_area.pack(side="left", padx=5, pady=5, anchor="nw")
+    std_matching_btn_area.pack(side="left", padx=5, pady=65, anchor="nw")
 
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
         text="Add",  # Button text
-        command=lambda x: x,  # Function to call when clicked
+        command=lambda: handle_add_button_press(
+            state, mode="std_matching"
+        ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
         fg="black",  # Text color
@@ -214,14 +223,14 @@ def create_stdGWM_tab(state, subtab_notebook):
         height=2000,
         width=1000,
         mode=None,
-        # select_bindFunc=on_cell_select_stdGWMsheet,
+        select_bindFunc=on_cell_select_WMsSheet,
     )
     WMs_sheet.kind = "WMs"
 
     # 칼럼 폭 자동 맞춤
     # WMs_sheet.set_options(auto_resize_columns=100)
     WMs_sheet.set_all_cell_sizes_to_text(width=5, slim=True)
-    WMs_sheet.pack(padx=5, pady=2, anchor="w")
+    WMs_sheet.pack(padx=5, pady=2, anchor="e")
 
     ####################################################################
     ####################################################################

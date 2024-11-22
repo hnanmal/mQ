@@ -17,7 +17,7 @@ class ObserverManager:
             print("Warning: No observers registered")
         for observer in self._observers:
             try:
-                print(f"Notifying observer")
+                print(f"Notifying observer {observer}")
                 observer(state)
             except Exception as e:
                 print(f"Error notifying observer {observer}: {e}")

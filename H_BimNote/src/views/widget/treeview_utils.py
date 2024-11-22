@@ -35,6 +35,60 @@ class TreeViewStateObserver:
         self.state.observer_manager.add_observer(updateFunc)
 
 
+class ScrollbarWidget:
+    def __init__(self, parent, target_widget, x=True, y=True):
+        # self.frame = ttk.Frame(parent)
+        self.frame = parent
+        # self.frame.pack(expand=True, fill="both")
+
+        # The target widget should be provided by the user of this class.
+        # self.target_widget = target_widget(self.frame)
+        self.target_widget = target_widget
+        # self.target_widget.pack(side="left", expand=True, fill="both")
+
+        commands_scroll = []
+        if y and x:
+            # Add Vertical Scrollbar
+            self.v_scrollbar = ttk.Scrollbar(
+                self.frame, orient="vertical", command=self.target_widget.yview
+            )
+            self.v_scrollbar.pack(side="right", fill="y", anchor="ne")
+            commands_scroll.append(self.v_scrollbar.set)
+            # Add Horizontal Scrollbar
+            self.h_scrollbar = ttk.Scrollbar(
+                self.frame, orient="horizontal", command=self.target_widget.xview
+            )
+            self.h_scrollbar.pack(side="bottom", fill="x", anchor="sw")
+            # self.h_scrollbar.pack(fill="x")
+            commands_scroll.append(self.h_scrollbar.set)
+        elif y and not x:
+            # Add Vertical Scrollbar
+            self.v_scrollbar = ttk.Scrollbar(
+                self.frame, orient="vertical", command=self.target_widget.yview
+            )
+            self.v_scrollbar.pack(side="right", fill="y", anchor="ne")
+            commands_scroll.append(self.v_scrollbar.set)
+        elif not y and x:
+            # Add Horizontal Scrollbar
+            self.h_scrollbar = ttk.Scrollbar(
+                self.frame, orient="horizontal", command=self.target_widget.xview
+            )
+            self.h_scrollbar.pack(side="bottom", fill="x", anchor="sw")
+            # self.h_scrollbar.pack(fill="x")
+            commands_scroll.append(self.h_scrollbar.set)
+        else:
+            pass
+
+        # Attach scrollbars to the target widget
+        if commands_scroll:
+            argNames = ["yscrollcommand", "xscrollcommand"]
+            args = dict(zip(argNames, commands_scroll))
+            self.target_widget.configure(
+                **args
+                # yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set
+            )
+
+
 class BaseTreeView:
     def __init__(self, parent, headers):
         self.tree = ttk.Treeview(parent, columns=headers, show="headings")
@@ -79,11 +133,68 @@ class BaseTreeView:
 
                 for item in itemDicts.keys():
                     self.tree.insert(gwm_id, "end", text=item, values=("", "", item))
-                # for item in items:
-                #     item_key = list(item.keys())[0]
-                #     self.tree.insert(
-                #         gwm_id, "end", text=item_key, values=("", "", item_key)
-                #     )
+
+    def get_item_indices(self, selected_item_id):
+        """
+        Get the list of indices from the highest-level parent down to the selected item.
+
+        Parameters:
+        tree (ttk.Treeview): The Treeview widget.
+        selected_item_id (str): The ID of the selected item.
+
+        Returns:
+        list: A list of indices representing the path from the highest-level parent to the selected item.
+        """
+        indices = []
+
+        current_item = selected_item_id
+        while current_item:
+            # Get the parent of the current item
+            parent_id = self.tree.parent(current_item)
+
+            # Get all the siblings of the current item (including the current item itself)
+            siblings = self.tree.get_children(parent_id)
+
+            # Find the index of the current item among its siblings
+            position = siblings.index(current_item)
+
+            # Insert the position at the beginning of the list (to maintain top-down order)
+            indices.insert(0, position)
+
+            # Move up one level to the parent
+            current_item = parent_id
+
+        return indices
+
+    def select_item_by_indices(self, indices):
+        """
+        Select an item in the Treeview using the provided list of indices.
+
+        Parameters:
+        tree (ttk.Treeview): The Treeview widget.
+        indices (list): A list of indices representing the path from the highest-level parent to the desired item.
+        """
+        current_parent = ""  # Start from the root
+        target_item = None
+
+        for index in indices:
+            # Get all children of the current parent
+            children = self.tree.get_children(current_parent)
+
+            # Make sure the index is within bounds
+            if index < len(children):
+                target_item = children[index]
+                current_parent = target_item
+            else:
+                # If the index is out of bounds, it means something went wrong
+                print(f"Index {index} is out of bounds for the current parent.")
+                return
+
+        # If a target item was found, select it
+        if target_item:
+            self.tree.selection_set(target_item)
+            self.tree.focus(target_item)
+            self.tree.see(target_item)  # Scroll to the selected item if needed
 
 
 class TeamStd_GWMTreeView:
@@ -91,26 +202,37 @@ class TeamStd_GWMTreeView:
         self.state = state
         headers = ["분류", "G-WM", "Item"]
         hdr_widths = [127, 60, 100]
+        # hdr_widths = [200, 100, 100]
 
         # Compose TreeView, Style Manager, and State Observer
         self.treeview = BaseTreeView(parent, headers)
-        self.state_observer = TreeViewStateObserver(state, self.treeview, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, self.treeview, lambda e: self.update(state)
+        )
 
         # Set up UI
-        self.treeview.setup_columns(headers, hdr_widths)
         self.set_title(parent)
         self.treeview.tree.pack(expand=True, fill="both")
+        # self.scroll_widget = ScrollbarWidget(parent, self.treeview.tree, x=True)
+        self.treeview.setup_columns(headers, hdr_widths)
 
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
-    # def update(self, state):
-    def update(self, e):
+    def update(self, state):
+        selected_item_id = self.treeview.tree.selection()
+        origin_indices = self.treeview.get_item_indices(selected_item_id)
+
+        print("TeamStd_GWMTreeView > update 메소드 시작")
         """Update the TreeView whenever the state changes."""
-        if "std-GWM" in self.state.team_std_info:
+        if "std-GWM" in state.team_std_info:
+            # Clear the TreeView and reload data from the updated state
             self.treeview.clear_treeview()
-            data = self.state.team_std_info["std-GWM"]
+            data = state.team_std_info["std-GWM"]
             self.treeview.insert_data_with_levels(data)
+
+        self.treeview.select_item_by_indices(origin_indices)
+        print("TeamStd_GWMTreeView > update 메소드 종료")
 
     def set_title(self, parent):
         title_font = tk.font.Font(family="맑은 고딕", size=12)
@@ -119,12 +241,8 @@ class TeamStd_GWMTreeView:
 
     def on_item_selected(self, event):
         selected_item_id = self.treeview.tree.selection()
-
         # selected_item_id = self.treeview.tree.focus()
-        # item_values = self.treeview.tree.item(selected_item, "values")
 
-        # Collect all parent items to build the full path
-        # current_item = selected_item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
         selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
@@ -145,57 +263,56 @@ class TeamStd_GWMTreeView:
         self.state.selected_stdGWM_item.set(formatted_value)
         # print(f"Selected Item: {self.state.selected_stdGWM_item.get()}")
 
-        # ## 리스트뷰 업데이트 관련
-        # if selected_item_id:
-        #     # Fetch matched list items from state
-        #     matching_list_items = self.state.team_std_info["std-GWM"][
-        #         grand_parent_item_name
-        #     ][parent_item_name][selected_item_name]
-        #     print(matching_list_items)
-        #     # Notify observers to update the list view
-        #     # self.state.selected_tree_item = selected_item_id
-        #     # self.state.update_stdGWM_matching(matching_list_items)
-
 
 class TeamStd_GWMmatching_TreeView:
     def __init__(self, state, parent):
         self.state = state
         headers = ["Work Master"]
-        hdr_widths = [500]
+        hdr_widths = [600]
 
+        self.set_title(parent)
         # Compose TreeView, Style Manager, and State Observer
-        self.treeview = BaseTreeView(parent, headers)
+        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        tree_frame.pack(
+            expand=True,
+            fill="both",
+            # side="top",
+        )
+        self.treeview = BaseTreeView(tree_frame, headers)
         # TreeViewStyleManager.apply_style(self.treeview.tree)
-        self.state_observer = TreeViewStateObserver(state, self.treeview, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, self.treeview, lambda e: self.update(state)
+        )
 
         # Set up UI
+        self.treeview.tree.pack(expand=True, fill="both", side="left", anchor="nw")
         self.treeview.setup_columns(headers, hdr_widths)
-        self.set_title(parent)
-        self.treeview.tree.pack(expand=True, fill="both")
+        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree, y=True)
 
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
     # def update(self, state):
-    def update(self, e):
+    def update(self, state):
         """Update the TreeView whenever the state changes."""
         print("TeamStd_GWMmatching_TreeView > update 메소드 시작")
-        print(self.state.selected_stdGWM_item.get())
-        # try:
-        #     self.state.selected_stdGWM_item.get().split(" | ")
+        print(state.selected_stdGWM_item.get())
+        try:
+            self.state.selected_stdGWM_item.get().split(" | ")
 
-        #     grand_parent_item_name, parent_item_name, selected_item_name = (
-        #         self.state.selected_stdGWM_item.get().split(" | ")
-        #     )
-        #     if "std-GWM" in self.state.team_std_info:
-        #         self.treeview.clear_treeview()
-        #         data = self.state.team_std_info["std-GWM"][grand_parent_item_name][
-        #             parent_item_name
-        #         ][selected_item_name]
-        #         self.treeview.insert_data(data)
-        # except:
-        #     print("TeamStd_GWMmatching_TreeView > update 메소드 진입 안됩니다~")
-        #     pass
+            grand_parent_item_name, parent_item_name, selected_item_name = (
+                self.state.selected_stdGWM_item.get().split(" | ")
+            )
+            if "std-GWM" in self.state.team_std_info:
+                self.treeview.clear_treeview()
+                data = self.state.team_std_info["std-GWM"][grand_parent_item_name][
+                    parent_item_name
+                ][selected_item_name]
+                self.treeview.insert_data(data)
+        except:
+            print("TeamStd_GWMmatching_TreeView > update 메소드 진입 안됩니다~")
+            pass
+        print("TeamStd_GWMmatching_TreeView > update 메소드 종료")
 
     def set_title(self, parent):
         title_font = tk.font.Font(family="맑은 고딕", size=12)

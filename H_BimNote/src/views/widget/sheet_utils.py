@@ -49,6 +49,38 @@ def on_cell_select(event, state, sheet, color="#fffec0"):
     )
 
 
+def on_cell_select_WMsSheet(event, state, sheet, color="#fffec0"):
+    # 선택된 셀의 위치 가져오기
+    selected_cells = list(sheet.get_selected_cells())
+    state.selected_stdGWM_item.get().split(" | ")
+    grand_parent_item_name, parent_item_name, selected_item_name = (
+        state.selected_stdGWM_item.get().split(" | ")
+    )
+    if selected_cells:
+        # 기존 스타일 초기화
+        sheet.dehighlight_rows()
+
+        # 선택된 행 강조 표시 (예: 노란색으로 설정)
+        selected_rows = list(map(lambda x: x[0], selected_cells))
+        print(selected_rows)
+
+        selectedWMs = []
+        for row_idx in selected_rows:
+            stringified_rowData = list(
+                map(lambda x: str(x), sheet.get_row_data(row_idx))
+            )
+            selectedWMs.append([" | ".join(stringified_rowData)])
+        state.selectedWMs = selectedWMs
+        print(f"on_cell_select_WMsSheet: {selectedWMs}")
+        sheet.highlight_rows(
+            rows=selected_rows, bg=color, fg="black", highlight_index=True
+        )
+
+    state.log_widget.write(
+        f"선택 발생! 외애애애애애엥 [{sheet.kind}]시트, [{selected_cells}] 에서 선택 발생!!!!"
+    )
+
+
 def on_cell_select_stdGWMsheet(event, state, sheet):
     on_cell_select(event, state, sheet, color="yellow")
 
@@ -122,11 +154,13 @@ def create_tksheet(
         sheet.extra_bindings(
             [
                 ("cell_select", lambda e: select_bindFunc(e, state, sheet)),
+                ("drag_select_cells", lambda e: select_bindFunc(e, state, sheet)),
             ]
         )
     else:
         sheet.extra_bindings(
             [
+                ("cell_select", lambda e: on_cell_select(e, state, sheet)),
                 ("drag_select_cells", lambda e: on_cell_select(e, state, sheet)),
             ]
         )
