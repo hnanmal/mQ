@@ -6,9 +6,13 @@ from tkinter import ttk
 #     on_paste_cells,
 #     on_stdGWM_sheet_data_change,
 # )
-from src.controllers.widget.widgets import handle_add_button_press
+from src.controllers.widget.widgets import (
+    handle_add_button_press,
+    handle_del_button_press,
+)
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
+    TeamStd_WMsSheetView,
     create_tksheet,
     on_cell_select_WMsSheet,
     # on_cell_select_stdGWMsheet,
@@ -30,14 +34,16 @@ def create_stdGWM_tab(state, subtab_notebook):
     tab_common_area = ttk.Frame(
         stdGWM_tab,
         # width=2000,
-        height=50,
+        height=10,
     )
     tab_common_area.pack(expand=True, fill="x")
+
+    tmpLabel = ttk.Label(tab_common_area)
 
     stdGWM_tab_paned_area = ttk.Frame(
         stdGWM_tab,
         # width=600,
-        height=2000,
+        height=3000,
     )
     stdGWM_tab_paned_area.pack(expand=True, fill="both")
 
@@ -52,25 +58,26 @@ def create_stdGWM_tab(state, subtab_notebook):
     section1 = ttk.Frame(
         stdGWM_tab_paned_area,
         width=1000,
-        height=2000,
+        height=3000,
     )
     section2 = ttk.Frame(
         stdGWM_tab_paned_area,
-        width=1500,
-        height=2000,
+        width=600,
+        height=3000,
     )
     section3 = ttk.Frame(
         stdGWM_tab_paned_area,
         width=600,
-        height=2000,
+        height=3000,
     )
-    # section1.pack(fill=tk.BOTH, expand=True, anchor="w")
-    # section2.pack(fill=tk.BOTH, expand=True, anchor="e")
-    # section3.pack(fill=tk.BOTH, expand=True, anchor="e")
+
     stdGWM_tab_paned_window.add(section1, minsize=400)
     stdGWM_tab_paned_window.add(section2, minsize=400)
     stdGWM_tab_paned_window.add(section3, minsize=600)
 
+    stdGWM_tab_paned_window.paneconfigure(section1, height=3000)
+    stdGWM_tab_paned_window.paneconfigure(section2, width=600, height=3000)
+    stdGWM_tab_paned_window.paneconfigure(section3, height=3000)
     # stdGWM_tab_paned_window.paneconfigure(section2, width=600)
 
     # common 영역 라벨링
@@ -81,48 +88,8 @@ def create_stdGWM_tab(state, subtab_notebook):
     )
 
     # Place tksheet in G-WM tab
-
-    # stdGWM_sheet = create_tksheet(
-    #     state,
-    #     section1,
-    #     headers=state.stdGWM_headers,
-    #     data=[
-    #         ["", ""],
-    #     ],
-    #     tab_name=None,
-    #     height=2000,
-    #     width=400,
-    #     mode=None,
-    #     select_bindFunc=on_cell_select_stdGWMsheet,
-    # )
-
-    # stdGWM_sheet["B"].highlight(fg="purple")
-    # stdGWM_sheet["C"].highlight(fg="blue")
-
-    # stdGWM_sheet.kind = "std-GWM"
-
-    # # 칼럼 폭 자동 맞춤
-    # stdGWM_sheet.set_options(auto_resize_columns=50)
-
-    # # tksheet의 셀 데이터 변경 이벤트 바인딩
-    # stdGWM_sheet.extra_bindings(
-    #     [
-    #         (
-    #             "end_edit_cell",
-    #             lambda e: on_stdGWM_sheet_data_change(e, state, stdGWM_sheet),
-    #         ),
-    #         (
-    #             "begin_paste",
-    #             lambda e: on_paste_cells(e, state, stdGWM_sheet),
-    #         ),
-    #         (
-    #             "end_paste",
-    #             lambda e: on_stdGWM_sheet_data_change(e, state, stdGWM_sheet),
-    #         ),
-    #     ]
-    # )
-    # state.stdGWM_sheet = stdGWM_sheet
-
+    ##############################################################
+    ## section 1###########
     stdGWM_treeview = TeamStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(stdGWM_treeview.treeview.tree)
 
@@ -138,16 +105,12 @@ def create_stdGWM_tab(state, subtab_notebook):
         seleted_item_label_area,
         text="Selected Item: ",
         font=stdGWM_tab_font,
-        # width=10,
-        # height=5,
     )
     seleted_item = tk.Label(
         seleted_item_label_area,
         textvariable=state.selected_stdGWM_item,
         font=stdGWM_tab_font,
         fg="blue",
-        # width=10,
-        # height=5,
     )
     seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
     seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
@@ -156,10 +119,6 @@ def create_stdGWM_tab(state, subtab_notebook):
         section2,
         width=600,
     )
-    std_matching_widget_area.pack(side=tk.LEFT, anchor="w")
-
-    # std_matching_listbox = create_listbox(state, std_matching_listbox_area)
-    # state.std_matching_listbox = std_matching_listbox
 
     std_matching_treeview = TeamStd_GWMmatching_TreeView(
         state, std_matching_widget_area
@@ -172,8 +131,8 @@ def create_stdGWM_tab(state, subtab_notebook):
         section2,
         width=100,
     )
-    std_matching_btn_area.pack(side="left", padx=5, pady=65, anchor="nw")
-
+    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
+    std_matching_widget_area.pack(side="top", anchor="w")
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
@@ -188,16 +147,16 @@ def create_stdGWM_tab(state, subtab_notebook):
         height=1,  # Height of the button
         relief=tk.RAISED,
     )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-    add_button.pack(
-        side="top", padx=5, pady=5, anchor="nw"
-    )  # Add padding around the button
+
     state.std_matching_add_btn = add_button
 
     # Create a button and place it in the window
     del_button = tk.Button(
         std_matching_btn_area,
         text="Del",  # Button text
-        command=lambda x: x,  # Function to call when clicked
+        command=lambda: handle_del_button_press(
+            state, mode="std_matching"
+        ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
         fg="black",  # Text color
@@ -206,7 +165,10 @@ def create_stdGWM_tab(state, subtab_notebook):
         relief=tk.RAISED,
     )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
     del_button.pack(
-        side="top", padx=5, pady=5, anchor="nw"
+        side="left", padx=5, pady=5, anchor="nw"
+    )  # Add padding around the button
+    add_button.pack(
+        side="left", padx=5, pady=5, anchor="nw"
     )  # Add padding around the button
     state.std_matching_del_btn = del_button
 
@@ -214,40 +176,7 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 3###########
-    WMs_sheet = create_tksheet(
-        state,
-        section3,
-        # headers=state.stdGWM_headers,
-        data=[],
-        tab_name=None,
-        height=2000,
-        width=1000,
-        mode=None,
-        select_bindFunc=on_cell_select_WMsSheet,
-    )
-    WMs_sheet.kind = "WMs"
 
-    # 칼럼 폭 자동 맞춤
-    # WMs_sheet.set_options(auto_resize_columns=100)
-    WMs_sheet.set_all_cell_sizes_to_text(width=5, slim=True)
-    WMs_sheet.pack(padx=5, pady=2, anchor="e")
-
-    ####################################################################
-    ####################################################################
-    ####################################################################
-    ####################################################################
-    ####################################################################
-
-    # # 옵저버 함수 등록
-    # state.observer_manager.add_observer(
-    #     lambda e: updateWidget_stdGWM_sheet(e, state, stdGWM_sheet),
-    # )
-    # 옵저버 함수 등록
-    state.observer_manager.add_observer(
-        lambda e: updateWidget_WMs_sheet(e, state, WMs_sheet),
-    )
-
-    # add_edit_mode_radio_buttons(state, stdGWM_sheet, section1)
-    # stdGWM_sheet.pack(padx=5, pady=2, anchor="w")
+    WMs_sheet_ = TeamStd_WMsSheetView(state, section3)
 
     return stdGWM_tab

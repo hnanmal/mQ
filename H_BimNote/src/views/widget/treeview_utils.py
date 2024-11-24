@@ -1,5 +1,5 @@
 # src/views/widget/treeview_utils.py
-
+from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk
 
@@ -22,6 +22,10 @@ class DefaultTreeViewStyleManager:
             background=[("selected", "#fffec0")],  # Set the selection background color
             foreground=[("selected", "blue")],
         )  # Set the selection foreground color
+        # Configure hover style
+        style.configure(
+            "Hover.Treeview", background="#d3d3d3", padding=(2, 2)
+        )  # Light gray hover color
         style.configure("Treeview.Heading", font=("Arial", 10, "normal"))
         treeview.configure(style="Treeview")
 
@@ -30,8 +34,6 @@ class DefaultTreeViewStyleManager:
 class TreeViewStateObserver:
     def __init__(self, state, treeview, updateFunc):
         self.state = state
-        self.treeview = treeview
-        # self.state.observer_manager.add_observer(self.update)
         self.state.observer_manager.add_observer(updateFunc)
 
 
@@ -39,12 +41,11 @@ class ScrollbarWidget:
     def __init__(self, parent, target_widget, x=True, y=True):
         # self.frame = ttk.Frame(parent)
         self.frame = parent
-        # self.frame.pack(expand=True, fill="both")
+        self.frame.pack(side="top", expand=True, fill="both")
 
         # The target widget should be provided by the user of this class.
         # self.target_widget = target_widget(self.frame)
         self.target_widget = target_widget
-        # self.target_widget.pack(side="left", expand=True, fill="both")
 
         commands_scroll = []
         if y and x:
@@ -52,13 +53,14 @@ class ScrollbarWidget:
             self.v_scrollbar = ttk.Scrollbar(
                 self.frame, orient="vertical", command=self.target_widget.yview
             )
-            self.v_scrollbar.pack(side="right", fill="y", anchor="ne")
+            self.v_scrollbar.pack(side="right", fill="y")
             commands_scroll.append(self.v_scrollbar.set)
+
             # Add Horizontal Scrollbar
             self.h_scrollbar = ttk.Scrollbar(
                 self.frame, orient="horizontal", command=self.target_widget.xview
             )
-            self.h_scrollbar.pack(side="bottom", fill="x", anchor="sw")
+            self.h_scrollbar.pack(side="bottom", fill="x")
             # self.h_scrollbar.pack(fill="x")
             commands_scroll.append(self.h_scrollbar.set)
         elif y and not x:
@@ -66,14 +68,14 @@ class ScrollbarWidget:
             self.v_scrollbar = ttk.Scrollbar(
                 self.frame, orient="vertical", command=self.target_widget.yview
             )
-            self.v_scrollbar.pack(side="right", fill="y", anchor="ne")
+            # self.v_scrollbar.pack(side="right", fill="y", anchor="ne")
             commands_scroll.append(self.v_scrollbar.set)
         elif not y and x:
             # Add Horizontal Scrollbar
             self.h_scrollbar = ttk.Scrollbar(
                 self.frame, orient="horizontal", command=self.target_widget.xview
             )
-            self.h_scrollbar.pack(side="bottom", fill="x", anchor="sw")
+            # self.h_scrollbar.pack(side="bottom", fill="x", anchor="sw")
             # self.h_scrollbar.pack(fill="x")
             commands_scroll.append(self.h_scrollbar.set)
         else:
@@ -94,6 +96,62 @@ class BaseTreeView:
         self.tree = ttk.Treeview(parent, columns=headers, show="headings")
         self.setup_columns(headers)
         self.parent = parent
+        # Configure tag styles
+        self.tree.tag_configure(
+            "hover",
+            background="#d3d3d3",
+            foreground="blue",
+            font=("Arial", 10, "bold"),
+            # padding=(2, 2),
+        )  # Light gray background for hover
+        self.tree.tag_configure(
+            "normal", background="white"
+        )  # Default white background
+
+        # Track the last selected item
+        self.last_selected_item = None
+
+        # 이벤트 바인딩
+        self.tree.bind(
+            "<Motion>", self.on_mouse_motion
+        )  # 마우스 움직임을 감지해 hover 효과 적용
+        self.tree.bind(
+            "<Leave>", self.on_mouse_leave
+        )  # 트리뷰에서 마우스가 나갔을 때 hover 효과 제거
+
+    # 모든 항목에서 hover 효과 제거 함수 (재귀적으로 모든 하위 항목 포함)
+    def clear_all_hover(self, tree):
+        def clear_tags_recursive(item):
+            if self.last_selected_item == item:
+                pass
+            else:
+                # 현재 항목의 태그를 'normal'로 변경
+                tree.item(item, tags=("normal",))
+                # 자식 항목들에 대해서도 동일하게 적용
+                children = tree.get_children(item)
+                for child in children:
+                    clear_tags_recursive(child)
+
+        # 루트 항목부터 시작하여 모든 항목에 대해 재귀적으로 태그 설정
+        for root_item in tree.get_children():
+            clear_tags_recursive(root_item)
+
+    # Function to apply hover effect
+    def on_mouse_motion(self, event):
+        # 모든 항목의 hover 상태 초기화
+        self.clear_all_hover(self.tree)
+        # self.tree.config(cursor="circle")  # Change to a hand cursor
+
+        # 마우스 커서 아래에 있는 아이템의 ID 가져오기
+        item_id = self.tree.identify_row(event.y)
+        if item_id:
+            # hover 상태를 적용
+            self.tree.item(item_id, tags=("hover",))
+
+    # Function to reset all tags when the mouse leaves the widget
+    def on_mouse_leave(self, event):
+        self.clear_all_hover(self.tree)
+        # self.tree.config(cursor="")  # Reset to default
 
     def setup_columns(self, headers, hdr_widths=None):
         for idx, header in enumerate(headers):
@@ -195,6 +253,7 @@ class BaseTreeView:
             self.tree.selection_set(target_item)
             self.tree.focus(target_item)
             self.tree.see(target_item)  # Scroll to the selected item if needed
+            self.last_selected_item = target_item
 
 
 class TeamStd_GWMTreeView:
@@ -202,20 +261,28 @@ class TeamStd_GWMTreeView:
         self.state = state
         headers = ["분류", "G-WM", "Item"]
         hdr_widths = [127, 60, 100]
-        # hdr_widths = [200, 100, 100]
 
         # Compose TreeView, Style Manager, and State Observer
-        self.treeview = BaseTreeView(parent, headers)
+        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview.tree.config(height=3000)
         self.state_observer = TreeViewStateObserver(
             state, self.treeview, lambda e: self.update(state)
         )
 
+        # config selection mode
+        self.treeview.tree.config(selectmode="browse")
+        # Tag styles
+        self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
+        self.treeview.tree.tag_configure("normal", font=("Arial", 10))
         # Set up UI
         self.set_title(parent)
-        self.treeview.tree.pack(expand=True, fill="both")
-        # self.scroll_widget = ScrollbarWidget(parent, self.treeview.tree, x=True)
+        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
+        self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
 
+        # Track the last selected item with an instance attribute
+        self.last_selected_item = None
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
@@ -240,27 +307,32 @@ class TeamStd_GWMTreeView:
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
-        selected_item_id = self.treeview.tree.selection()
-        # selected_item_id = self.treeview.tree.focus()
+        if self.last_selected_item:
+            self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
 
+        # selected_item_id = self.treeview.tree.selection()
+        selected_item_id = self.treeview.tree.focus()
+        self.treeview.last_selected_item = selected_item_id
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-        selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
 
-        parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-        grand_parent_item_name = self.treeview.tree.item(
-            grand_parent_item_id, "values"
-        )[-3]
+        if self.treeview.tree.item(selected_item_id, "values")[-1]:
+            selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
 
-        formatted_value = " | ".join(
-            [
-                grand_parent_item_name,
-                parent_item_name,
-                selected_item_name,
-            ]
-        )
+            parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
+            grand_parent_item_name = self.treeview.tree.item(
+                grand_parent_item_id, "values"
+            )[-3]
 
-        self.state.selected_stdGWM_item.set(formatted_value)
+            formatted_value = " | ".join(
+                [
+                    grand_parent_item_name,
+                    parent_item_name,
+                    selected_item_name,
+                ]
+            )
+
+            self.state.selected_stdGWM_item.set(formatted_value)
         # print(f"Selected Item: {self.state.selected_stdGWM_item.get()}")
 
 
@@ -268,26 +340,24 @@ class TeamStd_GWMmatching_TreeView:
     def __init__(self, state, parent):
         self.state = state
         headers = ["Work Master"]
-        hdr_widths = [600]
+        hdr_widths = [1000]
 
-        self.set_title(parent)
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
-        tree_frame.pack(
-            expand=True,
-            fill="both",
-            # side="top",
-        )
         self.treeview = BaseTreeView(tree_frame, headers)
-        # TreeViewStyleManager.apply_style(self.treeview.tree)
+        self.treeview.tree.config(height=3000)
         self.state_observer = TreeViewStateObserver(
             state, self.treeview, lambda e: self.update(state)
         )
 
+        # config selection mode
+        self.treeview.tree.config(selectmode="extended")
+
         # Set up UI
-        self.treeview.tree.pack(expand=True, fill="both", side="left", anchor="nw")
+        self.set_title(parent)
+        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
+        self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
-        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree, y=True)
 
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
@@ -308,7 +378,8 @@ class TeamStd_GWMmatching_TreeView:
                 data = self.state.team_std_info["std-GWM"][grand_parent_item_name][
                     parent_item_name
                 ][selected_item_name]
-                self.treeview.insert_data(data)
+                wrapped_data = list(map(lambda x: [x], data))
+                self.treeview.insert_data(wrapped_data)
         except:
             print("TeamStd_GWMmatching_TreeView > update 메소드 진입 안됩니다~")
             pass
@@ -320,4 +391,15 @@ class TeamStd_GWMmatching_TreeView:
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
-        pass
+        print("on_item_selected_시작")
+        selected_items_id = self.treeview.tree.selection()
+        selected_items_name = go(
+            selected_items_id,
+            map(lambda x: list(self.treeview.tree.item(x, "values"))),
+            list,
+            map(lambda x: x[0]),
+            list,
+        )
+        self.state.selected_matchedWMs = selected_items_name
+        print(selected_items_name)
+        print("on_item_selected_종료")

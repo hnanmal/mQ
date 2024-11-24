@@ -13,6 +13,16 @@ def handle_add_button_press(state, mode=None):
     print("handle_add_button_press_종료")
 
 
+def handle_del_button_press(state, mode=None):
+    print("handle_add_button_press_시작")
+    # Pass the data to the model to be added to the state
+    if mode == "std_matching":
+        state.dematch_matchedWMs_to_stdType()
+        state.observer_manager.notify_observers(state)
+
+    print("handle_add_button_press_종료")
+
+
 def toggle_stdGWM_widget_mode(state, sheet, edit_mode_var):  ##sheet를 탭으로 바꿔서?
     """시트의 편집 가능 여부를 전환하는 함수"""
     mode = edit_mode_var.get()

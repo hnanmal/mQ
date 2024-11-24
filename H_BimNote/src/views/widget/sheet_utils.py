@@ -1,5 +1,5 @@
 # src/views/widget/sheet_utils.py
-
+from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
@@ -8,24 +8,142 @@ from src.models.sheet_utils import parse_DB_toSheet
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 
 
-# def updateWidget_stdGWM_sheet(event, state, sheet):
-#     # 상태 변경 시 tksheet를 업데이트
-#     data_forSheet = parse_DB_toSheet(state.team_std_info["std-GWM"], mode="std-GWM")
-#     sheet.set_sheet_data(
-#         data_forSheet,
-#         # reset_col_positions=True,
-#         # reset_row_positions=True,
-#     )
+class DefaultSheetViewStyleManager:
+    pass
+
+
+class SheetViewStateObserver:
+    def __init__(self, state, treeview, updateFunc):
+        self.state = state
+        self.state.observer_manager.add_observer(updateFunc)
+
+
+class BaseSheetView:
+    def __init__(self, parent, headers):
+        self.sheet = Sheet(parent, headers=headers)
+        self.parent = parent
+
+        # config enable_bindings
+        self.sheet.enable_bindings(
+            "edit_cell",
+            "delete",
+            "single_select",  # Allow single cell selection
+            "drag_select",
+            "row_select",  # Allow row selection
+            "column_select",  # Allow column selection
+            "drag_select",  # Allow drag selection
+            "column_width_resize",
+            "row_height_resize",
+            "double_click_column_resize",
+            "copy",
+            "paste",
+            "ctrl_click_select",
+            "right_click_popup_menu",
+            "rc_insert_row",
+            "rc_delete_row",
+            "arrowkeys",
+        )
+
+    def setup_columns(self, headers, hdr_widths=None):
+        pass
+
+    def insert_data(self, data):
+        pass
+
+    def clear_sheetview():
+        pass
+
+    def get_sheet_data():
+        pass
+
+
+class TeamStd_WMsSheetView:
+    def __init__(self, state, parent):
+        self.state = state
+        # headers = ["분류", "G-WM", "Item"]
+
+        # Compose TreeView, Style Manager, and State Observer
+        self.sheetview = BaseSheetView(parent, headers=None)
+        self.state_observer = SheetViewStateObserver(
+            state, self.sheetview, lambda e: self.update(state)
+        )
+
+        # Set up UI
+        self.set_title(parent)
+        self.sheetview.sheet.pack(expand=True, fill="both")
+        self.sheetview.sheet.header_font(("Arial", 8, "normal"))
+        self.sheetview.sheet.set_options(
+            font=("Arial Narrow", 10, "normal"),
+            default_row_height=35,
+            # Bind selection events
+        )  # Font name and size
+
+        self.sheetview.sheet.extra_bindings(
+            [
+                (
+                    "cell_select",
+                    lambda e: self.on_cell_select(e, state, self.sheetview.sheet),
+                ),
+                (
+                    "drag_select_cells",
+                    lambda e: self.on_cell_select(e, state, self.sheetview.sheet),
+                ),
+            ]
+        )
+
+    def update(self, state):
+        # Updating tksheet in the UI
+        data_forSheet = state.team_std_info.get("WMs", [])
+        self.sheetview.sheet.set_sheet_data(data_forSheet)
+
+    def set_title(self, parent):
+        self.widget_name = "WorkMaster DB"
+        title_font = tk.font.Font(family="맑은 고딕", size=12)
+        title_label = tk.Label(parent, text=self.widget_name, font=title_font)
+        title_label.pack(padx=5, pady=5, anchor="w")
+
+    def on_cell_select(self, event, state, sheet, color="#fffec0"):
+        # 선택된 셀의 위치 가져오기
+        selected_cells = list(sheet.get_selected_cells())
+        state.selected_stdGWM_item.get().split(" | ")
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            state.selected_stdGWM_item.get().split(" | ")
+        )
+        if selected_cells:
+            # 기존 스타일 초기화
+            sheet.dehighlight_rows()
+
+            # 선택된 행 강조 표시 (예: 노란색으로 설정)
+            selected_rows = list(map(lambda x: x[0], selected_cells))
+            print(selected_rows)
+
+            selectedWMs = []
+            for row_idx in selected_rows:
+                stringified_rowData = go(
+                    sheet.get_row_data(row_idx),
+                    map(lambda x: str(x)),
+                    filter(lambda x: x != "0"),
+                    filter(lambda x: x != ""),
+                    filter(lambda x: x != " "),
+                    filter(lambda x: x != "ㅤ"),  #  공백 특수 문자
+                    lambda x: " | ".join(x),
+                )
+                selectedWMs.append(stringified_rowData)
+            state.selectedWMs = selectedWMs
+            print(f"on_cell_select_WMsSheet: {selectedWMs}")
+            sheet.highlight_rows(
+                rows=selected_rows, bg=color, fg="black", highlight_index=True
+            )
+
+        state.log_widget.write(
+            f"선택 발생! 외애애애애애엥 [{self.widget_name}]시트, [{selected_cells}] 에서 선택 발생!!!!"
+        )
 
 
 def updateWidget_WMs_sheet(event, state, sheet):
     # Updating tksheet in the UI
     data_forSheet = state.team_std_info.get("WMs", [])
     sheet.set_sheet_data(data_forSheet)
-
-
-def updateWidget_matching_listbox(event, state, listbox):
-    pass
 
 
 def on_cell_select(event, state, sheet, color="#fffec0"):
@@ -66,10 +184,16 @@ def on_cell_select_WMsSheet(event, state, sheet, color="#fffec0"):
 
         selectedWMs = []
         for row_idx in selected_rows:
-            stringified_rowData = list(
-                map(lambda x: str(x), sheet.get_row_data(row_idx))
+            stringified_rowData = go(
+                sheet.get_row_data(row_idx),
+                map(lambda x: str(x)),
+                filter(lambda x: x != "0"),
+                filter(lambda x: x != ""),
+                filter(lambda x: x != " "),
+                filter(lambda x: x != "ㅤ"),  #  공백 특수 문자
+                lambda x: " | ".join(x),
             )
-            selectedWMs.append([" | ".join(stringified_rowData)])
+            selectedWMs.append(stringified_rowData)
         state.selectedWMs = selectedWMs
         print(f"on_cell_select_WMsSheet: {selectedWMs}")
         sheet.highlight_rows(

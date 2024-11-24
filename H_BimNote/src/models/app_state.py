@@ -26,12 +26,11 @@ class AppState:
         self.previous_tab = None  # Track the previous tab
         self.config = None
         self.selected_stdGWM_item = tk.StringVar()
-        self.selectedWMs = []
         # Set up a trace to call the observer whenever the value changes
         self.selected_stdGWM_item.trace_add("write", self._notify_selected_change)
-        # self.selected_stdGWM_item.trace_add(
-        #     "write", lambda e, *args: self.observer_manager.notify_observers(self)
-        # )
+
+        self.selectedWMs = []
+        self.selected_matchedWMs = []
 
         self.std_edit_mode = tk.StringVar(value="locked")
 
@@ -109,12 +108,29 @@ class AppState:
             self.selected_stdGWM_item.get().split(" | ")
         )
 
-        if "std-GWM" in self.team_std_info:
+        if "std-GWM" in self.team_std_info and selectedWMs != []:
             self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
                 selected_item_name
-            ] = selectedWMs
+            ] = sorted(selectedWMs)
 
         print("match_wms_to_stdType_종료")
+
+    def dematch_matchedWMs_to_stdType(self):
+        print("dematch_matchedWMs_to_stdType_시작")
+        selected_matchedWMs = self.selected_matchedWMs
+        self.selected_stdGWM_item.get().split(" | ")
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            self.selected_stdGWM_item.get().split(" | ")
+        )
+        print(f"제거 여부 판별시작")
+        if "std-GWM" in self.team_std_info:
+            print(f"제거 여부 판별중 {selected_matchedWMs}")
+            for matchedWM in selected_matchedWMs:
+                self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
+                    selected_item_name
+                ].remove(matchedWM)
+
+        print("dematch_matchedWMs_to_stdType_종료")
 
     # # 통합 상태 업데이트 함수
     # def update_project_info(self, new_data):
