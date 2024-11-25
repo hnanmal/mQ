@@ -18,42 +18,6 @@ class SheetViewStateObserver:
         self.state.observer_manager.add_observer(updateFunc)
 
 
-class SheetSearchManager:
-    def __init__(self, sheet, state):
-        self.sheet = sheet
-        self.state = state
-        # self.original_data = sheet.get_sheet_data(return_copy=True)
-
-    def search_sheet_data(self, search_term):
-        """Search for rows containing the search term and update the sheet."""
-        search_term = search_term.lower()
-        if not search_term:
-            # If the search term is empty, reset to the original data
-            self.reset_sheet_data()
-            return
-
-        # Get all data from the sheet and filter it
-        all_data = self.state.team_std_info.get("WMs", [])
-        filtered_data = [
-            row
-            for row in all_data
-            if any(search_term in str(cell).lower() for cell in row)
-        ]
-
-        # Update the sheet with filtered data
-        self.sheet.set_sheet_data(filtered_data)
-
-    def reset_sheet_data(self):
-        """Reset the sheet to its original state."""
-        original_data = self.state.team_std_info.get("WMs", [])
-        self.sheet.set_sheet_data(original_data)
-
-    def reset_search(self, search_entry):
-        """Clear the search entry and reset the sheet data to the original state."""
-        search_entry.delete(0, tk.END)  # Clear the search entry
-        self.reset_sheet_data()  # Reset the data in the sheet
-
-
 class BaseSheetView:
     def __init__(self, parent, headers):
         self.sheet = Sheet(parent, headers=headers)
@@ -105,24 +69,15 @@ class TeamStd_WMsSheetView:
         )
 
         # Set up UI
-        self.title_frame = ttk.Frame(parent)
-        self.title_frame.pack(anchor="w")
-        self.set_title(self.title_frame)
+        self.set_title(parent)
         self.sheetview.sheet.pack(expand=True, fill="both")
         self.sheetview.sheet.header_font(("Arial", 8, "normal"))
         self.sheetview.sheet.set_options(
-            font=("Arial Narrow", 9, "normal"),
-            default_row_height=30,
+            font=("Arial Narrow", 10, "normal"),
+            default_row_height=35,
             # Bind selection events
         )  # Font name and size
 
-        # Initialize the search manager
-        self.search_manager = SheetSearchManager(self.sheetview.sheet, self.state)
-
-        # Add Search Box
-        self.add_search_box(self.title_frame)
-
-        # action binding
         self.sheetview.sheet.extra_bindings(
             [
                 (
@@ -135,19 +90,13 @@ class TeamStd_WMsSheetView:
                 ),
             ]
         )
+        # Add Search Box
+        self.add_search_box(parent)
 
     def update(self, state):
         # Updating tksheet in the UI
-        data_forSheet = state.team_std_info.get("WMs")
-        sheetview_data = self.sheetview.sheet.get_sheet_data()
-        # print(sheetview_data)
-        if not sheetview_data:
-            self.sheetview.sheet.set_sheet_data(data_forSheet)
-
-        # elif sorted(sheetview_data) == sorted(data_forSheet):
-        #     pass
-        # else:
-        #     self.sheetview.sheet.set_sheet_data(data_forSheet)
+        data_forSheet = state.team_std_info.get("WMs", [])
+        self.sheetview.sheet.set_sheet_data(data_forSheet)
 
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""
@@ -161,28 +110,32 @@ class TeamStd_WMsSheetView:
         # Search Entry
         self.search_entry = tk.Entry(search_frame, width=20)
         self.search_entry.pack(side="left", padx=5)
-        self.search_entry.bind(
-            "<Return>",
-            lambda e: self.search_manager.search_sheet_data(self.search_entry.get()),
-        )
+        self.search_entry.bind("<Return>", lambda e: self.search_sheet_data())
 
         # Search Button
         search_button = tk.Button(
-            search_frame,
-            text="Search",
-            command=lambda: self.search_manager.search_sheet_data(
-                self.search_entry.get()
-            ),
+            search_frame, text="Search", command=self.search_sheet_data
         )
         search_button.pack(side="left", padx=5)
 
-        # Reset Button
-        reset_button = tk.Button(
-            search_frame,
-            text="Reset",
-            command=lambda: self.search_manager.reset_search(self.search_entry),
-        )
-        reset_button.pack(side="left", padx=5)
+    def search_sheet_data(self):
+        """Search for rows containing the search term and update the sheet."""
+        search_term = self.search_entry.get().lower()
+        if not search_term:
+            # If the search term is empty, reset to the original data
+            self.update(self.state)
+            return
+
+        # Get all data from the sheet and filter it
+        all_data = self.state.team_std_info.get("WMs", [])
+        filtered_data = [
+            row
+            for row in all_data
+            if any(search_term in str(cell).lower() for cell in row)
+        ]
+
+        # Update the sheet with filtered data
+        self.sheetview.sheet.set_sheet_data(filtered_data)
 
     def set_title(self, parent):
         self.widget_name = "WorkMaster DB"
@@ -193,17 +146,17 @@ class TeamStd_WMsSheetView:
     def on_cell_select(self, event, state, sheet, color="#fffec0"):
         # 선택된 셀의 위치 가져오기
         selected_cells = list(sheet.get_selected_cells())
-        # state.selected_stdGWM_item.get().split(" | ")
-        # grand_parent_item_name, parent_item_name, selected_item_name = (
-        #     state.selected_stdGWM_item.get().split(" | ")
-        # )
+        state.selected_stdGWM_item.get().split(" | ")
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            state.selected_stdGWM_item.get().split(" | ")
+        )
         if selected_cells:
             # 기존 스타일 초기화
             sheet.dehighlight_rows()
 
             # 선택된 행 강조 표시 (예: 노란색으로 설정)
             selected_rows = list(map(lambda x: x[0], selected_cells))
-            # print(selected_rows)
+            print(selected_rows)
 
             selectedWMs = []
             for row_idx in selected_rows:
@@ -218,14 +171,14 @@ class TeamStd_WMsSheetView:
                 )
                 selectedWMs.append(stringified_rowData)
             state.selectedWMs = selectedWMs
-            # print(f"on_cell_select_WMsSheet: {selectedWMs}")
+            print(f"on_cell_select_WMsSheet: {selectedWMs}")
             sheet.highlight_rows(
                 rows=selected_rows, bg=color, fg="black", highlight_index=True
             )
 
-        # state.log_widget.write(
-        #     f"선택 발생! 외애애애애애엥 [{self.widget_name}]시트, [{selected_cells}] 에서 선택 발생!!!!"
-        # )
+        state.log_widget.write(
+            f"선택 발생! 외애애애애애엥 [{self.widget_name}]시트, [{selected_cells}] 에서 선택 발생!!!!"
+        )
 
 
 #######################################################################################

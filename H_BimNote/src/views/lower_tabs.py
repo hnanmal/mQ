@@ -89,6 +89,18 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     # Place tksheet in G-WM tab
     ##############################################################
+    ## tab_common_area###########
+    # Create an "Edit Mode" / "Locked Mode" button
+    mode_button = tk.Button(
+        tab_common_area,
+        text="Locked Mode",
+        command=lambda: state.edit_mode_manager.set_edit_mode(
+            "edit" if mode_button.cget("text") == "Locked Mode" else "locked"
+        ),
+    )
+    mode_button.pack(anchor="w", pady=5)
+
+    ##############################################################
     ## section 1###########
     stdGWM_treeview = TeamStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(stdGWM_treeview.treeview.tree)
@@ -136,7 +148,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
-        text="Add",  # Button text
+        text="Add 🡇",  # Button text
         command=lambda: handle_add_button_press(
             state, mode="std_matching"
         ),  # Function to call when clicked
@@ -153,7 +165,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     # Create a button and place it in the window
     del_button = tk.Button(
         std_matching_btn_area,
-        text="Del",  # Button text
+        text="Del 🡅",  # Button text
         command=lambda: handle_del_button_press(
             state, mode="std_matching"
         ),  # Function to call when clicked
@@ -177,6 +189,23 @@ def create_stdGWM_tab(state, subtab_notebook):
     ##############################################################
     ## section 3###########
 
-    WMs_sheet_ = TeamStd_WMsSheetView(state, section3)
+    WMs_sheet = TeamStd_WMsSheetView(state, section3)
+
+    # Register widgets with EditModeManager
+    state.edit_mode_manager.register_widgets(
+        mode_button=mode_button,
+        tree_views=[
+            # stdGWM_treeview,
+            std_matching_treeview,
+        ],
+        tree_ctrl_btn=[
+            add_button,
+            del_button,
+        ],
+        sheet=WMs_sheet,
+    )
+
+    # Set the initial state to "Locked Mode"
+    state.edit_mode_manager.set_edit_mode("locked")
 
     return stdGWM_tab

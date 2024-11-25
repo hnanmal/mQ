@@ -1,5 +1,6 @@
 # src/models/app_state.py
-
+from src.controllers.widget.widgets import EditModeManager
+from src.core.fp_utils import *
 from src.models.observer_manager import ObserverManager
 
 
@@ -32,6 +33,7 @@ class AppState:
         self.selectedWMs = []
         self.selected_matchedWMs = []
 
+        self.edit_mode_manager = EditModeManager(self)
         self.std_edit_mode = tk.StringVar(value="locked")
 
         self.wm_group_data = {}
@@ -102,7 +104,13 @@ class AppState:
     # state 데이터 업데이트 함수들
     def match_wms_to_stdType(self):
         print("match_wms_to_stdType_시작")
-        selectedWMs = self.selectedWMs
+        selectedWMs = go(
+            self.selectedWMs,
+            sorted,
+            # map(lambda x: list(x)),
+            list,
+        )
+        print(selectedWMs)
         self.selected_stdGWM_item.get().split(" | ")
         grand_parent_item_name, parent_item_name, selected_item_name = (
             self.selected_stdGWM_item.get().split(" | ")
@@ -111,7 +119,7 @@ class AppState:
         if "std-GWM" in self.team_std_info and selectedWMs != []:
             self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
                 selected_item_name
-            ] = sorted(selectedWMs)
+            ].extend(selectedWMs)
 
         print("match_wms_to_stdType_종료")
 

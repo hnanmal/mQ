@@ -2,6 +2,78 @@
 
 import tkinter as tk
 
+from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
+
+
+class EditModeManager:
+    def __init__(self, state):
+        self.state = state
+        self.widgets = {}
+
+    def register_widgets(self, **widgets):
+        """
+        Register widgets to be controlled by EditModeManager.
+        """
+        self.widgets.update(widgets)
+
+    def set_edit_mode(self, mode):
+        """
+        Set the edit mode of all registered widgets.
+        """
+        if mode == "edit":
+            self.enable_editing()
+        elif mode == "locked":
+            self.disable_editing()
+
+    def enable_editing(self):
+        # Update button label if available
+        if "mode_button" in self.widgets:
+            self.widgets["mode_button"].config(text="Edit Mode")
+
+        # Enable TreeView editing
+        for tree_widget in self.widgets.get("tree_views", []):
+            DefaultTreeViewStyleManager.apply_style(tree_widget.treeview.tree)
+
+        # Enable Btn
+        for btn_widget in self.widgets.get("tree_ctrl_btn", []):
+            btn_widget.config(state="normal")
+
+        # Enable Sheet editing
+        sheet_widget = self.widgets.get("sheet")
+        if sheet_widget:
+            sheet_widget.sheetview.sheet.enable_bindings(
+                "edit_cell", "delete", "insert_row", "delete_row", "copy", "paste"
+            )
+
+    def disable_editing(self):
+        # Update button label if available
+        if "mode_button" in self.widgets:
+            self.widgets["mode_button"].config(text="Locked Mode")
+
+        # Disable TreeView editing
+        for tree_widget in self.widgets.get("tree_views", []):
+            DefaultTreeViewStyleManager.apply_locked_style(tree_widget.treeview.tree)
+
+        # Disable Btn
+        for btn_widget in self.widgets.get("tree_ctrl_btn", []):
+            btn_widget.config(state="disabled")
+
+        # Disable Sheet editing
+        sheet_widget = self.widgets.get("sheet")
+        if sheet_widget:
+            sheet_widget.sheetview.sheet.disable_bindings(
+                "edit_cell", "delete", "insert_row", "delete_row", "paste"
+            )
+
+    def start_treeview_edit(self, tree, event):
+        """
+        Example function to start editing a TreeView item.
+        """
+        item_id = tree.focus()
+        if item_id:
+            # Implement your editing logic here (e.g., open an entry widget for editing)
+            print(f"Editing item: {tree.item(item_id, 'values')}")
+
 
 def handle_add_button_press(state, mode=None):
     print("handle_add_button_press_시작")
