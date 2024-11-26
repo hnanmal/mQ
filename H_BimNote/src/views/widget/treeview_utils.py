@@ -548,6 +548,8 @@ class TeamStd_GWMTreeView:
 
             # self.state.selected_stdGWM_item.set(formatted_value)
             self.selected_item.set(formatted_value)
+            # 마지막 선택항목으로 재등록
+            self.last_selected_item = selected_item_id
 
 
 class TeamStd_WMmatching_TreeView:
@@ -575,6 +577,8 @@ class TeamStd_WMmatching_TreeView:
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
 
+        # Track the last selected item with an instance attribute
+        self.last_selected_item = None
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
@@ -610,6 +614,9 @@ class TeamStd_WMmatching_TreeView:
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
+        # if self.last_selected_item:
+        #     self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
+
         print("on_item_selected_시작")
         selected_items_id = self.treeview.tree.selection()
         selected_items_name = go(
@@ -620,7 +627,8 @@ class TeamStd_WMmatching_TreeView:
             list,
         )
         self.state.selected_matchedWMs = selected_items_name
-        # print(selected_items_name)
+        # # 마지막 선택항목으로 재등록
+        # self.last_selected_item = selected_items_id[0]
         print("on_item_selected_종료")
 
 
@@ -717,3 +725,5 @@ class TeamStd_SWMTreeView:
             )
 
             self.selected_item.set(formatted_value)
+            # 마지막 선택항목으로 재등록
+            self.last_selected_item = selected_item_id
