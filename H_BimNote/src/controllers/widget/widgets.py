@@ -6,8 +6,8 @@ from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
 
 
 class EditModeManager:
-    def __init__(self, state):
-        self.state = state
+    def __init__(self):
+        # self.state = state
         self.widgets = {}
 
     def register_widgets(self, **widgets):
@@ -15,6 +15,7 @@ class EditModeManager:
         Register widgets to be controlled by EditModeManager.
         """
         self.widgets.update(widgets)
+        print(f"register_widgets : {self.widgets}")
 
     def set_edit_mode(self, mode):
         """
@@ -33,6 +34,11 @@ class EditModeManager:
         # Enable TreeView editing
         for tree_widget in self.widgets.get("tree_views", []):
             DefaultTreeViewStyleManager.apply_style(tree_widget.treeview.tree)
+            if hasattr(tree_widget, "context_menu"):
+                print(f"{tree_widget}:::락스테이터스 있음")
+                tree_widget.context_menu.set_locked_status(False)
+            else:
+                print("락스테이터스 없음")
 
         # Enable Btn
         for btn_widget in self.widgets.get("tree_ctrl_btn", []):
@@ -50,9 +56,16 @@ class EditModeManager:
         if "mode_button" in self.widgets:
             self.widgets["mode_button"].config(text="Locked Mode")
 
+        # Disable TreeViewContextMenu
+
         # Disable TreeView editing
         for tree_widget in self.widgets.get("tree_views", []):
             DefaultTreeViewStyleManager.apply_locked_style(tree_widget.treeview.tree)
+            if hasattr(tree_widget, "context_menu"):
+                print(f"{tree_widget}:::락스테이터스 있음")
+                tree_widget.context_menu.set_locked_status(True)
+            else:
+                print("락스테이터스 없음")
 
         # Disable Btn
         for btn_widget in self.widgets.get("tree_ctrl_btn", []):
@@ -75,21 +88,21 @@ class EditModeManager:
             print(f"Editing item: {tree.item(item_id, 'values')}")
 
 
-def handle_add_button_press(state, mode=None):
+def handle_add_button_press(state, data_kind=None):
     print("handle_add_button_press_시작")
     # Pass the data to the model to be added to the state
-    if mode == "std_matching":
-        state.match_wms_to_stdType()
+    if "WM" in data_kind:
+        state.match_wms_to_stdType(data_kind)
         state.observer_manager.notify_observers(state)
 
     print("handle_add_button_press_종료")
 
 
-def handle_del_button_press(state, mode=None):
+def handle_del_button_press(state, data_kind=None):
     print("handle_add_button_press_시작")
     # Pass the data to the model to be added to the state
-    if mode == "std_matching":
-        state.dematch_matchedWMs_to_stdType()
+    if "WM" in data_kind:
+        state.dematch_matchedWMs_to_stdType(data_kind)
         state.observer_manager.notify_observers(state)
 
     print("handle_add_button_press_종료")

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.views.lower_tabs import create_stdGWM_tab
+from src.views.lower_tabs import create_stdGWM_tab, create_stdSWM_tab
 
 
 def create_tab_with_subtabs(notebook, tab_name, subtab_names):
@@ -22,6 +22,7 @@ def create_team_standard_tab(state, notebook):
     subtab_notebook = create_tab_with_subtabs(notebook, "Team Standard", subtab_names)
 
     g_wm_tab = create_stdGWM_tab(state, subtab_notebook)
+    s_wm_tab = create_stdSWM_tab(state, subtab_notebook)
 
 
 def create_project_standard_tab(notebook):

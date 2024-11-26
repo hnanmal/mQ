@@ -39,10 +39,13 @@ def load_from_json(state, _file_path=None):
             loaded_data = json.load(file)
 
             state.update_team_standard_info(loaded_data, data_kind="std-GWM")
+            state.update_team_standard_info(loaded_data, data_kind="std-SWM")
             if loaded_data.get("WMs"):
                 state.update_team_standard_info(loaded_data["WMs"], data_kind="WMs")
             else:
-                loadedWMs = load_from_excel(state, _file_path=file_path)
+                loadedWMs = load_from_excel(
+                    state, _file_path="./resource/WorkMaster_DB.xlsx"
+                )[6:]
                 state.update_team_standard_info(loadedWMs, data_kind="WMs")
 
             # state.update_project_info(loaded_data.get("project_info", {}))

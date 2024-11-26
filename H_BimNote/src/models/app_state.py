@@ -26,15 +26,9 @@ class AppState:
         self.current_tab = None
         self.previous_tab = None  # Track the previous tab
         self.config = None
-        self.selected_stdGWM_item = tk.StringVar()
-        # Set up a trace to call the observer whenever the value changes
-        self.selected_stdGWM_item.trace_add("write", self._notify_selected_change)
 
         self.selectedWMs = []
         self.selected_matchedWMs = []
-
-        self.edit_mode_manager = EditModeManager(self)
-        self.std_edit_mode = tk.StringVar(value="locked")
 
         self.wm_group_data = {}
         self.lock_status = {}
@@ -47,26 +41,16 @@ class AppState:
 
     # def _notify_selected_change(self, *args):
     def _notify_selected_change(self, *args):
-        self.std_matching_treeview.update(self)
+        try:
+            self.std_matching_treeview_GWM.update(self)
+        except:
+            pass
+        try:
+            self.std_matching_treeview_SWM.update(self)
+        except:
+            pass
 
     ################### 옵저버 관련 #################################
-    # 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
-    def updateDB_S_GWM_data(self, new_data):
-        self.log_widget.write("update_S_GWM_data_start\n")
-
-        self.team_std_info.update({"std-GWM": new_data})
-
-        self.log_widget.write("update_S_GWM_data_end\n")
-
-    def updateDB_WMs_data(self, new_data):
-        self.log_widget.write("update_WMs_data_start\n")
-
-        # self.project_info["GWM"] = new_data
-        self.team_std_info.update({"WMs": new_data})
-        # self.observer_manager.notify_observers()
-
-        self.log_widget.write("update_WMs_data_end\n")
-
     def update_stdGWM_matching(self, listbox_items):
         grand_parent_item_name, parent_item_name, selected_item_name = (
             self.selected_stdGWM_item.get().split(" | ")
@@ -90,10 +74,37 @@ class AppState:
         )
 
     # 통합 상태 업데이트 함수
+    ## 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
+    def updateDB_WMs_data(self, new_data):
+        self.log_widget.write("update_WMs_data_start\n")
+
+        # self.project_info["GWM"] = new_data
+        self.team_std_info.update({"WMs": new_data})
+        # self.observer_manager.notify_observers()
+
+        self.log_widget.write("update_WMs_data_end\n")
+
+    def updateDB_S_GWM_data(self, new_data):
+        self.log_widget.write("update_S_GWM_data_start\n")
+
+        self.team_std_info.update({"std-GWM": new_data})
+
+        self.log_widget.write("update_S_GWM_data_end\n")
+
+    def updateDB_S_SWM_data(self, new_data):
+        self.log_widget.write("update_S_SWM_data_start\n")
+
+        self.team_std_info.update({"std-SWM": new_data})
+
+        self.log_widget.write("update_S_SWM_data_end\n")
+
     def update_team_standard_info(self, new_data, data_kind=None):
         if data_kind == "std-GWM":
             new_SGWM_data = new_data.get(data_kind)
             self.updateDB_S_GWM_data(new_SGWM_data)
+        elif data_kind == "std-SWM":
+            new_SSWM_data = new_data.get(data_kind)
+            self.updateDB_S_SWM_data(new_SSWM_data)
         elif data_kind == "WMs":
             new_WMs_data = new_data
             self.updateDB_WMs_data(new_WMs_data)
@@ -102,7 +113,7 @@ class AppState:
         self.observer_manager.notify_observers(self)
 
     # state 데이터 업데이트 함수들
-    def match_wms_to_stdType(self):
+    def match_wms_to_stdType(self, data_kind):
         print("match_wms_to_stdType_시작")
         selectedWMs = go(
             self.selectedWMs,
@@ -116,14 +127,14 @@ class AppState:
             self.selected_stdGWM_item.get().split(" | ")
         )
 
-        if "std-GWM" in self.team_std_info and selectedWMs != []:
-            self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
+        if data_kind in self.team_std_info and selectedWMs != []:
+            self.team_std_info[data_kind][grand_parent_item_name][parent_item_name][
                 selected_item_name
             ].extend(selectedWMs)
 
         print("match_wms_to_stdType_종료")
 
-    def dematch_matchedWMs_to_stdType(self):
+    def dematch_matchedWMs_to_stdType(self, data_kind):
         print("dematch_matchedWMs_to_stdType_시작")
         selected_matchedWMs = self.selected_matchedWMs
         self.selected_stdGWM_item.get().split(" | ")
@@ -131,10 +142,10 @@ class AppState:
             self.selected_stdGWM_item.get().split(" | ")
         )
         print(f"제거 여부 판별시작")
-        if "std-GWM" in self.team_std_info:
+        if data_kind in self.team_std_info:
             print(f"제거 여부 판별중 {selected_matchedWMs}")
             for matchedWM in selected_matchedWMs:
-                self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
+                self.team_std_info[data_kind][grand_parent_item_name][parent_item_name][
                     selected_item_name
                 ].remove(matchedWM)
 

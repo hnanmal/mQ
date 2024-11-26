@@ -7,6 +7,7 @@ from tkinter import ttk
 #     on_stdGWM_sheet_data_change,
 # )
 from src.controllers.widget.widgets import (
+    EditModeManager,
     handle_add_button_press,
     handle_del_button_press,
 )
@@ -23,11 +24,14 @@ from src.views.widget.listbox_utils import create_listbox
 from src.views.widget.treeview_utils import (
     TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
-    TeamStd_GWMmatching_TreeView,
+    TeamStd_WMmatching_TreeView,
+    TeamStd_SWMTreeView,
 )
 
 
 def create_stdGWM_tab(state, subtab_notebook):
+    edit_mode_manager = EditModeManager()
+
     stdGWM_tab = ttk.Frame(subtab_notebook)
     subtab_notebook.add(stdGWM_tab, text="Standard Work Master : Group (Std G-WM)")
 
@@ -37,8 +41,6 @@ def create_stdGWM_tab(state, subtab_notebook):
         height=10,
     )
     tab_common_area.pack(expand=True, fill="x")
-
-    tmpLabel = ttk.Label(tab_common_area)
 
     stdGWM_tab_paned_area = ttk.Frame(
         stdGWM_tab,
@@ -90,11 +92,12 @@ def create_stdGWM_tab(state, subtab_notebook):
     # Place tksheet in G-WM tab
     ##############################################################
     ## tab_common_area###########
+
     # Create an "Edit Mode" / "Locked Mode" button
     mode_button = tk.Button(
         tab_common_area,
         text="Locked Mode",
-        command=lambda: state.edit_mode_manager.set_edit_mode(
+        command=lambda: edit_mode_manager.set_edit_mode(
             "edit" if mode_button.cget("text") == "Locked Mode" else "locked"
         ),
     )
@@ -107,37 +110,39 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 2###########
-    seleted_item_label_area = ttk.Frame(
+    selected_item_label_area = ttk.Frame(
         section2,
         width=600,
     )
-    seleted_item_label_area.pack(side=tk.TOP, anchor="w")
+    selected_item_label_area.pack(side=tk.TOP, anchor="w")
 
-    seleted_item_label = tk.Label(
-        seleted_item_label_area,
+    selected_item_label = tk.Label(
+        selected_item_label_area,
         text="Selected Item: ",
         font=stdGWM_tab_font,
     )
-    seleted_item = tk.Label(
-        seleted_item_label_area,
-        textvariable=state.selected_stdGWM_item,
+    selected_item = tk.Label(
+        selected_item_label_area,
+        # textvariable=state.selected_stdGWM_item,
+        textvariable=stdGWM_treeview.selected_item,
         font=stdGWM_tab_font,
         fg="blue",
     )
-    seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
-    seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
+    selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
+    selected_item.pack(side="left", padx=5, pady=5, anchor="w")
 
     std_matching_widget_area = ttk.Frame(
         section2,
         width=600,
     )
 
-    std_matching_treeview = TeamStd_GWMmatching_TreeView(
-        state, std_matching_widget_area
+    std_matching_treeview = TeamStd_WMmatching_TreeView(
+        state, std_matching_widget_area, stdGWM_treeview, data_kind="std-GWM"
     )
+
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
     std_matching_treeview.treeview.tree.config(height=800)
-    state.std_matching_treeview = std_matching_treeview
+    state.std_matching_treeview_GWM = std_matching_treeview
 
     std_matching_btn_area = ttk.Frame(
         section2,
@@ -150,7 +155,7 @@ def create_stdGWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Add 🡇",  # Button text
         command=lambda: handle_add_button_press(
-            state, mode="std_matching"
+            state, data_kind="std-GWM"
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
@@ -167,7 +172,7 @@ def create_stdGWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Del 🡅",  # Button text
         command=lambda: handle_del_button_press(
-            state, mode="std_matching"
+            state, data_kind="std-GWM"
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
@@ -192,10 +197,10 @@ def create_stdGWM_tab(state, subtab_notebook):
     WMs_sheet = TeamStd_WMsSheetView(state, section3)
 
     # Register widgets with EditModeManager
-    state.edit_mode_manager.register_widgets(
+    edit_mode_manager.register_widgets(
         mode_button=mode_button,
         tree_views=[
-            # stdGWM_treeview,
+            stdGWM_treeview,
             std_matching_treeview,
         ],
         tree_ctrl_btn=[
@@ -206,6 +211,191 @@ def create_stdGWM_tab(state, subtab_notebook):
     )
 
     # Set the initial state to "Locked Mode"
-    state.edit_mode_manager.set_edit_mode("locked")
+    edit_mode_manager.set_edit_mode("locked")
 
     return stdGWM_tab
+
+
+def create_stdSWM_tab(state, subtab_notebook):
+    edit_mode_manager_SWM = EditModeManager()
+
+    stdSWM_tab = ttk.Frame(subtab_notebook)
+    subtab_notebook.add(stdSWM_tab, text="Standard Work Master : Single (Std S-WM)")
+
+    tab_common_area = ttk.Frame(
+        stdSWM_tab,
+        # width=2000,
+        height=10,
+    )
+    tab_common_area.pack(expand=True, fill="x")
+
+    stdSWM_tab_paned_area = ttk.Frame(
+        stdSWM_tab,
+        # width=600,
+        height=3000,
+    )
+    stdSWM_tab_paned_area.pack(expand=True, fill="both")
+
+    stdSWM_tab_paned_window = tk.PanedWindow(
+        stdSWM_tab_paned_area,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    stdSWM_tab_paned_window.pack(expand=True, fill="both")
+
+    section1 = ttk.Frame(
+        stdSWM_tab_paned_area,
+        width=1000,
+        height=3000,
+    )
+    section2 = ttk.Frame(
+        stdSWM_tab_paned_area,
+        width=600,
+        height=3000,
+    )
+    section3 = ttk.Frame(
+        stdSWM_tab_paned_area,
+        width=600,
+        height=3000,
+    )
+
+    stdSWM_tab_paned_window.add(section1, minsize=400)
+    stdSWM_tab_paned_window.add(section2, minsize=400)
+    stdSWM_tab_paned_window.add(section3, minsize=600)
+
+    stdSWM_tab_paned_window.paneconfigure(section1, height=3000)
+    stdSWM_tab_paned_window.paneconfigure(section2, width=600, height=3000)
+    stdSWM_tab_paned_window.paneconfigure(section3, height=3000)
+    # stdGWM_tab_paned_window.paneconfigure(section2, width=600)
+
+    # common 영역 라벨링
+    stdSWM_tab_font = tk.font.Font(
+        family="맑은 고딕",
+        size=12,
+        # weight="bold",
+    )
+
+    # Place tksheet in G-WM tab
+    ##############################################################
+    ## tab_common_area###########
+    # Create an "Edit Mode" / "Locked Mode" button
+    mode_button = tk.Button(
+        tab_common_area,
+        text="Locked Mode",
+        command=lambda: edit_mode_manager_SWM.set_edit_mode(
+            "edit" if mode_button.cget("text") == "Locked Mode" else "locked"
+        ),
+    )
+    mode_button.pack(anchor="w", pady=5)
+
+    ##############################################################
+    ## section 1###########
+    stdSWM_treeview = TeamStd_SWMTreeView(state, section1)
+    DefaultTreeViewStyleManager.apply_style(stdSWM_treeview.treeview.tree)
+
+    ##############################################################
+    ## section 2###########
+    seleted_item_label_area = ttk.Frame(
+        section2,
+        width=600,
+    )
+    seleted_item_label_area.pack(side=tk.TOP, anchor="w")
+
+    seleted_item_label = tk.Label(
+        seleted_item_label_area,
+        text="Selected Item: ",
+        font=stdSWM_tab_font,
+    )
+    seleted_item = tk.Label(
+        seleted_item_label_area,
+        # textvariable=state.selected_stdGWM_item,
+        textvariable=stdSWM_treeview.selected_item,
+        font=stdSWM_tab_font,
+        fg="blue",
+    )
+    seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
+    seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
+
+    std_matching_widget_area = ttk.Frame(
+        section2,
+        width=600,
+    )
+
+    std_matching_treeview = TeamStd_WMmatching_TreeView(
+        state, std_matching_widget_area, stdSWM_treeview, data_kind="std-SWM"
+    )
+    DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
+    std_matching_treeview.treeview.tree.config(height=800)
+    state.std_matching_treeview_SWM = std_matching_treeview
+
+    std_matching_btn_area = ttk.Frame(
+        section2,
+        width=100,
+    )
+    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
+    std_matching_widget_area.pack(side="top", anchor="w")
+    # Create a button and place it in the window
+    add_button = tk.Button(
+        std_matching_btn_area,
+        text="Add 🡇",  # Button text
+        command=lambda: handle_add_button_press(
+            state, data_kind="std-SWM"
+        ),  # Function to call when clicked
+        font=("Arial", 10),  # Custom font for button text
+        bg="#fffec0",  # Background color
+        fg="black",  # Text color
+        width=8,  # Width of the button
+        height=1,  # Height of the button
+        relief=tk.RAISED,
+    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+
+    # state.std_matching_add_btn = add_button
+
+    # Create a button and place it in the window
+    del_button = tk.Button(
+        std_matching_btn_area,
+        text="Del 🡅",  # Button text
+        command=lambda: handle_del_button_press(
+            state, data_kind="std-SWM"
+        ),  # Function to call when clicked
+        font=("Arial", 10),  # Custom font for button text
+        bg="#fffec0",  # Background color
+        fg="black",  # Text color
+        width=8,  # Width of the button
+        height=1,  # Height of the button
+        relief=tk.RAISED,
+    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+    del_button.pack(
+        side="left", padx=5, pady=5, anchor="nw"
+    )  # Add padding around the button
+    add_button.pack(
+        side="left", padx=5, pady=5, anchor="nw"
+    )  # Add padding around the button
+    # state.std_matching_del_btn = del_button
+
+    # print(state.std_edit_mode)
+
+    ##############################################################
+    ## section 3###########
+
+    WMs_inSWM_sheet = TeamStd_WMsSheetView(state, section3)
+
+    # Register widgets with EditModeManager
+    edit_mode_manager_SWM.register_widgets(
+        mode_button=mode_button,
+        tree_views=[
+            stdSWM_treeview,
+            std_matching_treeview,
+        ],
+        tree_ctrl_btn=[
+            add_button,
+            del_button,
+        ],
+        sheet=WMs_inSWM_sheet,
+    )
+
+    # Set the initial state to "Locked Mode"
+    edit_mode_manager_SWM.set_edit_mode("locked")
+
+    return stdSWM_tab
