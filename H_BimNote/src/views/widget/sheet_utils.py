@@ -4,7 +4,6 @@ import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
 
-from src.models.sheet_utils import parse_DB_toSheet
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 
 

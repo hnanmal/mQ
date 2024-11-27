@@ -98,13 +98,23 @@ class AppState:
 
         self.log_widget.write("update_S_SWM_data_end\n")
 
+    def updateDB_commonInput_data(self, new_data):
+        self.log_widget.write("update_S_SWM_data_start\n")
+
+        self.team_std_info.update({"common-input": new_data})
+
+        self.log_widget.write("update_S_SWM_data_end\n")
+
     def update_team_standard_info(self, new_data, data_kind=None):
         if data_kind == "std-GWM":
-            new_SGWM_data = new_data.get(data_kind)
-            self.updateDB_S_GWM_data(new_SGWM_data)
+            new_target_data = new_data.get(data_kind)
+            self.updateDB_S_GWM_data(new_target_data)
         elif data_kind == "std-SWM":
-            new_SSWM_data = new_data.get(data_kind)
-            self.updateDB_S_SWM_data(new_SSWM_data)
+            new_target_data = new_data.get(data_kind)
+            self.updateDB_S_SWM_data(new_target_data)
+        elif data_kind == "common-input":
+            new_target_data = new_data.get(data_kind)
+            self.updateDB_commonInput_data(new_target_data)
         elif data_kind == "WMs":
             new_WMs_data = new_data
             self.updateDB_WMs_data(new_WMs_data)

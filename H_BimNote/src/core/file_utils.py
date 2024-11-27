@@ -40,6 +40,7 @@ def load_from_json(state, _file_path=None):
 
             state.update_team_standard_info(loaded_data, data_kind="std-GWM")
             state.update_team_standard_info(loaded_data, data_kind="std-SWM")
+            state.update_team_standard_info(loaded_data, data_kind="common-input")
             if loaded_data.get("WMs"):
                 state.update_team_standard_info(loaded_data["WMs"], data_kind="WMs")
             else:

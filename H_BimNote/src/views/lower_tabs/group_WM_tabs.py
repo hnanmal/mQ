@@ -2,10 +2,6 @@ import tkinter as tk
 import tkinter.font
 from tkinter import ttk
 
-# from src.controllers.widget.sheet_utils import (
-#     on_paste_cells,
-#     on_stdGWM_sheet_data_change,
-# )
 from src.controllers.widget.widgets import (
     EditModeManager,
     handle_add_button_press,
@@ -14,13 +10,7 @@ from src.controllers.widget.widgets import (
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
     TeamStd_WMsSheetView,
-    create_tksheet,
-    on_cell_select_WMsSheet,
-    # on_cell_select_stdGWMsheet,
-    updateWidget_WMs_sheet,
-    # updateWidget_stdGWM_sheet,
 )
-from src.views.widget.listbox_utils import create_listbox
 from src.views.widget.treeview_utils import (
     TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
@@ -32,58 +22,57 @@ from src.views.widget.treeview_utils import (
 def create_stdGWM_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
-    stdGWM_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(stdGWM_tab, text="Standard Work Master : Group (Std G-WM)")
+    working_tab = ttk.Frame(subtab_notebook)
+    subtab_notebook.add(working_tab, text="Standard Work Master : Group (Std G-WM)")
 
-    tab_common_area = ttk.Frame(
-        stdGWM_tab,
+    working_tab_common_area = ttk.Frame(
+        working_tab,
         # width=2000,
         height=10,
     )
-    tab_common_area.pack(expand=True, fill="x")
+    working_tab_common_area.pack(expand=True, fill="x")
 
-    stdGWM_tab_paned_area = ttk.Frame(
-        stdGWM_tab,
+    working_tab_paned_area = ttk.Frame(
+        working_tab,
         # width=600,
         height=3000,
     )
-    stdGWM_tab_paned_area.pack(expand=True, fill="both")
+    working_tab_paned_area.pack(expand=True, fill="both")
 
-    stdGWM_tab_paned_window = tk.PanedWindow(
-        stdGWM_tab_paned_area,
+    working_tab_paned_window = tk.PanedWindow(
+        working_tab_paned_area,
         orient=tk.HORIZONTAL,
         sashwidth=7,
         bg="#e3e3e3",
     )
-    stdGWM_tab_paned_window.pack(expand=True, fill="both")
+    working_tab_paned_window.pack(expand=True, fill="both")
 
     section1 = ttk.Frame(
-        stdGWM_tab_paned_area,
+        working_tab_paned_area,
         width=1000,
         height=3000,
     )
     section2 = ttk.Frame(
-        stdGWM_tab_paned_area,
+        working_tab_paned_area,
         width=600,
         height=3000,
     )
     section3 = ttk.Frame(
-        stdGWM_tab_paned_area,
+        working_tab_paned_area,
         width=600,
         height=3000,
     )
 
-    stdGWM_tab_paned_window.add(section1, minsize=400)
-    stdGWM_tab_paned_window.add(section2, minsize=400)
-    stdGWM_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section1, minsize=400)
+    working_tab_paned_window.add(section2, minsize=400)
+    working_tab_paned_window.add(section3, minsize=600)
 
-    stdGWM_tab_paned_window.paneconfigure(section1, height=3000)
-    stdGWM_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    stdGWM_tab_paned_window.paneconfigure(section3, height=3000)
-    # stdGWM_tab_paned_window.paneconfigure(section2, width=600)
+    working_tab_paned_window.paneconfigure(section1, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
+    working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
-    stdGWM_tab_font = tk.font.Font(
+    working_tab_font = tk.font.Font(
         family="맑은 고딕",
         size=12,
         # weight="bold",
@@ -94,14 +83,14 @@ def create_stdGWM_tab(state, subtab_notebook):
     ## tab_common_area###########
 
     # Create an "Edit Mode" / "Locked Mode" button
-    mode_button = tk.Button(
-        tab_common_area,
+    edit_mode_button = tk.Button(
+        working_tab_common_area,
         text="Locked Mode",
         command=lambda: edit_mode_manager.set_edit_mode(
-            "edit" if mode_button.cget("text") == "Locked Mode" else "locked"
+            "edit" if edit_mode_button.cget("text") == "Locked Mode" else "locked"
         ),
     )
-    mode_button.pack(anchor="w", pady=5)
+    edit_mode_button.pack(anchor="w", pady=5)
 
     ##############################################################
     ## section 1###########
@@ -119,13 +108,13 @@ def create_stdGWM_tab(state, subtab_notebook):
     selected_item_label = tk.Label(
         selected_item_label_area,
         text="Selected Item: ",
-        font=stdGWM_tab_font,
+        font=working_tab_font,
     )
     selected_item = tk.Label(
         selected_item_label_area,
         # textvariable=state.selected_stdGWM_item,
         textvariable=stdGWM_treeview.selected_item,
-        font=stdGWM_tab_font,
+        font=working_tab_font,
         fg="blue",
     )
     selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
@@ -198,7 +187,7 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
-        mode_button=mode_button,
+        mode_button=edit_mode_button,
         tree_views=[
             stdGWM_treeview,
             std_matching_treeview,
@@ -213,64 +202,61 @@ def create_stdGWM_tab(state, subtab_notebook):
     # Set the initial state to "Locked Mode"
     edit_mode_manager.set_edit_mode("locked")
 
-    return stdGWM_tab
+    return working_tab
 
 
 def create_stdSWM_tab(state, subtab_notebook):
-    edit_mode_manager_SWM = EditModeManager()
+    edit_mode_manager = EditModeManager()
 
-    stdSWM_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(stdSWM_tab, text="Standard Work Master : Single (Std S-WM)")
+    working_tab = ttk.Frame(subtab_notebook)
+    subtab_notebook.add(working_tab, text="Standard Work Master : Single (Std S-WM)")
 
-    tab_common_area = ttk.Frame(
-        stdSWM_tab,
-        # width=2000,
+    working_tab_common_area = ttk.Frame(
+        working_tab,
         height=10,
     )
-    tab_common_area.pack(expand=True, fill="x")
+    working_tab_common_area.pack(expand=True, fill="x")
 
-    stdSWM_tab_paned_area = ttk.Frame(
-        stdSWM_tab,
-        # width=600,
+    working_tab_paned_area = ttk.Frame(
+        working_tab,
         height=3000,
     )
-    stdSWM_tab_paned_area.pack(expand=True, fill="both")
+    working_tab_paned_area.pack(expand=True, fill="both")
 
-    stdSWM_tab_paned_window = tk.PanedWindow(
-        stdSWM_tab_paned_area,
+    working_tab_paned_window = tk.PanedWindow(
+        working_tab_paned_area,
         orient=tk.HORIZONTAL,
         sashwidth=7,
         bg="#e3e3e3",
     )
-    stdSWM_tab_paned_window.pack(expand=True, fill="both")
+    working_tab_paned_window.pack(expand=True, fill="both")
 
     section1 = ttk.Frame(
-        stdSWM_tab_paned_area,
+        working_tab_paned_area,
         width=1000,
         height=3000,
     )
     section2 = ttk.Frame(
-        stdSWM_tab_paned_area,
+        working_tab_paned_area,
         width=600,
         height=3000,
     )
     section3 = ttk.Frame(
-        stdSWM_tab_paned_area,
+        working_tab_paned_area,
         width=600,
         height=3000,
     )
 
-    stdSWM_tab_paned_window.add(section1, minsize=400)
-    stdSWM_tab_paned_window.add(section2, minsize=400)
-    stdSWM_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section1, minsize=400)
+    working_tab_paned_window.add(section2, minsize=400)
+    working_tab_paned_window.add(section3, minsize=600)
 
-    stdSWM_tab_paned_window.paneconfigure(section1, height=3000)
-    stdSWM_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    stdSWM_tab_paned_window.paneconfigure(section3, height=3000)
-    # stdGWM_tab_paned_window.paneconfigure(section2, width=600)
+    working_tab_paned_window.paneconfigure(section1, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
+    working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
-    stdSWM_tab_font = tk.font.Font(
+    working_tab_font = tk.font.Font(
         family="맑은 고딕",
         size=12,
         # weight="bold",
@@ -281,9 +267,9 @@ def create_stdSWM_tab(state, subtab_notebook):
     ## tab_common_area###########
     # Create an "Edit Mode" / "Locked Mode" button
     mode_button = tk.Button(
-        tab_common_area,
+        working_tab_common_area,
         text="Locked Mode",
-        command=lambda: edit_mode_manager_SWM.set_edit_mode(
+        command=lambda: edit_mode_manager.set_edit_mode(
             "edit" if mode_button.cget("text") == "Locked Mode" else "locked"
         ),
     )
@@ -305,13 +291,13 @@ def create_stdSWM_tab(state, subtab_notebook):
     seleted_item_label = tk.Label(
         seleted_item_label_area,
         text="Selected Item: ",
-        font=stdSWM_tab_font,
+        font=working_tab_font,
     )
     seleted_item = tk.Label(
         seleted_item_label_area,
         # textvariable=state.selected_stdGWM_item,
         textvariable=stdSWM_treeview.selected_item,
-        font=stdSWM_tab_font,
+        font=working_tab_font,
         fg="blue",
     )
     seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
@@ -382,7 +368,7 @@ def create_stdSWM_tab(state, subtab_notebook):
     WMs_inSWM_sheet = TeamStd_WMsSheetView(state, section3)
 
     # Register widgets with EditModeManager
-    edit_mode_manager_SWM.register_widgets(
+    edit_mode_manager.register_widgets(
         mode_button=mode_button,
         tree_views=[
             stdSWM_treeview,
@@ -396,6 +382,6 @@ def create_stdSWM_tab(state, subtab_notebook):
     )
 
     # Set the initial state to "Locked Mode"
-    edit_mode_manager_SWM.set_edit_mode("locked")
+    edit_mode_manager.set_edit_mode("locked")
 
-    return stdSWM_tab
+    return working_tab
