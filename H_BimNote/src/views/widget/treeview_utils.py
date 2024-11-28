@@ -266,22 +266,47 @@ class BaseTreeView:
         for item in root_items:
             expand_item(item)
 
+    # def insert_data_with_levels(self, data, parent_id=""):
+    #     """Insert data into the TreeView with levels based on nested dictionaries."""
+    #     for classification, sub_dict in data.items():
+    #         class_id = self.tree.insert(
+    #             parent_id, "end", text=classification, values=(classification, "", "")
+    #         )
+    #         self.tree.item(class_id, open=True)
+
+    #         for gwm, itemDicts in sub_dict.items():
+    #             gwm_id = self.tree.insert(
+    #                 class_id, "end", text=gwm, values=("", gwm, "")
+    #             )
+    #             self.tree.item(gwm_id, open=True)
+
+    #             for item in itemDicts.keys():
+    #                 self.tree.insert(gwm_id, "end", text=item, values=("", "", item))
+
     def insert_data_with_levels(self, data, parent_id=""):
-        """Insert data into the TreeView with levels based on nested dictionaries."""
-        for classification, sub_dict in data.items():
-            class_id = self.tree.insert(
-                parent_id, "end", text=classification, values=(classification, "", "")
-            )
-            self.tree.item(class_id, open=True)
+        """Insert data into the TreeView with levels based on the new data structure."""
+        for node in data:
+            if isinstance(node, dict):
+                # Extract the last value in the 'values' list to be displayed in the TreeView
+                # display_value = node["values"][-1] if node["values"] else ""
+                display_value = node["values"]
 
-            for gwm, itemDicts in sub_dict.items():
-                gwm_id = self.tree.insert(
-                    class_id, "end", text=gwm, values=("", gwm, "")
+                # Insert the current node with its name and the last value from 'values'
+                node_id = self.tree.insert(
+                    parent_id, "end", text=node["name"], values=(display_value)
                 )
-                self.tree.item(gwm_id, open=True)
+                self.tree.item(
+                    node_id, open=True
+                )  # Keep the tree open to display all items
 
-                for item in itemDicts.keys():
-                    self.tree.insert(gwm_id, "end", text=item, values=("", "", item))
+                # Recursively insert children if there are any
+                if "children" in node and isinstance(node["children"], list):
+                    self.insert_data_with_levels(node["children"], node_id)
+
+            elif isinstance(node, str):
+                # Insert the string as a leaf node without additional children
+                # self.tree.insert(parent_id, "end", text=node, values=(node,))
+                pass
 
     def get_item_indices(self, selected_item_id):
         indices = []
@@ -387,24 +412,30 @@ class TeamStd_GWMTreeView:
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
-        try:
-            origin_indices = self.treeview.get_item_indices(selected_item_id)
-            print(origin_indices, "!!!")
-        except:
-            print("origin_indices 추출 실패")
+        origin_indices = None
+
+        # Extract origin indices if a valid item is focused
+        if selected_item_id:
+            try:
+                origin_indices = self.treeview.get_item_indices(selected_item_id)
+                print(origin_indices, "!!!")
+            except Exception as e:
+                print(f"origin_indices 추출 실패: {e}")
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]
-            # treeview_data = self.treeview.get_tree_data()
+            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
-        try:
-            self.treeview.select_item_by_indices(origin_indices)
-        except:
-            pass
+        # Reselect the item if possible
+        if origin_indices:
+            try:
+                self.treeview.select_item_by_indices(origin_indices)
+            except Exception as e:
+                print(f"Item selection failed: {e}")
+
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def set_title(self, parent):
@@ -414,39 +445,57 @@ class TeamStd_GWMTreeView:
 
     def on_item_selected(self, event):
         try:
+            # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
-                self.treeview.tree.item(
-                    self.treeview.last_selected_item, tags=("normal",)
-                )
-        except:
-            pass
+                self.treeview.tree.item(self.last_selected_item, tags=("normal",))
+        except Exception as e:
+            print(f"Error resetting last selected item tag: {e}")
 
-        # selected_item_id = self.treeview.tree.selection()
+        # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
+
+        # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
 
-        if self.treeview.tree.item(selected_item_id, "values")[-1]:
-            selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
-
-            parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-            grand_parent_item_name = self.treeview.tree.item(
-                grand_parent_item_id, "values"
-            )[-3]
-
-            formatted_value = " | ".join(
-                [
-                    grand_parent_item_name,
-                    parent_item_name,
-                    selected_item_name,
-                ]
+        # Extract the names from the values, ensuring each level is handled appropriately
+        try:
+            # Get the name of the selected item, parent, and grandparent
+            selected_item_name = go(
+                self.treeview.tree.item(selected_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            parent_item_name = go(
+                self.treeview.tree.item(parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            grand_parent_item_name = go(
+                self.treeview.tree.item(grand_parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
             )
 
-            # self.state.selected_stdGWM_item.set(formatted_value)
+            # Format the selected path as "grandparent | parent | selected"
+            formatted_value = " | ".join(
+                filter(
+                    None, [grand_parent_item_name, parent_item_name, selected_item_name]
+                )
+            )
+
+            # Update the selected item in the state
             self.selected_item.set(formatted_value)
-            # 마지막 선택항목으로 재등록
+
+            # Register the last selected item
             self.last_selected_item = selected_item_id
+
+        except Exception as e:
+            print(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -623,28 +672,69 @@ class TeamStd_WMmatching_TreeView:
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
-    # def update(self, state):
     def update(self, event=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
         print(f"{self.__class__.__name__} > update 메소드 시작")
         print(self.selected_item_relate_widget.get())
-        try:
-            self.selected_item_relate_widget.get().split(" | ")
 
+        try:
+            # Split the selected item path to find the grandparent, parent, and selected item names
             grand_parent_item_name, parent_item_name, selected_item_name = (
                 self.selected_item_relate_widget.get().split(" | ")
             )
-            if self.data_kind in self.state.team_std_info:
-                self.treeview.clear_treeview()
-                data = self.state.team_std_info[self.data_kind][grand_parent_item_name][
-                    parent_item_name
-                ][selected_item_name]
-                wrapped_data = list(map(lambda x: [x], data))
-                self.treeview.insert_data(wrapped_data)
-        except:
-            print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~")
-            pass
+
+            # Ensure the data kind exists in the team standard information
+            if self.data_kind in state.team_std_info:
+                data = state.team_std_info[self.data_kind]["children"]
+
+                # Find the grandparent node
+                grand_parent_node = next(
+                    (node for node in data if node["name"] == grand_parent_item_name),
+                    None,
+                )
+                if grand_parent_node:
+                    # Find the parent node
+                    parent_node = next(
+                        (
+                            node
+                            for node in grand_parent_node["children"]
+                            if node["name"] == parent_item_name
+                        ),
+                        None,
+                    )
+                    if parent_node:
+                        # Find the selected node
+                        selected_node = next(
+                            (
+                                node
+                                for node in parent_node["children"]
+                                if node["name"] == selected_item_name
+                            ),
+                            None,
+                        )
+                        if selected_node:
+                            # Clear the TreeView and insert the data for the selected node
+                            self.treeview.clear_treeview()
+
+                            # Wrap the children of the selected node for insertion
+                            wrapped_data = go(
+                                selected_node["children"],
+                                map(lambda x: [x]),
+                                list,
+                            )
+                            # self.treeview.insert_data_with_levels(wrapped_data)
+                            self.treeview.insert_data(wrapped_data)
+                        else:
+                            print(f"Selected item '{selected_item_name}' not found.")
+                    else:
+                        print(f"Parent item '{parent_item_name}' not found.")
+                else:
+                    print(f"Grandparent item '{grand_parent_item_name}' not found.")
+
+        except Exception as e:
+            print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
+
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def set_title(self, parent):
@@ -721,24 +811,30 @@ class TeamStd_SWMTreeView:
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
-        try:
-            origin_indices = self.treeview.get_item_indices(selected_item_id)
-            print(origin_indices, "!!!")
-        except:
-            print("origin_indices 추출 실패")
+        origin_indices = None
+
+        # Extract origin indices if a valid item is focused
+        if selected_item_id:
+            try:
+                origin_indices = self.treeview.get_item_indices(selected_item_id)
+                print(origin_indices, "!!!")
+            except Exception as e:
+                print(f"origin_indices 추출 실패: {e}")
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]
-            # treeview_data = self.treeview.get_tree_data()
+            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
-        try:
-            self.treeview.select_item_by_indices(origin_indices)
-        except:
-            pass
+        # Reselect the item if possible
+        if origin_indices:
+            try:
+                self.treeview.select_item_by_indices(origin_indices)
+            except Exception as e:
+                print(f"Item selection failed: {e}")
+
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def set_title(self, parent):
@@ -748,38 +844,57 @@ class TeamStd_SWMTreeView:
 
     def on_item_selected(self, event):
         try:
+            # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
-                self.treeview.tree.item(
-                    self.treeview.last_selected_item, tags=("normal",)
-                )
-        except:
-            pass
+                self.treeview.tree.item(self.last_selected_item, tags=("normal",))
+        except Exception as e:
+            print(f"Error resetting last selected item tag: {e}")
 
-        # selected_item_id = self.treeview.tree.selection()
+        # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
+
+        # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
 
-        if self.treeview.tree.item(selected_item_id, "values")[-1]:
-            selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
-
-            parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-            grand_parent_item_name = self.treeview.tree.item(
-                grand_parent_item_id, "values"
-            )[-3]
-
-            formatted_value = " | ".join(
-                [
-                    grand_parent_item_name,
-                    parent_item_name,
-                    selected_item_name,
-                ]
+        # Extract the names from the values, ensuring each level is handled appropriately
+        try:
+            # Get the name of the selected item, parent, and grandparent
+            selected_item_name = go(
+                self.treeview.tree.item(selected_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            parent_item_name = go(
+                self.treeview.tree.item(parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            grand_parent_item_name = go(
+                self.treeview.tree.item(grand_parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
             )
 
+            # Format the selected path as "grandparent | parent | selected"
+            formatted_value = " | ".join(
+                filter(
+                    None, [grand_parent_item_name, parent_item_name, selected_item_name]
+                )
+            )
+
+            # Update the selected item in the state
             self.selected_item.set(formatted_value)
-            # 마지막 선택항목으로 재등록
+
+            # Register the last selected item
             self.last_selected_item = selected_item_id
+
+        except Exception as e:
+            print(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -979,43 +1094,74 @@ class TeamStd_CommonInputTreeView:
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
+    # def update(self, event=None):
+    #     state = self.state
+    #     print(f"{self.__class__.__name__} > update 메소드 시작")
+
+    #     def insert_item(parent_id, item_data):
+    #         """Recursive function to insert items into the Treeview."""
+    #         item_id = self.treeview.tree.insert(
+    #             parent_id, "end", values=item_data["values"]
+    #         )
+    #         for child_data in item_data["children"]:
+    #             insert_item(item_id, child_data)
+
+    #     selected_item_id = self.treeview.tree.focus()
+    #     try:
+    #         origin_indices = self.treeview.get_item_indices(selected_item_id)
+    #         print(origin_indices, "!!!")
+    #     except:
+    #         print("origin_indices 추출 실패")
+
+    #     """Update the TreeView whenever the state changes."""
+    #     if self.data_kind in state.team_std_info:
+    #         # Clear the TreeView and reload data from the updated state
+    #         data = state.team_std_info[self.data_kind]
+    #         # treeview_data = self.treeview.get_tree_data()
+    #         self.treeview.clear_treeview()
+    #         # self.treeview.insert_data_with_levels(data)
+    #         for item_data in data:
+    #             insert_item("", item_data)
+    #             # insert_item(item_data["id"], item_data)
+
+    #         # 트리뷰 항목 자동 펼침
+    #         self.treeview.expand_all_items()
+
+    #     # try:
+    #     #     self.treeview.select_item_by_indices(origin_indices)
+    #     # except:
+    #     #     pass
+
+    #     print(f"{self.__class__.__name__} > update 메소드 종료")
+
     def update(self, event=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
-        def insert_item(parent_id, item_data):
-            """Recursive function to insert items into the Treeview."""
-            item_id = self.treeview.tree.insert(
-                parent_id, "end", values=item_data["values"]
-            )
-            for child_data in item_data["children"]:
-                insert_item(item_id, child_data)
-
         selected_item_id = self.treeview.tree.focus()
-        try:
-            origin_indices = self.treeview.get_item_indices(selected_item_id)
-            print(origin_indices, "!!!")
-        except:
-            print("origin_indices 추출 실패")
+        origin_indices = None
+
+        # Extract origin indices if a valid item is focused
+        if selected_item_id:
+            try:
+                origin_indices = self.treeview.get_item_indices(selected_item_id)
+                print(origin_indices, "!!!")
+            except Exception as e:
+                print(f"origin_indices 추출 실패: {e}")
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]
-            # treeview_data = self.treeview.get_tree_data()
+            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
-            # self.treeview.insert_data_with_levels(data)
-            for item_data in data:
-                insert_item("", item_data)
-                # insert_item(item_data["id"], item_data)
+            self.treeview.insert_data_with_levels(data)
 
-            # 트리뷰 항목 자동 펼침
-            self.treeview.expand_all_items()
-
-        # try:
-        #     self.treeview.select_item_by_indices(origin_indices)
-        # except:
-        #     pass
+        # Reselect the item if possible
+        if origin_indices:
+            try:
+                self.treeview.select_item_by_indices(origin_indices)
+            except Exception as e:
+                print(f"Item selection failed: {e}")
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
