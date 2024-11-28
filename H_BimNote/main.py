@@ -1,5 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+
+# from ttkthemes import ThemedTk
 
 from src.controllers.db_update_manager import DBUpdateManager
 from src.core.file_utils import load_from_json
@@ -12,10 +16,13 @@ from src.views.app_ui_setup import initialize_app
 
 
 def main():
-    root = tk.Tk()
+    # root = tk.Tk()
+    root = ttk.Window(themename="journal")
+    # root = ThemedTk(theme="ubuntu")
+    # root = ThemedTk(theme="breeze")
     notebook, state = initialize_app(root)
 
-    state.db_manager = DBUpdateManager(state)
+    # state.db_manager = DBUpdateManager(state)
     # state.log_widget.write("!!!")
     # Create parent tabs within the notebook
     create_team_standard_tab(state, notebook)
