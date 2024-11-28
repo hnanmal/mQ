@@ -18,6 +18,7 @@ from src.views.app_ui_setup import initialize_app
 def main():
     # root = tk.Tk()
     root = ttk.Window(themename="journal")
+    # root = ttk.Window(themename="simplex")
     # root = ThemedTk(theme="ubuntu")
     # root = ThemedTk(theme="breeze")
     notebook, state = initialize_app(root)
