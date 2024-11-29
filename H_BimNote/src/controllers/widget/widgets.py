@@ -88,21 +88,25 @@ class EditModeManager:
             print(f"Editing item: {tree.item(item_id, 'values')}")
 
 
-def handle_add_button_press(state, data_kind=None):
+def handle_add_button_press(state, related_widget=None):
     print("handle_add_button_press_시작")
+
+    data_kind = related_widget.data_kind
     # Pass the data to the model to be added to the state
     if "WM" in data_kind:
-        state.match_wms_to_stdType(data_kind)
+        state.match_wms_to_stdType(related_widget)
         state.observer_manager.notify_observers(state)
 
     print("handle_add_button_press_종료")
 
 
-def handle_del_button_press(state, data_kind=None):
+def handle_del_button_press(state, related_widget=None):
     print("handle_add_button_press_시작")
+
+    data_kind = related_widget.data_kind
     # Pass the data to the model to be added to the state
     if "WM" in data_kind:
-        state.dematch_matchedWMs_to_stdType(data_kind)
+        state.dematch_matchedWMs_to_stdType(related_widget)
         state.observer_manager.notify_observers(state)
 
     print("handle_add_button_press_종료")

@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.font
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 from src.controllers.widget.widgets import (
     EditModeManager,
@@ -64,9 +65,9 @@ def create_common_input_tab(state, subtab_notebook):
         height=3000,
     )
 
-    working_tab_paned_window.add(section1, minsize=400)
-    working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section1, minsize=800)
+    working_tab_paned_window.add(section2, minsize=100)
+    working_tab_paned_window.add(section3, minsize=700)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
@@ -183,7 +184,17 @@ def create_common_input_tab(state, subtab_notebook):
 
     # ##############################################################
     # ## section 3###########
+    # Alternatively, using PIL for other image formats like JPG
+    image = Image.open("resource/common_info_pic1.png")
+    image.resize((500, 250), Image.LANCZOS)
+    # image = image.resize(
+    #     (200, 200),
+    # )  # Image.ANTIALIAS)  # Resize the image if needed
+    photo = ImageTk.PhotoImage(image)
 
+    label = ttk.Label(section3, image=photo)
+    label.image = photo  # Keep a reference to avoid garbage collection
+    label.pack()
     # WMs_sheet = TeamStd_WMsSheetView(state, section3)
 
     # # Register widgets with EditModeManager

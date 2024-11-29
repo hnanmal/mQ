@@ -1,11 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
+
+# from tkinter import ttk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
-# from ttkthemes import ThemedTk
-
-from src.controllers.db_update_manager import DBUpdateManager
+# from src.controllers.db_update_manager import DBUpdateManager
 from src.core.file_utils import load_from_json
 from src.views.upper_tab import (
     create_project_apply_tab,
@@ -19,8 +18,6 @@ def main():
     # root = tk.Tk()
     root = ttk.Window(themename="journal")
     # root = ttk.Window(themename="simplex")
-    # root = ThemedTk(theme="ubuntu")
-    # root = ThemedTk(theme="breeze")
     notebook, state = initialize_app(root)
 
     # state.db_manager = DBUpdateManager(state)

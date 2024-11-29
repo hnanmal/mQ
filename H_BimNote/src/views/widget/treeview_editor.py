@@ -1,6 +1,6 @@
-from src.core.fp_utils import *
 import tkinter as tk
-from tkinter import ttk, simpledialog
+
+from src.controllers.tree_data_navigator import TreeDataManager
 
 
 class TreeviewEditor:
@@ -12,50 +12,42 @@ class TreeviewEditor:
         self.entry_widget = None
         self.current_item = None
         self.current_column = None
+        self.data_manager = TreeDataManager(state)
 
         # Bind double-click to initiate edit
         self.tree.bind("<Double-1>", self.on_double_click)
 
-    def generate_id_from_values(self, values):
-        """Generate an ID from the first non-empty value in the values list."""
-        for value in values:
-            if value:  # If value is not empty
-                return value
-        return "default_id"  # If no non-empty value found, provide a default ID
+    # def on_double_click(self, event):
+    #     # Identify the column and item that was double-clicked
+    #     region = self.tree.identify("region", event.x, event.y)
+    #     if region != "cell":
+    #         return
 
-    def add_item(self, parent_id="", values=()):
-        """Add an item to the Treeview and to the state."""
-        # Generate an ID from the first non-empty value in the values list
-        item_id = self.generate_id_from_values(values)
+    #     item_id = self.tree.identify_row(event.y)
+    #     column = self.tree.identify_column(event.x)
 
-        # Insert the item into the Treeview with the custom ID
-        self.tree.insert(parent_id, "end", iid=item_id, values=values)
+    #     if not item_id or not column:
+    #         return
 
-        # Insert the item into the state with the same ID
-        item_data = {"id": item_id, "values": list(values), "children": []}
+    #     self.current_item = item_id
+    #     self.current_column = int(column.replace("#", "")) - 1
 
-        # Add to state: either as a root item or as a child
-        if parent_id:
-            # Find the parent in the state and add as a child
-            self._add_child_to_state(
-                self.state.team_std_info[self.impl_treeview.data_kind],
-                parent_id,
-                item_data,
-            )
-        else:
-            # Add as a root item
-            self.state.team_std_info[self.impl_treeview.data_kind].append(item_data)
+    #     # Get the current value of the selected item
+    #     current_values = self.tree.item(item_id, "values")
+    #     if self.current_column >= len(current_values):
+    #         return
+    #     current_value = current_values[self.current_column]
 
-    def _add_child_to_state(self, items, parent_id, child_data):
-        """Recursively add a child to the correct parent in the state."""
-        for item in items:
-            if item["id"] == parent_id:
-                item["children"].append(child_data)
-                return True
-            if item["children"]:
-                if self._add_child_to_state(item["children"], parent_id, child_data):
-                    return True
-        return False
+    #     # Create an Entry widget for editing
+    #     x, y, width, height = self.tree.bbox(item_id, column)
+    #     self.entry_widget = tk.Entry(self.tree, width=width)
+    #     self.entry_widget.place(x=x, y=y, width=width, height=height)
+    #     self.entry_widget.insert(0, current_value)
+    #     self.entry_widget.focus()
+
+    #     # Bind events for Entry widget
+    #     self.entry_widget.bind("<Return>", self.on_edit_complete)
+    #     self.entry_widget.bind("<Escape>", self.on_edit_cancel)
 
     def on_double_click(self, event):
         # Identify the column and item that was double-clicked
@@ -73,10 +65,24 @@ class TreeviewEditor:
         self.current_column = int(column.replace("#", "")) - 1
 
         # Get the current value of the selected item
-        current_value = self.tree.item(item_id, "values")[self.current_column]
+        current_values = self.tree.item(item_id, "values")
+        if self.current_column >= len(current_values):
+            # If the column index exceeds current values length, set current_value to empty
+            current_value = ""
+        else:
+            current_value = current_values[self.current_column]
 
         # Create an Entry widget for editing
-        x, y, width, height = self.tree.bbox(item_id, column)
+        bbox = self.tree.bbox(item_id, column)
+        if not bbox:
+            print("Error: Bounding box could not be determined")
+            return
+
+        x, y, width, height = bbox
+        if width <= 0 or height <= 0:
+            print("Error: Bounding box width or height is invalid")
+            return
+
         self.entry_widget = tk.Entry(self.tree, width=width)
         self.entry_widget.place(x=x, y=y, width=width, height=height)
         self.entry_widget.insert(0, current_value)
@@ -85,6 +91,30 @@ class TreeviewEditor:
         # Bind events for Entry widget
         self.entry_widget.bind("<Return>", self.on_edit_complete)
         self.entry_widget.bind("<Escape>", self.on_edit_cancel)
+        self.entry_widget.bind("<FocusOut>", self.on_edit_complete)
+
+    # def on_edit_complete(self, event):
+    #     if self.current_item is None or self.current_column is None:
+    #         return
+
+    #     # Get the updated value from the Entry widget
+    #     new_value = self.entry_widget.get()
+
+    #     # Update the state with the new value using TreeDataManager
+    #     selected_name = self.tree.item(self.current_item, "text")
+    #     self.data_manager.update_node_value(
+    #         data_kind=self.impl_treeview.data_kind,
+    #         selected_name=selected_name,
+    #         column_index=self.current_column,
+    #         new_value=new_value,
+    #     )
+
+    #     # Notify observers that the state has been updated
+    #     self.state.observer_manager.notify_observers(self.state)
+
+    #     # Destroy the Entry widget
+    #     self.entry_widget.destroy()
+    #     self.entry_widget = None
 
     def on_edit_complete(self, event):
         if self.current_item is None or self.current_column is None:
@@ -93,14 +123,25 @@ class TreeviewEditor:
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
 
-        # Update the Treeview item value ## 위젯 변경 말고 스테이트 변경 후 노티 방식으로
-        values = list(self.tree.item(self.current_item, "values"))
-        values[self.current_column] = new_value
-        # self.tree.item(self.current_item, values=values)
+        # Update the state with the new value using TreeDataManager
+        selected_name = self.tree.item(self.current_item, "text")
+        self.data_manager.update_node_value(
+            data_kind=self.impl_treeview.data_kind,
+            selected_name=selected_name,
+            column_index=self.current_column,
+            new_value=new_value,
+        )
 
-        # Update the state with the new value
-        self.update_state(self.current_item, values)
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        # If the modified column matches the level depth, update the name as well
+        depth = self.get_item_depth(self.current_item)
+        if self.current_column == depth:
+            self.data_manager.update_node_name(
+                data_kind=self.impl_treeview.data_kind,
+                selected_name=selected_name,
+                new_name=new_value,
+            )
+
+        # Notify observers that the state has been updated
         self.state.observer_manager.notify_observers(self.state)
 
         # Destroy the Entry widget
@@ -113,18 +154,54 @@ class TreeviewEditor:
             self.entry_widget.destroy()
             self.entry_widget = None
 
-    def update_state(self, item_id, new_values):
-        # Recursively update the state with the new values
-        def update_item_data(items):
-            for item in items:
-                if item["id"] == item_id:
-                    item["values"] = new_values
-                    return True
-                if item["children"]:
-                    if update_item_data(item["children"]):
-                        return True
-            return False
+    def get_item_depth(self, item_id):
+        """Calculate the depth of the given item in the tree."""
+        depth = 0
+        parent_id = self.tree.parent(item_id)
+        while parent_id:
+            depth += 1
+            parent_id = self.tree.parent(parent_id)
+        return depth
 
-        tree_data = self.state.team_std_info[self.impl_treeview.data_kind]
-        update_item_data(tree_data)
-        # self.state.team_std_info[self.impl_treeview.data_kind] = tree_data
+    # def on_item_selected(self, event):
+    #     try:
+    #         if self.last_selected_item:
+    #             self.tree.item(self.last_selected_item, tags=("normal",))
+    #     except Exception as e:
+    #         print(f"Error resetting last selected item tag: {e}")
+
+    #     # Get the currently selected item
+    #     selected_item_id = self.tree.focus()
+    #     self.last_selected_item = selected_item_id
+
+    #     # Get the parent and grandparent of the selected item
+    #     parent_item_id = self.tree.parent(selected_item_id)
+    #     grand_parent_item_id = self.tree.parent(parent_item_id)
+
+    #     try:
+    #         # Extract the names from the values, ensuring each level is handled appropriately
+    #         selected_values = self.tree.item(selected_item_id, "values")
+    #         parent_values = self.tree.item(parent_item_id, "values")
+    #         grand_parent_values = self.tree.item(grand_parent_item_id, "values")
+
+    #         selected_item_name = next((v for v in selected_values if v), None)
+    #         parent_item_name = next((v for v in parent_values if v), None)
+    #         grand_parent_item_name = next((v for v in grand_parent_values if v), None)
+
+    #         # Format the selected path as "grandparent | parent | selected"
+    #         formatted_value = " | ".join(
+    #             filter(
+    #                 None, [grand_parent_item_name, parent_item_name, selected_item_name]
+    #             )
+    #         )
+
+    #         # Update the selected item in the state
+    #         self.selected_item.set(formatted_value)
+
+    #         # Register the last selected item
+    #         self.last_selected_item = selected_item_id
+
+    #     except IndexError as e:
+    #         print(f"IndexError: {e}")
+    #     except Exception as e:
+    #         print(f"Error processing selected item details: {e}")

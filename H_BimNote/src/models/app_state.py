@@ -1,18 +1,9 @@
 # src/models/app_state.py
+from src.controllers.tree_data_navigator import TreeDataManager
 from src.controllers.widget.widgets import EditModeManager
 from src.core.fp_utils import *
 from src.models.observer_manager import ObserverManager
 
-
-stdGWM_headers = [
-    "분류",
-    "G-WM",
-    "ITEM",
-    # "WM_code",
-    # "Work Master",
-    # "Spec",
-    # "Unit",
-]
 
 import tkinter as tk
 
@@ -21,7 +12,7 @@ class AppState:
     def __init__(self, log_widget):
         # self._state = {}  ## 필요 없으면 나중에 삭제
         self.observer_manager = ObserverManager()
-        self.stdGWM_headers = stdGWM_headers
+        # self.treeDataManager = TreeDataManager(self, related_widget)
 
         self.current_tab = None
         self.previous_tab = None  # Track the previous tab
@@ -34,9 +25,10 @@ class AppState:
         self.lock_status = {}
         self.log_widget = log_widget
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
-        # self.project_info = None  # Loaded project data
+
         self.team_std_info = {}
-        self.project_info = {}
+        self.project_std_info = {}
+        self.project_apply_info = {}
         self.undo_stack = []
 
     # def _notify_selected_change(self, *args):
@@ -51,27 +43,6 @@ class AppState:
             pass
 
     ################### 옵저버 관련 #################################
-    def update_stdGWM_matching(self, listbox_items):
-        grand_parent_item_name, parent_item_name, selected_item_name = (
-            self.selected_stdGWM_item.get().split(" | ")
-        )
-        # print(type(self.selected_stdGWM_item.get()))
-        self.team_std_info["std-GWM"][grand_parent_item_name][parent_item_name][
-            selected_item_name
-        ] = listbox_items
-        self.observer_manager.notify_observers(self)
-
-    def get_stdGWM_matching(self):
-        grand_parent_item_name, parent_item_name, selected_item_name = (
-            self.selected_stdGWM_item.get().split(" | ")
-        )
-
-        return (
-            self.team_std_info.get("std-GWM")
-            .get(grand_parent_item_name)
-            .get(parent_item_name)
-            .get(selected_item_name)
-        )
 
     # 통합 상태 업데이트 함수
     ## 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
@@ -123,41 +94,52 @@ class AppState:
         self.observer_manager.notify_observers(self)
 
     # state 데이터 업데이트 함수들
-    def match_wms_to_stdType(self, data_kind):
+    def match_wms_to_stdType(self, related_widget):
         print("match_wms_to_stdType_시작")
-        selectedWMs = go(
+        data_kind = related_widget.data_kind
+        selected_wms = go(
             self.selectedWMs,
             sorted,
-            # map(lambda x: list(x)),
             list,
         )
-        print(selectedWMs)
-        self.selected_stdGWM_item.get().split(" | ")
+        print(selected_wms)
+        related_widget.selected_item.get().split(" | ")
         grand_parent_item_name, parent_item_name, selected_item_name = (
-            self.selected_stdGWM_item.get().split(" | ")
+            related_widget.selected_item.get().split(" | ")
         )
 
-        if data_kind in self.team_std_info and selectedWMs != []:
-            self.team_std_info[data_kind][grand_parent_item_name][parent_item_name][
-                selected_item_name
-            ].extend(selectedWMs)
+        # Use TreeDataNavigator to remove matched WMs
+        treeDataManager = TreeDataManager(self, related_widget)
+        treeDataManager.match_wms_to_stdType(
+            data_kind,
+            grand_parent_item_name,
+            parent_item_name,
+            selected_item_name,
+            selected_wms,
+        )
 
         print("match_wms_to_stdType_종료")
 
-    def dematch_matchedWMs_to_stdType(self, data_kind):
+    def dematch_matchedWMs_to_stdType(self, related_widget):
         print("dematch_matchedWMs_to_stdType_시작")
+
+        data_kind = related_widget.data_kind
         selected_matchedWMs = self.selected_matchedWMs
-        self.selected_stdGWM_item.get().split(" | ")
+
+        # Split the selected item to get grandparent, parent, and selected item names
         grand_parent_item_name, parent_item_name, selected_item_name = (
-            self.selected_stdGWM_item.get().split(" | ")
+            related_widget.selected_item.get().split(" | ")
         )
-        print(f"제거 여부 판별시작")
-        if data_kind in self.team_std_info:
-            print(f"제거 여부 판별중 {selected_matchedWMs}")
-            for matchedWM in selected_matchedWMs:
-                self.team_std_info[data_kind][grand_parent_item_name][parent_item_name][
-                    selected_item_name
-                ].remove(matchedWM)
+
+        # Use TreeDataNavigator to remove matched WMs
+        navigator = TreeDataManager(self, related_widget)
+        navigator.remove_matched_wms(
+            data_kind,
+            grand_parent_item_name,
+            parent_item_name,
+            selected_item_name,
+            selected_matchedWMs,
+        )
 
         print("dematch_matchedWMs_to_stdType_종료")
 

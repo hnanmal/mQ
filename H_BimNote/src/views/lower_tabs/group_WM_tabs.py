@@ -1,6 +1,9 @@
 import tkinter as tk
 import tkinter.font
-from tkinter import ttk
+
+# from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 from src.controllers.widget.widgets import (
     EditModeManager,
@@ -96,6 +99,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     ## section 1###########
     stdGWM_treeview = TeamStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(stdGWM_treeview.treeview.tree)
+    state.stdGWM_treeview = stdGWM_treeview
 
     ##############################################################
     ## section 2###########
@@ -105,17 +109,17 @@ def create_stdGWM_tab(state, subtab_notebook):
     )
     selected_item_label_area.pack(side=tk.TOP, anchor="w")
 
-    selected_item_label = tk.Label(
+    selected_item_label = ttk.Label(
         selected_item_label_area,
         text="Selected Item: ",
         font=working_tab_font,
     )
-    selected_item = tk.Label(
+    selected_item = ttk.Label(
         selected_item_label_area,
         # textvariable=state.selected_stdGWM_item,
         textvariable=stdGWM_treeview.selected_item,
         font=working_tab_font,
-        fg="blue",
+        foreground="blue",
     )
     selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
     selected_item.pack(side="left", padx=5, pady=5, anchor="w")
@@ -144,7 +148,9 @@ def create_stdGWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Add 🡇",  # Button text
         command=lambda: handle_add_button_press(
-            state, data_kind="std-GWM"
+            state,
+            # data_kind="std-GWM",
+            related_widget=stdGWM_treeview,
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
@@ -161,7 +167,9 @@ def create_stdGWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Del 🡅",  # Button text
         command=lambda: handle_del_button_press(
-            state, data_kind="std-GWM"
+            state,
+            # data_kind="std-GWM",
+            related_widget=stdGWM_treeview,
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
@@ -288,17 +296,17 @@ def create_stdSWM_tab(state, subtab_notebook):
     )
     seleted_item_label_area.pack(side=tk.TOP, anchor="w")
 
-    seleted_item_label = tk.Label(
+    seleted_item_label = ttk.Label(
         seleted_item_label_area,
         text="Selected Item: ",
         font=working_tab_font,
     )
-    seleted_item = tk.Label(
+    seleted_item = ttk.Label(
         seleted_item_label_area,
         # textvariable=state.selected_stdGWM_item,
         textvariable=stdSWM_treeview.selected_item,
         font=working_tab_font,
-        fg="blue",
+        foreground="blue",
     )
     seleted_item_label.pack(side="left", padx=5, pady=5, anchor="w")
     seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
@@ -326,7 +334,9 @@ def create_stdSWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Add 🡇",  # Button text
         command=lambda: handle_add_button_press(
-            state, data_kind="std-SWM"
+            state,
+            # data_kind="std-SWM",
+            related_widget=stdSWM_treeview,
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color
@@ -343,7 +353,9 @@ def create_stdSWM_tab(state, subtab_notebook):
         std_matching_btn_area,
         text="Del 🡅",  # Button text
         command=lambda: handle_del_button_press(
-            state, data_kind="std-SWM"
+            state,
+            # data_kind="std-SWM",
+            related_widget=stdSWM_treeview,
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color

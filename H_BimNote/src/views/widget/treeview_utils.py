@@ -1,7 +1,14 @@
 # src/views/widget/treeview_utils.py
+from src.controllers.tree_data_navigator import TreeDataManager
 from src.core.fp_utils import *
 import tkinter as tk
-from tkinter import ttk, simpledialog, messagebox
+from tkinter import (
+    # ttk,
+    simpledialog,
+    messagebox,
+)
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 from src.views.widget.treeview_editor import TreeviewEditor
 
@@ -18,6 +25,7 @@ class DefaultTreeViewStyleManager:
             highlightthickness=1,
             background="white",
             foreground="black",
+            rowheight=25,
             height=50,
         )
         style.map(
@@ -126,7 +134,7 @@ class TreeViewContextMenu:
         # Create the context menu
         self.menu = tk.Menu(self.treeview.tree, tearoff=0)
         self.menu.add_command(label="Add Item", command=self.add_item)
-        self.menu.add_command(label="Edit Item", command=self.edit_item)
+        # self.menu.add_command(label="Edit Item", command=self.edit_item)
         self.menu.add_command(label="Delete Item", command=self.delete_item)
 
         # Bind the right-click to show the menu
@@ -266,23 +274,6 @@ class BaseTreeView:
         for item in root_items:
             expand_item(item)
 
-    # def insert_data_with_levels(self, data, parent_id=""):
-    #     """Insert data into the TreeView with levels based on nested dictionaries."""
-    #     for classification, sub_dict in data.items():
-    #         class_id = self.tree.insert(
-    #             parent_id, "end", text=classification, values=(classification, "", "")
-    #         )
-    #         self.tree.item(class_id, open=True)
-
-    #         for gwm, itemDicts in sub_dict.items():
-    #             gwm_id = self.tree.insert(
-    #                 class_id, "end", text=gwm, values=("", gwm, "")
-    #             )
-    #             self.tree.item(gwm_id, open=True)
-
-    #             for item in itemDicts.keys():
-    #                 self.tree.insert(gwm_id, "end", text=item, values=("", "", item))
-
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
         for node in data:
@@ -367,6 +358,10 @@ class TeamStd_GWMTreeView:
     def __init__(self, state, parent):
         self.state = state
         self.data_kind = "std-GWM"
+
+        self.treeDataManager = TreeDataManager(state, self)
+        self.state_observer = TreeViewStateObserver(state, self.update)
+
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "G-WM", "Item"]
@@ -376,8 +371,6 @@ class TeamStd_GWMTreeView:
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-
-        self.state_observer = TreeViewStateObserver(state, self.update)
 
         # config selection mode
         self.treeview.tree.config(selectmode="browse")
@@ -401,11 +394,14 @@ class TeamStd_GWMTreeView:
             self.treeview,
             data_kind=self.data_kind,
             add=self.add_item,
-            edit=self.edit_item,
-            # edit=self.edit_item,
             delete=self.delete_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
+
+    def set_title(self, parent):
+        title_font = tk.font.Font(family="맑은 고딕", size=12)
+        title_label = tk.Label(parent, text="Standard Types for GWM", font=title_font)
+        title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
         state = self.state
@@ -437,11 +433,6 @@ class TeamStd_GWMTreeView:
                 print(f"Item selection failed: {e}")
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
-
-    def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(parent, text="Standard Types for GWM", font=title_font)
-        title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
         try:
@@ -523,121 +514,28 @@ class TeamStd_GWMTreeView:
             lambda x: self.treeview.tree.item(x, "values"),
             filter(lambda x: x != ""),
             list,
+        )[0]
+        self.treeDataManager.add_child_node(
+            self.data_kind, selected_item_name, new_item_name
         )
-        parents = self.get_parent_ids(selected_item_id)
-        print(parents)
-        parents_names = go(
-            parents,
-            map(lambda x: self.treeview.tree.item(x, "values")),
-            lambda x: chain(*x),
-            filter(lambda x: x != ""),
-            list,
-        )
-        if new_item_name:
-            if len(parents) == 0:
-                [lv1_key] = selected_item_name
-                state.team_std_info[self.data_kind][lv1_key].update({new_item_name: {}})
-            elif len(parents) == 1:
-                [lv1_key] = parents_names
-                [lv2_key] = selected_item_name
-                state.team_std_info[self.data_kind][lv1_key][lv2_key].update(
-                    {new_item_name: []}
-                )
-            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
-
-    def edit_item(self):
-        state = self.state
-        selected_item_id = self.treeview.tree.selection()
-        if selected_item_id:
-            selected_item_name = go(
-                selected_item_id,
-                lambda x: self.treeview.tree.item(x, "values"),
-                filter(lambda x: x != ""),
-                list,
-            )
-            parents = self.get_parent_ids(selected_item_id)
-            print(parents)
-            parents_names = go(
-                parents,
-                map(lambda x: self.treeview.tree.item(x, "values")),
-                lambda x: chain(*x),
-                filter(lambda x: x != ""),
-                list,
-            )
-            current_value = selected_item_name
-
-            new_value = simpledialog.askstring(
-                "Edit Item", "Edit the item:", initialvalue=current_value
-            )
-            if new_value:
-                # Update the item with the new value
-                if len(parents) == 0:
-                    [lv1_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind].pop(lv1_key)
-                    self.state.team_std_info[self.data_kind].update({new_value: v})
-                elif len(parents) == 1:
-                    [lv1_key] = parents_names
-                    [lv2_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key].pop(lv2_key)
-                    self.state.team_std_info[self.data_kind][lv1_key].update(
-                        {new_value: v}
-                    )
-                elif len(parents) == 2:
-                    [lv1_key, lv2_key] = parents_names
-                    [lv3_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key][lv2_key].pop(
-                        lv3_key
-                    )
-                    self.state.team_std_info[self.data_kind][lv1_key][lv2_key].update(
-                        {new_value: v}
-                    )
-        else:
-            messagebox.showwarning("No Selection", "Please select an item to edit.")
-
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
 
     def delete_item(self):
         state = self.state
-        selected_item_id = self.treeview.tree.selection()
-        if selected_item_id:
-            selected_item_name = go(
-                selected_item_id,
-                lambda x: self.treeview.tree.item(x, "values"),
-                filter(lambda x: x != ""),
-                list,
-            )
-            parents = self.get_parent_ids(selected_item_id)
-            print(parents)
-            parents_names = go(
-                parents,
-                map(lambda x: self.treeview.tree.item(x, "values")),
-                lambda x: chain(*x),
-                filter(lambda x: x != ""),
-                list,
-            )
-            confirm = messagebox.askyesno(
-                "Delete Item", "Are you sure you want to delete the selected item?"
-            )
-            if confirm:
-                # Delete the selected item
-                if len(parents) == 0:
-                    [lv1_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind].pop(lv1_key)
-                elif len(parents) == 1:
-                    [lv1_key] = parents_names
-                    [lv2_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key].pop(lv2_key)
-                elif len(parents) == 2:
-                    [lv1_key, lv2_key] = parents_names
-                    [lv3_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key][lv2_key].pop(
-                        lv3_key
-                    )
-        else:
-            messagebox.showwarning("No Selection", "Please select an item to delete.")
 
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+
+        self.treeDataManager.delete_node(
+            self.data_kind,
+            selected_item_name,
+        )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
 
@@ -671,6 +569,13 @@ class TeamStd_WMmatching_TreeView:
         self.last_selected_item = None
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
+
+    def set_title(self, parent):
+        title_font = tk.font.Font(family="맑은 고딕", size=12)
+        title_label = tk.Label(
+            parent, text="Matched WMs for Selected Standard Types", font=title_font
+        )
+        title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
         state = self.state
@@ -737,13 +642,6 @@ class TeamStd_WMmatching_TreeView:
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
-    def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(
-            parent, text="Matched WMs for Selected Standard Types", font=title_font
-        )
-        title_label.pack(padx=5, pady=5, anchor="w")
-
     def on_item_selected(self, event):
         # if self.last_selected_item:
         #     self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
@@ -757,6 +655,7 @@ class TeamStd_WMmatching_TreeView:
             map(lambda x: x[0]),
             list,
         )
+        print(selected_items_name)
         self.state.selected_matchedWMs = selected_items_name
         # # 마지막 선택항목으로 재등록
         # self.last_selected_item = selected_items_id[0]
@@ -767,6 +666,10 @@ class TeamStd_SWMTreeView:
     def __init__(self, state, parent):
         self.state = state
         self.data_kind = "std-SWM"
+
+        self.treeDataManager = TreeDataManager(state, self)
+        self.state_observer = TreeViewStateObserver(state, self.update)
+
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "S-WM", "Item"]
@@ -776,8 +679,6 @@ class TeamStd_SWMTreeView:
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-
-        self.state_observer = TreeViewStateObserver(state, self.update)
 
         # config selection mode
         self.treeview.tree.config(selectmode="browse")
@@ -801,10 +702,14 @@ class TeamStd_SWMTreeView:
             self.treeview,
             self.data_kind,
             add=self.add_item,
-            edit=self.edit_item,
             delete=self.delete_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
+
+    def set_title(self, parent):
+        title_font = tk.font.Font(family="맑은 고딕", size=12)
+        title_label = tk.Label(parent, text="Standard Types for SWM", font=title_font)
+        title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
         state = self.state
@@ -836,11 +741,6 @@ class TeamStd_SWMTreeView:
                 print(f"Item selection failed: {e}")
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
-
-    def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(parent, text="Standard Types for SWM", font=title_font)
-        title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_item_selected(self, event):
         try:
@@ -922,122 +822,28 @@ class TeamStd_SWMTreeView:
             lambda x: self.treeview.tree.item(x, "values"),
             filter(lambda x: x != ""),
             list,
+        )[0]
+        self.treeDataManager.add_child_node(
+            self.data_kind, selected_item_name, new_item_name
         )
-        parents = self.get_parent_ids(selected_item_id)
-        print(parents)
-        parents_names = go(
-            parents,
-            map(lambda x: self.treeview.tree.item(x, "values")),
-            lambda x: chain(*x),
-            filter(lambda x: x != ""),
-            list,
-        )
-
-        if new_item_name:
-            if len(parents) == 0:
-                [lv1_key] = selected_item_name
-                state.team_std_info[self.data_kind][lv1_key].update({new_item_name: {}})
-            elif len(parents) == 1:
-                [lv1_key] = parents_names
-                [lv2_key] = selected_item_name
-                state.team_std_info[self.data_kind][lv1_key][lv2_key].update(
-                    {new_item_name: []}
-                )
-            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
-
-    def edit_item(self):
-        state = self.state
-        selected_item_id = self.treeview.tree.selection()
-        if selected_item_id:
-            selected_item_name = go(
-                selected_item_id,
-                lambda x: self.treeview.tree.item(x, "values"),
-                filter(lambda x: x != ""),
-                list,
-            )
-            parents = self.get_parent_ids(selected_item_id)
-            print(parents)
-            parents_names = go(
-                parents,
-                map(lambda x: self.treeview.tree.item(x, "values")),
-                lambda x: chain(*x),
-                filter(lambda x: x != ""),
-                list,
-            )
-            current_value = selected_item_name
-
-            new_value = simpledialog.askstring(
-                "Edit Item", "Edit the item:", initialvalue=current_value
-            )
-            if new_value:
-                # Update the item with the new value
-                if len(parents) == 0:
-                    [lv1_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind].pop(lv1_key)
-                    self.state.team_std_info[self.data_kind].update({new_value: v})
-                elif len(parents) == 1:
-                    [lv1_key] = parents_names
-                    [lv2_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key].pop(lv2_key)
-                    self.state.team_std_info[self.data_kind][lv1_key].update(
-                        {new_value: v}
-                    )
-                elif len(parents) == 2:
-                    [lv1_key, lv2_key] = parents_names
-                    [lv3_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key][lv2_key].pop(
-                        lv3_key
-                    )
-                    self.state.team_std_info[self.data_kind][lv1_key][lv2_key].update(
-                        {new_value: v}
-                    )
-        else:
-            messagebox.showwarning("No Selection", "Please select an item to edit.")
-
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
 
     def delete_item(self):
         state = self.state
-        selected_item_id = self.treeview.tree.selection()
-        if selected_item_id:
-            selected_item_name = go(
-                selected_item_id,
-                lambda x: self.treeview.tree.item(x, "values"),
-                filter(lambda x: x != ""),
-                list,
-            )
-            parents = self.get_parent_ids(selected_item_id)
-            print(parents)
-            parents_names = go(
-                parents,
-                map(lambda x: self.treeview.tree.item(x, "values")),
-                lambda x: chain(*x),
-                filter(lambda x: x != ""),
-                list,
-            )
-            confirm = messagebox.askyesno(
-                "Delete Item", "Are you sure you want to delete the selected item?"
-            )
-            if confirm:
-                # Delete the selected item
-                if len(parents) == 0:
-                    [lv1_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind].pop(lv1_key)
-                elif len(parents) == 1:
-                    [lv1_key] = parents_names
-                    [lv2_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key].pop(lv2_key)
-                elif len(parents) == 2:
-                    [lv1_key, lv2_key] = parents_names
-                    [lv3_key] = selected_item_name
-                    v = self.state.team_std_info[self.data_kind][lv1_key][lv2_key].pop(
-                        lv3_key
-                    )
-        else:
-            messagebox.showwarning("No Selection", "Please select an item to delete.")
 
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+
+        self.treeDataManager.delete_node(
+            self.data_kind,
+            selected_item_name,
+        )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
 
@@ -1049,6 +855,10 @@ class TeamStd_CommonInputTreeView:
     def __init__(self, state, parent):
         self.state = state
         self.data_kind = "common-input"
+
+        self.treeDataManager = TreeDataManager(state, self)
+        self.state_observer = TreeViewStateObserver(state, self.update)
+
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "Abbreviation", "Description", "Input", "Unit", "Remark"]
@@ -1058,8 +868,6 @@ class TeamStd_CommonInputTreeView:
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-
-        self.state_observer = TreeViewStateObserver(state, self.update)
 
         # config selection mode
         self.treeview.tree.config(selectmode="browse")
@@ -1074,7 +882,8 @@ class TeamStd_CommonInputTreeView:
 
         # set treeview_editor class
         self.treeviewEditor = TreeviewEditor(state, self)
-        self.add_item = self.treeviewEditor.add_item
+        # self.add_item = self.treeviewEditor.add_item
+
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
         # Bind selection events
@@ -1088,51 +897,16 @@ class TeamStd_CommonInputTreeView:
             self.treeview,
             data_kind=self.data_kind,
             add=self.add_item,
-            # edit=self.edit_item,
-            edit=self.treeviewEditor.on_double_click,
             delete=self.delete_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
-    # def update(self, event=None):
-    #     state = self.state
-    #     print(f"{self.__class__.__name__} > update 메소드 시작")
-
-    #     def insert_item(parent_id, item_data):
-    #         """Recursive function to insert items into the Treeview."""
-    #         item_id = self.treeview.tree.insert(
-    #             parent_id, "end", values=item_data["values"]
-    #         )
-    #         for child_data in item_data["children"]:
-    #             insert_item(item_id, child_data)
-
-    #     selected_item_id = self.treeview.tree.focus()
-    #     try:
-    #         origin_indices = self.treeview.get_item_indices(selected_item_id)
-    #         print(origin_indices, "!!!")
-    #     except:
-    #         print("origin_indices 추출 실패")
-
-    #     """Update the TreeView whenever the state changes."""
-    #     if self.data_kind in state.team_std_info:
-    #         # Clear the TreeView and reload data from the updated state
-    #         data = state.team_std_info[self.data_kind]
-    #         # treeview_data = self.treeview.get_tree_data()
-    #         self.treeview.clear_treeview()
-    #         # self.treeview.insert_data_with_levels(data)
-    #         for item_data in data:
-    #             insert_item("", item_data)
-    #             # insert_item(item_data["id"], item_data)
-
-    #         # 트리뷰 항목 자동 펼침
-    #         self.treeview.expand_all_items()
-
-    #     # try:
-    #     #     self.treeview.select_item_by_indices(origin_indices)
-    #     # except:
-    #     #     pass
-
-    #     print(f"{self.__class__.__name__} > update 메소드 종료")
+    def set_title(self, parent):
+        title_font = tk.font.Font(family="맑은 고딕", size=12)
+        title_label = tk.Label(
+            parent, text="Standard Common Input Setting", font=title_font
+        )
+        title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
         state = self.state
@@ -1165,44 +939,75 @@ class TeamStd_CommonInputTreeView:
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
-    def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(
-            parent, text="Standard Common Input Setting", font=title_font
-        )
-        title_label.pack(padx=5, pady=5, anchor="w")
+    # def on_item_selected(self, event):
+    #     if self.last_selected_item:
+    #         self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
+
+    #     # selected_item_id = self.treeview.tree.selection()
+    #     selected_item_id = self.treeview.tree.focus()
+    #     print(selected_item_id)
+    #     self.treeview.last_selected_item = selected_item_id
+    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
+    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+
+    #     if self.treeview.tree.item(selected_item_id, "values")[-1]:
+    #         selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
+
+    #         parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
+    #         grand_parent_item_name = self.treeview.tree.item(
+    #             grand_parent_item_id, "values"
+    #         )[-3]
+
+    #         formatted_value = " | ".join(
+    #             [
+    #                 grand_parent_item_name,
+    #                 parent_item_name,
+    #                 selected_item_name,
+    #             ]
+    #         )
+
+    #         # self.state.selected_stdGWM_item.set(formatted_value)
+    #         self.selected_item.set(formatted_value)
+    #         # 마지막 선택항목으로 재등록
+    #         self.last_selected_item = selected_item_id
 
     def on_item_selected(self, event):
-        if self.last_selected_item:
-            self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
+        try:
+            if self.last_selected_item:
+                self.treeview.tree.item(self.last_selected_item, tags=("normal",))
+        except Exception as e:
+            print(f"Error resetting last selected item tag: {e}")
 
-        # selected_item_id = self.treeview.tree.selection()
+        # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
-        print(selected_item_id)
-        self.treeview.last_selected_item = selected_item_id
+        self.last_selected_item = selected_item_id
+
+        # Get the parent of the selected item based on its structure
         parent_item_id = self.treeview.tree.parent(selected_item_id)
-        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
 
-        if self.treeview.tree.item(selected_item_id, "values")[-1]:
-            selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
+        try:
+            # Extract the names from the values, ensuring each level is handled appropriately
+            selected_values = self.treeview.tree.item(selected_item_id, "values")
+            parent_values = self.treeview.tree.item(parent_item_id, "values")
 
-            parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-            grand_parent_item_name = self.treeview.tree.item(
-                grand_parent_item_id, "values"
-            )[-3]
+            selected_item_name = next((v for v in selected_values if v), None)
+            parent_item_name = next((v for v in parent_values if v), None)
 
+            # Format the selected path as "parent | selected"
             formatted_value = " | ".join(
-                [
-                    grand_parent_item_name,
-                    parent_item_name,
-                    selected_item_name,
-                ]
+                filter(None, [parent_item_name, selected_item_name])
             )
 
-            # self.state.selected_stdGWM_item.set(formatted_value)
+            # Update the selected item in the state
             self.selected_item.set(formatted_value)
-            # 마지막 선택항목으로 재등록
+
+            # Register the last selected item
             self.last_selected_item = selected_item_id
+
+        except IndexError as e:
+            print(f"IndexError: {e}")
+        except Exception as e:
+            print(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1218,43 +1023,39 @@ class TeamStd_CommonInputTreeView:
         print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
         return list(reversed(parent_ids))
 
-    # def add_item(self):
-    #     state = self.state
-    #     # Prompt the user for the new item name
-    #     new_item_name = simpledialog.askstring(
-    #         "Add Item", "Enter the name of the new item:"
-    #     )
-    #     selected_item_id = self.treeview.tree.selection()
-    #     selected_item_name = go(
-    #         selected_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )
-    #     parents = self.get_parent_ids(selected_item_id)
-    #     print(parents)
-    #     parents_names = go(
-    #         parents,
-    #         map(lambda x: self.treeview.tree.item(x, "values")),
-    #         lambda x: chain(*x),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )
-
-    #     if len(parents) == 0:
-    #         [lv1_key] = selected_item_name
-    #         state.team_std_info[self.data_kind][lv1_key].update({new_item_name: {}})
-    #     elif len(parents) == 1:
-    #         [lv1_key] = parents_names
-    #         [lv2_key] = selected_item_name
-    #         state.team_std_info[self.data_kind][lv1_key][lv2_key].update(
-    #             {new_item_name: []}
-    #         )
-    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-    #     state.observer_manager.notify_observers(state)
-
-    def edit_item(self):
-        pass
+    def add_item(self):
+        state = self.state
+        # Prompt the user for the new item name
+        new_item_name = simpledialog.askstring(
+            "Add Item", "Enter the name of the new item:"
+        )
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        self.treeDataManager.add_child_node(
+            self.data_kind, selected_item_name, new_item_name
+        )
+        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        state.observer_manager.notify_observers(state)
 
     def delete_item(self):
-        pass
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+
+        self.treeDataManager.delete_node(
+            self.data_kind,
+            selected_item_name,
+        )
+        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        state.observer_manager.notify_observers(state)
