@@ -150,15 +150,15 @@ class TeamStd_WMsSheetView:
 
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""
-        search_frame = tk.Frame(parent)
+        search_frame = ttk.Frame(parent)
         search_frame.pack(padx=5, pady=5, anchor="w")
 
         # Search Label
-        search_label = tk.Label(search_frame, text="Search:")
+        search_label = ttk.Label(search_frame, text="Search:")
         search_label.pack(side="left", padx=5)
 
         # Search Entry
-        self.search_entry = tk.Entry(search_frame, width=20)
+        self.search_entry = ttk.Entry(search_frame, width=20)
         self.search_entry.pack(side="left", padx=5)
         self.search_entry.bind(
             "<Return>",
@@ -166,7 +166,7 @@ class TeamStd_WMsSheetView:
         )
 
         # Search Button
-        search_button = tk.Button(
+        search_button = ttk.Button(
             search_frame,
             text="Search",
             command=lambda: self.search_manager.search_sheet_data(
@@ -176,7 +176,7 @@ class TeamStd_WMsSheetView:
         search_button.pack(side="left", padx=5)
 
         # Reset Button
-        reset_button = tk.Button(
+        reset_button = ttk.Button(
             search_frame,
             text="Reset",
             command=lambda: self.search_manager.reset_search(self.search_entry),
@@ -186,7 +186,7 @@ class TeamStd_WMsSheetView:
     def set_title(self, parent):
         self.widget_name = "WorkMaster DB"
         title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(parent, text=self.widget_name, font=title_font)
+        title_label = ttk.Label(parent, text=self.widget_name, font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def on_cell_select(self, event, state, sheet, color="#fffec0"):

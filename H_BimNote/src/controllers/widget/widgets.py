@@ -34,6 +34,7 @@ class EditModeManager:
         # Enable TreeView editing
         for tree_widget in self.widgets.get("tree_views", []):
             DefaultTreeViewStyleManager.apply_style(tree_widget.treeview.tree)
+            tree_widget.treeviewEditor.enable_edit()
             if hasattr(tree_widget, "context_menu"):
                 print(f"{tree_widget}:::락스테이터스 있음")
                 tree_widget.context_menu.set_locked_status(False)
@@ -61,6 +62,7 @@ class EditModeManager:
         # Disable TreeView editing
         for tree_widget in self.widgets.get("tree_views", []):
             DefaultTreeViewStyleManager.apply_locked_style(tree_widget.treeview.tree)
+            tree_widget.treeviewEditor.disable_edit()
             if hasattr(tree_widget, "context_menu"):
                 print(f"{tree_widget}:::락스테이터스 있음")
                 tree_widget.context_menu.set_locked_status(True)

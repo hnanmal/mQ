@@ -9,6 +9,7 @@ from tkinter import (
 )
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from ttkbootstrap.tableview import Tableview
 
 from src.views.widget.treeview_editor import TreeviewEditor
 
@@ -132,7 +133,7 @@ class TreeViewContextMenu:
         self.data_kind = data_kind
         self.funcs = funcs
         # Create the context menu
-        self.menu = tk.Menu(self.treeview.tree, tearoff=0)
+        self.menu = ttk.Menu(self.treeview.tree, tearoff=0)
         self.menu.add_command(label="Add Item", command=self.add_item)
         # self.menu.add_command(label="Edit Item", command=self.edit_item)
         self.menu.add_command(label="Delete Item", command=self.delete_item)
@@ -174,6 +175,7 @@ class TreeViewContextMenu:
 class BaseTreeView:
     def __init__(self, parent, headers):
         self.tree = ttk.Treeview(parent, columns=headers, show="headings")
+        # self.tree = Tableview(parent, columns=headers, show="headings")
         self.setup_columns(headers)
         self.parent = parent
         # Configure tag styles
@@ -383,6 +385,9 @@ class TeamStd_GWMTreeView:
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
 
+        # set treeview_editor class
+        self.treeviewEditor = TreeviewEditor(state, self)
+
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
         # Bind selection events
@@ -399,8 +404,8 @@ class TeamStd_GWMTreeView:
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
     def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(parent, text="Standard Types for GWM", font=title_font)
+        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_label = ttk.Label(parent, text="Standard Types for GWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
@@ -565,14 +570,17 @@ class TeamStd_WMmatching_TreeView:
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
 
+        # set treeview_editor class
+        self.treeviewEditor = TreeviewEditor(state, self)
+
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
     def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(
+        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_label = ttk.Label(
             parent, text="Matched WMs for Selected Standard Types", font=title_font
         )
         title_label.pack(padx=5, pady=5, anchor="w")
@@ -691,6 +699,9 @@ class TeamStd_SWMTreeView:
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
 
+        # set treeview_editor class
+        self.treeviewEditor = TreeviewEditor(state, self)
+
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
         # Bind selection events
@@ -707,8 +718,8 @@ class TeamStd_SWMTreeView:
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
     def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(parent, text="Standard Types for SWM", font=title_font)
+        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_label = ttk.Label(parent, text="Standard Types for SWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None):
@@ -862,7 +873,7 @@ class TeamStd_CommonInputTreeView:
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "Abbreviation", "Description", "Input", "Unit", "Remark"]
-        hdr_widths = [127, 70, 200, 50, 50, 200]
+        hdr_widths = [127, 125, 200, 50, 50, 200]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -902,8 +913,8 @@ class TeamStd_CommonInputTreeView:
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
     def set_title(self, parent):
-        title_font = tk.font.Font(family="맑은 고딕", size=12)
-        title_label = tk.Label(
+        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_label = ttk.Label(
             parent, text="Standard Common Input Setting", font=title_font
         )
         title_label.pack(padx=5, pady=5, anchor="w")
@@ -938,38 +949,6 @@ class TeamStd_CommonInputTreeView:
                 print(f"Item selection failed: {e}")
 
         print(f"{self.__class__.__name__} > update 메소드 종료")
-
-    # def on_item_selected(self, event):
-    #     if self.last_selected_item:
-    #         self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
-
-    #     # selected_item_id = self.treeview.tree.selection()
-    #     selected_item_id = self.treeview.tree.focus()
-    #     print(selected_item_id)
-    #     self.treeview.last_selected_item = selected_item_id
-    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
-    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-
-    #     if self.treeview.tree.item(selected_item_id, "values")[-1]:
-    #         selected_item_name = self.treeview.tree.item(selected_item_id, "values")[-1]
-
-    #         parent_item_name = self.treeview.tree.item(parent_item_id, "values")[-2]
-    #         grand_parent_item_name = self.treeview.tree.item(
-    #             grand_parent_item_id, "values"
-    #         )[-3]
-
-    #         formatted_value = " | ".join(
-    #             [
-    #                 grand_parent_item_name,
-    #                 parent_item_name,
-    #                 selected_item_name,
-    #             ]
-    #         )
-
-    #         # self.state.selected_stdGWM_item.set(formatted_value)
-    #         self.selected_item.set(formatted_value)
-    #         # 마지막 선택항목으로 재등록
-    #         self.last_selected_item = selected_item_id
 
     def on_item_selected(self, event):
         try:

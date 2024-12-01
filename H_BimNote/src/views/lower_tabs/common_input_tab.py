@@ -66,7 +66,7 @@ def create_common_input_tab(state, subtab_notebook):
     )
 
     working_tab_paned_window.add(section1, minsize=800)
-    working_tab_paned_window.add(section2, minsize=100)
+    # working_tab_paned_window.add(section2, minsize=100)
     working_tab_paned_window.add(section3, minsize=700)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
@@ -197,19 +197,13 @@ def create_common_input_tab(state, subtab_notebook):
     label.pack()
     # WMs_sheet = TeamStd_WMsSheetView(state, section3)
 
-    # # Register widgets with EditModeManager
-    # edit_mode_manager.register_widgets(
-    #     mode_button=edit_mode_button,
-    #     tree_views=[
-    #         stdGWM_treeview,
-    #         std_matching_treeview,
-    #     ],
-    #     tree_ctrl_btn=[
-    #         add_button,
-    #         del_button,
-    #     ],
-    #     sheet=WMs_sheet,
-    # )
+    # Register widgets with EditModeManager
+    edit_mode_manager.register_widgets(
+        mode_button=edit_mode_button,
+        tree_views=[
+            std_commonInput_treeview,
+        ],
+    )
 
     # Set the initial state to "Locked Mode"
     edit_mode_manager.set_edit_mode("locked")
