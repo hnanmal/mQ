@@ -1109,7 +1109,7 @@ class TeamStd_FamlistTreeView:
             "S-WM 1",
             "표준물량 산출식",
         ]
-        hdr_widths = [60, 10, 100, 200, 30, 30, 30, 30, 30, 30]
+        hdr_widths = [60, 10, 100, 250, 30, 30, 30, 30, 30, 30]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1200,35 +1200,35 @@ class TeamStd_FamlistTreeView:
 
         # Extract the names from the values, ensuring each level is handled appropriately
         try:
-            # Get the name of the selected item, parent, and grandparent
-            selected_item_name = go(
-                self.treeview.tree.item(selected_item_id, "values"),
-                filter(lambda x: x != ""),
-                list,
-                lambda x: x[0],
-            )
-            parent_item_name = go(
-                self.treeview.tree.item(parent_item_id, "values"),
-                filter(lambda x: x != ""),
-                list,
-                lambda x: x[0],
-            )
-            grand_parent_item_name = go(
-                self.treeview.tree.item(grand_parent_item_id, "values"),
-                filter(lambda x: x != ""),
-                list,
-                lambda x: x[0],
-            )
+            # # Get the name of the selected item, parent, and grandparent
+            # selected_item_name = go(
+            #     self.treeview.tree.item(selected_item_id, "values"),
+            #     filter(lambda x: x != ""),
+            #     list,
+            #     lambda x: x[0],
+            # )
+            # parent_item_name = go(
+            #     self.treeview.tree.item(parent_item_id, "values"),
+            #     filter(lambda x: x != ""),
+            #     list,
+            #     lambda x: x[0],
+            # )
+            # grand_parent_item_name = go(
+            #     self.treeview.tree.item(grand_parent_item_id, "values"),
+            #     filter(lambda x: x != ""),
+            #     list,
+            #     lambda x: x[0],
+            # )
 
-            # Format the selected path as "grandparent | parent | selected"
-            formatted_value = " | ".join(
-                filter(
-                    None, [grand_parent_item_name, parent_item_name, selected_item_name]
-                )
-            )
+            # # Format the selected path as "grandparent | parent | selected"
+            # formatted_value = " | ".join(
+            #     filter(
+            #         None, [grand_parent_item_name, parent_item_name, selected_item_name]
+            #     )
+            # )
 
-            # Update the selected item in the state
-            self.selected_item.set(formatted_value)
+            # # Update the selected item in the state
+            # self.selected_item.set(formatted_value)
 
             # Register the last selected item
             self.last_selected_item = selected_item_id
