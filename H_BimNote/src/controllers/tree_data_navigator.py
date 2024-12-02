@@ -105,6 +105,24 @@ class TreeDataManager:
         else:
             print(f"Could not find node '{selected_name}' to update name.")
 
+    def add_top_level_node(self, data_kind, new_child):
+        """Add a new top-level node to the specified data kind."""
+        try:
+            # Create the values list with empty strings, setting the name in the first column
+            values = [new_child]
+
+            # Append the new child to the top-level "children" list
+            self.team_std_info[data_kind]["children"].append(
+                {
+                    "name": new_child,
+                    "values": values,
+                    "children": [],
+                }
+            )
+            print(f"Added top-level node: {new_child}")
+        except Exception as e:
+            print(f"Error adding top-level node: {e}")
+
     def add_child_node(self, data_kind, selected_name, new_child):
         """Add a new child node to the specified selected node."""
         try:

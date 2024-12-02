@@ -95,6 +95,7 @@ class BaseSheetView:
 class TeamStd_WMsSheetView:
     def __init__(self, state, parent):
         self.state = state
+        self.data_kind = "WMs"
         # headers = ["분류", "G-WM", "Item"]
 
         # Compose TreeView, Style Manager, and State Observer

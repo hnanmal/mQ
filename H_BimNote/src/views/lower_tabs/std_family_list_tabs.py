@@ -1,26 +1,33 @@
 import tkinter as tk
 import tkinter.font
-from tkinter import ttk
-from PIL import Image, ImageTk
+
+# from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 from src.controllers.widget.widgets import (
     EditModeManager,
+    handle_add_button_press,
+    handle_del_button_press,
 )
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
     TeamStd_WMsSheetView,
 )
 from src.views.widget.treeview_utils import (
-    TeamStd_CommonInputTreeView,
+    TeamStd_FamlistTreeView,
+    TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
+    TeamStd_WMmatching_TreeView,
+    TeamStd_SWMTreeView,
 )
 
 
-def create_common_input_tab(state, subtab_notebook):
+def create_stdFamList_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Common Input")
+    subtab_notebook.add(working_tab, text="Standard Family List")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -46,7 +53,7 @@ def create_common_input_tab(state, subtab_notebook):
 
     section1 = ttk.Frame(
         working_tab_paned_area,
-        width=1000,
+        width=1500,
         height=3000,
     )
     section2 = ttk.Frame(
@@ -54,19 +61,19 @@ def create_common_input_tab(state, subtab_notebook):
         width=600,
         height=3000,
     )
-    section3 = ttk.Frame(
-        working_tab_paned_area,
-        width=600,
-        height=3000,
-    )
+    # section3 = ttk.Frame(
+    #     working_tab_paned_area,
+    #     width=600,
+    #     height=3000,
+    # )
 
-    working_tab_paned_window.add(section1, minsize=800)
-    # working_tab_paned_window.add(section2, minsize=100)
-    working_tab_paned_window.add(section3, minsize=700)
+    working_tab_paned_window.add(section1, minsize=400)
+    working_tab_paned_window.add(section2, minsize=400)
+    # working_tab_paned_window.add(section3, minsize=600)
 
-    working_tab_paned_window.paneconfigure(section1, height=3000)
+    working_tab_paned_window.paneconfigure(section1, width=1500, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    working_tab_paned_window.paneconfigure(section3, height=3000)
+    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -91,45 +98,20 @@ def create_common_input_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-
-    std_commonInput_treeview = TeamStd_CommonInputTreeView(state, section1)
-    DefaultTreeViewStyleManager.apply_style(std_commonInput_treeview.treeview.tree)
-
-    # Create a frame for the custom-styled labels of Column B
-    column_b_frame = ttk.Frame(section1)
-    column_b_frame.pack(side="right", fill="y", expand=True)
-
-    data = std_commonInput_treeview.treeview.tree
-
-    # # Insert labels for Column B values with custom colors
-    # for index, item in enumerate(data):
-    #     label = ttk.Label(column_b_frame, text=item[1], bootstyle="info")
-    #     label.pack(pady=5)
-
-    # ##############################################################
-    # ## section 2###########
-
-    # ##############################################################
-    # ## section 3###########
-    # Alternatively, using PIL for other image formats like JPG
-    image = Image.open("resource/common_info_pic1.png")
-    image.resize((500, 250), Image.LANCZOS)
-    # image = image.resize(
-    #     (200, 200),
-    # )  # Image.ANTIALIAS)  # Resize the image if needed
-    photo = ImageTk.PhotoImage(image)
-
-    label = ttk.Label(section3, image=photo)
-    label.image = photo  # Keep a reference to avoid garbage collection
-    label.pack()
-    # WMs_sheet = TeamStd_WMsSheetView(state, section3)
+    stdFamlist_treeview = TeamStd_FamlistTreeView(state, section1)
+    DefaultTreeViewStyleManager.apply_style(stdFamlist_treeview.treeview.tree)
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
-            std_commonInput_treeview,
+            stdFamlist_treeview,
         ],
+        # tree_ctrl_btn=[
+        #     add_button,
+        #     del_button,
+        # ],
+        # sheet=WMs_sheet,
     )
 
     # Set the initial state to "Locked Mode"

@@ -46,6 +46,14 @@ class AppState:
 
     # 통합 상태 업데이트 함수
     ## 시트별 상태 업데이트 함수 - SGWM 시트의 내용을 state의 team_std_info에 업데이트
+
+    def updateDB_total_data(self, data_kind, new_data):
+        self.log_widget.write(f"update_{data_kind}_start\n")
+
+        self.team_std_info.update({data_kind: new_data})
+
+        self.log_widget.write(f"update_{data_kind}_data_end\n")
+
     def updateDB_WMs_data(self, new_data):
         self.log_widget.write("update_WMs_data_start\n")
 
@@ -77,18 +85,22 @@ class AppState:
         self.log_widget.write("update_S_SWM_data_end\n")
 
     def update_team_standard_info(self, new_data, data_kind=None):
-        if data_kind == "std-GWM":
-            new_target_data = new_data.get(data_kind)
-            self.updateDB_S_GWM_data(new_target_data)
-        elif data_kind == "std-SWM":
-            new_target_data = new_data.get(data_kind)
-            self.updateDB_S_SWM_data(new_target_data)
-        elif data_kind == "common-input":
-            new_target_data = new_data.get(data_kind)
-            self.updateDB_commonInput_data(new_target_data)
-        elif data_kind == "WMs":
-            new_WMs_data = new_data
-            self.updateDB_WMs_data(new_WMs_data)
+
+        new_target_data = new_data.get(data_kind)
+        self.updateDB_total_data(data_kind, new_target_data)
+
+        # if data_kind == "std-GWM":
+        #     new_target_data = new_data.get(data_kind)
+        #     self.updateDB_S_GWM_data(new_target_data)
+        # elif data_kind == "std-SWM":
+        #     new_target_data = new_data.get(data_kind)
+        #     self.updateDB_S_SWM_data(new_target_data)
+        # elif data_kind == "common-input":
+        #     new_target_data = new_data.get(data_kind)
+        #     self.updateDB_commonInput_data(new_target_data)
+        # elif data_kind == "WMs":
+        #     new_WMs_data = new_data
+        #     self.updateDB_WMs_data(new_WMs_data)
 
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         self.observer_manager.notify_observers(self)
