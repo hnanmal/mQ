@@ -1,92 +1,201 @@
-# import tkinter as tk
-# from tkinter import ttk
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sqlite3
 
 
-# class WidgetSwitcher:
-#     def __init__(self, parent_frame, widgets, combo_box):
-#         """
-#         Initialize the WidgetSwitcher.
-
-#         :param parent_frame: The parent frame where the widgets are placed.
-#         :param widgets: A dictionary of widget names and corresponding widgets to be switched.
-#         :param combo_box: The combo box for selecting which widget to display.
-#         """
-#         self.parent_frame = parent_frame
-#         self.widgets = (
-#             widgets  # A dictionary of widget names and corresponding widget objects
-#         )
-#         self.combo_box = combo_box
-
-#         # Hide all widgets initially
-#         for widget in self.widgets.values():
-#             widget.pack_forget()
-
-#         # Set default widget (if any) based on combo box selection
-#         if widgets:
-#             default_selection = self.combo_box.get()
-#             self.show_widget(default_selection)
-
-#         # Bind the combo box to the switching method
-#         self.combo_box.bind("<<ComboboxSelected>>", self.on_combo_box_selected)
-
-#     def show_widget(self, widget_name):
-#         """Show the selected widget and hide the others."""
-#         # Hide all widgets
-#         for widget in self.widgets.values():
-#             widget.pack_forget()
-
-#         # Show the selected widget
-#         selected_widget = self.widgets.get(widget_name)
-#         if selected_widget:
-#             selected_widget.pack(fill=tk.BOTH, expand=True)
-
-#     def on_combo_box_selected(self, event):
-#         """Handle the combo box selection change event."""
-#         selected_widget_name = self.combo_box.get()
-#         self.show_widget(selected_widget_name)
+# Database Setup
+def initialize_db():
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parent_id INTEGER,
+            name TEXT NOT NULL,
+            node_type TEXT
+        )
+    """
+    )
+    conn.commit()
+    conn.close()
 
 
-# # Example usage with two pre-created Treeview widgets
-# class MainApp:
-#     def __init__(self, root):
-#         self.root = root
-#         self.root.title("Widget Switcher Example")
-
-#         # Create combo box to choose between Treeview One and Treeview Two
-#         self.combobox = ttk.Combobox(self.root, values=["Treeview One", "Treeview Two"])
-#         self.combobox.set("Treeview One")  # Set the default selection
-#         self.combobox.pack(pady=10)
-
-#         # Create two tree views to switch between
-#         self.treeview_one = ttk.Treeview(
-#             self.root, columns=("Col1", "Col2"), show="headings"
-#         )
-#         self.treeview_one.heading("Col1", text="Column 1")
-#         self.treeview_one.heading("Col2", text="Column 2")
-#         self.treeview_one.insert("", "end", values=("Item 1A", "Item 1B"))
-#         self.treeview_one.insert("", "end", values=("Item 2A", "Item 2B"))
-
-#         self.treeview_two = ttk.Treeview(
-#             self.root, columns=("ColA", "ColB", "ColC"), show="headings"
-#         )
-#         self.treeview_two.heading("ColA", text="Column A")
-#         self.treeview_two.heading("ColB", text="Column B")
-#         self.treeview_two.heading("ColC", text="Column C")
-#         self.treeview_two.insert("", "end", values=("Item A1", "Item B1", "Item C1"))
-#         self.treeview_two.insert("", "end", values=("Item A2", "Item B2", "Item C2"))
-
-#         # Register the widgets to switch between
-#         self.widgets = {
-#             "Treeview One": self.treeview_one,
-#             "Treeview Two": self.treeview_two,
-#         }
-
-#         # Initialize WidgetSwitcher with the parent frame, widgets, and combo box
-#         self.widget_switcher = WidgetSwitcher(self.root, self.widgets, self.combobox)
+# Functions to interact with the database
+def insert_item(name, parent_id=None, node_type="default"):
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO items (name, parent_id, node_type) VALUES (?, ?, ?)",
+        (name, parent_id, node_type),
+    )
+    conn.commit()
+    conn.close()
 
 
-# if __name__ == "__main__":
-#     root = tk.Tk()
-#     root.geometry("600x400")
-#     app = MainApp(root)
-#     root.mainloop()
+def update_item(item_id, name):
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE items SET name = ? WHERE id = ?", (name, item_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_item(item_id):
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM items WHERE id = ?", (item_id,))
+    cursor.execute(
+        "DELETE FROM items WHERE parent_id = ?", (item_id,)
+    )  # Delete child nodes as well
+    conn.commit()
+    conn.close()
+
+
+def fetch_items():
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, parent_id, name, node_type FROM items")
+    items = cursor.fetchall()
+    conn.close()
+    return items
+
+
+def fetch_children(parent_id):
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, name, node_type FROM items WHERE parent_id = ?", (parent_id,)
+    )
+    children = cursor.fetchall()
+    conn.close()
+    return children
+
+
+def fetch_root_items():
+    conn = sqlite3.connect("treeview_items.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, node_type FROM items WHERE parent_id IS NULL")
+    root_items = cursor.fetchall()
+    conn.close()
+    return root_items
+
+
+def fetch_all_descendants(parent_id):
+    descendants = []
+    children = fetch_children(parent_id)
+    for child in children:
+        descendants.append(child)
+        descendants.extend(fetch_all_descendants(child[0]))
+    return descendants
+
+
+# GUI Application
+def run_app():
+    # Initialize DB
+    initialize_db()
+
+    # Main Application Window
+    root = tk.Tk()
+    root.title("TreeView SQLite Editor")
+    root.geometry("600x400")
+
+    # Treeview Widget
+    tree = ttk.Treeview(root)
+    tree.heading("#0", text="Items", anchor="w")
+    tree.pack(fill=tk.BOTH, expand=True)
+
+    # Load Items from Database
+    def load_items():
+        for item in tree.get_children():
+            tree.delete(item)
+        items = fetch_items()
+        item_dict = {}
+        for item in items:
+            item_id, parent_id, name, node_type = item
+            if parent_id is None:
+                item_dict[item_id] = tree.insert(
+                    "", "end", text=f"{name} ({node_type})", tags=(str(item_id),)
+                )
+            else:
+                item_dict[item_id] = tree.insert(
+                    item_dict[parent_id],
+                    "end",
+                    text=f"{name} ({node_type})",
+                    tags=(str(item_id),),
+                )
+
+    load_items()
+
+    # Add Item Functionality
+    def add_item():
+        selected_item = tree.focus()
+        new_item_name = item_name_entry.get()
+        node_type = node_type_entry.get()
+        if not new_item_name:
+            messagebox.showwarning("Input Error", "Item name cannot be empty!")
+            return
+        parent_id = None
+        if selected_item:
+            parent_id = int(tree.item(selected_item, "tags")[0])
+        insert_item(new_item_name, parent_id, node_type)
+        load_items()
+        item_name_entry.delete(0, tk.END)
+        node_type_entry.delete(0, tk.END)
+
+    # Edit Item Functionality
+    def edit_item():
+        selected_item = tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Selection Error", "No item selected!")
+            return
+        new_name = item_name_entry.get()
+        if not new_name:
+            messagebox.showwarning("Input Error", "Item name cannot be empty!")
+            return
+        item_id = int(tree.item(selected_item, "tags")[0])
+        update_item(item_id, new_name)
+        load_items()
+        item_name_entry.delete(0, tk.END)
+
+    # Delete Item Functionality
+    def delete_item_action():
+        selected_item = tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Selection Error", "No item selected!")
+            return
+        item_id = int(tree.item(selected_item, "tags")[0])
+        delete_item(item_id)
+        load_items()
+
+    # Entry for Item Name
+    item_name_entry = tk.Entry(root)
+    item_name_entry.pack(fill=tk.X, padx=10, pady=5)
+
+    # Entry for Node Type
+    node_type_entry = tk.Entry(root)
+    node_type_entry.pack(fill=tk.X, padx=10, pady=5)
+    node_type_entry.insert(0, "default")
+
+    # Buttons
+    button_frame = tk.Frame(root)
+    button_frame.pack(pady=5)
+
+    add_button = tk.Button(button_frame, text="Add Item", command=add_item)
+    add_button.grid(row=0, column=0, padx=5)
+
+    edit_button = tk.Button(button_frame, text="Edit Item", command=edit_item)
+    edit_button.grid(row=0, column=1, padx=5)
+
+    delete_button = tk.Button(
+        button_frame, text="Delete Item", command=delete_item_action
+    )
+    delete_button.grid(row=0, column=2, padx=5)
+
+    # Run the Tkinter Main Loop
+    root.mainloop()
+
+
+# Entry Point
+if __name__ == "__main__":
+    run_app()

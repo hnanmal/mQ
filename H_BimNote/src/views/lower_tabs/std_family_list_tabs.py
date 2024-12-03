@@ -60,7 +60,7 @@ def create_stdFamList_tab(state, subtab_notebook):
     )
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=600,
+        width=400,
         height=3000,
     )
     section3 = ttk.Frame(
@@ -69,12 +69,12 @@ def create_stdFamList_tab(state, subtab_notebook):
         height=3000,
     )
 
+    working_tab_paned_window.add(section2, minsize=300)
     working_tab_paned_window.add(section1, minsize=400)
-    working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section3, minsize=800)
 
     working_tab_paned_window.paneconfigure(section1, width=1200, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=700, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=300, height=3000)
     working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
@@ -142,37 +142,37 @@ def create_stdFamList_tab(state, subtab_notebook):
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_SWMTreeView.tree_frame.pack_forget()
 
-    std_GWMTreeView.tree_frame.pack(
-        side="left",
-        padx=20,
-        pady=5,
-    )
-    std_SWMTreeView.tree_frame.pack(
-        side="left",
-        padx=10,
-        pady=5,
-    )
-
-    # widgetSwitcher = WidgetSwitcher(
-    #     std_matching_widget_area,
-    #     {
-    #         "GWM": std_GWMTreeView.tree_frame,
-    #         "SWM": std_SWMTreeView.tree_frame,
-    #     },
-    #     default_selection="GWM",
-    #     default_width=600,
+    # std_GWMTreeView.tree_frame.pack(
+    #     side="left",
+    #     padx=20,
+    #     pady=5,
     # )
+    # std_SWMTreeView.tree_frame.pack(
+    #     side="left",
+    #     padx=10,
+    #     pady=5,
+    # )
+
+    widgetSwitcher = WidgetSwitcher(
+        std_matching_widget_area,
+        {
+            "GWM": std_GWMTreeView.tree_frame,
+            "SWM": std_SWMTreeView.tree_frame,
+        },
+        default_selection="GWM",
+        default_width=600,
+    )
 
     std_matching_btn_area = ttk.Frame(
         section2,
         width=100,
     )
-    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="nw")
+    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
     std_matching_widget_area.pack(side="top", anchor="w")
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
-        text="Add 🡇",  # Button text
+        text="Add ⇨",  # Button text
         command=lambda: handle_add_button_press(
             state,
             # data_kind="std-GWM",
@@ -186,25 +186,25 @@ def create_stdFamList_tab(state, subtab_notebook):
         relief=tk.RAISED,
     )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
 
-    # Create a button and place it in the window
-    del_button = tk.Button(
-        std_matching_btn_area,
-        text="Del 🡅",  # Button text
-        command=lambda: handle_del_button_press(
-            state,
-            # data_kind="std-GWM",
-            related_widget=stdFamlist_treeview,
-        ),  # Function to call when clicked
-        font=("Arial", 10),  # Custom font for button text
-        bg="#fffec0",  # Background color
-        fg="black",  # Text color
-        width=8,  # Width of the button
-        height=1,  # Height of the button
-        relief=tk.RAISED,
-    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-    del_button.pack(
-        side="left", padx=5, pady=5, anchor="nw"
-    )  # Add padding around the button
+    # # Create a button and place it in the window
+    # del_button = tk.Button(
+    #     std_matching_btn_area,
+    #     text="Del 🡅",  # Button text
+    #     command=lambda: handle_del_button_press(
+    #         state,
+    #         # data_kind="std-GWM",
+    #         related_widget=stdFamlist_treeview,
+    #     ),  # Function to call when clicked
+    #     font=("Arial", 10),  # Custom font for button text
+    #     bg="#fffec0",  # Background color
+    #     fg="black",  # Text color
+    #     width=8,  # Width of the button
+    #     height=1,  # Height of the button
+    #     relief=tk.RAISED,
+    # )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+    # del_button.pack(
+    #     side="left", padx=5, pady=5, anchor="nw"
+    # )  # Add padding around the button
     add_button.pack(
         side="left", padx=5, pady=5, anchor="nw"
     )  # Add padding around the button
@@ -228,7 +228,7 @@ def create_stdFamList_tab(state, subtab_notebook):
         ],
         tree_ctrl_btn=[
             add_button,
-            del_button,
+            # del_button,
         ],
         # sheet=WMs_sheet,
     )
