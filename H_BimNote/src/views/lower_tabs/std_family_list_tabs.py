@@ -18,9 +18,11 @@ from src.views.widget.treeview_utils import (
     TeamStd_FamlistTreeView,
     TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
+    TeamStd_GWMmatching_TreeView,
     TeamStd_WMmatching_TreeView,
     TeamStd_SWMTreeView,
 )
+from src.views.widget.widget import WidgetSwitcher
 
 
 def create_stdFamList_tab(state, subtab_notebook):
@@ -61,19 +63,19 @@ def create_stdFamList_tab(state, subtab_notebook):
         width=600,
         height=3000,
     )
-    # section3 = ttk.Frame(
-    #     working_tab_paned_area,
-    #     width=600,
-    #     height=3000,
-    # )
+    section3 = ttk.Frame(
+        working_tab_paned_area,
+        width=600,
+        height=3000,
+    )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    # working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section3, minsize=600)
 
-    working_tab_paned_window.paneconfigure(section1, width=1500, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    # working_tab_paned_window.paneconfigure(section3, height=3000)
+    working_tab_paned_window.paneconfigure(section1, width=1200, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=700, height=3000)
+    working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -98,19 +100,136 @@ def create_stdFamList_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    stdFamlist_treeview = TeamStd_FamlistTreeView(state, section1)
+    stdFamlist_treeview = TeamStd_FamlistTreeView(state, section1, view_level=3)
     DefaultTreeViewStyleManager.apply_style(stdFamlist_treeview.treeview.tree)
+    stdFamlist_treeview.treeview.tree.column(0, width=0, minwidth=0, stretch=False)
 
+    # stdFamlist_treeview2 = TeamStd_WMsSheetView(state, section2)
+
+    ##############################################################
+    ## section 2###########
+    selected_item_label_area = ttk.Frame(
+        section2,
+        width=600,
+    )
+    selected_item_label_area.pack(side=tk.TOP, anchor="w")
+
+    selected_item_label = ttk.Label(
+        selected_item_label_area,
+        text="Selected Item: ",
+        font=working_tab_font,
+    )
+    selected_item = ttk.Label(
+        selected_item_label_area,
+        # textvariable=state.selected_stdGWM_item,
+        textvariable=stdFamlist_treeview.selected_item,
+        font=working_tab_font,
+        foreground="blue",
+    )
+    selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
+    selected_item.pack(side="left", padx=5, pady=5, anchor="w")
+
+    std_matching_widget_area = ttk.Frame(
+        section2,
+        width=600,
+    )
+
+    std_GWMTreeView = TeamStd_GWMTreeView(state, std_matching_widget_area, view_level=1)
+    # std_GWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
+    std_GWMTreeView.tree_frame.pack_forget()
+
+    std_SWMTreeView = TeamStd_SWMTreeView(state, std_matching_widget_area, view_level=1)
+    # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
+    std_SWMTreeView.tree_frame.pack_forget()
+
+    std_GWMTreeView.tree_frame.pack(
+        side="left",
+        padx=20,
+        pady=5,
+    )
+    std_SWMTreeView.tree_frame.pack(
+        side="left",
+        padx=10,
+        pady=5,
+    )
+
+    # widgetSwitcher = WidgetSwitcher(
+    #     std_matching_widget_area,
+    #     {
+    #         "GWM": std_GWMTreeView.tree_frame,
+    #         "SWM": std_SWMTreeView.tree_frame,
+    #     },
+    #     default_selection="GWM",
+    #     default_width=600,
+    # )
+
+    std_matching_btn_area = ttk.Frame(
+        section2,
+        width=100,
+    )
+    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="nw")
+    std_matching_widget_area.pack(side="top", anchor="w")
+    # Create a button and place it in the window
+    add_button = tk.Button(
+        std_matching_btn_area,
+        text="Add 🡇",  # Button text
+        command=lambda: handle_add_button_press(
+            state,
+            # data_kind="std-GWM",
+            related_widget=stdFamlist_treeview,
+        ),  # Function to call when clicked
+        font=("Arial", 10),  # Custom font for button text
+        bg="#fffec0",  # Background color
+        fg="black",  # Text color
+        width=8,  # Width of the button
+        height=1,  # Height of the button
+        relief=tk.RAISED,
+    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+
+    # Create a button and place it in the window
+    del_button = tk.Button(
+        std_matching_btn_area,
+        text="Del 🡅",  # Button text
+        command=lambda: handle_del_button_press(
+            state,
+            # data_kind="std-GWM",
+            related_widget=stdFamlist_treeview,
+        ),  # Function to call when clicked
+        font=("Arial", 10),  # Custom font for button text
+        bg="#fffec0",  # Background color
+        fg="black",  # Text color
+        width=8,  # Width of the button
+        height=1,  # Height of the button
+        relief=tk.RAISED,
+    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+    del_button.pack(
+        side="left", padx=5, pady=5, anchor="nw"
+    )  # Add padding around the button
+    add_button.pack(
+        side="left", padx=5, pady=5, anchor="nw"
+    )  # Add padding around the button
+
+    ##############################################################
+    ## section 3###########
+
+    # std_GWMTreeView.treeview.toggle_tree_lock(lock=True)
+    # std_GWMTreeView.treeview.expand_tree_to_level(level=1)
+    stdGWMmatching_treeview = TeamStd_GWMmatching_TreeView(
+        state, section3, stdFamlist_treeview
+    )
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
             stdFamlist_treeview,
+            stdGWMmatching_treeview,
+            std_GWMTreeView,
+            std_SWMTreeView,
         ],
-        # tree_ctrl_btn=[
-        #     add_button,
-        #     del_button,
-        # ],
+        tree_ctrl_btn=[
+            add_button,
+            del_button,
+        ],
         # sheet=WMs_sheet,
     )
 

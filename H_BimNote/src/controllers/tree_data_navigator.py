@@ -240,3 +240,27 @@ class TreeDataManager:
             selected_node["children"] = [
                 child for child in selected_node["children"] if child not in matched_wms
             ]
+
+    def match_GWMitems_to_stdFam(
+        self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems
+    ):
+        """Add specified matched WMs to the children of the selected node."""
+        _, parent_node, selected_node = self.get_node_path(
+            data_kind, grandparent_name, parent_name, child_name
+        )
+
+        for selected_GWMitem in selected_GWMitems:
+            new_values = list(selected_GWMitem["values"])
+            new_values.insert(0, "")
+            new_values.insert(0, "")
+            new_values.insert(0, "")
+            selected_GWMitem.update({"values": new_values})
+
+        if isinstance(selected_node, list) and selected_GWMitems:
+            # Handle adding to list of strings (last level)
+            print(f"Adding matched WMs: {selected_GWMitems}")
+            parent_node["children"].extend(selected_GWMitems)
+        elif selected_node and "children" in selected_node and selected_GWMitems:
+            # Handle adding matched WMs to regular children
+            print(f"Adding matched WMs: {selected_GWMitems}")
+            selected_node["children"].extend(selected_GWMitems)

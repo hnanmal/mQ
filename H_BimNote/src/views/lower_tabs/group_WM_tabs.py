@@ -55,6 +55,7 @@ def create_stdGWM_tab(state, subtab_notebook):
         width=1000,
         height=3000,
     )
+    # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
         width=600,
@@ -160,7 +161,7 @@ def create_stdGWM_tab(state, subtab_notebook):
         relief=tk.RAISED,
     )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
 
-    state.std_matching_add_btn = add_button
+    # state.std_matching_add_btn = add_button
 
     # Create a button and place it in the window
     del_button = tk.Button(
@@ -184,7 +185,6 @@ def create_stdGWM_tab(state, subtab_notebook):
     add_button.pack(
         side="left", padx=5, pady=5, anchor="nw"
     )  # Add padding around the button
-    state.std_matching_del_btn = del_button
 
     # print(state.std_edit_mode)
 

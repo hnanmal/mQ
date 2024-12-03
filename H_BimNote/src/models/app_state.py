@@ -19,6 +19,7 @@ class AppState:
         self.config = None
 
         self.selectedWMs = []
+        self.selectedGWMitems = []
         self.selected_matchedWMs = []
 
         self.wm_group_data = {}
@@ -155,48 +156,28 @@ class AppState:
 
         print("dematch_matchedWMs_to_stdType_종료")
 
-    # # 통합 상태 업데이트 함수
-    # def update_project_info(self, new_data):
-    #     self.project_info.update(new_data)
-    #     self.observer_manager.notify_observers(self)
+    def match_GWM_to_stdFam(self, related_widget):
+        print("match_wms_to_stdType_시작")
+        data_kind = related_widget.data_kind
+        selectedGWMitems = go(
+            self.selectedGWMitems,
+            sorted,
+            list,
+        )
+        print(selectedGWMitems)
+        related_widget.selected_item.get().split(" | ")
+        grandparent_item_name, parent_item_name, selected_item_name = (
+            related_widget.selected_item.get().split(" | ")
+        )
 
-    # ################### 옵저버 관련 #################################
+        # Use TreeDataNavigator to remove matched WMs
+        treeDataManager = TreeDataManager(self, related_widget)
+        treeDataManager.match_GWMitems_to_stdFam(
+            data_kind,
+            grandparent_item_name,
+            parent_item_name,
+            selected_item_name,
+            selectedGWMitems,
+        )
 
-    # def __getitem__(self, key):
-    #     return self._state.get(key)
-
-    # def __setitem__(self, key, value):
-    #     self._state[key] = value
-
-    # # Add getter and setter for clipboard_data
-    # def get_clipboard_data(self):
-    #     return self.clipboard_data
-
-    # def get_current_tab(self):
-    #     """Return the currently selected tab."""
-    #     return self.current_tab
-
-    # def set_clipboard_data(self, data):
-    #     self.clipboard_data = data
-
-    # def set_current_tab(self, tab_name):
-    #     self.current_tab = tab_name
-
-    # def load_config(self, config_data):
-    #     self.config = config_data
-
-    # def update_wm_group_data(self, data):
-    #     self.wm_group_data = data
-
-    # def set_lock_status(self, item_name, status):
-    #     self.lock_status[item_name] = status
-
-    # def get_lock_status(self, item_name):
-    #     return self.lock_status.get(item_name, False)
-
-    # # Method to get and set previous tab
-    # def get_previous_tab(self):
-    #     return self.previous_tab
-
-    # def set_previous_tab(self, tab_name):
-    #     self.previous_tab = tab_name
+        print("match_wms_to_stdType_종료")

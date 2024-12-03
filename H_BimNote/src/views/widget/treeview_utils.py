@@ -27,7 +27,8 @@ class DefaultTreeViewStyleManager:
             background="white",
             foreground="black",
             rowheight=30,
-            height=50,
+            # height=50,
+            height=20,
         )
         style.map(
             "Treeview",
@@ -264,12 +265,45 @@ class BaseTreeView:
             data.append(dict(zip(self.tree["columns"], values)))
         return data
 
+    def prevent_expansion(self, event):
+        # Prevent expansion or collapsing based on the lock state
+        if self.locked:
+            item_id = self.tree.focus()
+            self.tree.item(item_id, open=False)
+
+    def toggle_tree_lock(self, lock=True):
+        """Locks or unlocks the tree from being expanded."""
+        self.locked = lock
+        if self.locked:
+            self.tree.bind("<<TreeviewOpen>>", self.prevent_expansion)
+            self.tree.bind("<<TreeviewClose>>", self.prevent_expansion)
+        else:
+            self.tree.unbind("<<TreeviewOpen>>")
+            self.tree.unbind("<<TreeviewClose>>")
+
+    # Function to collapse all nodes in the tree
+    def collapse_all(self, parent=""):
+        treeview = self.tree
+
+        def collapse_item(item):
+            # Set the item to open (expanded)
+            treeview.item(item, open=False)
+            # Get the children of the current item
+            children = treeview.get_children(item)
+            for child in children:
+                collapse_item(child)
+
+        # Get all root items
+        root_items = treeview.get_children("")
+        for item in root_items:
+            collapse_item(item)
+
     def expand_all_items(self):
         """Recursively expand all items in the Treeview."""
         treeview = self.tree
 
         def expand_item(item):
-            # Set the item to open (expanded)
+            print(f"Expanding item: {item}")
             treeview.item(item, open=True)
             # Get the children of the current item
             children = treeview.get_children(item)
@@ -278,8 +312,24 @@ class BaseTreeView:
 
         # Get all root items
         root_items = treeview.get_children("")
+        if not root_items:
+            print("No root items found.")
         for item in root_items:
             expand_item(item)
+
+    def expand_tree_to_level(self, parent="", level=1, current_level=0):
+        tree = self.tree
+        # self.collapse_all()
+
+        # Check if the current level is less than the desired level
+        if current_level < level:
+            # Get all children of the current node
+            children = tree.get_children(parent)
+            for child in children:
+                # Expand the current node
+                tree.item(child, open=True)
+                # Recursively expand the children
+                self.expand_tree_to_level(child, level, current_level + 1)
 
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
@@ -294,7 +344,7 @@ class BaseTreeView:
                     parent_id, "end", text=node["name"], values=(display_value)
                 )
                 self.tree.item(
-                    node_id, open=True
+                    node_id,  # open=True
                 )  # Keep the tree open to display all items
 
                 # Recursively insert children if there are any
@@ -362,12 +412,13 @@ class BaseTreeView:
 
 
 class TeamStd_GWMTreeView:
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "std-GWM"
-
         self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(state, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -376,6 +427,7 @@ class TeamStd_GWMTreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
@@ -385,7 +437,7 @@ class TeamStd_GWMTreeView:
         # self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(parent)
+        self.set_title(tree_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -414,7 +466,7 @@ class TeamStd_GWMTreeView:
         title_label = ttk.Label(parent, text="Standard Types for GWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None):
+    def update(self, event=None, view_level=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -436,6 +488,7 @@ class TeamStd_GWMTreeView:
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
+            self.treeview.expand_tree_to_level(level=view_level)
         # Reselect the item if possible
         if origin_indices:
             try:
@@ -456,6 +509,14 @@ class TeamStd_GWMTreeView:
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
+        self.state.selectedGWMitems = [
+            {
+                "name": self.treeview.tree.item(selected_item_id, "text"),
+                "values": self.treeview.tree.item(selected_item_id, "values"),
+                "children": [],
+            }
+        ]
+        # self.treeview.tree.item(selected_item_id, "values")
 
         # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
@@ -564,7 +625,7 @@ class TeamStd_GWMTreeView:
 
 
 class TeamStd_WMmatching_TreeView:
-    def __init__(self, state, parent, relate_widget, data_kind=None):
+    def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
         self.state = state
         self.data_kind = data_kind
         self.selected_item_relate_widget = relate_widget.selected_item
@@ -573,9 +634,12 @@ class TeamStd_WMmatching_TreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-        self.state_observer = TreeViewStateObserver(state, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
 
         # config selection mode
         self.treeview.tree.config(selectmode="extended")
@@ -583,7 +647,7 @@ class TeamStd_WMmatching_TreeView:
         # Tag styles
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(parent)
+        self.set_title(tree_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -603,7 +667,7 @@ class TeamStd_WMmatching_TreeView:
         )
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None):
+    def update(self, event=None, view_level=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
         print(f"{self.__class__.__name__} > update 메소드 시작")
@@ -666,6 +730,8 @@ class TeamStd_WMmatching_TreeView:
         except Exception as e:
             print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
 
+        self.treeview.expand_tree_to_level(level=view_level)
+
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
@@ -689,12 +755,14 @@ class TeamStd_WMmatching_TreeView:
 
 
 class TeamStd_SWMTreeView:
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "std-SWM"
 
         self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(state, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -703,6 +771,7 @@ class TeamStd_SWMTreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
@@ -712,7 +781,7 @@ class TeamStd_SWMTreeView:
         # self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(parent)
+        self.set_title(tree_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -741,7 +810,7 @@ class TeamStd_SWMTreeView:
         title_label = ttk.Label(parent, text="Standard Types for SWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None):
+    def update(self, event=None, view_level=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -763,6 +832,8 @@ class TeamStd_SWMTreeView:
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
+            self.treeview.expand_tree_to_level(level=view_level)
+
         # Reselect the item if possible
         if origin_indices:
             try:
@@ -783,6 +854,13 @@ class TeamStd_SWMTreeView:
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
+        self.state.selectedGWMitems = [
+            {
+                "name": self.treeview.tree.item(selected_item_id, "text"),
+                "values": self.treeview.tree.item(selected_item_id, "values"),
+                "children": [],
+            }
+        ]
 
         # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
@@ -894,12 +972,14 @@ class TeamStd_SWMTreeView:
 
 
 class TeamStd_CommonInputTreeView:
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "common-input"
 
         self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(state, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -908,6 +988,7 @@ class TeamStd_CommonInputTreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
@@ -917,7 +998,7 @@ class TeamStd_CommonInputTreeView:
         # self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(parent)
+        self.set_title(tree_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -951,7 +1032,7 @@ class TeamStd_CommonInputTreeView:
         )
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None):
+    def update(self, event=None, view_level=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -972,6 +1053,8 @@ class TeamStd_CommonInputTreeView:
             data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
+
+            self.treeview.expand_tree_to_level(level=view_level)
 
         # Reselect the item if possible
         if origin_indices:
@@ -1088,31 +1171,30 @@ class TeamStd_CommonInputTreeView:
 
 
 class TeamStd_FamlistTreeView:
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "std-familylist"
 
         self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(state, self.update)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = [
+            "최상위",
             "분류",
             "No",
             "Family Name",
+            "GWM/SWM",
             "Description",
-            "G-WM 1",
-            "G-WM 2",
-            "G-WM 3",
-            "G-WM 4",
-            "S-WM 1",
-            "표준물량 산출식",
         ]
-        hdr_widths = [60, 10, 100, 250, 30, 30, 30, 30, 30, 30]
+        hdr_widths = [0, 60, 20, 150, 100, 200]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
@@ -1122,7 +1204,7 @@ class TeamStd_FamlistTreeView:
         # self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(parent)
+        self.set_title(tree_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -1151,7 +1233,7 @@ class TeamStd_FamlistTreeView:
         title_label = ttk.Label(parent, text="Standard Family List", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None):
+    def update(self, event=None, view_level=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -1172,6 +1254,8 @@ class TeamStd_FamlistTreeView:
             data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
+
+            self.treeview.expand_tree_to_level(level=view_level)
 
         # Reselect the item if possible
         if origin_indices:
@@ -1200,35 +1284,37 @@ class TeamStd_FamlistTreeView:
 
         # Extract the names from the values, ensuring each level is handled appropriately
         try:
-            # # Get the name of the selected item, parent, and grandparent
-            # selected_item_name = go(
-            #     self.treeview.tree.item(selected_item_id, "values"),
-            #     filter(lambda x: x != ""),
-            #     list,
-            #     lambda x: x[0],
-            # )
-            # parent_item_name = go(
-            #     self.treeview.tree.item(parent_item_id, "values"),
-            #     filter(lambda x: x != ""),
-            #     list,
-            #     lambda x: x[0],
-            # )
-            # grand_parent_item_name = go(
-            #     self.treeview.tree.item(grand_parent_item_id, "values"),
-            #     filter(lambda x: x != ""),
-            #     list,
-            #     lambda x: x[0],
-            # )
+            # Get the name of the selected item, parent, and grandparent
+            selected_item_name = go(
+                self.treeview.tree.item(selected_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            parent_item_name = go(
+                self.treeview.tree.item(parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0],
+            )
+            grand_parent_item_name = go(
+                self.treeview.tree.item(grand_parent_item_id, "values"),
+                filter(lambda x: x != ""),
+                list,
+                lambda x: x[0] or "",
+            )
 
-            # # Format the selected path as "grandparent | parent | selected"
-            # formatted_value = " | ".join(
-            #     filter(
-            #         None, [grand_parent_item_name, parent_item_name, selected_item_name]
-            #     )
-            # )
+            # Format the selected path as "grandparent | parent | selected"
+            formatted_value = " | ".join(
+                filter(
+                    # None, [grand_parent_item_name, parent_item_name, selected_item_name]
+                    None,
+                    [grand_parent_item_name, parent_item_name, selected_item_name],
+                )
+            )
 
-            # # Update the selected item in the state
-            # self.selected_item.set(formatted_value)
+            # Update the selected item in the state
+            self.selected_item.set(formatted_value)
 
             # Register the last selected item
             self.last_selected_item = selected_item_id
@@ -1298,3 +1384,134 @@ class TeamStd_FamlistTreeView:
         )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
+
+
+class TeamStd_GWMmatching_TreeView:
+    def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
+        self.state = state
+        self.data_kind = data_kind
+        self.selected_item_relate_widget = relate_widget.selected_item
+        headers = [
+            "표준물량 산출식",
+        ]
+        hdr_widths = [400, 400]
+
+        # Compose TreeView, Style Manager, and State Observer
+        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
+        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview.tree.config(height=3000)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
+
+        # config selection mode
+        self.treeview.tree.config(selectmode="extended")
+
+        # Tag styles
+        self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
+        # Set up UI
+        self.set_title(tree_frame)
+        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
+        self.treeview.tree.pack(expand=True, fill="both", side="left")
+        self.treeview.setup_columns(headers, hdr_widths)
+
+        # set treeview_editor class
+        self.treeviewEditor = TreeviewEditor(state, self)
+
+        # Track the last selected item with an instance attribute
+        self.last_selected_item = None
+        # Bind selection events
+        self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
+
+    def set_title(self, parent):
+        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_label = ttk.Label(
+            parent, text="Matched WMs for Selected Standard Types", font=title_font
+        )
+        title_label.pack(padx=5, pady=5, anchor="w")
+
+    def update(self, event=None, view_level=None):
+        state = self.state
+        """Update the TreeView whenever the state changes."""
+        print(f"{self.__class__.__name__} > update 메소드 시작")
+        print(self.selected_item_relate_widget.get())
+
+        try:
+            # Split the selected item path to find the grandparent, parent, and selected item names
+            grand_parent_item_name, parent_item_name, selected_item_name = (
+                self.selected_item_relate_widget.get().split(" | ")
+            )
+
+            # Ensure the data kind exists in the team standard information
+            if self.data_kind in state.team_std_info:
+                data = state.team_std_info[self.data_kind]["children"]
+
+                # Find the grandparent node
+                grand_parent_node = next(
+                    (node for node in data if node["name"] == grand_parent_item_name),
+                    None,
+                )
+                if grand_parent_node:
+                    # Find the parent node
+                    parent_node = next(
+                        (
+                            node
+                            for node in grand_parent_node["children"]
+                            if node["name"] == parent_item_name
+                        ),
+                        None,
+                    )
+                    if parent_node:
+                        # Find the selected node
+                        selected_node = next(
+                            (
+                                node
+                                for node in parent_node["children"]
+                                if node["name"] == selected_item_name
+                            ),
+                            None,
+                        )
+                        if selected_node:
+                            # Clear the TreeView and insert the data for the selected node
+                            self.treeview.clear_treeview()
+
+                            # Wrap the children of the selected node for insertion
+                            wrapped_data = go(
+                                selected_node["children"],
+                                map(lambda x: [x]),
+                                list,
+                            )
+                            # self.treeview.insert_data_with_levels(wrapped_data)
+                            self.treeview.insert_data(wrapped_data)
+                        else:
+                            print(f"Selected item '{selected_item_name}' not found.")
+                    else:
+                        print(f"Parent item '{parent_item_name}' not found.")
+                else:
+                    print(f"Grandparent item '{grand_parent_item_name}' not found.")
+
+        except Exception as e:
+            print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
+
+        self.treeview.expand_tree_to_level(level=view_level)
+        print(f"{self.__class__.__name__} > update 메소드 종료")
+
+    def on_item_selected(self, event):
+        # if self.last_selected_item:
+        #     self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
+
+        print("on_item_selected_시작")
+        selected_items_id = self.treeview.tree.selection()
+        selected_items_name = go(
+            selected_items_id,
+            map(lambda x: list(self.treeview.tree.item(x, "values"))),
+            list,
+            map(lambda x: x[0]),
+            list,
+        )
+        print(selected_items_name)
+        self.state.selected_matchedWMs = selected_items_name
+        # # 마지막 선택항목으로 재등록
+        # self.last_selected_item = selected_items_id[0]
+        print("on_item_selected_종료")

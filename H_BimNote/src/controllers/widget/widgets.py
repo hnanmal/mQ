@@ -98,6 +98,9 @@ def handle_add_button_press(state, related_widget=None):
     if "WM" in data_kind:
         state.match_wms_to_stdType(related_widget)
         state.observer_manager.notify_observers(state)
+    elif "std-familylist":
+        state.match_GWM_to_stdFam(related_widget)
+        state.observer_manager.notify_observers(state)
 
     print("handle_add_button_press_종료")
 
