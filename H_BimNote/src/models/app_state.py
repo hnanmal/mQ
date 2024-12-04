@@ -42,6 +42,10 @@ class AppState:
             self.std_matching_treeview_SWM.update(self)
         except:
             pass
+        try:
+            self.std_matching_treeview_Familylist.update(self)
+        except:
+            pass
 
     ################### 옵저버 관련 #################################
 
@@ -54,36 +58,6 @@ class AppState:
         self.team_std_info.update({data_kind: new_data})
 
         self.log_widget.write(f"update_{data_kind}_data_end\n")
-
-    def updateDB_WMs_data(self, new_data):
-        self.log_widget.write("update_WMs_data_start\n")
-
-        # self.project_info["GWM"] = new_data
-        self.team_std_info.update({"WMs": new_data})
-        # self.observer_manager.notify_observers()
-
-        self.log_widget.write("update_WMs_data_end\n")
-
-    def updateDB_S_GWM_data(self, new_data):
-        self.log_widget.write("update_S_GWM_data_start\n")
-
-        self.team_std_info.update({"std-GWM": new_data})
-
-        self.log_widget.write("update_S_GWM_data_end\n")
-
-    def updateDB_S_SWM_data(self, new_data):
-        self.log_widget.write("update_S_SWM_data_start\n")
-
-        self.team_std_info.update({"std-SWM": new_data})
-
-        self.log_widget.write("update_S_SWM_data_end\n")
-
-    def updateDB_commonInput_data(self, new_data):
-        self.log_widget.write("update_S_SWM_data_start\n")
-
-        self.team_std_info.update({"common-input": new_data})
-
-        self.log_widget.write("update_S_SWM_data_end\n")
 
     def update_team_standard_info(self, new_data, data_kind=None):
 

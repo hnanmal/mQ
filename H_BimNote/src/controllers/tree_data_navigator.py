@@ -18,6 +18,25 @@ class TreeDataManager:
             None,
         )
 
+    def find_node_by_name_recur(self, data, target_name):
+        """Find a node by its name in the given tree structure recursively."""
+        # If data is a list, iterate through each node
+        if isinstance(data, list):
+            for node in data:
+                if isinstance(node, dict):
+                    # If the current node matches the target name, return it
+                    if node.get("name") == target_name:
+                        return node
+
+                    # If the current node has children, search within them recursively
+                    if "children" in node:
+                        found_node = self.find_node_by_name(
+                            node["children"], target_name
+                        )
+                        if found_node:
+                            return found_node
+        return None
+
     def get_node_path(self, data_kind, grandparent_name, parent_name, child_name):
         """Navigate to the specified node based on grandparent, parent, and child names."""
         if data_kind not in self.team_std_info:

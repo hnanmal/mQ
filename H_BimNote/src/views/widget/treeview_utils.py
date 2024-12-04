@@ -499,6 +499,7 @@ class TeamStd_GWMTreeView:
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
+        treeDataManager = TreeDataManager(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
@@ -509,14 +510,19 @@ class TeamStd_GWMTreeView:
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
-        self.state.selectedGWMitems = [
-            {
-                "name": self.treeview.tree.item(selected_item_id, "text"),
-                "values": self.treeview.tree.item(selected_item_id, "values"),
-                "children": [],
-            }
-        ]
-        # self.treeview.tree.item(selected_item_id, "values")
+
+        try:
+            state_data = self.state.team_std_info[self.data_kind]["children"]
+            target_node = treeDataManager.find_node_by_name_recur(
+                state_data, self.treeview.tree.item(selected_item_id, "text")
+            ).copy()
+            print(
+                f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
+            )
+
+            self.state.selectedGWMitems = [target_node]
+        except:
+            pass
 
         # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
@@ -671,7 +677,7 @@ class TeamStd_WMmatching_TreeView:
         state = self.state
         """Update the TreeView whenever the state changes."""
         print(f"{self.__class__.__name__} > update 메소드 시작")
-        print(self.selected_item_relate_widget.get())
+        print(f"선택아이템 출력 : {self.selected_item_relate_widget.get()}")
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -844,6 +850,7 @@ class TeamStd_SWMTreeView:
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
+        treeDataManager = TreeDataManager(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
@@ -854,13 +861,19 @@ class TeamStd_SWMTreeView:
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
-        self.state.selectedGWMitems = [
-            {
-                "name": self.treeview.tree.item(selected_item_id, "text"),
-                "values": self.treeview.tree.item(selected_item_id, "values"),
-                "children": [],
-            }
-        ]
+
+        try:
+            state_data = self.state.team_std_info[self.data_kind]["children"]
+            target_node = treeDataManager.find_node_by_name_recur(
+                state_data, self.treeview.tree.item(selected_item_id, "text")
+            ).copy()
+            print(
+                f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
+            )
+
+            self.state.selectedGWMitems = [target_node]
+        except:
+            pass
 
         # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
@@ -1189,8 +1202,9 @@ class TeamStd_FamlistTreeView:
             "Family Name",
             "GWM/SWM",
             "Description",
+            "표준산출번호",
         ]
-        hdr_widths = [0, 60, 20, 150, 100, 200]
+        hdr_widths = [0, 60, 20, 150, 100, 200, 50]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1277,11 +1291,13 @@ class TeamStd_FamlistTreeView:
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
         self.treeview.last_selected_item = selected_item_id
+        print(
+            f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
+        )
 
         # Get the parent and grandparent of the selected item
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-
         # Extract the names from the values, ensuring each level is handled appropriately
         try:
             # Get the name of the selected item, parent, and grandparent
@@ -1312,10 +1328,11 @@ class TeamStd_FamlistTreeView:
                     [grand_parent_item_name, parent_item_name, selected_item_name],
                 )
             )
+            print(f"패밀리리스트 선택 항목 포맷 밸류 {formatted_value}")
 
             # Update the selected item in the state
             self.selected_item.set(formatted_value)
-
+            print(f"패밀리리스트 선택 항목 {self.selected_item.get()}")
             # Register the last selected item
             self.last_selected_item = selected_item_id
 
@@ -1386,15 +1403,13 @@ class TeamStd_FamlistTreeView:
         state.observer_manager.notify_observers(state)
 
 
-class TeamStd_GWMmatching_TreeView:
+class TeamStd_FamilyTypeMatching_TreeView:
     def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
         self.state = state
         self.data_kind = data_kind
         self.selected_item_relate_widget = relate_widget.selected_item
-        headers = [
-            "표준물량 산출식",
-        ]
-        hdr_widths = [400, 400]
+        headers = ["GWM/SWM", "표준산출유형 번호", "표준산출 수식", "심벌키", "심벌값"]
+        hdr_widths = [50, 50, 200, 100, 100]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1435,7 +1450,7 @@ class TeamStd_GWMmatching_TreeView:
         state = self.state
         """Update the TreeView whenever the state changes."""
         print(f"{self.__class__.__name__} > update 메소드 시작")
-        print(self.selected_item_relate_widget.get())
+        print(f"관련위젯 선택항목 출력 : {self.selected_item_relate_widget.get()}")
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -1452,6 +1467,7 @@ class TeamStd_GWMmatching_TreeView:
                     (node for node in data if node["name"] == grand_parent_item_name),
                     None,
                 )
+                # print(f"조부이름 {grand_parent_node}")
                 if grand_parent_node:
                     # Find the parent node
                     parent_node = next(
@@ -1477,11 +1493,14 @@ class TeamStd_GWMmatching_TreeView:
                             self.treeview.clear_treeview()
 
                             # Wrap the children of the selected node for insertion
-                            wrapped_data = go(
-                                selected_node["children"],
-                                map(lambda x: [x]),
-                                list,
-                            )
+                            # wrapped_data = go(
+                            #     selected_node["children"],
+                            #     map(lambda x: [x]),
+                            #     list,
+                            # )
+                            # print(f"dldldldldld !!!! {selected_node}")
+                            wrapped_data = selected_node["values"][7:][0]
+                            print(wrapped_data)
                             # self.treeview.insert_data_with_levels(wrapped_data)
                             self.treeview.insert_data(wrapped_data)
                         else:

@@ -3,6 +3,7 @@ class TreeDataManager:
         self.state = state
         self.team_std_info = state.team_std_info
         self.data_kind = related_widget.data_kind  # 대비용(필요없으면 추후 삭제)
+        self.find_node_by_name_recur
 
     def register_related_widget(self, related_widget):
         self.related_widget = related_widget
@@ -10,6 +11,25 @@ class TreeDataManager:
     def find_node_by_name(self, data, target_name):
         """Find a node by its name in the given children list."""
         return next((node for node in data if node["name"] == target_name), None)
+
+    def find_node_by_name_recur(self, data, target_name):
+        """Find a node by its name in the given tree structure recursively."""
+        # If data is a list, iterate through each node
+        if isinstance(data, list):
+            for node in data:
+                if isinstance(node, dict):
+                    # If the current node matches the target name, return it
+                    if node.get("name") == target_name:
+                        return node
+
+                    # If the current node has children, search within them recursively
+                    if "children" in node:
+                        found_node = self.find_node_by_name(
+                            node["children"], target_name
+                        )
+                        if found_node:
+                            return found_node
+        return None
 
     def get_node_path(self, data_kind, grandparent_name, parent_name, child_name):
         """Navigate to the specified node based on grandparent, parent, and child names."""
