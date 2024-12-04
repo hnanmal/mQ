@@ -115,45 +115,6 @@ class TreeviewEditor:
             parent_id = self.tree.parent(parent_id)
         return depth
 
-    # def on_item_selected(self, event):
-    #     try:
-    #         if self.last_selected_item:
-    #             self.tree.item(self.last_selected_item, tags=("normal",))
-    #     except Exception as e:
-    #         print(f"Error resetting last selected item tag: {e}")
-
-    #     # Get the currently selected item
-    #     selected_item_id = self.tree.focus()
-    #     self.last_selected_item = selected_item_id
-
-    #     # Get the parent and grandparent of the selected item
-    #     parent_item_id = self.tree.parent(selected_item_id)
-    #     grand_parent_item_id = self.tree.parent(parent_item_id)
-
-    #     try:
-    #         # Extract the names from the values, ensuring each level is handled appropriately
-    #         selected_values = self.tree.item(selected_item_id, "values")
-    #         parent_values = self.tree.item(parent_item_id, "values")
-    #         grand_parent_values = self.tree.item(grand_parent_item_id, "values")
-
-    #         selected_item_name = next((v for v in selected_values if v), None)
-    #         parent_item_name = next((v for v in parent_values if v), None)
-    #         grand_parent_item_name = next((v for v in grand_parent_values if v), None)
-
-    #         # Format the selected path as "grandparent | parent | selected"
-    #         formatted_value = " | ".join(
-    #             filter(
-    #                 None, [grand_parent_item_name, parent_item_name, selected_item_name]
-    #             )
-    #         )
-
-    #         # Update the selected item in the state
-    #         self.selected_item.set(formatted_value)
-
-    #         # Register the last selected item
-    #         self.last_selected_item = selected_item_id
-
-    #     except IndexError as e:
-    #         print(f"IndexError: {e}")
-    #     except Exception as e:
-    #         print(f"Error processing selected item details: {e}")
+    def get_item_location(self, item_id):
+        self.get_item_depth(item_id)
+        pass

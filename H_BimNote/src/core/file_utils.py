@@ -42,6 +42,7 @@ def load_from_json(state, _file_path=None):
             state.update_team_standard_info(loaded_data, data_kind="std-SWM")
             state.update_team_standard_info(loaded_data, data_kind="common-input")
             state.update_team_standard_info(loaded_data, data_kind="std-familylist")
+            state.update_team_standard_info(loaded_data, data_kind="std-calcdict")
             if loaded_data.get("WMs"):
                 state.update_team_standard_info(loaded_data, data_kind="WMs")
             else:

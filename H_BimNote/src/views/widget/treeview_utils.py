@@ -1406,7 +1406,8 @@ class TeamStd_FamlistTreeView:
 class TeamStd_FamilyTypeMatching_TreeView:
     def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
         self.state = state
-        self.data_kind = data_kind
+        # self.data_kind = data_kind
+        self.data_kind = "std-calcdict"
         self.selected_item_relate_widget = relate_widget.selected_item
         headers = ["GWM/SWM", "표준산출유형 번호", "표준산출 수식", "심벌키", "심벌값"]
         hdr_widths = [50, 50, 200, 100, 100]
@@ -1457,58 +1458,88 @@ class TeamStd_FamilyTypeMatching_TreeView:
             grand_parent_item_name, parent_item_name, selected_item_name = (
                 self.selected_item_relate_widget.get().split(" | ")
             )
+            selected_qItem_name = f"Q{selected_item_name}"
+            print(f"산출유형번호 : {selected_qItem_name}")
+
+            # for node in data["children"]:
+            #     if node["name"] == selected_qItem_name:
+            #         res.append(node)
+            # print(f"셀렉트노드 {res}")
 
             # Ensure the data kind exists in the team standard information
             if self.data_kind in state.team_std_info:
                 data = state.team_std_info[self.data_kind]["children"]
-
-                # Find the grandparent node
-                grand_parent_node = next(
-                    (node for node in data if node["name"] == grand_parent_item_name),
+                selected_node = next(
+                    (node for node in data if node["name"] == selected_qItem_name),
                     None,
                 )
-                # print(f"조부이름 {grand_parent_node}")
-                if grand_parent_node:
-                    # Find the parent node
-                    parent_node = next(
-                        (
-                            node
-                            for node in grand_parent_node["children"]
-                            if node["name"] == parent_item_name
-                        ),
-                        None,
-                    )
-                    if parent_node:
-                        # Find the selected node
-                        selected_node = next(
-                            (
-                                node
-                                for node in parent_node["children"]
-                                if node["name"] == selected_item_name
-                            ),
-                            None,
-                        )
-                        if selected_node:
-                            # Clear the TreeView and insert the data for the selected node
-                            self.treeview.clear_treeview()
+                print(selected_node)
 
-                            # Wrap the children of the selected node for insertion
-                            # wrapped_data = go(
-                            #     selected_node["children"],
-                            #     map(lambda x: [x]),
-                            #     list,
-                            # )
-                            # print(f"dldldldldld !!!! {selected_node}")
-                            wrapped_data = selected_node["values"][7:][0]
-                            print(wrapped_data)
-                            # self.treeview.insert_data_with_levels(wrapped_data)
-                            self.treeview.insert_data(wrapped_data)
-                        else:
-                            print(f"Selected item '{selected_item_name}' not found.")
-                    else:
-                        print(f"Parent item '{parent_item_name}' not found.")
-                else:
-                    print(f"Grandparent item '{grand_parent_item_name}' not found.")
+                if selected_node:
+                    # Clear the TreeView and insert the data for the selected node
+                    self.treeview.clear_treeview()
+                    wrapped_data = go(
+                        selected_node["children"],
+                        # map(lambda x: [x]),
+                        list,
+                    )
+                    self.treeview.insert_data(wrapped_data)
+
+                    # # Wrap the children of the selected node for insertion
+                    # wrapped_data = go(
+                    #     selected_node["children"],
+                    #     map(lambda x: [x]),
+                    #     list,
+                    # )
+                    # self.treeview.insert_data_with_levels(wrapped_data)
+
+            # Find the grandparent node
+            # grand_parent_node = next(
+            #     (node for node in data if node["name"] == grand_parent_item_name),
+            #     None,
+            # )
+            # # print(f"조부이름 {grand_parent_node}")
+            # if grand_parent_node:
+            #     # Find the parent node
+            #     parent_node = next(
+            #         (
+            #             node
+            #             for node in grand_parent_node["children"]
+            #             if node["name"] == parent_item_name
+            #         ),
+            #         None,
+            #     )
+            #     if parent_node:
+            #         # Find the selected node
+            #         selected_node = next(
+            #             (
+            #                 node
+            #                 for node in parent_node["children"]
+            #                 if node["name"] == selected_item_name
+            #             ),
+            #             None,
+            #         )
+            #         if selected_node:
+            #             # Clear the TreeView and insert the data for the selected node
+            #             self.treeview.clear_treeview()
+
+            #             # Wrap the children of the selected node for insertion
+            #             wrapped_data = go(
+            #                 selected_node["children"],
+            #                 map(lambda x: [x]),
+            #                 list,
+            #             )
+            #             self.treeview.insert_data_with_levels(wrapped_data)
+
+            #             # wrapped_data = selected_node["values"][7:][0]
+            #             # print(wrapped_data)
+            #             # self.treeview.insert_data(wrapped_data)
+            #         else:
+            #             print(f"Selected item '{selected_item_name}' not found.")
+            #     else:
+            #         print(f"Parent item '{parent_item_name}' not found.")
+            # else:
+            #     print(f"Grandparent item '{grand_parent_item_name}' not found.")
 
         except Exception as e:
             print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
