@@ -71,10 +71,10 @@ def create_stdFamList_tab(state, subtab_notebook):
 
     working_tab_paned_window.add(section1, minsize=300)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=800)
+    working_tab_paned_window.add(section3, minsize=350)
 
     working_tab_paned_window.paneconfigure(section1, width=300, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=1200, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=1500, height=3000)
     working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
@@ -203,6 +203,10 @@ def create_stdFamList_tab(state, subtab_notebook):
         section3,
         relate_widget=stdFamlist_treeview,
         data_kind=stdFamlist_treeview.data_kind,
+        view_level=3,
+    )
+    DefaultTreeViewStyleManager.apply_alternate_row_colors(
+        stdFamilyTypeMatching_treeview.treeview
     )
     state.std_matching_treeview_Familylist = stdFamilyTypeMatching_treeview
 

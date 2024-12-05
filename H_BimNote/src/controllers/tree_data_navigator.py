@@ -1,8 +1,11 @@
+from copy import deepcopy
+
+
 class TreeDataManager:
     def __init__(self, state, related_widget=None):
         self.state = state
         self.team_std_info = state.team_std_info
-        # self.data_kind = related_widget.data_kind  # 대비용(필요없으면 추후 삭제)
+        self.data_kind = related_widget.data_kind if related_widget else None
 
     def register_related_widget(self, related_widget):
         self.related_widget = related_widget
@@ -37,6 +40,26 @@ class TreeDataManager:
                             return found_node
         return None
 
+    def find_node_by_path(self, data, path):
+        """Find a node by traversing the given path in the tree structure."""
+        current_node = None
+        for name in path:
+            if isinstance(data, list):
+                current_node = next(
+                    (
+                        node
+                        for node in data
+                        if isinstance(node, dict) and node.get("name") == name
+                    ),
+                    None,
+                )
+                if current_node is None:
+                    return None
+                data = current_node.get("children", [])
+            else:
+                return None
+        return current_node
+
     def get_node_path(self, data_kind, grandparent_name, parent_name, child_name):
         """Navigate to the specified node based on grandparent, parent, and child names."""
         if data_kind not in self.team_std_info:
@@ -63,24 +86,53 @@ class TreeDataManager:
         child_node = self.find_node_by_name(parent_node["children"], child_name)
         return grandparent_node, parent_node, child_node
 
-    def update_node_value(self, data_kind, selected_name, column_index, new_value):
+    def get_node_depth(self, node):
+        """Calculate the depth of a given node in the tree data."""
+        depth = 0
+        while "parent" in node:
+            depth += 1
+            node = node["parent"]
+        return depth
+
+    # def update_node_value(self, data_kind, selected_name, column_index, new_value):
+    #     """Update the value of a node in the tree."""
+
+    #     def find_node_recursive(data, target_name):
+    #         if not isinstance(data, list):
+    #             return None
+    #         for node in data:
+    #             if isinstance(node, dict) and node.get("name") == target_name:
+    #                 return node
+    #             if "children" in node:
+    #                 found_node = find_node_recursive(node["children"], target_name)
+    #                 if found_node:
+    #                     return found_node
+    #         return None
+
+    #     # Find the selected node
+    #     selected_node = find_node_recursive(
+    #         self.team_std_info[data_kind]["children"], selected_name
+    #     )
+
+    #     if selected_node is not None and "values" in selected_node:
+    #         # Ensure that the values list is long enough
+    #         if len(selected_node["values"]) <= column_index:
+    #             selected_node["values"].extend(
+    #                 [""] * (column_index + 1 - len(selected_node["values"]))
+    #             )
+
+    #         # Update the corresponding value in "values"
+    #         selected_node["values"][column_index] = new_value
+    #         print(
+    #             f"Updated node value: {selected_name}, column {column_index} to {new_value}"
+    #         )
+    #     else:
+    #         print(f"Could not find node '{selected_name}' or 'values' key is missing.")
+
+    def update_node_value(self, data_kind, path, column_index, new_value):
         """Update the value of a node in the tree."""
-
-        def find_node_recursive(data, target_name):
-            if not isinstance(data, list):
-                return None
-            for node in data:
-                if isinstance(node, dict) and node.get("name") == target_name:
-                    return node
-                if "children" in node:
-                    found_node = find_node_recursive(node["children"], target_name)
-                    if found_node:
-                        return found_node
-            return None
-
-        # Find the selected node
-        selected_node = find_node_recursive(
-            self.team_std_info[data_kind]["children"], selected_name
+        selected_node = self.find_node_by_path(
+            self.team_std_info[data_kind]["children"], path
         )
 
         if selected_node is not None and "values" in selected_node:
@@ -93,36 +145,52 @@ class TreeDataManager:
             # Update the corresponding value in "values"
             selected_node["values"][column_index] = new_value
             print(
-                f"Updated node value: {selected_name}, column {column_index} to {new_value}"
+                f"Updated node value: {selected_node['name']}, column {column_index} to {new_value}"
             )
         else:
-            print(f"Could not find node '{selected_name}' or 'values' key is missing.")
+            print(f"Could not find node '{path}' or 'values' key is missing.")
 
-    def update_node_name(self, data_kind, selected_name, new_name):
+    # def update_node_name(self, data_kind, selected_name, new_name):
+    #     """Update the name of a node in the tree."""
+
+    #     def find_node_recursive(data, target_name):
+    #         if not isinstance(data, list):
+    #             return None
+    #         for node in data:
+    #             if isinstance(node, dict) and node.get("name") == target_name:
+    #                 return node
+    #             if "children" in node:
+    #                 found_node = find_node_recursive(node["children"], target_name)
+    #                 if found_node:
+    #                     return found_node
+    #         return None
+
+    #     # Find the selected node
+    #     selected_node = find_node_recursive(
+    #         self.team_std_info[data_kind]["children"], selected_name
+    #     )
+
+    #     if selected_node is not None:
+    #         selected_node["name"] = new_name
+    #         print(f"Updated node name: {selected_name} to {new_name}")
+    #     else:
+    #         print(f"Could not find node '{selected_name}' to update name.")
+
+    def update_node_name(self, data_kind, path, new_name):
         """Update the name of a node in the tree."""
-
-        def find_node_recursive(data, target_name):
-            if not isinstance(data, list):
-                return None
-            for node in data:
-                if isinstance(node, dict) and node.get("name") == target_name:
-                    return node
-                if "children" in node:
-                    found_node = find_node_recursive(node["children"], target_name)
-                    if found_node:
-                        return found_node
-            return None
-
-        # Find the selected node
-        selected_node = find_node_recursive(
-            self.team_std_info[data_kind]["children"], selected_name
+        selected_node = self.find_node_by_path(
+            self.team_std_info[data_kind]["children"], path
         )
 
         if selected_node is not None:
             selected_node["name"] = new_name
-            print(f"Updated node name: {selected_name} to {new_name}")
+            # Ensure that the name is also updated in the corresponding value at the level column index
+            depth = self.get_node_depth(selected_node)
+            if len(selected_node["values"]) > depth:
+                selected_node["values"][depth] = new_name
+            print(f"Updated node name: {selected_node['name']} to {new_name}")
         else:
-            print(f"Could not find node '{selected_name}' to update name.")
+            print(f"Could not find node '{path}' to update name.")
 
     def add_top_level_node(self, data_kind, new_child):
         """Add a new top-level node to the specified data kind."""
@@ -267,19 +335,28 @@ class TreeDataManager:
         _, parent_node, selected_node = self.get_node_path(
             data_kind, grandparent_name, parent_name, child_name
         )
+        selected_GWMitems_copy = deepcopy(selected_GWMitems)
 
-        for selected_GWMitem in selected_GWMitems:
+        for selected_GWMitem in selected_GWMitems_copy:
             new_values = list(selected_GWMitem["values"])
             new_values.insert(0, "")
             new_values.insert(0, "")
             new_values.insert(0, "")
             selected_GWMitem.update({"values": new_values})
 
-        if isinstance(selected_node, list) and selected_GWMitems:
+            children = list(selected_GWMitem["children"])
+            for child in children:
+                new_child_value = list(child["values"])
+                new_child_value.insert(0, "")
+                new_child_value.insert(0, "")
+                new_child_value.insert(0, "")
+                child.update({"values": new_child_value})
+
+        if isinstance(selected_node, list) and selected_GWMitems_copy:
             # Handle adding to list of strings (last level)
-            print(f"Adding matched WMs: {selected_GWMitems}")
-            parent_node["children"].extend(selected_GWMitems)
-        elif selected_node and "children" in selected_node and selected_GWMitems:
+            print(f"Adding matched WMs: {selected_GWMitems_copy}")
+            parent_node["children"].extend(selected_GWMitems_copy)
+        elif selected_node and "children" in selected_node and selected_GWMitems_copy:
             # Handle adding matched WMs to regular children
-            print(f"Adding matched WMs: {selected_GWMitems}")
-            selected_node["children"].extend(selected_GWMitems)
+            print(f"Adding matched WMs: {selected_GWMitems_copy}")
+            selected_node["children"].extend(selected_GWMitems_copy)

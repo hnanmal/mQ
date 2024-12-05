@@ -64,6 +64,34 @@ class DefaultTreeViewStyleManager:
         style.configure("Custom.Treeview.Heading", font=("Arial Narrow", 10, "normal"))
         treeview.configure(style="Custom.Treeview")
 
+    @staticmethod
+    def apply_alternate_row_colors(treeview):
+        """Apply alternate row colors to the Treeview."""
+        for i, item in enumerate(treeview.tree.get_children("")):
+            tag = "evenrow" if i % 2 == 0 else "oddrow"
+            treeview.tree.item(item, tags=(tag,))
+            DefaultTreeViewStyleManager.apply_alternate_row_colors_recursive(
+                treeview.tree, item, i % 2 == 0
+            )
+
+        treeview.tree.tag_configure("evenrow", background="white")
+        treeview.tree.tag_configure("oddrow", background="lightgray")
+
+    @staticmethod
+    def apply_alternate_row_colors_recursive(tree, item, is_even):
+        """Apply alternate row colors recursively to child items."""
+        children = tree.get_children(item)
+        for i, child in enumerate(children):
+            tag = (
+                "evenrow"
+                if (is_even and i % 2 == 0) or (not is_even and i % 2 != 0)
+                else "oddrow"
+            )
+            tree.item(child, tags=(tag,))
+            DefaultTreeViewStyleManager.apply_alternate_row_colors_recursive(
+                tree, child, tag == "evenrow"
+            )
+
 
 # Composition for State Management
 class TreeViewStateObserver:
@@ -281,26 +309,44 @@ class BaseTreeView:
             self.tree.unbind("<<TreeviewOpen>>")
             self.tree.unbind("<<TreeviewClose>>")
 
-    # Function to collapse all nodes in the tree
-    def collapse_all(self, parent=""):
-        treeview = self.tree
+    # # Function to collapse all nodes in the tree
+    # def collapse_all(self, parent=""):
+    #     treeview = self.tree
+    #     print(treeview.get_children())
+
+    #     def collapse_item(item):
+    #         # Set the item to open (expanded)
+    #         treeview.item(item, open=False)
+    #         # Get the children of the current item
+    #         children = treeview.get_children(item)
+    #         for child in children:
+    #             collapse_item(child)
+
+    #     # Get all root items
+    #     root_items = treeview.get_children("")
+    #     for item in root_items:
+    #         collapse_item(item)
+
+    def collapse_all_items(self):
+        """Recursively collapse all items in the Treeview."""
 
         def collapse_item(item):
-            # Set the item to open (expanded)
-            treeview.item(item, open=False)
+            # Set the item to closed (collapsed)
+            self.tree.item(item, open=False)
             # Get the children of the current item
-            children = treeview.get_children(item)
+            children = self.tree.get_children(item)
             for child in children:
                 collapse_item(child)
 
         # Get all root items
-        root_items = treeview.get_children("")
+        root_items = self.tree.get_children("")
         for item in root_items:
             collapse_item(item)
 
     def expand_all_items(self):
         """Recursively expand all items in the Treeview."""
         treeview = self.tree
+        self.collapse_all()
 
         def expand_item(item):
             print(f"Expanding item: {item}")
@@ -317,19 +363,42 @@ class BaseTreeView:
         for item in root_items:
             expand_item(item)
 
-    def expand_tree_to_level(self, parent="", level=1, current_level=0):
-        tree = self.tree
-        # self.collapse_all()
+    # def expand_tree_to_level(self, parent="", level=1, current_level=0):
+    #     tree = self.tree
+    #     self.collapse_all()
 
-        # Check if the current level is less than the desired level
-        if current_level < level:
-            # Get all children of the current node
-            children = tree.get_children(parent)
-            for child in children:
-                # Expand the current node
-                tree.item(child, open=True)
-                # Recursively expand the children
-                self.expand_tree_to_level(child, level, current_level + 1)
+    #     # Check if the current level is less than the desired level
+    #     if current_level < level:
+    #         # Get all children of the current node
+    #         children = tree.get_children(parent)
+    #         for child in children:
+    #             # Expand the current node
+    #             tree.item(child, open=True)
+    #             # Recursively expand the children
+    #             self.expand_tree_to_level(child, level, current_level + 1)
+
+    def expand_tree_to_level(self, level):
+        """Expand the treeview up to a given level."""
+        # First, collapse all items to ensure fresh expansion
+        self.collapse_all_items()
+
+        def expand_item(item, current_level):
+            # If the current level exceeds the specified level, stop expanding
+            if current_level > level:
+                return
+            # Try to expand the current item
+            try:
+                self.tree.item(item, open=True)
+                children = self.tree.get_children(item)
+                for child in children:
+                    expand_item(child, current_level + 1)
+            except Exception as e:
+                print(f"Error expanding tree at level {current_level}: {e}")
+
+        # Expand all root items initially
+        root_items = self.tree.get_children("")
+        for root in root_items:
+            expand_item(root, 1)
 
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
@@ -344,7 +413,7 @@ class BaseTreeView:
                     parent_id, "end", text=node["name"], values=(display_value)
                 )
                 self.tree.item(
-                    node_id,  # open=True
+                    node_id, open=True
                 )  # Keep the tree open to display all items
 
                 # Recursively insert children if there are any
@@ -1187,6 +1256,7 @@ class TeamStd_FamlistTreeView:
     def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "std-familylist"
+        self.view_level = view_level
 
         self.treeDataManager = TreeDataManager(state, self)
         self.state_observer = TreeViewStateObserver(
@@ -1201,16 +1271,29 @@ class TeamStd_FamlistTreeView:
             "No",
             "Family Name",
             "GWM/SWM",
+            "Item",
+            "표준산출 수식",
             "Description",
-            "표준산출번호",
+            "표준산출유형 번호",
         ]
-        hdr_widths = [0, 60, 20, 150, 100, 200, 50]
+        hdr_widths = [0, 60, 20, 150, 150, 100, 100, 200, 50]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
+
+        # Add ComboBox for selecting view level
+        self.level_combobox = ttk.Combobox(
+            tree_frame, values=list(range(1, len(headers) + 1)), state="readonly"
+        )
+        self.level_combobox.current(view_level - 1)  # Set default level
+        self.level_combobox.bind("<<ComboboxSelected>>", self.on_level_selected)
+        self.level_combobox.pack(pady=5)
+
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
+
+        self.state.on_level_selected = self.on_level_selected
 
         # config selection mode
         self.treeview.tree.config(selectmode="browse")
@@ -1277,7 +1360,7 @@ class TeamStd_FamlistTreeView:
                 self.treeview.select_item_by_indices(origin_indices)
             except Exception as e:
                 print(f"Item selection failed: {e}")
-
+        self.on_level_selected(self, event=None)
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
@@ -1338,6 +1421,16 @@ class TeamStd_FamlistTreeView:
 
         except Exception as e:
             print(f"Error processing selected item details: {e}")
+
+    def on_level_selected(self, event):
+        """Handle combo box selection and expand the tree to the selected level."""
+        try:
+            selected_level = int(self.level_combobox.get())
+            self.treeview.expand_tree_to_level(level=selected_level)
+        except ValueError as e:
+            print(f"Invalid level selected: {e}")
+        except Exception as e:
+            print(f"Error expanding tree to level {selected_level}: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1408,18 +1501,25 @@ class TeamStd_FamilyTypeMatching_TreeView:
         self.state = state
         # self.data_kind = data_kind
         self.data_kind = "std-calcdict"
+        self.treeDataManager = TreeDataManager(state, self)
+        self.state_observer = TreeViewStateObserver(
+            state, lambda e: self.update(e, view_level)
+        )
         self.selected_item_relate_widget = relate_widget.selected_item
-        headers = ["GWM/SWM", "표준산출유형 번호", "표준산출 수식", "심벌키", "심벌값"]
-        hdr_widths = [50, 50, 200, 100, 100]
+        headers = [
+            "표준산출유형 번호",
+            "심벌키",
+            "심벌값",
+            # "GWM/SWM",
+            # "표준산출 수식",
+        ]
+        hdr_widths = [100, 50, 200]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
 
         # config selection mode
         self.treeview.tree.config(selectmode="extended")
@@ -1439,6 +1539,15 @@ class TeamStd_FamilyTypeMatching_TreeView:
         self.last_selected_item = None
         # Bind selection events
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
+
+        self.context_menu = TreeViewContextMenu(
+            state,
+            self.treeview,
+            data_kind=self.data_kind,
+            add_top=self.add_top_item,
+            add=self.add_item,
+            delete=self.delete_item,
+        )
 
     def set_title(self, parent):
         title_font = ttk.font.Font(family="맑은 고딕", size=12)
@@ -1461,11 +1570,6 @@ class TeamStd_FamilyTypeMatching_TreeView:
             selected_qItem_name = f"Q{selected_item_name}"
             print(f"산출유형번호 : {selected_qItem_name}")
 
-            # for node in data["children"]:
-            #     if node["name"] == selected_qItem_name:
-            #         res.append(node)
-            # print(f"셀렉트노드 {res}")
-
             # Ensure the data kind exists in the team standard information
             if self.data_kind in state.team_std_info:
                 data = state.team_std_info[self.data_kind]["children"]
@@ -1478,72 +1582,14 @@ class TeamStd_FamilyTypeMatching_TreeView:
                 if selected_node:
                     # Clear the TreeView and insert the data for the selected node
                     self.treeview.clear_treeview()
-                    wrapped_data = go(
-                        selected_node["children"],
-                        # map(lambda x: [x]),
-                        list,
-                    )
-                    self.treeview.insert_data(wrapped_data)
+                    self.treeview.insert_data_with_levels([selected_node])
 
-                    # # Wrap the children of the selected node for insertion
-                    # wrapped_data = go(
-                    #     selected_node["children"],
-                    #     map(lambda x: [x]),
-                    #     list,
-                    # )
-                    # self.treeview.insert_data_with_levels(wrapped_data)
-
-            # Find the grandparent node
-            # grand_parent_node = next(
-            #     (node for node in data if node["name"] == grand_parent_item_name),
-            #     None,
-            # )
-            # # print(f"조부이름 {grand_parent_node}")
-            # if grand_parent_node:
-            #     # Find the parent node
-            #     parent_node = next(
-            #         (
-            #             node
-            #             for node in grand_parent_node["children"]
-            #             if node["name"] == parent_item_name
-            #         ),
-            #         None,
-            #     )
-            #     if parent_node:
-            #         # Find the selected node
-            #         selected_node = next(
-            #             (
-            #                 node
-            #                 for node in parent_node["children"]
-            #                 if node["name"] == selected_item_name
-            #             ),
-            #             None,
-            #         )
-            #         if selected_node:
-            #             # Clear the TreeView and insert the data for the selected node
-            #             self.treeview.clear_treeview()
-
-            #             # Wrap the children of the selected node for insertion
-            #             wrapped_data = go(
-            #                 selected_node["children"],
-            #                 map(lambda x: [x]),
-            #                 list,
-            #             )
-            #             self.treeview.insert_data_with_levels(wrapped_data)
-
-            #             # wrapped_data = selected_node["values"][7:][0]
-            #             # print(wrapped_data)
-            #             # self.treeview.insert_data(wrapped_data)
-            #         else:
-            #             print(f"Selected item '{selected_item_name}' not found.")
-            #     else:
-            #         print(f"Parent item '{parent_item_name}' not found.")
-            # else:
-            #     print(f"Grandparent item '{grand_parent_item_name}' not found.")
+                    # self.treeview.expand_tree_to_level(level=view_level)
 
         except Exception as e:
             print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
 
+        self.treeview.expand_all_items()
         self.treeview.expand_tree_to_level(level=view_level)
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
@@ -1565,3 +1611,66 @@ class TeamStd_FamilyTypeMatching_TreeView:
         # # 마지막 선택항목으로 재등록
         # self.last_selected_item = selected_items_id[0]
         print("on_item_selected_종료")
+
+    def get_parent_ids(self, selected_item_id):
+        parent_ids = []
+        current_item = selected_item_id
+
+        while current_item:
+            parent_id = self.treeview.tree.parent(current_item)
+            if parent_id:  # 부모 항목이 있을 경우에만 리스트에 추가
+                parent_ids.append(parent_id)
+            current_item = parent_id
+
+        # Debug: print the final list of parent IDs
+        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        return list(reversed(parent_ids))
+
+    def add_top_item(self):
+        state = self.state
+        # Prompt the user for the new item name
+        new_item_name = simpledialog.askstring(
+            "Add Top Item", "Enter the name of the new item:"
+        )
+        if new_item_name:
+            self.treeDataManager.add_top_level_node(self.data_kind, new_item_name)
+            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
+
+    def add_item(self):
+        state = self.state
+        # Prompt the user for the new item name
+        new_item_name = simpledialog.askstring(
+            "Add Item", "Enter the name of the new item:"
+        )
+        if new_item_name:
+            selected_item_id = self.treeview.tree.selection()
+            selected_item_name = go(
+                selected_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+            self.treeDataManager.add_child_node(
+                self.data_kind, selected_item_name, new_item_name
+            )
+            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
+
+    def delete_item(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+
+        self.treeDataManager.delete_node(
+            self.data_kind,
+            selected_item_name,
+        )
+        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        state.observer_manager.notify_observers(state)

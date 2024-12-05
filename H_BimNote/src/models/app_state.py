@@ -64,19 +64,6 @@ class AppState:
         new_target_data = new_data.get(data_kind)
         self.updateDB_total_data(data_kind, new_target_data)
 
-        # if data_kind == "std-GWM":
-        #     new_target_data = new_data.get(data_kind)
-        #     self.updateDB_S_GWM_data(new_target_data)
-        # elif data_kind == "std-SWM":
-        #     new_target_data = new_data.get(data_kind)
-        #     self.updateDB_S_SWM_data(new_target_data)
-        # elif data_kind == "common-input":
-        #     new_target_data = new_data.get(data_kind)
-        #     self.updateDB_commonInput_data(new_target_data)
-        # elif data_kind == "WMs":
-        #     new_WMs_data = new_data
-        #     self.updateDB_WMs_data(new_WMs_data)
-
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         self.observer_manager.notify_observers(self)
 
