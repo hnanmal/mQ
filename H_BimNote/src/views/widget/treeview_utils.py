@@ -14,6 +14,55 @@ from ttkbootstrap.tableview import Tableview
 from src.views.widget.treeview_editor import TreeviewEditor
 
 
+class TreeViewWithLines(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.canvas = tk.Canvas(self, borderwidth=0)
+        self.canvas.pack(side="left", fill="both", expand=True)
+
+        # Create the scrollbar
+        self.vsb = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.vsb.pack(side="right", fill="y")
+        self.canvas.configure(yscrollcommand=self.vsb.set)
+
+        # Add the frame for the TreeView inside the canvas
+        self.tree_frame = ttk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.tree_frame, anchor="nw")
+
+        # Add the TreeView widget
+        self.tree = ttk.Treeview(self.tree_frame, columns=("col1", "col2"))
+        self.tree.heading("#0", text="Name")
+        self.tree.heading("col1", text="Column 1")
+        self.tree.heading("col2", text="Column 2")
+        self.tree.pack(expand=True, fill="both", side="left")
+
+        # Populate the TreeView with some data
+        self.insert_data()
+
+        # Bind the <Configure> event to update the canvas and draw lines
+        self.tree.bind("<Configure>", self.on_tree_configure)
+
+    def insert_data(self):
+        for i in range(10):
+            self.tree.insert(
+                "", "end", text=f"Item {i}", values=(f"Value {i}", f"Data {i}")
+            )
+
+    def on_tree_configure(self, event):
+        # Redraw the canvas and the lines separating rows
+        self.draw_lines()
+
+    def draw_lines(self):
+        self.canvas.delete("line")  # Remove existing lines
+        tree_items = self.tree.get_children()
+        for i, item in enumerate(tree_items):
+            # Get the bounding box for each row
+            bbox = self.tree.bbox(item)
+            if bbox:
+                x1, y1, x2, y2 = bbox[0], bbox[1], bbox[2], bbox[1]
+                self.canvas.create_line(0, y2, x2, y2, fill="gray", tags="line")
+
+
 # Composition for Style Management
 class DefaultTreeViewStyleManager:
 
@@ -21,6 +70,7 @@ class DefaultTreeViewStyleManager:
     def apply_style(treeview):
         style = ttk.Style()
         style.configure(
+            # "Treeview",
             "Treeview",
             font=("Arial Narrow", 10),
             highlightthickness=1,
@@ -42,10 +92,11 @@ class DefaultTreeViewStyleManager:
         style.configure("Treeview.Heading", font=("Arial Narrow", 10, "normal"))
         treeview.configure(style="Treeview")
 
+    @staticmethod
     def apply_locked_style(treeview):
         style = ttk.Style()
         style.configure(
-            "Custom.Treeview",
+            "Custom_locked.Treeview",
             font=("Arial Narrow", 10),
             highlightthickness=1,
             background="#fafafa",
@@ -53,29 +104,31 @@ class DefaultTreeViewStyleManager:
             height=50,
         )
         style.map(
-            "Custom.Treeview",
+            "Custom_locked.Treeview",
             background=[("selected", "#fffec0")],  # Set the selection background color
             foreground=[("selected", "blue")],
         )  # Set the selection foreground color
         # Configure hover style
         style.configure(
-            "Hover.Custom.Treeview", background="#d3d3d3", padding=(2, 2)
+            "Hover.Custom_locked.Treeview", background="#d3d3d3", padding=(2, 2)
         )  # Light gray hover color
-        style.configure("Custom.Treeview.Heading", font=("Arial Narrow", 10, "normal"))
-        treeview.configure(style="Custom.Treeview")
+        style.configure(
+            "Custom_locked.Treeview.Heading", font=("Arial Narrow", 10, "normal")
+        )
+        treeview.configure(style="Custom_locked.Treeview")
 
     @staticmethod
     def apply_alternate_row_colors(treeview):
         """Apply alternate row colors to the Treeview."""
-        for i, item in enumerate(treeview.tree.get_children("")):
+        for i, item in enumerate(treeview.get_children("")):
             tag = "evenrow" if i % 2 == 0 else "oddrow"
-            treeview.tree.item(item, tags=(tag,))
+            treeview.item(item, tags=(tag,))
             DefaultTreeViewStyleManager.apply_alternate_row_colors_recursive(
-                treeview.tree, item, i % 2 == 0
+                treeview, item, i % 2 == 0
             )
 
-        treeview.tree.tag_configure("evenrow", background="white")
-        treeview.tree.tag_configure("oddrow", background="lightgray")
+        treeview.tag_configure("evenrow", background="white")
+        treeview.tag_configure("oddrow", background="lightgray")
 
     @staticmethod
     def apply_alternate_row_colors_recursive(tree, item, is_even):
@@ -212,6 +265,7 @@ class BaseTreeView:
         # self.tree = Tableview(parent, columns=headers, show="headings")
         self.setup_columns(headers)
         self.parent = parent
+
         # Configure tag styles
         self.tree.tag_configure(
             "hover",
@@ -220,6 +274,9 @@ class BaseTreeView:
             font=("Arial Narrow", 10, "bold"),
             # padding=(2, 2),
         )  # Light gray background for hover
+
+        # self.tree.tag_configure("evenrow", background="white")
+        # self.tree.tag_configure("oddrow", background="lightgray")
         self.tree.tag_configure(
             "normal", font=("Arial Narrow", 10)
         )  # Default white background
@@ -227,13 +284,13 @@ class BaseTreeView:
         # Track the last selected item
         self.last_selected_item = None
 
-        # 이벤트 바인딩
-        self.tree.bind(
-            "<Motion>", self.on_mouse_motion
-        )  # 마우스 움직임을 감지해 hover 효과 적용
-        self.tree.bind(
-            "<Leave>", self.on_mouse_leave
-        )  # 트리뷰에서 마우스가 나갔을 때 hover 효과 제거
+        # # 이벤트 바인딩
+        # self.tree.bind(
+        #     "<Motion>", self.on_mouse_motion
+        # )  # 마우스 움직임을 감지해 hover 효과 적용
+        # self.tree.bind(
+        #     "<Leave>", self.on_mouse_leave
+        # )  # 트리뷰에서 마우스가 나갔을 때 hover 효과 제거
 
     # 모든 항목에서 hover 효과 제거 함수 (재귀적으로 모든 하위 항목 포함)
     def clear_all_hover(self, tree):
@@ -285,6 +342,30 @@ class BaseTreeView:
         """Clear all items from the Treeview."""
         self.tree.delete(*self.tree.get_children())
 
+    # def apply_alternating_row_colors_based_on_visibility(self):
+    #     """Apply alternating row colors to the TreeView based on the visible rows."""
+    #     # Get all visible items in the TreeView
+    #     visible_items = self.tree.get_children()
+
+    #     def collect_visible_items(item):
+    #         """Recursively collect all visible children items of a given item."""
+    #         children = self.tree.get_children(item)
+    #         visible_items.extend(children)
+    #         for child in children:
+    #             collect_visible_items(child)
+
+    #     for item in visible_items:
+    #         collect_visible_items(item)
+
+    #     # Apply alternating row colors to the collected visible items
+    #     for index, item in enumerate(visible_items):
+    #         tag = "evenrow" if index % 2 == 0 else "oddrow"
+    #         self.tree.item(item, tags=(tag,))
+
+    #     # Configure the colors for the tags
+    #     self.tree.tag_configure("evenrow", background="white")
+    #     self.tree.tag_configure("oddrow", background="lightgray")
+
     def get_tree_data(self):
         """Get the current data from the Treeview as a list of dictionaries."""
         data = []
@@ -309,24 +390,6 @@ class BaseTreeView:
             self.tree.unbind("<<TreeviewOpen>>")
             self.tree.unbind("<<TreeviewClose>>")
 
-    # # Function to collapse all nodes in the tree
-    # def collapse_all(self, parent=""):
-    #     treeview = self.tree
-    #     print(treeview.get_children())
-
-    #     def collapse_item(item):
-    #         # Set the item to open (expanded)
-    #         treeview.item(item, open=False)
-    #         # Get the children of the current item
-    #         children = treeview.get_children(item)
-    #         for child in children:
-    #             collapse_item(child)
-
-    #     # Get all root items
-    #     root_items = treeview.get_children("")
-    #     for item in root_items:
-    #         collapse_item(item)
-
     def collapse_all_items(self):
         """Recursively collapse all items in the Treeview."""
 
@@ -346,7 +409,7 @@ class BaseTreeView:
     def expand_all_items(self):
         """Recursively expand all items in the Treeview."""
         treeview = self.tree
-        self.collapse_all()
+        self.collapse_all_items()
 
         def expand_item(item):
             print(f"Expanding item: {item}")
@@ -362,20 +425,6 @@ class BaseTreeView:
             print("No root items found.")
         for item in root_items:
             expand_item(item)
-
-    # def expand_tree_to_level(self, parent="", level=1, current_level=0):
-    #     tree = self.tree
-    #     self.collapse_all()
-
-    #     # Check if the current level is less than the desired level
-    #     if current_level < level:
-    #         # Get all children of the current node
-    #         children = tree.get_children(parent)
-    #         for child in children:
-    #             # Expand the current node
-    #             tree.item(child, open=True)
-    #             # Recursively expand the children
-    #             self.expand_tree_to_level(child, level, current_level + 1)
 
     def expand_tree_to_level(self, level):
         """Expand the treeview up to a given level."""
@@ -413,7 +462,7 @@ class BaseTreeView:
                     parent_id, "end", text=node["name"], values=(display_value)
                 )
                 self.tree.item(
-                    node_id, open=True
+                    node_id,  # open=True
                 )  # Keep the tree open to display all items
 
                 # Recursively insert children if there are any
@@ -424,6 +473,38 @@ class BaseTreeView:
                 # Insert the string as a leaf node without additional children
                 # self.tree.insert(parent_id, "end", text=node, values=(node,))
                 pass
+
+    # def insert_data_with_levels(self, data, parent_id="", level=0, counter=[0]):
+    #     """Insert data into the TreeView with levels based on the new data structure, with alternating row colors based on absolute order."""
+    #     for node in data:
+    #         if isinstance(node, dict):
+    #             # Extract the last value in the 'values' list to be displayed in the TreeView
+    #             display_value = node["values"]
+
+    #             # Insert the current node with its name and the last value from 'values'
+    #             node_id = self.tree.insert(
+    #                 parent_id, "end", text=node["name"], values=(display_value)
+    #             )
+
+    #             # Apply alternating row colors based on absolute count
+    #             tag = "evenrow" if counter[0] % 2 == 0 else "oddrow"
+    #             self.tree.item(node_id, tags=(tag,))
+
+    #             # Increment the counter for each row inserted
+    #             counter[0] += 1
+
+    #             # Recursively insert children if there are any
+    #             if "children" in node and isinstance(node["children"], list):
+    #                 self.insert_data_with_levels(
+    #                     node["children"], node_id, level + 1, counter
+    #                 )
+    #         elif isinstance(node, str):
+    #             # Insert the string as a leaf node without additional children
+    #             pass
+
+    #     # Apply styles for alternating colors
+    #     self.tree.tag_configure("evenrow", background="white")
+    #     self.tree.tag_configure("oddrow", background="lightgray")
 
     def get_item_indices(self, selected_item_id):
         indices = []
@@ -1284,7 +1365,10 @@ class TeamStd_FamlistTreeView:
 
         # Add ComboBox for selecting view level
         self.level_combobox = ttk.Combobox(
-            tree_frame, values=list(range(1, len(headers) + 1)), state="readonly"
+            # tree_frame, values=list(range(1, len(headers) + 1)), state="readonly"
+            tree_frame,
+            values=list(range(1, 5)),
+            state="readonly",
         )
         self.level_combobox.current(view_level - 1)  # Set default level
         self.level_combobox.bind("<<ComboboxSelected>>", self.on_level_selected)
@@ -1292,6 +1376,12 @@ class TeamStd_FamlistTreeView:
 
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
+
+        # Bind the <Configure> event to update the canvas and draw lines
+        # self.canvas = tk.Canvas(self.treeview.tree, borderwidth=0)
+        # self.canvas = tk.Canvas(tree_frame, borderwidth=0)
+        # self.canvas.pack(side="left", fill="both", expand=True)
+        # self.treeview.tree.bind("<Configure>", self.on_tree_configure)
 
         self.state.on_level_selected = self.on_level_selected
 
@@ -1330,6 +1420,20 @@ class TeamStd_FamlistTreeView:
         title_label = ttk.Label(parent, text="Standard Family List", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
+    def on_tree_configure(self, event):
+        # Redraw the canvas and the lines separating rows
+        self.draw_lines()
+
+    def draw_lines(self):
+        self.canvas.delete("line")  # Remove existing lines
+        tree_items = self.treeview.tree.get_children()
+        for i, item in enumerate(tree_items):
+            # Get the bounding box for each row
+            bbox = self.treeview.tree.bbox(item)
+            if bbox:
+                x1, y1, x2, y2 = bbox[0], bbox[1], bbox[2], bbox[1]
+                self.canvas.create_line(0, y2, x2, y2, fill="gray", tags="line")
+
     def update(self, event=None, view_level=None):
         state = self.state
         print(f"{self.__class__.__name__} > update 메소드 시작")
@@ -1360,6 +1464,10 @@ class TeamStd_FamlistTreeView:
                 self.treeview.select_item_by_indices(origin_indices)
             except Exception as e:
                 print(f"Item selection failed: {e}")
+
+        # Alternate row colors
+        # DefaultTreeViewStyleManager.apply_alternate_row_colors(self.treeview.tree)
+        # self.treeview.apply_alternating_row_colors_based_on_visibility()
         self.on_level_selected(self, event=None)
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
@@ -1497,13 +1605,14 @@ class TeamStd_FamlistTreeView:
 
 
 class TeamStd_FamilyTypeMatching_TreeView:
-    def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
+    def __init__(self, state, parent, relate_widget, data_kind=None, view_level=3):
         self.state = state
         # self.data_kind = data_kind
         self.data_kind = "std-calcdict"
+        self.view_level = view_level
         self.treeDataManager = TreeDataManager(state, self)
         self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
+            state, lambda e: self.update(event=e, view_level=self.view_level)
         )
         self.selected_item_relate_widget = relate_widget.selected_item
         headers = [
@@ -1557,6 +1666,8 @@ class TeamStd_FamilyTypeMatching_TreeView:
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None, view_level=None):
+        view_level = self.view_level
+        print(f"view_level {view_level}")
         state = self.state
         """Update the TreeView whenever the state changes."""
         print(f"{self.__class__.__name__} > update 메소드 시작")
@@ -1589,8 +1700,9 @@ class TeamStd_FamilyTypeMatching_TreeView:
         except Exception as e:
             print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
 
-        self.treeview.expand_all_items()
+        # self.treeview.expand_all_items()
         self.treeview.expand_tree_to_level(level=view_level)
+        # self.treeview.expand_tree_to_level(level=3)
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):

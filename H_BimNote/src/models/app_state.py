@@ -7,11 +7,14 @@ from src.models.observer_manager import ObserverManager
 
 import tkinter as tk
 
+from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
+
 
 class AppState:
     def __init__(self, log_widget):
         # self._state = {}  ## 필요 없으면 나중에 삭제
         self.observer_manager = ObserverManager()
+        self.DefaultTreeViewStyleManager = DefaultTreeViewStyleManager
         # self.treeDataManager = TreeDataManager(self, related_widget)
 
         self.current_tab = None

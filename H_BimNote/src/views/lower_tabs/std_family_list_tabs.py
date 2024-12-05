@@ -178,7 +178,8 @@ def create_stdFamList_tab(state, subtab_notebook):
     )
 
     stdFamlist_treeview = TeamStd_FamlistTreeView(state, section2, view_level=3)
-    DefaultTreeViewStyleManager.apply_style(stdFamlist_treeview.treeview.tree)
+    # DefaultTreeViewStyleManager.apply_style(stdFamlist_treeview.treeview.tree)
+    # DefaultTreeViewStyleManager.apply_alternate_row_colors(stdFamlist_treeview.treeview)
     stdFamlist_treeview.treeview.tree.column(0, width=0, minwidth=0, stretch=False)
 
     selected_item = ttk.Label(
@@ -205,9 +206,9 @@ def create_stdFamList_tab(state, subtab_notebook):
         data_kind=stdFamlist_treeview.data_kind,
         view_level=3,
     )
-    DefaultTreeViewStyleManager.apply_alternate_row_colors(
-        stdFamilyTypeMatching_treeview.treeview
-    )
+    # DefaultTreeViewStyleManager.apply_alternate_row_colors(
+    #     stdFamilyTypeMatching_treeview.treeview.tree
+    # )
     state.std_matching_treeview_Familylist = stdFamilyTypeMatching_treeview
 
     # Register widgets with EditModeManager

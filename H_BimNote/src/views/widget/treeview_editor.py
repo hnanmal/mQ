@@ -17,10 +17,6 @@ class TreeviewEditor:
         # Bind double-click to initiate edit
         self.tree.bind("<Double-1>", self.on_double_click)
 
-        # DefaultTreeViewStyleManager.apply_alternate_row_colors(
-        #     stdFamilyTypeMatching_treeview.treeview
-        # )
-
     def enable_edit(self):
         # Bind double-click to initiate edit
         self.tree.bind("<Double-1>", self.on_double_click)
