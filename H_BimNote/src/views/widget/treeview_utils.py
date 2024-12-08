@@ -206,7 +206,7 @@ class TreeViewContextMenu:
 
     def show_context_menu(self, event):
         # Debug statement to check locked status
-        print(f"Context Menu Locked Status: {self.locked_status}")
+        self.state.log_widget.write(f"Context Menu Locked Status: {self.locked_status}")
         # Only show the context menu if locked_status is False (unlocked)
         if not self.locked_status:
             # Get the item under the right-click
@@ -220,7 +220,7 @@ class TreeViewContextMenu:
     def set_locked_status(self, status):
         """Setter to update the locked status."""
         self.locked_status = status
-        print(f"Locked Status Updated: {self.locked_status}")
+        self.state.log_widget.write(f"Locked Status Updated: {self.locked_status}")
 
     def add_top_item(self):
         func = self.funcs.get("add_top")
@@ -366,7 +366,7 @@ class BaseTreeView:
         self.collapse_all_items()
 
         def expand_item(item):
-            print(f"Expanding item: {item}")
+            self.state.log_widget.write(f"Expanding item: {item}")
             treeview.item(item, open=True)
             # Get the children of the current item
             children = treeview.get_children(item)
@@ -376,7 +376,7 @@ class BaseTreeView:
         # Get all root items
         root_items = treeview.get_children("")
         if not root_items:
-            print("No root items found.")
+            self.state.log_widget.write("No root items found.")
         for item in root_items:
             expand_item(item)
 
@@ -396,7 +396,9 @@ class BaseTreeView:
                 for child in children:
                     expand_item(child, current_level + 1)
             except Exception as e:
-                print(f"Error expanding tree at level {current_level}: {e}")
+                self.state.log_widget.write(
+                    f"Error expanding tree at level {current_level}: {e}"
+                )
 
         # Expand all root items initially
         root_items = self.tree.get_children("")
@@ -441,13 +443,13 @@ class BaseTreeView:
                 item_index = siblings.index(current_item)
             except ValueError:
                 # If the item is not found among siblings, there's an issue
-                print(
+                self.state.log_widget.write(
                     f"Error: Item '{current_item}' not found among siblings {siblings}"
                 )
                 return []
 
             # Debug: print current processing details
-            print(
+            self.state.log_widget.write(
                 f"Current item: {current_item}, Parent ID: {parent_id}, Index: {item_index}"
             )
 
@@ -458,7 +460,7 @@ class BaseTreeView:
             current_item = parent_id
 
         # Debug: print the final indices
-        print(f"Final Indices: {indices}")
+        self.state.log_widget.write(f"Final Indices: {indices}")
         return indices
 
     def select_item_by_indices(self, indices):
@@ -474,7 +476,9 @@ class BaseTreeView:
                 target_item = children[index]
                 current_parent = target_item
             else:
-                print(f"Index {index} is out of bounds for the current parent.")
+                self.state.log_widget.write(
+                    f"Index {index} is out of bounds for the current parent."
+                )
                 return
 
         if target_item:
@@ -540,7 +544,7 @@ class TeamStd_GWMTreeView:
 
     def update(self, event=None, view_level=None):
         state = self.state
-        print(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
@@ -566,9 +570,9 @@ class TeamStd_GWMTreeView:
             try:
                 self.treeview.select_item_by_indices(origin_indices)
             except Exception as e:
-                print(f"Item selection failed: {e}")
+                self.state.log_widget.write(f"Item selection failed: {e}")
 
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         treeDataManager = TreeDataManager(self.state)
@@ -577,7 +581,7 @@ class TeamStd_GWMTreeView:
             if self.last_selected_item:
                 self.treeview.tree.item(self.last_selected_item, tags=("normal",))
         except Exception as e:
-            print(f"Error resetting last selected item tag: {e}")
+            self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
@@ -588,7 +592,7 @@ class TeamStd_GWMTreeView:
             target_node = treeDataManager.find_node_by_name_recur(
                 state_data, self.treeview.tree.item(selected_item_id, "text")
             ).copy()
-            print(
+            self.state.log_widget.write(
                 f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
             )
 
@@ -636,7 +640,7 @@ class TeamStd_GWMTreeView:
             self.last_selected_item = selected_item_id
 
         except Exception as e:
-            print(f"Error processing selected item details: {e}")
+            self.state.log_widget.write(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -649,7 +653,9 @@ class TeamStd_GWMTreeView:
             current_item = parent_id
 
         # Debug: print the final list of parent IDs
-        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        self.state.log_widget.write(
+            f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
+        )
         return list(reversed(parent_ids))
 
     def add_top_item(self):
@@ -748,8 +754,10 @@ class TeamStd_WMmatching_TreeView:
     def update(self, event=None, view_level=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
-        print(f"{self.__class__.__name__} > update 메소드 시작")
-        print(f"선택아이템 출력 : {self.selected_item_relate_widget.get()}")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(
+            f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
+        )
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -799,24 +807,32 @@ class TeamStd_WMmatching_TreeView:
                             # self.treeview.insert_data_with_levels(wrapped_data)
                             self.treeview.insert_data(wrapped_data)
                         else:
-                            print(f"Selected item '{selected_item_name}' not found.")
+                            self.state.log_widget.write(
+                                f"Selected item '{selected_item_name}' not found."
+                            )
                     else:
-                        print(f"Parent item '{parent_item_name}' not found.")
+                        self.state.log_widget.write(
+                            f"Parent item '{parent_item_name}' not found."
+                        )
                 else:
-                    print(f"Grandparent item '{grand_parent_item_name}' not found.")
+                    self.state.log_widget.write(
+                        f"Grandparent item '{grand_parent_item_name}' not found."
+                    )
 
         except Exception as e:
-            print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
+            self.state.log_widget.write(
+                f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}"
+            )
 
         self.treeview.expand_tree_to_level(level=view_level)
 
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         # if self.last_selected_item:
         #     self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
 
-        print("on_item_selected_시작")
+        self.state.log_widget.write("on_item_selected_시작")
         selected_items_id = self.treeview.tree.selection()
         selected_items_name = go(
             selected_items_id,
@@ -825,11 +841,11 @@ class TeamStd_WMmatching_TreeView:
             map(lambda x: x[0]),
             list,
         )
-        print(selected_items_name)
+        # print(selected_items_name)
         self.state.selected_matchedWMs = selected_items_name
         # # 마지막 선택항목으로 재등록
         # self.last_selected_item = selected_items_id[0]
-        print("on_item_selected_종료")
+        self.state.log_widget.write("on_item_selected_종료")
 
 
 class TeamStd_SWMTreeView:
@@ -890,7 +906,7 @@ class TeamStd_SWMTreeView:
 
     def update(self, event=None, view_level=None):
         state = self.state
-        print(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
@@ -919,7 +935,7 @@ class TeamStd_SWMTreeView:
             except Exception as e:
                 print(f"Item selection failed: {e}")
 
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         treeDataManager = TreeDataManager(self.state)
@@ -928,7 +944,7 @@ class TeamStd_SWMTreeView:
             if self.last_selected_item:
                 self.treeview.tree.item(self.last_selected_item, tags=("normal",))
         except Exception as e:
-            print(f"Error resetting last selected item tag: {e}")
+            self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
@@ -939,7 +955,7 @@ class TeamStd_SWMTreeView:
             target_node = treeDataManager.find_node_by_name_recur(
                 state_data, self.treeview.tree.item(selected_item_id, "text")
             ).copy()
-            print(
+            self.state.log_widget.write(
                 f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
             )
 
@@ -987,7 +1003,7 @@ class TeamStd_SWMTreeView:
             self.last_selected_item = selected_item_id
 
         except Exception as e:
-            print(f"Error processing selected item details: {e}")
+            self.state.log_widget.write(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1000,7 +1016,9 @@ class TeamStd_SWMTreeView:
             current_item = parent_id
 
         # Debug: print the final list of parent IDs
-        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        self.state.log_widget.write(
+            f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
+        )
         return list(reversed(parent_ids))
 
     def add_top_item(self):
@@ -1120,7 +1138,7 @@ class TeamStd_CommonInputTreeView:
 
     def update(self, event=None, view_level=None):
         state = self.state
-        print(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
@@ -1147,16 +1165,16 @@ class TeamStd_CommonInputTreeView:
             try:
                 self.treeview.select_item_by_indices(origin_indices)
             except Exception as e:
-                print(f"Item selection failed: {e}")
+                self.state.log_widget.write(f"Item selection failed: {e}")
 
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         try:
             if self.last_selected_item:
                 self.treeview.tree.item(self.last_selected_item, tags=("normal",))
         except Exception as e:
-            print(f"Error resetting last selected item tag: {e}")
+            self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
@@ -1185,9 +1203,9 @@ class TeamStd_CommonInputTreeView:
             self.last_selected_item = selected_item_id
 
         except IndexError as e:
-            print(f"IndexError: {e}")
+            self.state.log_widget.write(f"IndexError: {e}")
         except Exception as e:
-            print(f"Error processing selected item details: {e}")
+            self.state.log_widget.write(f"Error processing selected item details: {e}")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1200,7 +1218,9 @@ class TeamStd_CommonInputTreeView:
             current_item = parent_id
 
         # Debug: print the final list of parent IDs
-        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        self.state.log_widget.write(
+            f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
+        )
         return list(reversed(parent_ids))
 
     def add_top_item(self):
@@ -1280,7 +1300,7 @@ class TeamStd_FamlistTreeView:
             "Description",
             "표준산출유형 번호",
         ]
-        hdr_widths = [0, 60, 20, 150, 150, 100, 100, 200, 50]
+        hdr_widths = [0, 60, 20, 150, 100, 100, 100, 200, 50]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1312,6 +1332,7 @@ class TeamStd_FamlistTreeView:
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
+        self.treeview.tree.column("GWM/SWM", anchor="center")  # Center-align
 
         # set treeview_editor class
         self.treeviewEditor = TreeviewEditor(state, self)
@@ -1353,7 +1374,7 @@ class TeamStd_FamlistTreeView:
 
     def update(self, event=None, view_level=None):
         state = self.state
-        print(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
@@ -1380,11 +1401,11 @@ class TeamStd_FamlistTreeView:
             try:
                 self.treeview.select_item_by_indices(origin_indices)
             except Exception as e:
-                print(f"Item selection failed: {e}")
+                self.state.log_widget.write(f"Item selection failed: {e}")
 
-        # self.on_level_selected(event=None)
+        self.on_level_selected(event=None)
 
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         # Get the currently selected item
@@ -1406,10 +1427,10 @@ class TeamStd_FamlistTreeView:
                 for item in selected_item_id:
                     self.treeview.item(item, tags=("selected",))
         except Exception as e:
-            print(f"Error resetting last selected item tag: {e}")
+            self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
         self.treeview.last_selected_item = selected_item_id
-        print(
+        self.state.log_widget.write(
             f"select tree item!!! {self.treeview.tree.item(selected_item_id, 'text')}"
         )
 
@@ -1446,16 +1467,33 @@ class TeamStd_FamlistTreeView:
                     [grand_parent_item_name, parent_item_name, selected_item_name],
                 )
             )
-            print(f"패밀리리스트 선택 항목 포맷 밸류 {formatted_value}")
+            self.state.log_widget.write(
+                f"패밀리리스트 선택 항목 포맷 밸류 {formatted_value}"
+            )
 
             # Update the selected item in the state
             self.selected_item.set(formatted_value)
-            print(f"패밀리리스트 선택 항목 {self.selected_item.get()}")
+            self.state.log_widget.write(
+                f"패밀리리스트 선택 항목 {self.selected_item.get()}"
+            )
             # Register the last selected item
             self.last_selected_item = selected_item_id
 
         except Exception as e:
-            print(f"Error processing selected item details: {e}")
+            self.state.log_widget.write(f"Error processing selected item details: {e}")
+
+    def place_selected_item_at_top(self, tree):
+        """Place the selected item at the top of the Treeview."""
+        selected_item = tree.selection()
+        if selected_item:
+            # Get the index of the selected item
+            index = tree.index(selected_item[0])
+
+            # Calculate the fraction to scroll
+            total_items = len(tree.get_children())
+            if total_items > 0:
+                fraction = index / total_items
+                tree.yview_moveto(fraction)
 
     def on_level_selected(self, event):
         """Handle combo box selection and expand the tree to the selected level."""
@@ -1466,18 +1504,18 @@ class TeamStd_FamlistTreeView:
             DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
                 self.treeview.tree
             )
-        except ValueError as e:
-            print(f"Invalid level selected: {e}")
-        except Exception as e:
-            print(f"Error expanding tree to level {selected_level}: {e}")
+            if self.treeview.tree.focus():
+                selected_item = self.treeview.tree.focus()
+                # print(selected_item)
+                # self.treeview.tree.see(selected_item)
+                self.place_selected_item_at_top(self.treeview.tree)
 
-        # 트리뷰 데이터를 갱신하거나 레벨을 변경한 후 호출
-        DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
-            self.treeview.tree
-        )
-        if self.treeview.tree.selection():
-            selected_item = self.treeview.tree.selection()[0]
-            self.treeview.tree.see(selected_item)
+        except ValueError as e:
+            self.state.log_widget.write(f"Invalid level selected: {e}")
+        except Exception as e:
+            self.state.log_widget.write(
+                f"Error expanding tree to level {selected_level}: {e}"
+            )
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1490,7 +1528,9 @@ class TeamStd_FamlistTreeView:
             current_item = parent_id
 
         # Debug: print the final list of parent IDs
-        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        self.state.log_widget.write(
+            f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
+        )
         return list(reversed(parent_ids))
 
     def add_top_item(self):
@@ -1543,7 +1583,7 @@ class TeamStd_FamlistTreeView:
         state.observer_manager.notify_observers(state)
 
 
-class TeamStd_FamilyTypeMatching_TreeView:
+class TeamStd_calcDict_TreeView:
     def __init__(self, state, parent, relate_widget, data_kind=None, view_level=3):
         self.state = state
         # self.data_kind = data_kind
@@ -1561,10 +1601,11 @@ class TeamStd_FamilyTypeMatching_TreeView:
             # "GWM/SWM",
             # "표준산출 수식",
         ]
-        hdr_widths = [100, 50, 200]
+        hdr_widths = [100, 50, 100]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.add_update_button(tree_frame)
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
@@ -1604,30 +1645,96 @@ class TeamStd_FamilyTypeMatching_TreeView:
         )
         title_label.pack(padx=5, pady=5, anchor="w")
 
+    def add_update_button(self, parent):
+        """Adds an Update button to the tree view."""
+        button_frame = ttk.Frame(parent)
+        button_frame.pack(fill="x", pady=5)
+
+        update_button = ttk.Button(
+            button_frame,
+            text="Update from common-input",
+            command=lambda: self.update_target_byRef("common-input"),
+        )
+        update_button.pack(padx=10, side="left")
+
+    def update_target_byRef(self, dbKey):
+        state = self.state
+
+        pattern = r"^\d+\.\d+$"
+        selected_NoItem = go(
+            self.selected_item_relate_widget.get().split(" | "),
+            filter(lambda x: re.match(pattern, x)),
+            next,
+        )
+        selected_qItem_name = f"Q{selected_NoItem}"
+        # Ensure the data kind exists in the team standard information
+        data = state.team_std_info[self.data_kind]["children"]
+        selected_node = next(
+            (node for node in data if node["name"] == selected_qItem_name),
+            None,
+        )
+        # state.log_widget.write(str(selected_node))
+
+        refData = state.team_std_info[dbKey]
+        targetData = selected_node
+        # Flatten A data into a dictionary with 'name' as key and 'values' as value
+        a_values_map = {}
+
+        def flatten_a_data(data):
+            if isinstance(data, list):
+                for item in data:
+                    flatten_a_data(item)
+            elif isinstance(data, dict):
+                a_values_map[data["name"]] = data["values"]
+                flatten_a_data(data.get("children", []))
+
+        # Flatten A data for easy lookup
+        flatten_a_data(refData["children"])
+
+        # Update B data
+        for child in targetData["children"]:
+            if child["name"] in a_values_map:
+                # Get the fourth value of the matched A data
+                a_value_to_update = (
+                    a_values_map[child["name"]][3]
+                    if len(a_values_map[child["name"]]) > 3
+                    else None
+                )
+                if a_value_to_update:
+                    # Update the second value of B data
+                    child["values"].insert(2, a_value_to_update)
+
+        for idx, node in enumerate(state.team_std_info[self.data_kind]["children"]):
+            if node["name"] == selected_qItem_name:
+                state.team_std_info[self.data_kind]["children"].remove(node)
+                state.team_std_info[self.data_kind]["children"].insert(idx, targetData)
+                state.log_widget.write(str(targetData))
+
+        # state.log_widget.write(str(targetData))
+        return targetData
+
     def update(self, event=None, view_level=None):
         view_level = self.view_level
-        print(f"view_level {view_level}")
+        self.state.log_widget.write(f"view_level {view_level}")
         state = self.state
         """Update the TreeView whenever the state changes."""
-        print(f"{self.__class__.__name__} > update 메소드 시작")
-        print(f"관련위젯 선택항목 출력 : {self.selected_item_relate_widget.get()}")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(
+            f"관련위젯 선택항목 출력 : {self.selected_item_relate_widget.get()}"
+        )
 
         try:
             # # Split the selected item path to find the grandparent, parent, and selected item names
-            # grand_parent_item_name, parent_item_name, selected_item_name = (
-            #     self.selected_item_relate_widget.get().split(" | ")
-            # )
             pattern = r"^\d+\.\d+$"
             selected_NoItem = go(
                 self.selected_item_relate_widget.get().split(" | "),
                 filter(lambda x: re.match(pattern, x)),
-                # list,
                 next,
             )
 
             # selected_qItem_name = f"Q{selected_item_name}"
             selected_qItem_name = f"Q{selected_NoItem}"
-            print(f"산출유형번호 : {selected_qItem_name}")
+            self.state.log_widget.write(f"산출유형번호 : {selected_qItem_name}")
 
             # Ensure the data kind exists in the team standard information
             if self.data_kind in state.team_std_info:
@@ -1636,7 +1743,7 @@ class TeamStd_FamilyTypeMatching_TreeView:
                     (node for node in data if node["name"] == selected_qItem_name),
                     None,
                 )
-                print(selected_node)
+                # print(selected_node)
 
                 if selected_node:
                     # Clear the TreeView and insert the data for the selected node
@@ -1646,18 +1753,20 @@ class TeamStd_FamilyTypeMatching_TreeView:
                     # self.treeview.expand_tree_to_level(level=view_level)
 
         except Exception as e:
-            print(f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}")
+            self.state.log_widget.write(
+                f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}"
+            )
 
         # self.treeview.expand_all_items()
         self.treeview.expand_tree_to_level(level=view_level)
         # self.treeview.expand_tree_to_level(level=3)
-        print(f"{self.__class__.__name__} > update 메소드 종료")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         # if self.last_selected_item:
         #     self.treeview.tree.item(self.treeview.last_selected_item, tags=("normal",))
 
-        print("on_item_selected_시작")
+        self.state.log_widget.write("on_item_selected_시작")
         selected_items_id = self.treeview.tree.selection()
         selected_items_name = go(
             selected_items_id,
@@ -1666,11 +1775,11 @@ class TeamStd_FamilyTypeMatching_TreeView:
             map(lambda x: x[0]),
             list,
         )
-        print(selected_items_name)
+        self.state.log_widget.write(str(selected_items_name))
         self.state.selected_matchedWMs = selected_items_name
         # # 마지막 선택항목으로 재등록
         # self.last_selected_item = selected_items_id[0]
-        print("on_item_selected_종료")
+        self.state.log_widget.write("on_item_selected_종료")
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1683,7 +1792,9 @@ class TeamStd_FamilyTypeMatching_TreeView:
             current_item = parent_id
 
         # Debug: print the final list of parent IDs
-        print(f"Parent IDs for selected item '{selected_item_id}': {parent_ids}")
+        self.state.log_widget.write(
+            f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
+        )
         return list(reversed(parent_ids))
 
     def add_top_item(self):

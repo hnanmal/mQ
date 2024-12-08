@@ -101,7 +101,7 @@ class TreeviewEditor:
         self.entry_widget.destroy()
         self.entry_widget = None
 
-        # self.state.on_level_selected(None)
+        self.state.on_level_selected(None)
 
     def on_edit_cancel(self, event):
         # Cancel editing and destroy the Entry widget

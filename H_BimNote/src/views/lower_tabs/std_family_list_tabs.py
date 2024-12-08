@@ -18,7 +18,7 @@ from src.views.widget.treeview_utils import (
     TeamStd_FamlistTreeView,
     TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
-    TeamStd_FamilyTypeMatching_TreeView,
+    TeamStd_calcDict_TreeView,
     # TeamStd_WMmatching_TreeView,
     TeamStd_SWMTreeView,
 )
@@ -71,7 +71,7 @@ def create_stdFamList_tab(state, subtab_notebook):
 
     working_tab_paned_window.add(section1, minsize=300)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=350)
+    working_tab_paned_window.add(section3, minsize=250)
 
     working_tab_paned_window.paneconfigure(section1, width=300, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=1500, height=3000)
@@ -199,7 +199,7 @@ def create_stdFamList_tab(state, subtab_notebook):
 
     # std_GWMTreeView.treeview.toggle_tree_lock(lock=True)
     # std_GWMTreeView.treeview.expand_tree_to_level(level=1)
-    stdFamilyTypeMatching_treeview = TeamStd_FamilyTypeMatching_TreeView(
+    stdFamilyTypeMatching_treeview = TeamStd_calcDict_TreeView(
         state,
         section3,
         relate_widget=stdFamlist_treeview,
