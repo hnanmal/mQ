@@ -395,7 +395,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\Teams Received\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4_남양주 DH room.xlsx",
+      "HintPath": "C:\\Teams Received\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4_남양주 DH room.xlsx",
       "InputValue": "..\\..\\..\\Teams Received\\(H_PAB.OD.L2)_BIM 팀 표준 패밀리 리스트_r4_남양주 DH room.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "51b4738620874fe885b1b5ecce1e49b7",
@@ -6701,7 +6701,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\etc\\물량산출테스트용\\debug\\20240902_khh\\Total BOQ_blank.xlsx",
+      "HintPath": "C:\\MK\\mQ\\etc\\물량산출테스트용\\debug\\20240902_khh\\Total BOQ_blank.xlsx",
       "InputValue": "..\\etc\\물량산출테스트용\\debug\\20240902_khh\\Total BOQ_blank.xlsx",
       "NodeType": "ExtensionNode",
       "Id": "ecccb4f11a2543e29cb666423f4f697e",
@@ -7856,7 +7856,7 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\etc\\2024_물량산출 마무리\\A.1_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.6_2024.11.07_강한호_MK.xlsx.xlsm",
+      "HintPath": "C:\\MK\\mQ\\etc\\2024_물량산출 마무리\\A.1_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.6_2024.11.07_강한호_MK.xlsx.xlsm",
       "InputValue": "..\\etc\\2024_물량산출 마무리\\A.1_플랜트건축설계팀_BIM 팀 표준 Family List_Rev.6_2024.11.07_강한호_MK.xlsx.xlsm",
       "NodeType": "ExtensionNode",
       "Id": "8ab3accc47f6452a95570634f44f527d",
@@ -7951,7 +7951,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\nimport json\r\nimport ast\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\npjt_typeWM_match_dicts_str = IN[0]\r\npjt_typeWM_match_dicts = json.loads(pjt_typeWM_match_dicts_str)\r\nallElems_name = IN[1][0]\r\nallElems = IN[1][1]\r\n\r\n# Place your code below this line\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return calc_v\r\n\r\ndef update_calcResult_typeDict(pjt_typeWM_match_dicts, allElems, allElems_name):\r\n    res = []\r\n    for idx, elem in enumerate(allElems):\r\n        elem_famType_name = allElems_name[idx].upper()\r\n        for typeDict in pjt_typeWM_match_dicts:\r\n            typeDict[\"GUID\"] = elem.GetParameterValueByName(\"ifcGUID\")\r\n            if typeDict[\"type_name\"].strip() == elem_famType_name.strip():\r\n            \r\n                param_names = sorted(typeDict[\"params\"], key=len, reverse=True)\r\n                param_values = list(map(lambda x: typeDict[\"params\"][x], param_names))\r\n                \r\n                ###### 약자 값 업데이트 구간\r\n                updated_param_values = []\r\n                for param_v in param_values:\r\n                    if not isinstance(param_v, float):\r\n                        updated_param_values.append(get_param_value(elem, param_v))\r\n                    else:\r\n                        updated_param_values.append(param_v)\r\n                typeDict[\"calc_params\"] = dict(zip(param_names,updated_param_values))\r\n                ####### 약자 값 업데이트 구간####\r\n                \r\n                for wm in typeDict[\"wm_list\"]:\r\n                    \r\n                    \r\n                    if wm[\"변경 산출식\"]:\r\n                        formula = str(wm[\"변경 산출식\"])\r\n                    else:\r\n                        formula = str(wm[\"표준 산출식\"])\r\n                    wm[\"적용 산출식\"] = formula\r\n                        \r\n                    tmp_formula = formula\r\n                    \r\n                    if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n                        for n,v in typeDict[\"calc_params\"].items():\r\n                            tmp_formula = tmp_formula.replace(n, str(v))\r\n                        \r\n                        wm[\"대입 산출식\"] = tmp_formula\r\n                        try:\r\n                            wm[\"계산 결과\"] = eval(tmp_formula.strip(\"=\"))\r\n                        except:\r\n                            wm[\"로그\"] = \"!! 오류 발생 !! 수식 약자 및 파라미터 연동 확인 필요 !!\"\r\n                            wm[\"계산 결과\"] = 0\r\n                        \r\n#                    try:\r\n#                        res.append([typeDict[\"type_name\"], wm[\"Work Master\"], wm[\"표준 산출식\"], wm[\"대입 산출식\"], wm[\"계산 결과\"]])\r\n#                    except:\r\n#                        res.append([typeDict[\"type_name\"], wm[\"Work Master\"], wm[\"표준 산출식\"], \"대입 산출식 없음\", 0])\r\n                \r\n                res.append(typeDict)\r\n                \r\n    # Convert nested dictionary to JSON string before returning\r\n    return json.dumps(res, ensure_ascii=False, indent=2)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = update_calcResult_typeDict(pjt_typeWM_match_dicts, allElems, allElems_name)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\nimport json\r\nimport ast\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\n#pjt_typeWM_match_dicts_str = IN[0]\r\n#pjt_typeWM_match_dicts = json.loads(pjt_typeWM_match_dicts_str)\r\npjt_typeWM_match_dicts = IN[0]\r\nallElems_name = IN[1][0]\r\nallElems = IN[1][1]\r\n\r\n# Place your code below this line\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return round(calc_v,3)\r\n\r\ndef update_calcResult_typeDict(pjt_typeWM_match_dicts, allElems, allElems_name):\r\n    res = []\r\n    for idx, elem in enumerate(allElems):\r\n        elem_famType_name = allElems_name[idx].upper()\r\n        for typeDict in pjt_typeWM_match_dicts:\r\n            typeDict[\"GUID\"] = elem.GetParameterValueByName(\"IfcGUID\")\r\n            #print(elem.GetParameterValueByName(\"ifcGUID\"))\r\n            if typeDict[\"type_name\"].strip() == elem_famType_name.strip():\r\n                #param_names = sorted(typeDict[\"params\"].keys(), key=len, reverse=True)\r\n                param_names = sorted(typeDict[\"params\"].Keys, key=len, reverse=True)\r\n                param_values = list(map(lambda x: typeDict[\"params\"][x], param_names))\r\n                \r\n                ###### 약자 값 업데이트 구간\r\n                updated_param_values = []\r\n                for param_v in param_values:\r\n                    if not isinstance(param_v, float):\r\n                        updated_param_values.append(get_param_value(elem, param_v))\r\n                    else:\r\n                        updated_param_values.append(param_v)\r\n                typeDict[\"calc_params\"] = dict(zip(param_names,updated_param_values))\r\n                ####### 약자 값 업데이트 구간####\r\n                \r\n                for wm in typeDict[\"wm_list\"]:\r\n                    wm[\"GaugeCode\"] = \"\"\r\n                    wm[\"type_name\"] = typeDict[\"type_name\"]\r\n                    if wm[\"변경 산출식\"]:\r\n                        formula = str(wm[\"변경 산출식\"])\r\n                    else:\r\n                        formula = str(wm[\"표준 산출식\"])\r\n                    wm[\"적용 산출식\"] = formula\r\n                        \r\n                    tmp_formula = formula\r\n                    \r\n                    if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n                        for n,v in typeDict[\"calc_params\"].items():\r\n                            tmp_formula = tmp_formula.replace(n, str(v))\r\n                        \r\n                        wm[\"대입 산출식\"] = tmp_formula\r\n                        try:\r\n                            wm[\"계산 결과\"] = eval(tmp_formula.strip(\"=\"))\r\n                        except:\r\n                            wm[\"로그\"] = \"!! 오류 발생 !! 수식 약자 및 파라미터 연동 확인 필요 !!\"\r\n                            wm[\"계산 결과\"] = 0\r\n                    else:\r\n                        wm[\"대입 산출식\"] = \"\"\r\n                        wm[\"계산 결과\"] = \"\"\r\n                        wm[\"로그\"] = \"토공\"\r\n                \r\n                res.append(typeDict)\r\n    return res\r\n    # Convert nested dictionary to JSON string before returning\r\n    #return json.dumps(res, ensure_ascii=False, indent=2)\r\n    \r\n\r\n# Assign your output to the OUT variable.\r\nOUT = update_calcResult_typeDict(pjt_typeWM_match_dicts, allElems, allElems_name)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -7993,7 +7993,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\nimport json\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\npjtFamily_sheet_data = IN[0][0]\r\nstdFamily_sheet_data = IN[0][1]\r\n\r\n# Place your code below this line\r\ndef find_hdr_row(sheet_data, identifier):\r\n    res = go(\r\n        sheet_data,\r\n        filter(lambda x: identifier in str(x)),\r\n        filter(lambda x: \"No\" in str(x) and \"Family Name\" in str(x)),\r\n        list,\r\n    )\r\n    \r\n    if isinstance(res, list) and len(res)>0:\r\n        return res[0]\r\n    else:\r\n        return res\r\n\r\ndef find_cat(sheet, selected_row):\r\n    pattern = r'\\b\\d+\\.[A-Za-z]'\r\n    \r\n    crnt_row = selected_row\r\n    if sheet[crnt_row][2] and re.findall(pattern, str(sheet[crnt_row][2])):\r\n        return sheet[crnt_row][2]\r\n    elif crnt_row < 0:\r\n        pass\r\n    else:\r\n        return find_cat(sheet, crnt_row - 1)\r\n        \r\ndef find_parent_type(sheet, selected_row):\r\n    pattern = r'\\b\\d+\\.\\d+'\r\n    \r\n    crnt_row = selected_row\r\n    if sheet[crnt_row][2] and re.findall(pattern, str(sheet[crnt_row][2])):\r\n        return sheet[crnt_row][3]\r\n    elif crnt_row < 0:\r\n        pass\r\n    else:\r\n        return find_parent_type(sheet, crnt_row - 1)\r\n        \r\n        \r\ndef create_typeWM_match_dict_forPjt(sheet_data, hdrs=None):\r\n    if not hdrs:\r\n        hdrs = find_hdr_row(sheet_data, \"▣\")\r\n    hdr_idx_of_FamilyName = hdrs.index(\"Family Name\")\r\n    \r\n    modi_sheet_data = []\r\n    for idx,row in enumerate(pjtFamily_sheet_data):\r\n        newRow = list(row[:])\r\n        # del newRow[2]\r\n        # newRow.insert(2, find_cat(pjtFamily_sheet_data, idx))\r\n        newRow.append(find_cat(pjtFamily_sheet_data, idx))\r\n        newRow.append(find_parent_type(pjtFamily_sheet_data, idx))\r\n        modi_sheet_data.append(newRow)\r\n    \r\n    onlyEffRows = go(\r\n        modi_sheet_data,\r\n        filter(lambda x: \"True\" in str(x)),\r\n        list,\r\n    )\r\n    \r\n    dics_keys = [\r\n        \"Item\",\r\n        \"WM No.\",\r\n        \"Work Master\",\r\n        \"Spec.\",\r\n        \"Unit\",\r\n        \"표준 산출식\",\r\n        \"변경 산출식\",\r\n    ]\r\n    \r\n    res = []\r\n    tmp = None\r\n    for row_idx, row_cells in enumerate(onlyEffRows):\r\n        cat = row_cells[-2]\r\n        parent_type = row_cells[-1]\r\n        if \"True, True\" in str(row_cells):\r\n            if tmp:\r\n                for i in tmp:\r\n                    res.append(i)\r\n            tmp = []\r\n            for famType in row_cells[hdr_idx_of_FamilyName].split(\",\"):\r\n                tmp.append(\r\n                    {\r\n                        \"type_name\": famType.strip().upper(),\r\n                        \"cat\": cat,\r\n                        \"parent_type\": parent_type,\r\n                        \"wm_list\": []\r\n                    }\r\n                )\r\n        elif \"True, True\" not in str(row_cells):\r\n            for i in tmp:\r\n                famType = i[\"type_name\"]\r\n                wmDic = {}\r\n                for x in dics_keys:\r\n                    wmDic.update({x: row_cells[hdrs.index(x)]})\r\n                i[\"wm_list\"].append(wmDic)\r\n            \r\n    #return res\r\n    \r\n    # Convert nested dictionary to JSON string before returning\r\n    return json.dumps(res, ensure_ascii=False, indent=2)\r\n    \r\ndef create_typeWM_match_dict_forStd(sheet_data, hdrs=None):\r\n    def filter_hdr_row(row, rng_idx=None):\r\n        res_ = []\r\n        for hdr_idx, hdr in enumerate(row):\r\n            # if hdr!=None and hdr!='-':\r\n            res_.append({hdr: hdr_idx})\r\n        if rng_idx:\r\n            res = res_[rng_idx[0]:rng_idx[1]+1]\r\n        else:\r\n            res = res_\r\n        filter_res = list(filter(lambda hdr: list(hdr.keys())[0]!=None and list(hdr.keys())[0]!='-', res))\r\n        return filter_res\r\n    \r\n    if not hdrs:\r\n        common_hdrs = go(\r\n            sheet_data,\r\n            lambda x: find_hdr_row(x, \"Description\"),\r\n            lambda x: filter_hdr_row(x, [0,11]),\r\n        )\r\n    # hdr_idx_of_FamilyName = common_hdrs.index(\"Family Name_Basic (변경 불가)\")\r\n    \r\n    def find_hdrs_forType(common_hdrs, row):\r\n        type_hdrs_formula = filter_hdr_row(row, rng_idx=[12,32])\r\n        type_hdrs_paramDict = filter_hdr_row(row, rng_idx=[32,100])\r\n        \r\n        return {\r\n            \"표준헤더\": common_hdrs,\r\n            \"산출식헤더\": type_hdrs_formula,\r\n            \"매개변수헤더\": type_hdrs_paramDict,\r\n        }\r\n        \r\n    header_check = []\r\n    # res = []\r\n    \r\n    res = {}\r\n    type_hdrs=None\r\n    for idx, row in enumerate(sheet_data):\r\n        if row[2]==\"#\":\r\n            cat = row[3]\r\n            type_hdrs = find_hdrs_forType(common_hdrs, row)\r\n            # header_check.append(find_hdrs_forType(common_hdrs, row))\r\n        else:\r\n            dic = {}\r\n            if type_hdrs:\r\n                for hdr_dic in type_hdrs[\"표준헤더\"]:\r\n                    dic.update(\r\n                        {\r\n                            list(hdr_dic.keys())[0]: row[ list(hdr_dic.values())[0] ],\r\n                        }\r\n                    )\r\n                form_dic = {}\r\n                for hdr_formulas in type_hdrs[\"산출식헤더\"]:\r\n                    if row[ list(hdr_formulas.values())[0] ] and row[ list(hdr_formulas.values())[0] ]!='-':\r\n                        form_dic.update(\r\n                            {\r\n                                list(hdr_formulas.keys())[0]: row[ list(hdr_formulas.values())[0] ],\r\n                            }\r\n                        )\r\n                \r\n                param_dic = {}\r\n                for hdr_params in type_hdrs[\"매개변수헤더\"]:\r\n                    if row[ list(hdr_params.values())[0] ] and row[ list(hdr_params.values())[0] ]!='-':\r\n                        param_dic.update(\r\n                            {\r\n                                list(hdr_params.keys())[0]: row[ list(hdr_params.values())[0] ],\r\n                            }\r\n                        )\r\n\r\n                dic.update(\r\n                    {\r\n                        \"formulas\": form_dic,\r\n                        \"params\": param_dic,\r\n                    }\r\n                )\r\n                famName = dic[\"Family Name_Basic (변경 불가)\"]\r\n                res.update(\r\n                    {\r\n                        famName : dic\r\n                    }\r\n                )\r\n    \r\n    #return res\r\n    \r\n    # Convert nested dictionary to JSON string before returning\r\n    return json.dumps(res, ensure_ascii=False, indent=2)\r\n    \r\ndef insert_paramDic_toPjt_typeWM_match_dicts(pjt_typeWM_match_dicts, std_typeWM_match_dicts):\r\n    for dic in pjt_typeWM_match_dicts:\r\n        type_name = dic[\"type_name\"]\r\n        parent_typeName = dic[\"parent_type\"]\r\n        paramDic = std_typeWM_match_dicts[parent_typeName][\"params\"]\r\n        dic.update(\r\n            {\r\n                \"params\": paramDic\r\n            }\r\n        )\r\n        # print(dic)\r\n    #return pjt_typeWM_match_dicts\r\n    return json.dumps(pjt_typeWM_match_dicts, ensure_ascii=False, indent=2)\r\n\r\npjt_typeWM_match_dicts = create_typeWM_match_dict_forPjt(pjtFamily_sheet_data)\r\nstd_typeWM_match_dicts = create_typeWM_match_dict_forStd(stdFamily_sheet_data)\r\n\r\nres = insert_paramDic_toPjt_typeWM_match_dicts(\r\n    json.loads(pjt_typeWM_match_dicts), json.loads(std_typeWM_match_dicts)\r\n    )\r\n# Assign your output to the OUT variable.\r\n\r\n\r\nOUT = pjt_typeWM_match_dicts",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport re\r\nimport json\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\npjtFamily_sheet_data = IN[0][0]\r\nstdFamily_sheet_data = IN[0][1]\r\n\r\n# Place your code below this line\r\ndef find_hdr_row(sheet_data, identifier):\r\n    res = go(\r\n        sheet_data,\r\n        filter(lambda x: identifier in str(x)),\r\n        filter(lambda x: \"No\" in str(x) and \"Family Name\" in str(x)),\r\n        list,\r\n    )\r\n    \r\n    if isinstance(res, list) and len(res)>0:\r\n        return res[0]\r\n    else:\r\n        return res\r\n\r\ndef find_cat(sheet, selected_row):\r\n    pattern = r'\\b\\d+\\.[A-Za-z]'\r\n    \r\n    crnt_row = selected_row\r\n    if sheet[crnt_row][2] and re.findall(pattern, str(sheet[crnt_row][2])):\r\n        return sheet[crnt_row][2]\r\n    elif crnt_row < 0:\r\n        pass\r\n    else:\r\n        return find_cat(sheet, crnt_row - 1)\r\n        \r\ndef find_parent_type(sheet, selected_row):\r\n    pattern = r'\\b\\d+\\.\\d+'\r\n    \r\n    crnt_row = selected_row\r\n    if sheet[crnt_row][2] and re.findall(pattern, str(sheet[crnt_row][2])):\r\n        return sheet[crnt_row][3]\r\n    elif crnt_row < 0:\r\n        pass\r\n    else:\r\n        return find_parent_type(sheet, crnt_row - 1)\r\n        \r\n        \r\ndef create_typeWM_match_dict_forPjt(sheet_data, hdrs=None):\r\n    if not hdrs:\r\n        hdrs = find_hdr_row(sheet_data, \"▣\")\r\n    hdr_idx_of_FamilyName = hdrs.index(\"Family Name\")\r\n    \r\n    modi_sheet_data = []\r\n    for idx,row in enumerate(pjtFamily_sheet_data):\r\n        newRow = list(row[:])\r\n        # del newRow[2]\r\n        # newRow.insert(2, find_cat(pjtFamily_sheet_data, idx))\r\n        newRow.append(find_cat(pjtFamily_sheet_data, idx))\r\n        newRow.append(find_parent_type(pjtFamily_sheet_data, idx))\r\n        modi_sheet_data.append(newRow)\r\n    \r\n    onlyEffRows = go(\r\n        modi_sheet_data,\r\n        filter(lambda x: \"True\" in str(x)),\r\n        list,\r\n    )\r\n    \r\n    dics_keys = [\r\n        \"Item\",\r\n        \"WM No.\",\r\n        \"Work Master\",\r\n        \"Spec.\",\r\n        \"Unit\",\r\n        \"표준 산출식\",\r\n        \"변경 산출식\",\r\n    ]\r\n    \r\n    res = []\r\n    tmp = None\r\n    for row_idx, row_cells in enumerate(onlyEffRows):\r\n        cat = row_cells[-2]\r\n        parent_type = row_cells[-1]\r\n        if \"True, True\" in str(row_cells):\r\n            if tmp:\r\n                for i in tmp:\r\n                    res.append(i)\r\n            tmp = []\r\n            for famType in row_cells[hdr_idx_of_FamilyName].split(\",\"):\r\n                tmp.append(\r\n                    {\r\n                        \"type_name\": famType.strip().upper(),\r\n                        \"cat\": cat,\r\n                        \"parent_type\": parent_type,\r\n                        \"wm_list\": []\r\n                    }\r\n                )\r\n        elif \"True, True\" not in str(row_cells):\r\n            for i in tmp:\r\n                famType = i[\"type_name\"]\r\n                wmDic = {}\r\n                for x in dics_keys:\r\n                    if row_cells[hdrs.index(x)]==None:\r\n                        value = \"\"\r\n                    else:\r\n                        value = row_cells[hdrs.index(x)]\r\n                    #wmDic.update({x: row_cells[hdrs.index(x)]})\r\n                    wmDic.update({x: value})\r\n                i[\"wm_list\"].append(wmDic)\r\n            \r\n    return res\r\n    \r\n    # Convert nested dictionary to JSON string before returning\r\n    #return json.dumps(res, ensure_ascii=False, indent=2)\r\n    \r\ndef create_typeWM_match_dict_forStd(sheet_data, hdrs=None):\r\n    def filter_hdr_row(row, rng_idx=None):\r\n        res_ = []\r\n        for hdr_idx, hdr in enumerate(row):\r\n            # if hdr!=None and hdr!='-':\r\n            res_.append({hdr: hdr_idx})\r\n        if rng_idx:\r\n            res = res_[rng_idx[0]:rng_idx[1]+1]\r\n        else:\r\n            res = res_\r\n        filter_res = list(filter(lambda hdr: list(hdr.keys())[0]!=None and list(hdr.keys())[0]!='-', res))\r\n        return filter_res\r\n    \r\n    if not hdrs:\r\n        common_hdrs = go(\r\n            sheet_data,\r\n            lambda x: find_hdr_row(x, \"Description\"),\r\n            lambda x: filter_hdr_row(x, [0,11]),\r\n        )\r\n    # hdr_idx_of_FamilyName = common_hdrs.index(\"Family Name_Basic (변경 불가)\")\r\n    \r\n    def find_hdrs_forType(common_hdrs, row):\r\n        type_hdrs_formula = filter_hdr_row(row, rng_idx=[12,32])\r\n        type_hdrs_paramDict = filter_hdr_row(row, rng_idx=[32,100])\r\n        \r\n        return {\r\n            \"표준헤더\": common_hdrs,\r\n            \"산출식헤더\": type_hdrs_formula,\r\n            \"매개변수헤더\": type_hdrs_paramDict,\r\n        }\r\n        \r\n    header_check = []\r\n    # res = []\r\n    \r\n    res = {}\r\n    type_hdrs=None\r\n    for idx, row in enumerate(sheet_data):\r\n        if row[2]==\"#\":\r\n            cat = row[3]\r\n            type_hdrs = find_hdrs_forType(common_hdrs, row)\r\n            # header_check.append(find_hdrs_forType(common_hdrs, row))\r\n        else:\r\n            dic = {}\r\n            if type_hdrs:\r\n                for hdr_dic in type_hdrs[\"표준헤더\"]:\r\n                    #value = row[ list(hdr_dic.values())[0] ]\r\n                    dic.update(\r\n                        {\r\n                            list(hdr_dic.keys())[0]: row[ list(hdr_dic.values())[0] ],\r\n                        }\r\n                    )\r\n                form_dic = {}\r\n                for hdr_formulas in type_hdrs[\"산출식헤더\"]:\r\n                    if row[ list(hdr_formulas.values())[0] ] and row[ list(hdr_formulas.values())[0] ]!='-':\r\n                        form_dic.update(\r\n                            {\r\n                                list(hdr_formulas.keys())[0]: row[ list(hdr_formulas.values())[0] ],\r\n                            }\r\n                        )\r\n                \r\n                param_dic = {}\r\n                for hdr_params in type_hdrs[\"매개변수헤더\"]:\r\n                    if row[ list(hdr_params.values())[0] ] and row[ list(hdr_params.values())[0] ]!='-':\r\n                        param_dic.update(\r\n                            {\r\n                                list(hdr_params.keys())[0]: row[ list(hdr_params.values())[0] ],\r\n                            }\r\n                        )\r\n\r\n                dic.update(\r\n                    {\r\n                        \"formulas\": form_dic,\r\n                        \"params\": param_dic,\r\n                    }\r\n                )\r\n                famName = dic[\"Family Name_Basic (변경 불가)\"]\r\n                res.update(\r\n                    {\r\n                        famName : dic\r\n                    }\r\n                )\r\n    \r\n    return res\r\n    \r\n    # Convert nested dictionary to JSON string before returning\r\n    #return json.dumps(res, ensure_ascii=False, indent=2)\r\n    \r\ndef insert_paramDic_toPjt_typeWM_match_dicts(pjt_typeWM_match_dicts, std_typeWM_match_dicts):\r\n    for dic in pjt_typeWM_match_dicts:\r\n        type_name = dic[\"type_name\"]\r\n        parent_typeName = dic[\"parent_type\"]\r\n        paramDic = std_typeWM_match_dicts[parent_typeName][\"params\"]\r\n        dic.update(\r\n            {\r\n                \"params\": paramDic\r\n            }\r\n        )\r\n        # print(dic)\r\n    return pjt_typeWM_match_dicts\r\n    #return json.dumps(pjt_typeWM_match_dicts, ensure_ascii=False, indent=2)\r\n\r\npjt_typeWM_match_dicts = create_typeWM_match_dict_forPjt(pjtFamily_sheet_data)\r\nstd_typeWM_match_dicts = create_typeWM_match_dict_forStd(stdFamily_sheet_data)\r\n\r\nres = insert_paramDic_toPjt_typeWM_match_dicts(\r\n    pjt_typeWM_match_dicts, std_typeWM_match_dicts\r\n    )\r\n# Assign your output to the OUT variable.\r\n\r\n\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -8056,11 +8056,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\ni[\"wm_list\"][a],\n//i[\"wm_list\"][b],\ni[\"wm_list\"][\"Spec.\"],\ni[\"wm_list\"][\"적용 산출식\"],\ni[\"wm_list\"][\"대입 산출식\"],\ni[\"wm_list\"][\"계산 결과\"],\ni[\"wm_list\"][\"Unit\"]\n//i[\"wms\"][\"wmSpecs\"][\"rIDX\"]\n];",
+      "Code": "[\ni[\"wm_list\"][a],\ni[\"wm_list\"][b],\ni[\"wm_list\"][\"Spec.\"],\ni[\"wm_list\"][\"적용 산출식\"],\ni[\"wm_list\"][\"대입 산출식\"],\ni[\"wm_list\"][\"계산 결과\"],\ni[\"wm_list\"][\"Unit\"]\n//i[\"wms\"][\"wmSpecs\"][\"rIDX\"]\n];",
       "Id": "adffa41e39df4273bb610cebb5939930",
       "Inputs": [
         {
-          "Id": "fdac762e7077401f94c0de160605ff26",
+          "Id": "1a95987363474abbab03d78ae38e9070",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -8069,9 +8069,18 @@
           "KeepListStructure": false
         },
         {
-          "Id": "775c08fc6da44acb9b3b3b432cfd9da0",
+          "Id": "4ebec7a5cbda45af9eb9b7aa3a4f8abd",
           "Name": "a",
           "Description": "a",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "41ded09f29eb4ad8aff5dbd816a5aa49",
+          "Name": "b",
+          "Description": "b",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -8080,7 +8089,7 @@
       ],
       "Outputs": [
         {
-          "Id": "d22e26880eaf444db984e9ab94159b16",
+          "Id": "3a670da1a25442c4aa97887fe568c3c2",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -8193,11 +8202,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[\"wms\"][\"Family Type Name\"];",
+      "Code": "i[\"type_name\"];",
       "Id": "2d93bf440b3d49e4b1a3d7779e83ecdd",
       "Inputs": [
         {
-          "Id": "aa2eb6d7695149759fe14002754f65fa",
+          "Id": "cffbf41d94564751902654d7ed586da1",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -8208,7 +8217,7 @@
       ],
       "Outputs": [
         {
-          "Id": "bfa6937cf8434754a715361e57c85586",
+          "Id": "2523c67491de4d5b9d91ae5bc6c3709d",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -8575,6 +8584,194 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DesignScript.Builtin.Dictionary.ValueAtKey@string",
+      "Id": "610a56deb4f944b2995dfe857da8446f",
+      "Inputs": [
+        {
+          "Id": "7a475883a22e4648b279019f5af12795",
+          "Name": "dictionary",
+          "Description": "DesignScript.Builtin.Dictionary",
+          "UsingDefaultValue": false,
+          "Level": 1,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6ae63e6124094667b916cd80dd53a828",
+          "Name": "key",
+          "Description": "The key in the Dictionary to obtain value for\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2ad7deea950a4058add039785a6235f7",
+          "Name": "value",
+          "Description": "Value at the specified key or null if it is not set",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Obtain the value at a specified key\n\nDictionary.ValueAtKey (key: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"대입 산출식\";",
+      "Id": "de55757a5a824bf58f4bb981e90ccc73",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "15e589ccf7c341c3a2f263a094bd1666",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"wm_list\"];",
+      "Id": "b427671b78ed4ad19eca5fc625948dec",
+      "Inputs": [
+        {
+          "Id": "c9094df183444d0695f3c6ce53f53a79",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f945273e60e14d2fb19d83b87e4d16b8",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[105];",
+      "Id": "ca4166e63f024cab9a96acd1a638db87",
+      "Inputs": [
+        {
+          "Id": "0307fd34010a4a1485b8f456dd907a11",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2c4c0d82c77f4834b4e068ae734bb40a",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[1][0];",
+      "Id": "03800fc85ced48d9acaceb26f685ce92",
+      "Inputs": [
+        {
+          "Id": "57818aabda7c44cd8da5feb83e69e2d0",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e24359c618174497b82d5f5e2f999ad4",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "fd8de377a787471d87e1964870d754b2",
+      "Inputs": [
+        {
+          "Id": "7518c4fe1e9741318b5bd2478299eeb4",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "cdd2fc838d8b492e9e0ce50b3e2de61b",
+          "Name": "parameterName",
+          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cc7286da5fae4486b93c21d79226f09d",
+          "Name": "var[]..[]",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
     }
   ],
   "Connectors": [
@@ -9425,6 +9622,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "c54455fc6553473e9647aa720b5263e6",
+      "End": "57818aabda7c44cd8da5feb83e69e2d0",
+      "Id": "6d5f8ead8dd4407eb1f4b396129de647",
+      "IsHidden": "False"
+    },
+    {
       "Start": "cf6ef4699697424eb47c86b542bed47e",
       "End": "6d691c16e28044f88ab671d1b177a7b5",
       "Id": "263ceb1ac80a46068bbfb73b9356db34",
@@ -9458,12 +9661,6 @@
       "Start": "a0dd4e8d6e864acfaadcc4003759b07a",
       "End": "c00c4b8eb30046c7998cc0379f1bf9ed",
       "Id": "b1716d1835254c3db9149eab0cc93704",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "1481de8e3bcc40b08dc6231bd2a83a07",
-      "End": "e040cd905de141c8a8e0ef78b5e99845",
-      "Id": "264703b88f70484eb0f57192bc5f95ca",
       "IsHidden": "False"
     },
     {
@@ -10259,21 +10456,15 @@
       "IsHidden": "False"
     },
     {
-      "Start": "5b2b46e60ebb4a79aa36711ba992e8a7",
-      "End": "eedb2375ee86494e9786afd862c9a344",
-      "Id": "9baa997d10af41489d286d7b1df4f8f2",
-      "IsHidden": "False"
-    },
-    {
       "Start": "1c2c73f2aa4f4c46aca2ca125ce3bda1",
       "End": "b06aee2733e444e69592e53efffc5671",
       "Id": "c7e7798d3b0f41348d65f7fa0419325b",
       "IsHidden": "False"
     },
     {
-      "Start": "a0d3d08b67a145f7995ea9aaacb1e401",
-      "End": "aa2eb6d7695149759fe14002754f65fa",
-      "Id": "5fad0bd8f63144dd8dbc888a47cc6317",
+      "Start": "9abe7abcd42d4b63a9e0b486724e6555",
+      "End": "eedb2375ee86494e9786afd862c9a344",
+      "Id": "8ce4bfa271d240078e6eedc3c703783b",
       "IsHidden": "False"
     },
     {
@@ -10284,14 +10475,32 @@
     },
     {
       "Start": "a0d3d08b67a145f7995ea9aaacb1e401",
-      "End": "fdac762e7077401f94c0de160605ff26",
-      "Id": "d4a6269d12b24005af8964c84136ae1d",
+      "End": "c9094df183444d0695f3c6ce53f53a79",
+      "Id": "e751fc1375724fc9a5c5e52218e17fc7",
       "IsHidden": "False"
     },
     {
-      "Start": "d22e26880eaf444db984e9ab94159b16",
+      "Start": "a0d3d08b67a145f7995ea9aaacb1e401",
+      "End": "0307fd34010a4a1485b8f456dd907a11",
+      "Id": "ff54506ac4f7466f9ea50fb86cca1d19",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a0d3d08b67a145f7995ea9aaacb1e401",
+      "End": "cffbf41d94564751902654d7ed586da1",
+      "Id": "a99cfa533084486283597006ab880b51",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a0d3d08b67a145f7995ea9aaacb1e401",
+      "End": "1a95987363474abbab03d78ae38e9070",
+      "Id": "7bc5595984ac40c591bb30e4dc8b56b4",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3a670da1a25442c4aa97887fe568c3c2",
       "End": "d94fdebfb3ad48ccb4f1bed91f84bf63",
-      "Id": "7dd177f28bac4880bfb1e3968df2ae60",
+      "Id": "91408f1f1bdf42279a83da98b50cc05e",
       "IsHidden": "False"
     },
     {
@@ -10302,8 +10511,14 @@
     },
     {
       "Start": "78ef840851754b2fad977c2f943e4cb3",
-      "End": "775c08fc6da44acb9b3b3b432cfd9da0",
-      "Id": "d5ea7fdfb4d543b8add3eb2b383a16ce",
+      "End": "4ebec7a5cbda45af9eb9b7aa3a4f8abd",
+      "Id": "8bd182b4197940b185edeee3b82d6bfd",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "17c6b117ba5f441ca3d2b502ce4dea3d",
+      "End": "41ded09f29eb4ad8aff5dbd816a5aa49",
+      "Id": "b3fa24f36cba4f61a6f4450bdb669dfa",
       "IsHidden": "False"
     },
     {
@@ -10313,9 +10528,9 @@
       "IsHidden": "False"
     },
     {
-      "Start": "bfa6937cf8434754a715361e57c85586",
+      "Start": "2523c67491de4d5b9d91ae5bc6c3709d",
       "End": "123900a80da24393b566fe57e26eb910",
-      "Id": "e32c9a24435d42fd9c8fe0f2381938e3",
+      "Id": "52ecbdcb671244509bcf815b532a3bb7",
       "IsHidden": "False"
     },
     {
@@ -10334,6 +10549,12 @@
       "Start": "c263b8e885334580b7bcedb5306a5844",
       "End": "f8932e967b6045b9a96bb561a68de946",
       "Id": "a65b47f8d68b443a9c370e4859af1d0d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "09b30e8f2380485aa351e4fb9f338acb",
+      "End": "e040cd905de141c8a8e0ef78b5e99845",
+      "Id": "c4dc6a38a40b4a6793284861f0862a0a",
       "IsHidden": "False"
     },
     {
@@ -10376,6 +10597,24 @@
       "Start": "fc3b69514b2843589e5f92e39e0b4d9d",
       "End": "8d4a5b48001049b99347afd1197618b8",
       "Id": "6005a861b5e847f6a13ac8413f1f1709",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "15e589ccf7c341c3a2f263a094bd1666",
+      "End": "6ae63e6124094667b916cd80dd53a828",
+      "Id": "2cdb0e0ed0774db1b547058a1d64e1c9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f945273e60e14d2fb19d83b87e4d16b8",
+      "End": "7a475883a22e4648b279019f5af12795",
+      "Id": "f8e595a1cc064615ace52e05189312f8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e24359c618174497b82d5f5e2f999ad4",
+      "End": "7518c4fe1e9741318b5bd2478299eeb4",
+      "Id": "521509b715734222879e61388a4c3e97",
       "IsHidden": "False"
     }
   ],
@@ -12794,9 +13033,9 @@
         "Id": "cbea0bd9471f490eaab91c598020d50a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -3328.087497997014,
-        "Y": 487.6856294119064
+        "Excluded": true,
+        "X": -3342.885616024656,
+        "Y": 588.31283199987138
       },
       {
         "Name": "update_calcResult_typeDict___________________________________",
@@ -12805,8 +13044,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2628.3229152262838,
-        "Y": 624.97080159249469
+        "X": -2634.0558828286776,
+        "Y": 670.83454241164793
       },
       {
         "Name": "FamilyList Data Dictionarize_debug",
@@ -12815,8 +13054,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3345.0348955890122,
-        "Y": 54.531365069822144
+        "X": -3358.76920394412,
+        "Y": 38.508005322196553
       },
       {
         "Name": "Code Block",
@@ -12875,8 +13114,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 5269.7486877411811,
-        "Y": -6299.0361681749782
+        "X": 5238.9172434940192,
+        "Y": -6094.6351118697175
       },
       {
         "Name": "Code Block",
@@ -12985,8 +13224,68 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 4006.7599456078233,
-        "Y": -6517.9175996255208
+        "X": 3950.8371739131671,
+        "Y": -6442.5930499959841
+      },
+      {
+        "Name": "Dictionary.ValueAtKey",
+        "ShowGeometry": true,
+        "Id": "610a56deb4f944b2995dfe857da8446f",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4393.1315235485717,
+        "Y": -5879.2075186681514
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "de55757a5a824bf58f4bb981e90ccc73",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4112.0855277547016,
+        "Y": -5754.4741910139264
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "b427671b78ed4ad19eca5fc625948dec",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4076.0,
+        "Y": -5926.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "ca4166e63f024cab9a96acd1a638db87",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 4743.97740967862,
+        "Y": -5682.6862536718418
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "03800fc85ced48d9acaceb26f685ce92",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2992.4757262058952,
+        "Y": 1561.9882435552365
+      },
+      {
+        "Name": "Element.GetParameterValueByName",
+        "ShowGeometry": true,
+        "Id": "fd8de377a787471d87e1964870d754b2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2688.1055286256674,
+        "Y": 1610.3896807051708
       }
     ],
     "Annotations": [
@@ -13591,8 +13890,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": -4379.8252214585482,
-    "Y": 7384.3201126466274,
-    "Zoom": 1.1212147629224325
+    "X": -3247.641718408222,
+    "Y": 4789.4803164706746,
+    "Zoom": 0.70293978407468982
   }
 }
