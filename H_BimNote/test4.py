@@ -1,52 +1,66 @@
 import tkinter as tk
-from tkinter import ttk
+from tksheet import Sheet
 
 
-class AlternatingRowColorTreeViewApp:
-    def __init__(self, root):
-        # Set up the main frame
-        self.root = root
-        self.root.title("Alternating Row Colors in TreeView")
-
-        # Create the TreeView widget
-        self.tree = ttk.Treeview(root, columns=("Value1", "Value2"), show="headings")
-        self.tree.heading("Value1", text="Column 1")
-        self.tree.heading("Value2", text="Column 2")
-
-        # Add the TreeView widget to the window
-        self.tree.pack(expand=True, fill="both")
-
-        # Add some sample data
-        self.add_data()
-
-        # Apply alternate row colors
-        self.apply_alternate_row_colors()
-
-    def add_data(self):
-        # Adding data to TreeView
-        sample_data = [
-            ("Row 1, Value 1", "Row 1, Value 2"),
-            ("Row 2, Value 1", "Row 2, Value 2"),
-            ("Row 3, Value 1", "Row 3, Value 2"),
-            ("Row 4, Value 1", "Row 4, Value 2"),
-            ("Row 5, Value 1", "Row 5, Value 2"),
-        ]
-        for item in sample_data:
-            self.tree.insert("", "end", values=item)
-
-    def apply_alternate_row_colors(self):
-        """Apply alternate row colors to the Treeview."""
-        for i, item in enumerate(self.tree.get_children("")):
-            # Alternate between two different tags: evenrow and oddrow
-            tag = "evenrow" if i % 2 == 0 else "oddrow"
-            self.tree.item(item, tags=(tag,))
-
-        # Configure the styles for the tags
-        self.tree.tag_configure("evenrow", background="white")
-        self.tree.tag_configure("oddrow", background="lightgray")
+def toggle_checkbox(event):
+    """더블 클릭으로 체크박스 상태 토글"""
+    selected = sheet.get_currently_selected()
+    if selected:
+        row, col = selected
+        if col == 0:  # 체크박스가 있는 첫 번째 열
+            current_value = sheet.get_cell_data(row, col)
+            sheet.set_cell_data(row, col, not current_value)  # 상태 반전
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = AlternatingRowColorTreeViewApp(root)
-    root.mainloop()
+def get_checked_items():
+    """체크된 항목 출력"""
+    checked_items = []
+    for iid in sheet.get_children():
+        item_data = sheet.item(iid)
+        if item_data["values"][0]:  # 첫 번째 열의 값이 True인 항목
+            checked_items.append(item_data["text"])
+    print("Checked Items:", checked_items)
+
+
+# Tkinter 윈도우 생성
+root = tk.Tk()
+root.title("tksheet Treeview with Checkboxes Example")
+
+# tksheet 위젯 생성 (treeview 모드 활성화)
+sheet = Sheet(root, treeview=True, headers=["Select", "Name"], height=400, width=600)
+sheet.pack(expand=True, fill="both")
+
+# 트리뷰 데이터
+tree_data = [
+    ["id1", "", False, "Category 1"],  # 최상위 노드
+    ["id2", "id1", False, "Subcategory 1.1"],  # id1의 하위 노드
+    ["id3", "id1", True, "Subcategory 1.2"],
+    ["id4", "id3", False, "Item 1.2.1"],  # id3의 하위 노드
+    ["id5", "", False, "Category 2"],  # 새로운 최상위 노드
+    ["id6", "id5", True, "Subcategory 2.1"],
+    ["id7", "id6", False, "Item 2.1.1"],
+]
+
+# 트리뷰 데이터 빌드
+sheet.tree_build(
+    data=[[row[0], row[1], row[2], row[3]] for row in tree_data],
+    iid_column=0,  # ID 열
+    parent_column=1,  # 부모 ID 열
+    text_column=3,  # 트리뷰에 표시할 텍스트 열
+    include_iid_column=False,  # ID 열을 데이터에 표시하지 않음
+    include_parent_column=False,  # 부모 ID 열을 데이터에 표시하지 않음
+)
+
+# 첫 번째 열에 Boolean 값 설정
+for idx, row in enumerate(tree_data):
+    sheet.set_cell_data(idx, 0, row[2])
+
+# 체크박스 상태를 더블 클릭으로 토글
+sheet.bind("<Double-1>", toggle_checkbox)
+
+# 버튼 생성
+btn_get_checked = tk.Button(root, text="Get Checked Items", command=get_checked_items)
+btn_get_checked.pack(pady=10)
+
+# Tkinter 메인 루프 시작
+root.mainloop()

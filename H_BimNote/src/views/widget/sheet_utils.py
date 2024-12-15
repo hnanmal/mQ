@@ -92,6 +92,79 @@ class BaseSheetView:
         pass
 
 
+class ProjectStd_WM_Selcet_SheetView:
+    def __init__(self, state, parent):
+        self.state = state
+        self.data_kind = "std-GWM"
+        self.sheet = Sheet(
+            parent,
+            show_x_scrollbar=True,
+            show_y_scrollbar=True,
+            width=500,
+            height=800,
+        )
+        self.sheet.pack(expand=True, fill="both", padx=5, pady=5)
+
+        # 초기 데이터 로드 및 시트 설정
+        self.setup_sheet()
+
+        # 상태 변경 감지를 위한 옵저버 설정
+        self.state_observer = SheetViewStateObserver(
+            state, self.sheet, lambda e: self.update()
+        )
+
+    def setup_sheet(self):
+        # 헤더 설정
+        headers = ["Item", "Value", "Unit"]
+        self.sheet.headers(headers)
+
+        # 초기 데이터 로드
+        self.update()
+
+    def update(self):
+        # state에서 데이터 가져오기
+        data = self.get_level3_children_data()
+
+        # 데이터를 시트에 맞는 형식으로 변환
+        sheet_data = []
+        for item in data:
+            sheet_data.append(
+                [item.get("name", ""), item.get("value", ""), item.get("unit", "")]
+            )
+
+        # 시트 데이터 업데이트
+        self.sheet.set_sheet_data(sheet_data)
+
+    def get_level3_children_data(self):
+        try:
+            # state에서 "std-GWM" 데이터 가져오기
+            gwm_data = self.state.team_std_info.get("std-GWM", {})
+
+            # 3레벨 아이템의 children 찾기
+            result = []
+
+            def find_level3_children(data, current_level=1):
+                if isinstance(data, dict):
+                    if current_level == 3 and "children" in data:
+                        result.extend(data["children"])
+                    elif "children" in data:
+                        for child in data["children"]:
+                            find_level3_children(child, current_level + 1)
+
+            find_level3_children(gwm_data)
+            return result
+        except Exception as e:
+            print(f"Error getting level 3 children data: {e}")
+            return []
+
+    def set_edit_mode(self, mode):
+        # 편집 모드 설정
+        if mode == "edit":
+            self.sheet.enable_bindings()
+        else:
+            self.sheet.disable_bindings()
+
+
 class TeamStd_WMsSheetView:
     def __init__(self, state, parent):
         self.state = state

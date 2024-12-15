@@ -24,8 +24,8 @@ def main():
     # state.log_widget.write("!!!")
     # Create parent tabs within the notebook
     create_team_standard_tab(state, notebook)
-    create_project_standard_tab(notebook)
-    create_project_apply_tab(notebook)
+    create_project_standard_tab(state, notebook)
+    create_project_apply_tab(state, notebook)
 
     ## 팀스탠다드 자동 임포트
     load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
