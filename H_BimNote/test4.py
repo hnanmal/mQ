@@ -1,66 +1,178 @@
+import json
 import tkinter as tk
 from tksheet import Sheet
 
 
-def toggle_checkbox(event):
-    """더블 클릭으로 체크박스 상태 토글"""
-    selected = sheet.get_currently_selected()
-    if selected:
-        row, col = selected
-        if col == 0:  # 체크박스가 있는 첫 번째 열
-            current_value = sheet.get_cell_data(row, col)
-            sheet.set_cell_data(row, col, not current_value)  # 상태 반전
+class TreeSheet:
+    def __init__(self, parent, data):
+        self.parent = parent
+        self.data = data
+
+        # Frame for the tksheet widget
+        self.frame = tk.Frame(self.parent)
+        self.frame.pack(fill="both", expand=True)
+
+        # Initialize tksheet with treeview and checkbox support
+        self.sheet = Sheet(
+            self.frame,
+            headers=["Name", "Level 1", "Level 2", "Level 3", "Enabled/Not Used"],
+            treeview=True,
+        )
+        self.sheet.enable_bindings()  # Enable cell editing, resizing, etc.
+        self.sheet.pack(fill="both", expand=True)
+
+        # Create checkboxes in the last column
+        self.sheet.checkbox("E", checked=True)
+
+        # Populate the sheet with hierarchical data
+        self.populate_sheet()
+
+        # Automatically expand the treeview
+        self.expand_treeview()
+
+    def populate_sheet(self):
+        """Populate the tksheet in treeview mode."""
+        for item in self.data:
+            self.insert_item(item)
+
+    # def insert_item(self, item, parent=""):
+    #     """Recursively insert items into the tksheet."""
+    #     item_id = item["name"]  # Use the name as a unique ID
+    #     self.sheet.insert(
+    #         iid=item_id,
+    #         parent=parent,
+    #         text=item["name"],
+    #         # values=item["values"] + [],  # Add default checkbox state as True
+    #     )
+    #     for child in item.get("children", []):
+    #         if isinstance(child, dict):
+    #             self.insert_item(child, parent=item_id)
+    #         else:
+    #             self.sheet.insert(
+    #                 parent=item_id,
+    #                 iid=child,
+    #                 text=child,
+    #                 # values=[child] + [""] * (len(item["values"]) - 1) + [True],
+    #                 values=[child] + [""] * (len(item["values"]) - 1) + [""],
+    #             )
 
 
-def get_checked_items():
-    """체크된 항목 출력"""
-    checked_items = []
-    for iid in sheet.get_children():
-        item_data = sheet.item(iid)
-        if item_data["values"][0]:  # 첫 번째 열의 값이 True인 항목
-            checked_items.append(item_data["text"])
-    print("Checked Items:", checked_items)
+def insert_item(self, item, parent="", path=""):
+    """Recursively insert items into the tksheet."""
+    # Generate a unique ID based on the current path
+    item_id = f"{path}/{item['name']}".replace(" ", "_")  # Ensure no spaces in ID
+    is_last_level = not any(
+        isinstance(child, dict) for child in item.get("children", [])
+    )
+
+    # Insert the row
+    self.sheet.insert(
+        iid=item_id,
+        parent=parent,
+        text=item["name"],
+        values=item["values"]
+        + ([True] if is_last_level else [""]),  # Checkbox only for last level
+    )
+
+    # Add checkboxes only for last-level rows
+    if is_last_level:
+        self.sheet.checkbox(f"{item_id} E", checked=True)
+
+    for i, child in enumerate(item.get("children", [])):
+        if isinstance(child, dict):
+            # Pass the current path to children for unique ID generation
+            self.insert_item(child, parent=item_id, path=f"{path}/{item['name']}_{i}")
+        else:
+            child_id = f"{item_id}_child_{i}"  # Unique ID for string children
+            self.sheet.insert(
+                parent=item_id,
+                iid=child_id,
+                text=child,
+                values=[child] + [""] * (len(item["values"]) - 1) + [True],
+            )
+            self.sheet.checkbox(
+                f"{child_id} E", checked=True
+            )  # Checkbox for string children
+
+    def expand_treeview(self):
+        """Automatically expand all treeview nodes using tree_set_open."""
+        open_ids = self.collect_open_ids(self.data)
+        self.sheet.tree_set_open(open_ids)
+
+    def collect_open_ids(self, data):
+        """Recursively collect all IDs for tree nodes."""
+        open_ids = []
+        for item in data:
+            if isinstance(item, dict):
+                open_ids.append(item["name"])
+                open_ids.extend(self.collect_open_ids(item.get("children", [])))
+        return open_ids
+
+    def toggle_checkbox(self, column="E", checked=None):
+        """Toggle the checkbox value in the specified column."""
+        self.sheet.click_checkbox(column, checked=checked)
+
+    def save_data(self):
+        """Save the data back into hierarchical format."""
+        return (
+            self.data
+        )  # This would need to collect the current sheet state if edits are allowed
 
 
-# Tkinter 윈도우 생성
-root = tk.Tk()
-root.title("tksheet Treeview with Checkboxes Example")
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.geometry("800x600")
 
-# tksheet 위젯 생성 (treeview 모드 활성화)
-sheet = Sheet(root, treeview=True, headers=["Select", "Name"], height=400, width=600)
-sheet.pack(expand=True, fill="both")
+    # Example hierarchical data
+    # data = [
+    #     {
+    #         "name": "Earth Work",
+    #         "values": ["Earth Work", "", "", ""],
+    #         "children": [
+    #             {
+    #                 "name": "EARTH",
+    #                 "values": ["", "EARTH", "", ""],
+    #                 "children": [
+    #                     {
+    #                         "name": "Excavation_A",
+    #                         "values": ["", "", "Excavation_A", ""],
+    #                         "children": [
+    #                             "A01ZZ001-00010 | AR | A01 | Earth Work | ZZ | - | 001 | Excavation | 01 | Soil, Manual | 07 | Manual Excavation Above GWL | M3 | M3 | A01ZZ001 | A01ZZ001-00010",
+    #                             "A01ZZ001-00011 | AR | A01 | Earth Work | ZZ | - | 001 | Excavation | 01 | Soil, Manual | 08 | Manual Excavation Below GWL | M3 | M3 | A01ZZ001 | A01ZZ001-00011",
+    #                         ],
+    #                     },
+    #                     {
+    #                         "name": "Backfilling_A",
+    #                         "values": ["", "", "Backfilling_A", ""],
+    #                         "children": [
+    #                             "A01ZZ003-00001 | AR | A01 | Earth Work | ZZ | - | 003 | Backfill | 06 | Re-use, Soil | Compaction=(  )% | M3 | M3 | A01ZZ003 | A01ZZ003-00001"
+    #                         ],
+    #                     },
+    #                 ],
+    #             }
+    #         ],
+    #     }
+    # ]
+    with open("resource/PlantArch_BIM Standard.bnote", "r", encoding="utf-8") as file:
+        data_ = json.load(file)
 
-# 트리뷰 데이터
-tree_data = [
-    ["id1", "", False, "Category 1"],  # 최상위 노드
-    ["id2", "id1", False, "Subcategory 1.1"],  # id1의 하위 노드
-    ["id3", "id1", True, "Subcategory 1.2"],
-    ["id4", "id3", False, "Item 1.2.1"],  # id3의 하위 노드
-    ["id5", "", False, "Category 2"],  # 새로운 최상위 노드
-    ["id6", "id5", True, "Subcategory 2.1"],
-    ["id7", "id6", False, "Item 2.1.1"],
-]
+    data = data_["std-GWM"]["children"]
 
-# 트리뷰 데이터 빌드
-sheet.tree_build(
-    data=[[row[0], row[1], row[2], row[3]] for row in tree_data],
-    iid_column=0,  # ID 열
-    parent_column=1,  # 부모 ID 열
-    text_column=3,  # 트리뷰에 표시할 텍스트 열
-    include_iid_column=False,  # ID 열을 데이터에 표시하지 않음
-    include_parent_column=False,  # 부모 ID 열을 데이터에 표시하지 않음
-)
+    # Initialize and display TreeSheet
+    tree_sheet = TreeSheet(root, data)
 
-# 첫 번째 열에 Boolean 값 설정
-for idx, row in enumerate(tree_data):
-    sheet.set_cell_data(idx, 0, row[2])
+    # Add a button to save data
+    save_button = tk.Button(
+        root, text="Save", command=lambda: print(tree_sheet.save_data())
+    )
+    save_button.pack()
 
-# 체크박스 상태를 더블 클릭으로 토글
-sheet.bind("<Double-1>", toggle_checkbox)
+    # Add a button to toggle checkbox state
+    toggle_button = tk.Button(
+        root,
+        text="Toggle Checkboxes",
+        command=lambda: tree_sheet.toggle_checkbox(checked=False),
+    )
+    toggle_button.pack()
 
-# 버튼 생성
-btn_get_checked = tk.Button(root, text="Get Checked Items", command=get_checked_items)
-btn_get_checked.pack(pady=10)
-
-# Tkinter 메인 루프 시작
-root.mainloop()
+    root.mainloop()
