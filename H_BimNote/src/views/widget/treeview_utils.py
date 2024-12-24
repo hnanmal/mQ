@@ -1,5 +1,5 @@
 # src/views/widget/treeview_utils.py
-from src.controllers.tree_data_navigator import TreeDataManager
+from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import (
@@ -13,6 +13,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.tableview import Tableview
 
 from src.views.widget.treeview_editor import TreeviewEditor
+from src.views.widget.widget import StateObserver
 
 
 # Composition for Style Management
@@ -124,13 +125,6 @@ class DefaultTreeViewStyleManager:
         # 태그에 대한 색상 정의
         treeview.tag_configure("evenrow", background="white")
         treeview.tag_configure("oddrow", background="#ebf0e6")
-
-
-# Composition for State Management
-class TreeViewStateObserver:
-    def __init__(self, state, updateFunc):
-        self.state = state
-        self.state.observer_manager.add_observer(lambda e: updateFunc(e))
 
 
 class ScrollbarWidget:
@@ -491,10 +485,8 @@ class TeamStd_GWMTreeView:
     def __init__(self, state, parent, view_level=2):
         self.state = state
         self.data_kind = "std-GWM"
-        self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -575,7 +567,7 @@ class TeamStd_GWMTreeView:
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
-        treeDataManager = TreeDataManager(self.state)
+        treeDataManager = TreeDataManager_treeview(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
@@ -721,9 +713,7 @@ class TeamStd_WMmatching_TreeView:
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(tree_frame, headers)
         self.treeview.tree.config(height=3000)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         # config selection mode
         self.treeview.tree.config(selectmode="extended")
@@ -853,10 +843,8 @@ class TeamStd_SWMTreeView:
         self.state = state
         self.data_kind = "std-SWM"
 
-        self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -938,7 +926,7 @@ class TeamStd_SWMTreeView:
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
-        treeDataManager = TreeDataManager(self.state)
+        treeDataManager = TreeDataManager_treeview(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
@@ -1079,10 +1067,8 @@ class TeamStd_CommonInputTreeView:
         self.state = state
         self.data_kind = "common-input"
 
-        self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -1282,10 +1268,8 @@ class TeamStd_FamlistTreeView:
         self.data_kind = "std-familylist"
         self.view_level = view_level
 
-        self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(
-            state, lambda e: self.update(e, view_level)
-        )
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -1589,8 +1573,8 @@ class TeamStd_calcDict_TreeView:
         # self.data_kind = data_kind
         self.data_kind = "std-calcdict"
         self.view_level = view_level
-        self.treeDataManager = TreeDataManager(state, self)
-        self.state_observer = TreeViewStateObserver(
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(
             state, lambda e: self.update(event=e, view_level=self.view_level)
         )
         self.selected_item_relate_widget = relate_widget.selected_item

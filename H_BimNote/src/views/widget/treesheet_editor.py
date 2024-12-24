@@ -1,9 +1,8 @@
 import tkinter as tk
+from src.controllers.tree_data_navigator import TreeDataManager_treesheet
 
-from src.controllers.tree_data_navigator import TreeDataManager_treeview
 
-
-class TreeviewEditor:
+class TreesheetEditor:
     def __init__(self, state, impl_treeview):
         self.impl_treeview = impl_treeview
         self.treeview = self.impl_treeview.treeview
@@ -12,7 +11,7 @@ class TreeviewEditor:
         self.entry_widget = None
         self.current_item = None
         self.current_column = None
-        self.data_manager = TreeDataManager_treeview(state)
+        self.data_manager = TreeDataManager_treesheet(state)
 
         # Bind double-click to initiate edit
         self.tree.bind("<Double-1>", self.on_double_click)

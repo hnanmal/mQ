@@ -1,10 +1,13 @@
 # src/views/widget/sheet_utils.py
+from src.controllers.tree_data_navigator import TreeDataManager_treesheet
 from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk
 from tksheet import Sheet
 
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
+from src.views.widget.widget import StateObserver
+from src.views.widget.treesheet_editor import TreesheetEditor
 
 
 class DefaultSheetViewStyleManager:
@@ -304,7 +307,6 @@ class TeamStd_WMsSheetView:
 class TreeviewSheet:
     def __init__(self, parent, headers):
         self.sheet = Sheet(parent, headers=headers)
-        self.data_kind = "WMs"
         self.parent = parent
 
         # config enable_bindings
@@ -339,3 +341,40 @@ class TreeviewSheet:
 
     def toggle_sheet_lock(self, lock=True):
         pass
+
+    def collapse_all_items(self):
+        pass
+
+    def expand_all_items(self):
+        pass
+
+    def expand_tree_to_level(self, level):
+        pass
+
+    def insert_data_with_levels(self, data, parents_id=""):
+        pass
+
+    def get_item_indices(self, selected_item_id):
+        pass
+
+    def select_item_by_indices(self, indices):
+        pass
+
+    ####
+
+
+class Pjt_GWM_TreeviewSheet(TreeviewSheet):
+    def __init__(self, state, parent, view_level=3):
+        self.state = state
+        self.data_kind = "pjt-GWM"
+        self.treeDataManager = TreeDataManager_treesheet(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+
+        self.selected_item = tk.StringVar()
+        self.selected_item.trace_add("write", state._notify_selected_change)
+
+        # set treeview_editor class
+        self.treesheetEditor = TreesheetEditor(state, self)
+
+        # Track the last selected item with an instance attribute
+        self.last_selected_item = None

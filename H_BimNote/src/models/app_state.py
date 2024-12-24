@@ -1,5 +1,5 @@
 # src/models/app_state.py
-from src.controllers.tree_data_navigator import TreeDataManager
+from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.controllers.widget.widgets import EditModeManager
 from src.core.fp_utils import *
 from src.models.observer_manager import ObserverManager
@@ -86,7 +86,7 @@ class AppState:
         )
 
         # Use TreeDataNavigator to remove matched WMs
-        treeDataManager = TreeDataManager(self, related_widget)
+        treeDataManager = TreeDataManager_treeview(self, related_widget)
         treeDataManager.match_wms_to_stdType(
             data_kind,
             grand_parent_item_name,
@@ -109,7 +109,7 @@ class AppState:
         )
 
         # Use TreeDataNavigator to remove matched WMs
-        navigator = TreeDataManager(self, related_widget)
+        navigator = TreeDataManager_treeview(self, related_widget)
         navigator.remove_matched_wms(
             data_kind,
             grand_parent_item_name,
@@ -135,7 +135,7 @@ class AppState:
         )
 
         # Use TreeDataNavigator to remove matched WMs
-        treeDataManager = TreeDataManager(self, related_widget)
+        treeDataManager = TreeDataManager_treeview(self, related_widget)
         treeDataManager.match_GWMitems_to_stdFam(
             data_kind,
             grandparent_item_name,

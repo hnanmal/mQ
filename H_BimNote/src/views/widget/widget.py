@@ -2,6 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 
 
+# Composition for State Management
+class StateObserver:
+    def __init__(self, state, updateFunc):
+        self.state = state
+        self.state.observer_manager.add_observer(lambda e: updateFunc(e))
+
+
 class WidgetSwitcher:
     def __init__(
         self, parent_frame, widgets, default_selection=None, default_width=300
