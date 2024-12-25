@@ -43,7 +43,7 @@ def create_project_standard_tab(state, notebook):
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
-    std_Famlist_tab = create_stdFamList_tab(state, subtab_notebook)
+    # std_Famlist_tab = create_stdFamList_tab(state, subtab_notebook)
 
 
 def create_project_apply_tab(state, notebook):
