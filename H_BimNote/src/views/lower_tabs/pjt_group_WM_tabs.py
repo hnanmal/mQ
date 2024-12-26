@@ -13,13 +13,14 @@ from src.controllers.widget.widgets import (
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
     TeamStd_WMsSheetView,
-    ProjectStd_WM_Selcet_SheetView,
+    ProjectStd_WM_Selcet_SheetView_GWM,
 )
 from src.views.widget.treeview_utils import (
     TeamStd_GWMTreeView,
     DefaultTreeViewStyleManager,
     TeamStd_WMmatching_TreeView,
     TeamStd_SWMTreeView,
+    PjtStd_GWMTreeView,
 )
 
 
@@ -59,22 +60,22 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
     # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=600,
+        width=2000,
         height=3000,
     )
-    section3 = ttk.Frame(
-        working_tab_paned_area,
-        width=600,
-        height=3000,
-    )
+    # section3 = ttk.Frame(
+    #     working_tab_paned_area,
+    #     width=600,
+    #     height=3000,
+    # )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    # working_tab_paned_window.add(section3, minsize=600)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    working_tab_paned_window.paneconfigure(section3, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=2000, height=3000)
+    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -100,6 +101,7 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
     ##############################################################
     ## section 1###########
     pjtStdGWM_treeview = TeamStd_GWMTreeView(state, section1)
+    # pjtStdGWM_treeview = PjtStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(pjtStdGWM_treeview.treeview.tree)
     state.pjtStdGWM_treeview = pjtStdGWM_treeview
 
@@ -132,9 +134,10 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
     )
     std_matching_widget_area.pack(side="top", anchor="w")
 
-    pjtStd_matching_treeview = ProjectStd_WM_Selcet_SheetView(
-        state, std_matching_widget_area
+    pjtStd_matching_treeview_GWM = ProjectStd_WM_Selcet_SheetView_GWM(
+        state, std_matching_widget_area, pjtStdGWM_treeview
     )
+    state.pjtStd_matching_treeview_GWM = pjtStd_matching_treeview_GWM
 
     # pjtStd_matching_treeview = TeamStd_WMmatching_TreeView(
     #     state, std_matching_widget_area, pjtStdGWM_treeview, data_kind="std-GWM"

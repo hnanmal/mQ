@@ -700,6 +700,11 @@ class TeamStd_GWMTreeView:
         state.observer_manager.notify_observers(state)
 
 
+class PjtStd_GWMTreeView(TeamStd_GWMTreeView):
+    def __init__(self, state, parent):
+        super().__init__(state, parent, view_level=2)
+
+
 class TeamStd_WMmatching_TreeView:
     def __init__(self, state, parent, relate_widget, data_kind=None, view_level=2):
         self.state = state

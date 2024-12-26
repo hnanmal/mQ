@@ -1,5 +1,8 @@
 # src/views/widget/sheet_utils.py
-from src.controllers.tree_data_navigator import TreeDataManager_treesheet
+from src.controllers.tree_data_navigator import (
+    TreeDataManager_treesheet,
+    TreeDataManager_treeview,
+)
 from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk
@@ -95,66 +98,187 @@ class BaseSheetView:
         pass
 
 
-class ProjectStd_WM_Selcet_SheetView:
-    def __init__(self, state, parent):
+class ProjectStd_WM_Selcet_SheetView_GWM:
+    def __init__(self, state, parent, relate_widget):
         self.state = state
         self.data_kind = "std-GWM"
+        self.treeDataManager = TreeDataManager_treesheet(state, self)
+        self.relate_widget = relate_widget
+        self.selected_item_relate_widget = relate_widget.selected_item
         self.sheet = Sheet(
             parent,
             show_x_scrollbar=True,
             show_y_scrollbar=True,
-            width=500,
+            width=2000,
             height=800,
         )
         self.sheet.pack(expand=True, fill="both", padx=5, pady=5)
 
+        # config enable_bindings
+        self.sheet.enable_bindings(
+            "edit_cell",
+            "delete",
+            "single_select",  # Allow single cell selection
+            "drag_select",
+            "row_select",  # Allow row selection
+            "column_select",  # Allow column selection
+            "drag_select",  # Allow drag selection
+            # "column_width_resize",
+            "row_height_resize",
+            "double_click_column_resize",
+            "copy",
+            "paste",
+            "ctrl_click_select",
+            "right_click_popup_menu",
+            "rc_insert_row",
+            "rc_delete_row",
+            "arrowkeys",
+        )
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
 
         # 상태 변경 감지를 위한 옵저버 설정
-        self.state_observer = SheetViewStateObserver(
-            state, self.sheet, lambda e: self.update()
-        )
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
 
     def setup_sheet(self):
         # 헤더 설정
-        headers = ["Item", "Value", "Unit"]
+        headers = ["Use", "Spec", "Unit", "Work Master"]
         self.sheet.headers(headers)
 
+        # Create checkboxes in the First column
+        self.sheet.checkbox("A", checked=True)
+
+        self.setup_column_style()
         # 초기 데이터 로드
         self.update()
 
-    def update(self):
-        # state에서 데이터 가져오기
-        data = self.get_level3_children_data()
+    def setup_column_style(self):
+        self.sheet.set_column_widths([25, 90, 25, 2000])
+        # self.sheet.align_columns({0: "center"})
+        self.sheet["A"].align("center")
+        self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
+        # self.sheet.set_options(font=("Arial Narrow", 10, "normal"))
+        # self.sheet.set_options(font=("RomanS", 9, "normal"))
+        self.sheet.set_options(font=("Simplex", 9, "normal"))
+        # self.sheet.set_options(font=("Arial", 9, "normal"))
+        # self.sheet.set_options(font=("디자인하우스 Light", 11, "normal"))
+        self.sheet.set_options(default_row_height=30)
 
-        # 데이터를 시트에 맞는 형식으로 변환
-        sheet_data = []
-        for item in data:
-            sheet_data.append(
-                [item.get("name", ""), item.get("value", ""), item.get("unit", "")]
+    def update(self, event=None):
+        state = self.state
+        """Update the TreeView whenever the state changes."""
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        self.state.log_widget.write(
+            f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
+        )
+
+        try:
+            # Split the selected item path to find the grandparent, parent, and selected item names
+            grand_parent_item_name, parent_item_name, selected_item_name = (
+                self.selected_item_relate_widget.get().split(" | ")
             )
 
-        # 시트 데이터 업데이트
-        self.sheet.set_sheet_data(sheet_data)
+            # Ensure the data kind exists in the team standard information
+            if self.data_kind in state.team_std_info:
+                data = state.team_std_info[self.data_kind]["children"]
+
+                # Find the grandparent node
+                grand_parent_node = next(
+                    (node for node in data if node["name"] == grand_parent_item_name),
+                    None,
+                )
+                if grand_parent_node:
+                    # Find the parent node
+                    parent_node = next(
+                        (
+                            node
+                            for node in grand_parent_node["children"]
+                            if node["name"] == parent_item_name
+                        ),
+                        None,
+                    )
+                    if parent_node:
+                        # Find the selected node
+                        selected_node = next(
+                            (
+                                node
+                                for node in parent_node["children"]
+                                if node["name"] == selected_item_name
+                            ),
+                            None,
+                        )
+                        if selected_node:
+                            # Clear the TreeView and insert the data for the selected node
+                            self.sheet.clear()
+                            # self.treeview.clear_treeview()
+
+                            # Wrap the children of the selected node for insertion
+                            wrapped_data = go(
+                                selected_node["children"],
+                                map(
+                                    lambda x: ["", "", "", x]
+                                ),  ## std-GWM 항목을 복사해서 "pjtStd-GWM"로 state에 저장하도록 하는 로직 추가 시 이 부분 변경 필요
+                                list,
+                            )
+                            # self.treeview.insert_data_with_levels(wrapped_data)
+                            self.sheet.set_sheet_data(wrapped_data)
+                        else:
+                            self.state.log_widget.write(
+                                f"Selected item '{selected_item_name}' not found."
+                            )
+                    else:
+                        self.state.log_widget.write(
+                            f"Parent item '{parent_item_name}' not found."
+                        )
+                else:
+                    self.state.log_widget.write(
+                        f"Grandparent item '{grand_parent_item_name}' not found."
+                    )
+
+        except Exception as e:
+            self.state.log_widget.write(
+                f"{self.__class__.__name__} > update 메소드 진입 안됩니다~: {e}"
+            )
+
+        self.setup_column_style()
+        # self.treeview.expand_tree_to_level(level=view_level)
+
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def get_level3_children_data(self):
+        selected_item = self.related_widget.selected_item.get()
+
+        # try:
+        #     # state에서 "std-GWM" 데이터 가져오기
+        #     gwm_data = self.state.team_std_info.get("std-GWM", {})
+
+        #     # 3레벨 아이템의 children 찾기
+        #     result = []
+
+        #     def find_level3_children(data, current_level=1):
+        #         if isinstance(data, dict):
+        #             if current_level == 3 and "children" in data:
+        #                 result.extend(data["children"])
+        #             elif "children" in data:
+        #                 for child in data["children"]:
+        #                     find_level3_children(child, current_level + 1)
+
+        #     find_level3_children(gwm_data)
+        #     return result
+        # except Exception as e:
+        #     print(f"Error getting level 3 children data: {e}")
+        #     return []
+
         try:
             # state에서 "std-GWM" 데이터 가져오기
-            gwm_data = self.state.team_std_info.get("std-GWM", {})
+            gwm_data = self.state.team_std_info["std-GWM"]
+            path = selected_item.split(" | ")
+            print(path)
 
-            # 3레벨 아이템의 children 찾기
-            result = []
+            result = self.treeDataManager.find_node_by_path(gwm_data, path)
+            # print(result)
+            # gwm_data["children"][gf][f][s]["children"]
 
-            def find_level3_children(data, current_level=1):
-                if isinstance(data, dict):
-                    if current_level == 3 and "children" in data:
-                        result.extend(data["children"])
-                    elif "children" in data:
-                        for child in data["children"]:
-                            find_level3_children(child, current_level + 1)
-
-            find_level3_children(gwm_data)
             return result
         except Exception as e:
             print(f"Error getting level 3 children data: {e}")

@@ -41,12 +41,19 @@ class AppState:
             self.std_matching_treeview_GWM.update(self)
         except:
             pass
+
         try:
             self.std_matching_treeview_SWM.update(self)
         except:
             pass
+
         try:
             self.std_matching_treeview_Familylist.update(self)
+        except:
+            pass
+
+        try:
+            self.pjtStd_matching_treeview_GWM.update(self)
         except:
             pass
 

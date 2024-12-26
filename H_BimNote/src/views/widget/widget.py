@@ -2,6 +2,20 @@ import tkinter as tk
 from tkinter import ttk
 
 
+def select_tab(notebook, parent_index, subtab_index=None):
+    """Select a parent tab and optionally a subtab."""
+    notebook.select(parent_index)  # Select the parent tab
+    if subtab_index is not None:  # If a subtab is specified
+        parent_tab = notebook.nametowidget(
+            notebook.tabs()[parent_index]
+        )  # Get the parent tab widget
+        sub_notebook = parent_tab.children.get(
+            "sub_notebook"
+        )  # Find the sub-notebook inside the parent tab
+        if sub_notebook:
+            sub_notebook.select(subtab_index)  # Select the subtab
+
+
 # Composition for State Management
 class StateObserver:
     def __init__(self, state, updateFunc):
