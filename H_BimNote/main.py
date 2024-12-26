@@ -106,7 +106,7 @@ def show_splash_screen():
     splash.geometry(f"{splash_width}x{splash_height}+{x}+{y}")
 
     # Close splash screen after 3 seconds
-    splash.after(10000, splash.destroy)
+    splash.after(3000, splash.destroy)
 
     return splash
 
