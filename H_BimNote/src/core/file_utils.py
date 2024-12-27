@@ -84,3 +84,9 @@ def load_from_excel(state, _file_path=None):
         return sheet_data
     except Exception as e:
         print(f"Error loading data from Excel: {e}")
+
+
+# Load HTML file content
+def load_html_file(filepath):
+    with open(filepath, "r", encoding="utf-8") as file:
+        return file.read()

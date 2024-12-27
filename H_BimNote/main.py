@@ -4,6 +4,8 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
+from tkinterdnd2 import TkinterDnD
+
 # from tkinter.ttk import Progressbar
 
 from PIL import ImageTk, Image
@@ -22,7 +24,13 @@ from src.views.app_ui_setup import initialize_app
 
 def main():
     # root = tk.Tk()
-    root = ttk.Window(themename="journal")
+    # root = ttk.Window(themename="journal")
+    root = TkinterDnD.Tk()
+
+    # Apply ttkbootstrap theme
+    style = ttk.Style()
+    style.theme_use("journal")  # Use your preferred ttkbootstrap theme
+    ################
 
     notebook, state = initialize_app(root)
     root.iconify()

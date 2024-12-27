@@ -1834,3 +1834,100 @@ class TeamStd_calcDict_TreeView:
         )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
+
+
+class BuildingList_TreeView(ttk.Frame):
+    def __init__(self, state, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.pack(fill="both", expand=True)
+        self.state = state
+        self.data_kind = "std-familylist"
+
+        # Title Label
+        ttk.Label(self, text="Building List", font=("Arial", 16)).pack(pady=10)
+
+        headers = ["Building Name"]
+        hdr_widths = [400]
+
+        # Compose TreeView, Style Manager, and State Observer
+        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        self.tree_frame = tree_frame
+        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview.tree.config(height=3000)
+
+        # config selection mode
+        self.treeview.tree.config(selectmode="browse")
+        # Tag styles
+        self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
+        # self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
+        # Set up UI
+        # self.set_title(tree_frame)
+        self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
+        self.treeview.tree.pack(expand=True, fill="both", side="left")
+        self.treeview.setup_columns(headers, hdr_widths)
+
+        # set treeview_editor class
+        self.treeviewEditor = TreeviewEditor(state, self)
+
+        # Input Field
+        ttk.Label(self, text="Enter Building Name:", font=("Arial", 12)).pack(pady=5)
+        self.entry = ttk.Entry(self, font=("Arial", 12), bootstyle=SECONDARY)
+        self.entry.pack(pady=5, fill="x", padx=10)
+
+        # Buttons for Add and Delete
+        button_frame = ttk.Frame(self)
+        button_frame.pack(pady=10)
+
+        ttk.Button(
+            button_frame,
+            text="Add Building",
+            command=self.add_building,
+            bootstyle=SUCCESS,
+        ).pack(side="left", padx=5)
+        ttk.Button(
+            button_frame,
+            text="Delete Building",
+            command=self.delete_building,
+            bootstyle=DANGER,
+        ).pack(side="left", padx=5)
+
+        # Status Label
+        self.status_label = ttk.Label(self, text="", font=("Arial", 10))
+        self.status_label.pack(pady=5)
+
+    def add_building(self):
+        """Add a building name to the TreeView."""
+        building_name = self.entry.get().strip()
+        print(f"building_name: {building_name}")
+        if building_name:
+            self.treeview.tree.insert(
+                "",
+                "end",
+                text=building_name,
+                values=[building_name],
+            )  # Add the building to the TreeView
+            self.entry.delete(0, "end")  # Clear the entry field
+            self.status_label.config(
+                text=f"Building '{building_name}' added successfully.",
+                bootstyle=SUCCESS,
+            )
+        else:
+            self.status_label.config(
+                text="Please enter a building name.", bootstyle=DANGER
+            )
+        print(self.treeview.tree.item(self.treeview.tree.get_children("")))
+
+    def delete_building(self):
+        """Delete the selected building from the TreeView."""
+        selected_item = self.treeview.tree.selection()
+        if selected_item:
+            building_name = self.treeview.tree.item(selected_item, "text")
+            self.treeview.tree.delete(selected_item)
+            self.status_label.config(
+                text=f"Building '{building_name}' deleted successfully.",
+                bootstyle=SUCCESS,
+            )
+        else:
+            self.status_label.config(
+                text="Please select a building to delete.", bootstyle=DANGER
+            )

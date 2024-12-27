@@ -1,5 +1,10 @@
 import tkinter as tk
-from tkinter import ttk, simpledialog, filedialog, Menu
+from tkinter import (
+    # ttk,
+    Menu,
+)
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 import json
 
 from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
@@ -13,8 +18,7 @@ def define_styles():
     style.configure(
         "Main.TNotebook",
         tabposition="nw",  # north, tabs at the top
-        # background="lightgrey",
-        tabmargins=[5, 5, 5, 5],
+        # tabmargins=[5, 5, 5, 5],
     )  # space around tabs
 
     style.configure(
@@ -22,15 +26,15 @@ def define_styles():
         background="white",
         foreground="black",
         padding=[70, 0],
-        font=("Helvetica", 12, "bold"),
+        # font=("Helvetica", 12, "bold"),
+        font=("Helvetica", 16, "normal"),
     )
 
     # Define a custom style for the subtabs
     style.configure(
         "Subtab.TNotebook",
-        # background="white",
         tabposition="nw",
-        tabmargins=[5, 5, 5, 5],
+        # tabmargins=[5, 5, 5, 5],
     )
 
     style.configure(
@@ -38,7 +42,7 @@ def define_styles():
         background="lightblue",
         foreground="darkblue",
         padding=[5, 0],
-        font=("Helvetica", 10, "bold"),
+        font=("Helvetica", 12, "normal"),
     )
 
 
@@ -50,9 +54,6 @@ def initialize_app(root):
 
     state.defaultextension = ".bnote"
     state.filetypes = [("BNOTE files", "*.bnote")]
-
-    # ## 팀스탠다드 자동 임포트
-    # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
 
     root.title("H_BimNote")
     root.geometry("1400x900+100+100")

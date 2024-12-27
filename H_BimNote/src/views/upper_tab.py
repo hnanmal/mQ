@@ -8,6 +8,7 @@ from src.views.lower_tabs.pjt_group_WM_tabs import (
     create_pjtStdGWM_tab,
     create_pjtStdSWM_tab,
 )
+from src.views.lower_tabs.pjt_main_tab import create_pjtMain_tab
 
 
 def create_tab_with_subtabs(notebook, tab_name, subtab_names):
@@ -39,7 +40,7 @@ def create_project_standard_tab(state, notebook):
     subtab_notebook = create_tab_with_subtabs(
         notebook, "Project Standard", subtab_names
     )
-    # main_tab =
+    main_tab = create_pjtMain_tab(state, subtab_notebook)
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
