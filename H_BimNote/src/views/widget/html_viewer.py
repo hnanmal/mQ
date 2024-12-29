@@ -1,16 +1,16 @@
-from cefpython3 import cefpython as cef
+from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 import tkinter as tk
-from tkinter import ttk
 import os
+import sys
 
 
-class BrowserWidget(ttk.Frame):
-    def __init__(self, parent, html_file=None, url=None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
+class BrowserWidget(QWidget):
+    def __init__(self, parent=None, html_file=None, url=None):
+        super().__init__(parent)
 
         # Determine whether to load a local file or a URL
         if html_file:
-            # Preprocess the path to handle backslashes
             path = os.path.abspath(html_file).replace("\\", "/")
             self.url = f"file:///{path}"
         elif url:
@@ -18,64 +18,60 @@ class BrowserWidget(ttk.Frame):
         else:
             raise ValueError("Either 'html_file' or 'url' must be provided.")
 
-        # Initialize CEF
-        self.init_cef()
+        # Set up layout for the browser
+        layout = QVBoxLayout(self)
 
-        # Create a Frame to hold the browser
-        self.browser_frame = ttk.Frame(self)
-        self.browser_frame.pack(fill="both", expand=True)
+        # Create the web view
+        self.browser = QWebEngineView()
+        layout.addWidget(self.browser)
 
-        # Embed the browser
-        self.browser = self.create_browser()
-
-        # Start the CEF message loop
-        self.after(10, self._cef_loop)
-
-    def init_cef(self):
-        """Initialize CEF with necessary configurations."""
-        settings = {
-            "multi_threaded_message_loop": False,
-            "command_line_args_disabled": False,
-        }
-
-        switches = {
-            "disable-gpu": "",
-            "disable-gpu-compositing": "",
-        }
-
-        cef.Initialize(settings=settings, switches=switches)
-
-    def create_browser(self):
-        """Create a browser instance embedded in the Tkinter Frame."""
-        window_info = cef.WindowInfo()
-        window_info.SetAsChild(self.browser_frame.winfo_id(), [0, 0, 800, 600])
-        return cef.CreateBrowserSync(window_info=window_info, url=self.url)
-
-    def _cef_loop(self):
-        """Integrate CEF event loop with Tkinter."""
-        cef.MessageLoopWork()
-        self.after(10, self._cef_loop)
-
-    def on_close(self):
-        """Shutdown CEF properly when the widget or app closes."""
-        cef.Shutdown()
+        # Load the provided URL or HTML file
+        self.browser.setUrl(self.url)
 
 
-# Example usage
+class EmbeddedBrowser:
+    def __init__(self, parent, html_file=None, url=None):
+        self.parent = parent
+
+        # Create the PyQt5 application
+        self.qt_app = QApplication.instance()
+        if not self.qt_app:
+            self.qt_app = QApplication([])
+
+        # Create the BrowserWidget
+        self.browser_widget = BrowserWidget(html_file=html_file, url=url)
+
+        # Create a tkinter Frame to hold the browser
+        self.tk_frame = tk.Frame(self.parent)
+        self.tk_frame.pack(fill="both", expand=True)
+
+        # Embed the PyQt5 widget into the tkinter Frame
+        self.browser_widget.winId()  # Ensure the widget has a native handle
+        self.embed_browser()
+
+    def embed_browser(self):
+        # Place the PyQt5 widget inside the tkinter Frame
+        self.browser_widget.setParent(None)
+        self.browser_widget.setGeometry(
+            0, 0, self.tk_frame.winfo_width(), self.tk_frame.winfo_height()
+        )
+
+        # Handle resizing
+        self.tk_frame.bind("<Configure>", self.resize_browser)
+
+    def resize_browser(self, event):
+        self.browser_widget.setGeometry(0, 0, event.width, event.height)
+
+    # Example usage in a tkinter application
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     root.geometry("1024x768")
-    root.title("In-App Browser Widget")
+    root.title("Embedded Browser in Tkinter")
 
     # Load a local HTML file
-    local_file = "example.html"  # Replace with your HTML file path
-    browser = BrowserWidget(root, html_file=local_file)
-    browser.pack(fill="both", expand=True, padx=10, pady=10)
+    html_file = "example.html"  # Replace with your HTML file path
+    browser = EmbeddedBrowser(root, html_file=html_file)
 
-    # Properly shut down CEF when closing the app
-    def on_close():
-        browser.on_close()
-        root.destroy()
-
-    root.protocol("WM_DELETE_WINDOW", on_close)
     root.mainloop()

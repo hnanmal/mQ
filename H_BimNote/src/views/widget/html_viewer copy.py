@@ -5,9 +5,18 @@ import os
 
 
 class BrowserWidget(ttk.Frame):
-    def __init__(self, parent, url, *args, **kwargs):
+    def __init__(self, parent, html_file=None, url=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.url = url
+
+        # Determine whether to load a local file or a URL
+        if html_file:
+            # Preprocess the path to handle backslashes
+            path = os.path.abspath(html_file).replace("\\", "/")
+            self.url = f"file:///{path}"
+        elif url:
+            self.url = url
+        else:
+            raise ValueError("Either 'html_file' or 'url' must be provided.")
 
         # Initialize CEF
         self.init_cef()
@@ -24,15 +33,14 @@ class BrowserWidget(ttk.Frame):
 
     def init_cef(self):
         """Initialize CEF with necessary configurations."""
-        # Pass command-line arguments directly in settings
         settings = {
-            "multi_threaded_message_loop": False,  # Required for Tkinter integration
-            "command_line_args_disabled": False,  # Allow custom command-line arguments
+            "multi_threaded_message_loop": False,
+            "command_line_args_disabled": False,
         }
 
         switches = {
-            "disable-gpu": "",  # Disable GPU rendering
-            "disable-gpu-compositing": "",  # Prevent compositing issues
+            "disable-gpu": "",
+            "disable-gpu-compositing": "",
         }
 
         cef.Initialize(settings=settings, switches=switches)
@@ -40,7 +48,6 @@ class BrowserWidget(ttk.Frame):
     def create_browser(self):
         """Create a browser instance embedded in the Tkinter Frame."""
         window_info = cef.WindowInfo()
-        # Embed the browser into the widget
         window_info.SetAsChild(self.browser_frame.winfo_id(), [0, 0, 800, 600])
         return cef.CreateBrowserSync(window_info=window_info, url=self.url)
 
@@ -54,15 +61,15 @@ class BrowserWidget(ttk.Frame):
         cef.Shutdown()
 
 
-# Example usage in a larger application
+# Example usage
 if __name__ == "__main__":
-    # Initialize the main application window
     root = tk.Tk()
     root.geometry("1024x768")
     root.title("In-App Browser Widget")
 
-    # Create the BrowserWidget
-    browser = BrowserWidget(root, url="https://www.python.org")
+    # Load a local HTML file
+    local_file = "example.html"  # Replace with your HTML file path
+    browser = BrowserWidget(root, html_file=local_file)
     browser.pack(fill="both", expand=True, padx=10, pady=10)
 
     # Properly shut down CEF when closing the app

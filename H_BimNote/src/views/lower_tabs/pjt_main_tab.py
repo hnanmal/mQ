@@ -2,8 +2,9 @@ import tkinter as tk
 import tkinter.font
 from PIL import Image, ImageTk
 from html.parser import HTMLParser
-from tkhtmlview import HTMLLabel
-from cefpython3 import cefpython as cef
+
+# from tkhtmlview import HTMLLabel
+# from cefpython3 import cefpython as cef
 
 # from tkinter import ttk
 import ttkbootstrap as ttk
@@ -155,6 +156,8 @@ def create_pjtMain_tab(state, subtab_notebook):
     pjt_rvtSummary_area.pack(padx=20, side=tk.TOP, anchor="nw")
     FilePathRegister(pjt_rvtSummary_area)
 
-    browser = BrowserWidget(section3, url="C:/Users/HEC/Pictures/RVT Summary.html")
+    browser = BrowserWidget(
+        section3, html_file="C:/Users/HEC/Pictures/RVT Summary.html"
+    )
     # browser = BrowserWidget(section3, url="https://www.python.org")
     browser.pack(fill="both", expand=True, padx=10, pady=10)
