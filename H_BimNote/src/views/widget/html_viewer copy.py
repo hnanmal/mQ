@@ -48,7 +48,7 @@ class BrowserWidget(ttk.Frame):
     def create_browser(self):
         """Create a browser instance embedded in the Tkinter Frame."""
         window_info = cef.WindowInfo()
-        window_info.SetAsChild(self.browser_frame.winfo_id(), [0, 0, 800, 600])
+        window_info.SetAsChild(self.browser_frame.winfo_id(), [0, 0, 1000, 800])
         return cef.CreateBrowserSync(window_info=window_info, url=self.url)
 
     def _cef_loop(self):

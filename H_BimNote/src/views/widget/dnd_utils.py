@@ -21,9 +21,11 @@ class FilePathRegister(ttk.Frame):
         self.entry.pack(pady=10, fill="x", padx=10)
 
         # Instruction Label
-        ttk.Label(self, text="Drag and drop a file here:", font=("Arial", 12)).pack(
-            pady=5
-        )
+        ttk.Label(
+            self,
+            text="→ 레빗 모델링이 있다면: \n\n    서머리파일을 드래그해주세요:",
+            font=("Arial", 10),
+        ).pack(pady=5)
 
         # Drop Area using Canvas
         self.drop_area = ttk.Canvas(

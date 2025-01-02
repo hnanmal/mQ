@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 
 def select_tab(notebook, parent_index, subtab_index=None):
@@ -80,3 +82,44 @@ class WidgetSwitcher:
         """Handle the combo box selection change event."""
         selected_widget_name = self.combo_box.get()
         self.show_widget(selected_widget_name)
+
+
+import tkinter as tk
+from tkinter import ttk
+
+
+class TabNavigationButton(tk.Frame):
+    def __init__(
+        self, parent, notebook, tab_index, button_text="Go to Tab", *args, **kwargs
+    ):
+        """
+        A widget that allows navigation to a specific tab in a Tkinter notebook.
+
+        :param parent: Parent Tkinter widget
+        :param notebook: The ttk.Notebook instance to navigate
+        :param tab_index: The index of the tab to navigate to
+        :param button_text: The text displayed on the navigation button
+        """
+        super().__init__(parent, *args, **kwargs)
+
+        self.notebook = notebook
+        self.tab_index = tab_index
+
+        # Create the navigation button
+        self.button = ttk.Button(
+            self,
+            text=button_text,
+            command=self.go_to_tab,
+            # bootstyle=SUCCESS,
+        )
+        self.button.pack(fill="both", padx=5, pady=5)
+        self.pack()
+
+    def go_to_tab(self):
+        """
+        Navigate to the specified tab in the notebook.
+        """
+        try:
+            self.notebook.select(self.tab_index)
+        except tk.TclError:
+            print(f"Error: Tab index {self.tab_index} is out of range.")

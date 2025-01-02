@@ -27,7 +27,7 @@ def define_styles():
         foreground="black",
         padding=[70, 0],
         # font=("Helvetica", 12, "bold"),
-        font=("Helvetica", 16, "normal"),
+        font=("Arial", 12, "normal"),
     )
 
     # Define a custom style for the subtabs
@@ -41,9 +41,10 @@ def define_styles():
         "Subtab.TNotebook.Tab",
         background="lightblue",
         foreground="darkblue",
-        padding=[5, 0],
-        font=("Helvetica", 12, "normal"),
+        # padding=[50, 0],
+        font=("Arial", 11, "normal"),
     )
+    style.configure("lefttab.TNotebook", tabposition="wn")
 
 
 def initialize_app(root):
@@ -60,6 +61,8 @@ def initialize_app(root):
     root.state("zoomed")
 
     define_styles()
+
+    state.tab_bootStyle = "secondary"
 
     menubar = Menu(root)
     root.config(menu=menubar)
@@ -84,7 +87,11 @@ def initialize_app(root):
     )
     paned_window.pack(expand=True, fill="both")
 
-    notebook = ttk.Notebook(paned_window, style="Main.TNotebook")
+    notebook = ttk.Notebook(
+        paned_window,
+        # style="Main.TNotebook",
+        bootstyle=state.tab_bootStyle,
+    )
     paned_window.add(notebook)
 
     # Ctrl+S 단축키를 'Save Team Standard' 기능에 연결

@@ -134,72 +134,11 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
     )
     std_matching_widget_area.pack(side="top", anchor="w")
 
-    pjtStd_matching_treeview_GWM = ProjectStd_WM_Selcet_SheetView_GWM(
+    pjtStd_WMselect_sheetview_GWM = ProjectStd_WM_Selcet_SheetView_GWM(
         state, std_matching_widget_area, pjtStdGWM_treeview
     )
-    state.pjtStd_matching_treeview_GWM = pjtStd_matching_treeview_GWM
-
-    # pjtStd_matching_treeview = TeamStd_WMmatching_TreeView(
-    #     state, std_matching_widget_area, pjtStdGWM_treeview, data_kind="std-GWM"
-    # )
-
-    # DefaultTreeViewStyleManager.apply_style(pjtStd_matching_treeview.treeview.tree)
-    # pjtStd_matching_treeview.treeview.tree.config(height=800)
-    # state.pjtStd_matching_treeview_GWM = pjtStd_matching_treeview
-
-    # std_matching_btn_area = ttk.Frame(
-    #     section2,
-    #     width=100,
-    # )
-    # std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
-    # # Create a button and place it in the window
-    # add_button = tk.Button(
-    #     std_matching_btn_area,
-    #     text="Add 🡇",  # Button text
-    #     command=lambda: handle_add_button_press(
-    #         state,
-    #         # data_kind="std-GWM",
-    #         related_widget=pjtStdGWM_treeview,
-    #     ),  # Function to call when clicked
-    #     font=("Arial", 10),  # Custom font for button text
-    #     bg="#fffec0",  # Background color
-    #     fg="black",  # Text color
-    #     width=8,  # Width of the button
-    #     height=1,  # Height of the button
-    #     relief=tk.RAISED,
-    # )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-
-    # # state.std_matching_add_btn = add_button
-
-    # # Create a button and place it in the window
-    # del_button = tk.Button(
-    #     std_matching_btn_area,
-    #     text="Del 🡅",  # Button text
-    #     command=lambda: handle_del_button_press(
-    #         state,
-    #         # data_kind="std-GWM",
-    #         related_widget=pjtStdGWM_treeview,
-    #     ),  # Function to call when clicked
-    #     font=("Arial", 10),  # Custom font for button text
-    #     bg="#fffec0",  # Background color
-    #     fg="black",  # Text color
-    #     width=8,  # Width of the button
-    #     height=1,  # Height of the button
-    #     relief=tk.RAISED,
-    # )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-    # del_button.pack(
-    #     side="left", padx=5, pady=5, anchor="nw"
-    # )  # Add padding around the button
-    # add_button.pack(
-    #     side="left", padx=5, pady=5, anchor="nw"
-    # )  # Add padding around the button
-
-    # # print(state.std_edit_mode)
-
-    # ##############################################################
-    # ## section 3###########
-
-    # WMs_sheet = TeamStd_WMsSheetView(state, section3)
+    ## 체크표시만 pjt-GWM에 GMW-WM 항목별로 저장하고, 시트불러올때는 std-GWM불러온뒤 체크표시만 pjt-GWM으로 업데이트 하면 어떤가?
+    state.pjtStd_WMselect_sheetview_GWM = pjtStd_WMselect_sheetview_GWM
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(

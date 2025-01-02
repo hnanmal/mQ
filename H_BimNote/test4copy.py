@@ -1,48 +1,80 @@
 import tkinter as tk
-from tkinter import ttk
-import time  # Simulate loading delay
+from ttkbootstrap import ttk, Window
+from ttkbootstrap.constants import *
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from PIL import Image, ImageTk
 
 
-def create_tabs():
-    """Create tabs and update progress during initialization."""
-    total_tabs = 5  # Total number of tabs
-    for i in range(total_tabs):
-        # Simulate some loading time for each tab
-        time.sleep(0.5)
+class DashboardWidget(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.pack(fill="both", expand=True, padx=10, pady=10)
+        self.init_ui()
 
-        # Create a new tab
-        frame = tk.Frame(notebook)
-        tk.Label(frame, text=f"Content of Tab {i + 1}").pack(pady=50)
-        notebook.add(frame, text=f"Tab {i + 1}")
+    def init_ui(self):
+        # Top Frame for Dashboard Title
+        title_frame = ttk.Frame(self)
+        title_frame.pack(fill="x", pady=10)
+        ttk.Label(title_frame, text="Dashboard", font=("Arial", 24, "bold")).pack()
 
-        # Update progress
-        progress_value.set(
-            (i + 1) / total_tabs * 100
-        )  # Update progress as a percentage
-        root.update_idletasks()  # Refresh the UI
+        # Main Content Frame
+        content_frame = ttk.Frame(self)
+        content_frame.pack(fill="both", expand=True)
+
+        # Left Panel: Stats
+        stats_frame = ttk.Frame(content_frame)
+        stats_frame.pack(side=LEFT, fill="y", padx=10, pady=10)
+
+        ttk.Label(stats_frame, text="Key Metrics", font=("Arial", 18)).pack(
+            anchor="w", pady=10
+        )
+        self.add_stat(stats_frame, "Total Users", "1,245")
+        self.add_stat(stats_frame, "Active Sessions", "322")
+        self.add_stat(stats_frame, "Revenue", "$10,542")
+
+        # Right Panel: Graph
+        graph_frame = ttk.Frame(content_frame)
+        graph_frame.pack(side=LEFT, fill="both", expand=True, padx=10, pady=10)
+
+        self.add_chart(graph_frame)
+
+    def add_stat(self, parent, label, value):
+        """Add a stat to the stats panel."""
+        frame = ttk.Frame(parent)
+        frame.pack(fill="x", pady=5)
+        ttk.Label(frame, text=label, font=("Arial", 12)).pack(side=LEFT)
+        ttk.Label(frame, text=value, font=("Arial", 14, "bold"), bootstyle=INFO).pack(
+            side=RIGHT
+        )
+
+    def add_chart(self, parent):
+        """Add a chart to the graph panel."""
+        # Sample data
+        x = ["Jan", "Feb", "Mar", "Apr", "May"]
+        y = [10, 20, 15, 25, 30]
+
+        # Create a Matplotlib Figure
+        fig = Figure(figsize=(5, 4), dpi=100)
+        ax = fig.add_subplot(111)
+        ax.plot(x, y, marker="o")
+        ax.set_title("Monthly Growth")
+        ax.set_ylabel("Value")
+        ax.set_xlabel("Month")
+
+        # Embed the Matplotlib figure into Tkinter
+        canvas = FigureCanvasTkAgg(fig, parent)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
 
 
-# Main application window
-root = tk.Tk()
-root.title("Progress During Tab Creation")
-root.geometry("400x300")
+# Example Usage
+if __name__ == "__main__":
+    app = Window(themename="journal")
+    app.title("Dashboard Example")
+    app.geometry("800x600")
 
-# Progress bar value tracker
-progress_value = tk.DoubleVar()
-progress_value.set(0)  # Initialize progress to 0%
+    dashboard = DashboardWidget(app)
+    dashboard.pack(fill="both", expand=True)
 
-# Progress bar
-progress_bar = ttk.Progressbar(
-    root, orient="horizontal", mode="determinate", maximum=100, variable=progress_value
-)
-progress_bar.pack(pady=20, fill="x", padx=20)
-
-# Notebook (Tab container)
-notebook = ttk.Notebook(root)
-notebook.pack(expand=True, fill="both")
-
-# Create tabs with progress tracking
-create_tabs()
-
-# Run the application
-root.mainloop()
+    app.mainloop()

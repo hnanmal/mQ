@@ -58,7 +58,17 @@ def main():
 
     notebook.select(1)
 
+    # # Handle window close event
+    # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))
+
     root.mainloop()
+
+
+def close_app(root, state):
+    """Ensure CEF and other resources are properly shut down."""
+    if hasattr(state, "browser_widget"):
+        state.browser_widget.on_close()  # Shutdown CEF properly
+    root.destroy()
 
 
 def show_splash_screen():

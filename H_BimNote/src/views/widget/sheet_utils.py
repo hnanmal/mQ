@@ -245,45 +245,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
-    def get_level3_children_data(self):
-        selected_item = self.related_widget.selected_item.get()
-
-        # try:
-        #     # state에서 "std-GWM" 데이터 가져오기
-        #     gwm_data = self.state.team_std_info.get("std-GWM", {})
-
-        #     # 3레벨 아이템의 children 찾기
-        #     result = []
-
-        #     def find_level3_children(data, current_level=1):
-        #         if isinstance(data, dict):
-        #             if current_level == 3 and "children" in data:
-        #                 result.extend(data["children"])
-        #             elif "children" in data:
-        #                 for child in data["children"]:
-        #                     find_level3_children(child, current_level + 1)
-
-        #     find_level3_children(gwm_data)
-        #     return result
-        # except Exception as e:
-        #     print(f"Error getting level 3 children data: {e}")
-        #     return []
-
-        try:
-            # state에서 "std-GWM" 데이터 가져오기
-            gwm_data = self.state.team_std_info["std-GWM"]
-            path = selected_item.split(" | ")
-            print(path)
-
-            result = self.treeDataManager.find_node_by_path(gwm_data, path)
-            # print(result)
-            # gwm_data["children"][gf][f][s]["children"]
-
-            return result
-        except Exception as e:
-            print(f"Error getting level 3 children data: {e}")
-            return []
-
     def set_edit_mode(self, mode):
         # 편집 모드 설정
         if mode == "edit":
@@ -343,11 +304,6 @@ class TeamStd_WMsSheetView:
         # print(sheetview_data)
         if not sheetview_data:
             self.sheetview.sheet.set_sheet_data(data_forSheet)
-
-        # elif sorted(sheetview_data) == sorted(data_forSheet):
-        #     pass
-        # else:
-        #     self.sheetview.sheet.set_sheet_data(data_forSheet)
 
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""

@@ -35,7 +35,6 @@ class AppState:
         self.project_apply_info = {}
         self.undo_stack = []
 
-    # def _notify_selected_change(self, *args):
     def _notify_selected_change(self, *args):
         try:
             self.std_matching_treeview_GWM.update(self)
@@ -53,7 +52,7 @@ class AppState:
             pass
 
         try:
-            self.pjtStd_matching_treeview_GWM.update(self)
+            self.pjtStd_WMselect_sheetview_GWM.update(self)
         except:
             pass
 
