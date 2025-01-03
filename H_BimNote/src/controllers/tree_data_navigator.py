@@ -228,6 +228,77 @@ class TreeDataManager:
         except Exception as e:
             print(f"Error deleting node: {e}")
 
+    def copy_node(self, data_kind, selected_name, new_name):
+        """Copy the selected node and its children, placing the copy directly below the original."""
+        try:
+            # Find the parent node and the selected node to copy
+            def find_parent_node_recursive(data, target_name):
+                if not isinstance(data, list):
+                    return None, None
+                for node in data:
+                    if "children" in node:
+                        # Check if the target node is in the children
+                        for child in node["children"]:
+                            if child["name"] == target_name:
+                                return node, child
+                        # Recur to find the parent in deeper levels
+                        parent_node, child_node = find_parent_node_recursive(
+                            node["children"], target_name
+                        )
+                        if parent_node:
+                            return parent_node, child_node
+                return None, None
+
+            # Find the parent and selected node
+            parent_node, selected_node = find_parent_node_recursive(
+                self.team_std_info[data_kind]["children"], selected_name
+            )
+
+            if not selected_node:
+                print(f"Could not find the node '{selected_name}' to copy.")
+                return
+
+            # Create a deep copy of the selected node
+            def deep_copy_node(node, new_name=None):
+                """Deep copy a node, renaming it if a new_name is provided."""
+                copied_node = {
+                    "name": new_name if new_name else node["name"],
+                    "values": node["values"][:],  # Copy values
+                }
+
+                # Check if the node has children
+                if "children" in node:
+                    if isinstance(node["children"], list):
+                        # Check if children are tree nodes or simple items
+                        if all(isinstance(child, dict) for child in node["children"]):
+                            # Deep copy child tree nodes
+                            copied_node["children"] = [
+                                deep_copy_node(child) for child in node["children"]
+                            ]
+                        else:
+                            # Directly copy the list of items
+                            copied_node["children"] = node["children"][:]
+                    else:
+                        # If children is not a list, handle it gracefully
+                        copied_node["children"] = []
+
+                return copied_node
+
+            # Generate a deep copy with a new name
+            copied_node = deep_copy_node(selected_node, new_name)
+            print(f"\ncopied_node: {copied_node}\n")
+
+            # Insert the copied node directly after the selected node in the parent's children
+            if parent_node:
+                index = parent_node["children"].index(selected_node)
+                parent_node["children"].insert(index + 1, copied_node)
+                print(f"Copied node '{selected_name}' to '{new_name}'.")
+            else:
+                print(f"Parent node not found for '{selected_name}'.")
+
+        except Exception as e:
+            print(f"Error copying node: {e}")
+
 
 class TreeDataManager_treeview(TreeDataManager):
     def __init__(self, state, related_widget=None):

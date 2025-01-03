@@ -123,7 +123,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             "row_select",  # Allow row selection
             "column_select",  # Allow column selection
             "drag_select",  # Allow drag selection
-            # "column_width_resize",
+            "column_width_resize",
             "row_height_resize",
             "double_click_column_resize",
             "copy",
@@ -134,6 +134,14 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             "rc_delete_row",
             "arrowkeys",
         )
+
+        # Bind checkbox clicks
+        self.sheet.extra_bindings(
+            [
+                ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+            ]
+        )
+
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
 
@@ -153,7 +161,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 90, 25, 2000])
+        self.sheet.set_column_widths([25, 200, 25, 2000])
         # self.sheet.align_columns({0: "center"})
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
@@ -163,6 +171,68 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         # self.sheet.set_options(font=("Arial", 9, "normal"))
         # self.sheet.set_options(font=("디자인하우스 Light", 11, "normal"))
         self.sheet.set_options(default_row_height=30)
+
+    def on_checkbox_click(self, event):
+        """Callback for checkbox clicks."""
+        self.state.log_widget.write(
+            f"{self.__class__.__name__} > on_checkbox_click 메소드 시작"
+        )
+        selected_item_str = self.selected_item_relate_widget.get()
+        project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
+
+        # print(self.sheet.get_data())
+
+        row = event["row"]
+        column = event["column"]
+        for r in range(self.sheet.get_total_rows()):
+            if r != row:
+                self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
+
+        # Ensure the clicked checkbox remains selected
+        self.sheet.set_cell_data(row, 0, True)
+
+        loc = list(event["cells"]["table"].keys())[0]
+        row_check_status = event["value"]
+
+        self.state.log_widget.write(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
+
+        wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
+
+        if column == 0:
+            if project_GWM:
+                spec = project_GWM[-1]
+            else:
+                spec = go(
+                    self.sheet.get_cell_data(row, 3).split(" | "),
+                    filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
+                    lambda x: "\n".join(x),
+                )
+            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+        elif column == 1:
+            spec = event["value"]
+            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+
+        # if row_check_status:
+        self.state.team_std_info["project-GWM"].update(
+            {selected_item_str: [wm_code, unit, spec]}
+        )
+        self.state.log_widget.write(
+            self.state.team_std_info["project-GWM"][selected_item_str]
+        )
+        self.highlight_checked_row()
+
+    def highlight_checked_row(self):
+        """Update row highlights based on checkbox values."""
+        checked_rows = []
+        for row in range(self.sheet.get_total_rows()):
+            if self.sheet.get_cell_data(row, 0):  # If checkbox is checked
+                checked_rows.append(row)
+
+        # Clear existing highlights
+        self.sheet.dehighlight_all()
+        self.sheet.highlight_rows(
+            checked_rows, highlight_index=False, bg="#D3F9D8"
+        )  # Light green
 
     def update(self, event=None):
         state = self.state
@@ -210,18 +280,46 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                         if selected_node:
                             # Clear the TreeView and insert the data for the selected node
                             self.sheet.clear()
-                            # self.treeview.clear_treeview()
 
                             # Wrap the children of the selected node for insertion
                             wrapped_data = go(
                                 selected_node["children"],
                                 map(
-                                    lambda x: ["", "", "", x]
-                                ),  ## std-GWM 항목을 복사해서 "pjtStd-GWM"로 state에 저장하도록 하는 로직 추가 시 이 부분 변경 필요
+                                    lambda x: [
+                                        "",
+                                        go(
+                                            x.split(" | "),
+                                            filter(
+                                                lambda x: ("(   )" in x)
+                                                or ("(   )" in x)
+                                                or ("(  )" in x)
+                                            ),
+                                            lambda x: "\n".join(x),
+                                        ),
+                                        x.split(" | ")[-3],
+                                        x,
+                                    ]
+                                ),
                                 list,
                             )
+
+                            selected_item_str = self.selected_item_relate_widget.get()
+                            decided_WM = state.team_std_info["project-GWM"].get(
+                                selected_item_str, None
+                            )
+
+                            tgt_rowIdx = 0
+                            if decided_WM:
+                                for idx, row in enumerate(wrapped_data):
+                                    if decided_WM[0] in row[-1]:
+                                        row[0] = True
+                                        row[1] = decided_WM[-1]
+                                        row[2] = decided_WM[-2]
+                                        tgt_rowIdx = idx
+
                             # self.treeview.insert_data_with_levels(wrapped_data)
                             self.sheet.set_sheet_data(wrapped_data)
+                            self.sheet.see(tgt_rowIdx, 0)
                         else:
                             self.state.log_widget.write(
                                 f"Selected item '{selected_item_name}' not found."
@@ -241,7 +339,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             )
 
         self.setup_column_style()
-        # self.treeview.expand_tree_to_level(level=view_level)
+        self.highlight_checked_row()
 
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 

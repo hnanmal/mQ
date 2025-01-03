@@ -194,6 +194,8 @@ class TreeViewContextMenu:
         self.menu.add_command(label="Add Item", command=self.add_item)
         # self.menu.add_command(label="Edit Item", command=self.edit_item)
         self.menu.add_command(label="Delete Item", command=self.delete_item)
+        if "copy_GWM" in funcs:
+            self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
 
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
@@ -216,6 +218,10 @@ class TreeViewContextMenu:
         self.locked_status = status
         self.state.log_widget.write(f"Locked Status Updated: {self.locked_status}")
 
+    def copy_GWM(self):
+        func = self.funcs.get("copy_GWM")
+        func()
+
     def add_top_item(self):
         func = self.funcs.get("add_top")
         func()
@@ -234,7 +240,8 @@ class TreeViewContextMenu:
 
 
 class BaseTreeView:
-    def __init__(self, parent, headers):
+    def __init__(self, state, parent, headers):
+        self.state = state
         self.tree = ttk.Treeview(parent, columns=headers, show="headings")
         # self.tree = Tableview(parent, columns=headers, show="headings")
         self.setup_columns(headers)
@@ -496,7 +503,7 @@ class TeamStd_GWMTreeView:
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # config selection mode
@@ -526,6 +533,7 @@ class TeamStd_GWMTreeView:
             add_top=self.add_top_item,
             add=self.add_item,
             delete=self.delete_item,
+            copy_GWM=self.copy_GWM,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
@@ -650,6 +658,21 @@ class TeamStd_GWMTreeView:
         )
         return list(reversed(parent_ids))
 
+    def copy_GWM(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "_Copy"
+
+        self.treeDataManager.copy_node(self.data_kind, selected_item_name, new_name)
+        state.observer_manager.notify_observers(state)
+
     def add_top_item(self):
         state = self.state
         # Prompt the user for the new item name
@@ -716,7 +739,7 @@ class TeamStd_WMmatching_TreeView:
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
@@ -859,7 +882,7 @@ class TeamStd_SWMTreeView:
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # config selection mode
@@ -1083,7 +1106,7 @@ class TeamStd_CommonInputTreeView:
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # config selection mode
@@ -1306,7 +1329,7 @@ class TeamStd_FamlistTreeView:
         self.level_combobox.bind("<<ComboboxSelected>>", self.on_level_selected)
         self.level_combobox.pack(pady=5)
 
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # self.state.on_level_selected = self.on_level_selected
@@ -1596,7 +1619,7 @@ class TeamStd_calcDict_TreeView:
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.add_update_button(tree_frame)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # config selection mode
@@ -1852,7 +1875,7 @@ class BuildingList_TreeView(ttk.Frame):
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
         self.tree_frame = tree_frame
-        self.treeview = BaseTreeView(tree_frame, headers)
+        self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
 
         # config selection mode
