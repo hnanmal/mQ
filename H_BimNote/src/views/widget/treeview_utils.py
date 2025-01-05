@@ -670,7 +670,41 @@ class TeamStd_GWMTreeView:
         )[0]
         new_name = selected_item_name + "_Copy"
 
-        self.treeDataManager.copy_node(self.data_kind, selected_item_name, new_name)
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            self.data_kind,
+            # selected_item_name,
+            path,
+            new_name,
+        )
         state.observer_manager.notify_observers(state)
 
     def add_top_item(self):
@@ -714,10 +748,25 @@ class TeamStd_GWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        parent_item_name = go(
+            parent_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        grand_parent_item_name = go(
+            grand_parent_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
 
         self.treeDataManager.delete_node(
             self.data_kind,
-            selected_item_name,
+            # selected_item_name,
+            [grand_parent_item_name, parent_item_name, selected_item_name],
         )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
