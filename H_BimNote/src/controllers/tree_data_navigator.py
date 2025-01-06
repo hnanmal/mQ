@@ -124,10 +124,10 @@ class TreeDataManager:
         if selected_node is not None:
             selected_node["name"] = new_name
             # Ensure that the name is also updated in the corresponding value at the level column index
-            depth = self.get_node_depth(selected_node)
-            if len(selected_node["values"]) > depth:
-                selected_node["values"][depth] = new_name
-            print(f"Updated node name: {selected_node['name']} to {new_name}")
+            # depth = self.get_node_depth(selected_node)
+            # if len(selected_node["values"]) > depth:
+            #     selected_node["values"][depth] = new_name
+            # print(f"Updated node name: {selected_node['name']} to {new_name}")
         else:
             print(f"Could not find node '{path}' to update name.")
 
@@ -193,45 +193,10 @@ class TreeDataManager:
         except Exception as e:
             print(f"Error adding child node: {e}")
 
-    # def delete_node(self, data_kind, selected_name):
-    #     """Delete the specified node from the tree."""
-    #     try:
-    #         # Try to find the parent node of the selected item
-    #         def find_parent_node_recursive(data, target_name):
-    #             if not isinstance(data, list):
-    #                 return None, None
-    #             for node in data:
-    #                 if "children" in node:
-    #                     # Check if the target node is in the children
-    #                     for child in node["children"]:
-    #                         if child["name"] == target_name:
-    #                             return node, child
-    #                     # Recur to find the parent in deeper levels
-    #                     parent_node, child_node = find_parent_node_recursive(
-    #                         node["children"], target_name
-    #                     )
-    #                     if parent_node:
-    #                         return parent_node, child_node
-    #             return None, None
-
-    #         # Find the parent node and the selected node to delete
-    #         parent_node, selected_node = find_parent_node_recursive(
-    #             self.team_std_info[data_kind]["children"], selected_name
-    #         )
-
-    #         if parent_node and selected_node:
-    #             # Remove the selected node from the parent's children
-    #             parent_node["children"].remove(selected_node)
-    #             print(f"Deleted node: {selected_name}")
-    #         else:
-    #             print(f"Could not find selected node '{selected_name}' or its parent.")
-    #     except Exception as e:
-    #         print(f"Error deleting node: {e}")
-
     def delete_node(self, data_kind, path):
         """Delete the specified node from the tree based on its path."""
         try:
-            # Find the node by traversing the path
+            # Helper function to find a node by traversing the path
             def find_node_by_path(data, path):
                 current_node = None
                 for name in path:
@@ -240,11 +205,20 @@ class TreeDataManager:
                             (node for node in data if node.get("name") == name), None
                         )
                         if current_node is None:
-                            return None, None
+                            return None  # Stop if the node doesn't exist
                         data = current_node.get("children", [])
                     else:
-                        return None, None
+                        return None  # If data is not a list, stop traversal
                 return current_node
+
+            # Validate the path
+            if not path or not isinstance(path, list):
+                print("Invalid path: Path must be a non-empty list of node names.")
+                return
+
+            if data_kind not in self.team_std_info:
+                print(f"Invalid data kind: {data_kind}")
+                return
 
             # Ensure the path includes the parent's path and the target node name
             parent_path = path[:-1]
@@ -255,31 +229,85 @@ class TreeDataManager:
                 self.team_std_info[data_kind]["children"], parent_path
             )
 
-            if parent_node and "children" in parent_node:
-                # Find the target node in the parent's children
-                target_node = next(
-                    (
-                        node
-                        for node in parent_node["children"]
-                        if node.get("name") == target_name
-                    ),
-                    None,
-                )
-
-                if target_node:
-                    # Remove the target node from the parent's children
-                    parent_node["children"].remove(target_node)
-                    print(f"Deleted node: {target_name}")
-                else:
-                    print(
-                        f"Could not find target node '{target_name}' in the specified path."
-                    )
-            else:
+            if not parent_node or "children" not in parent_node:
                 print(f"Could not find parent node for path: {parent_path}")
+                return
+
+            # Find the target node in the parent's children
+            target_node = next(
+                (
+                    node
+                    for node in parent_node["children"]
+                    if node.get("name") == target_name
+                ),
+                None,
+            )
+
+            if not target_node:
+                print(
+                    f"Could not find target node '{target_name}' in the specified path."
+                )
+                return
+
+            # Remove the target node from the parent's children
+            parent_node["children"].remove(target_node)
+            print(f"Deleted node: {target_name}")
+
         except Exception as e:
             print(f"Error deleting node: {e}")
 
-    def copy_node(self, data_kind, path, new_name):
+    # def delete_node(self, data_kind, path):
+    #     """Delete the specified node from the tree based on its path."""
+    #     try:
+    #         # Find the node by traversing the path
+    #         def find_node_by_path(data, path):
+    #             current_node = None
+    #             for name in path:
+    #                 if isinstance(data, list):
+    #                     current_node = next(
+    #                         (node for node in data if node.get("name") == name), None
+    #                     )
+    #                     if current_node is None:
+    #                         return None, None
+    #                     data = current_node.get("children", [])
+    #                 else:
+    #                     return None, None
+    #             return current_node
+
+    #         # Ensure the path includes the parent's path and the target node name
+    #         parent_path = path[:-1]
+    #         target_name = path[-1]
+
+    #         # Find the parent node
+    #         parent_node = find_node_by_path(
+    #             self.team_std_info[data_kind]["children"], parent_path
+    #         )
+
+    #         if parent_node and "children" in parent_node:
+    #             # Find the target node in the parent's children
+    #             target_node = next(
+    #                 (
+    #                     node
+    #                     for node in parent_node["children"]
+    #                     if node.get("name") == target_name
+    #                 ),
+    #                 None,
+    #             )
+
+    #             if target_node:
+    #                 # Remove the target node from the parent's children
+    #                 parent_node["children"].remove(target_node)
+    #                 print(f"Deleted node: {target_name}")
+    #             else:
+    #                 print(
+    #                     f"Could not find target node '{target_name}' in the specified path."
+    #                 )
+    #         else:
+    #             print(f"Could not find parent node for path: {parent_path}")
+    #     except Exception as e:
+    #         print(f"Error deleting node: {e}")
+
+    def copy_node(self, data_kind, path, new_name, name_depth):
         """Copy the selected node and its children, placing the copy directly below the original."""
         try:
             # Find the node by traversing the path
@@ -331,7 +359,8 @@ class TreeDataManager:
                 depth = node["values"].index(node["name"])
 
                 new_values = node["values"][:]
-                if depth == 1:
+                # if depth == 1:
+                if depth == name_depth:
                     new_values[depth] = new_name
 
                 copied_node = {
@@ -497,27 +526,66 @@ class TreeDataManager_treeview(TreeDataManager):
     def match_GWMitems_to_stdFam(
         self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems
     ):
-        """Add specified matched WMs to the children of the selected node."""
+        """Add specified matched WMs to the children of the selected node, recognizing derived items by inclusion."""
         _, parent_node, selected_node = self.get_node_path(
             data_kind, grandparent_name, parent_name, child_name
         )
         selected_GWMitems_copy = deepcopy(selected_GWMitems)
 
+        # Get existing child names for recognition of derivatives
+        existing_names = {child["name"] for child in selected_node.get("children", [])}
+
         for selected_GWMitem in selected_GWMitems_copy:
+            # Check if the item is a derivative by inclusion
+            base_name = selected_GWMitem["name"]
+            derived_from = next(
+                (name for name in existing_names if base_name.startswith(name)), None
+            )
+
+            if derived_from:
+                # Recognized as a derived item, update its name to include base name
+                selected_GWMitem["name"] = (
+                    base_name  # The name already represents the derived item
+                )
+
+            # Update the values for the item
             new_values = list(selected_GWMitem["values"])
-            new_values.insert(0, "")
+            new_values.insert(0, "")  # Add placeholders for columns
             new_values.insert(0, "")
             new_values.insert(0, "")
             selected_GWMitem.update({"values": new_values})
 
-            children = list(selected_GWMitem["children"])
+            # Copy formulas for the children if they match a reference item
+            children = list(selected_GWMitem.get("children", []))
+            reference_items = (
+                selected_node.get("children", [])
+                if isinstance(selected_node, dict)
+                else []
+            )
             for child in children:
+                # Find a matching reference child by name
+                matching_reference = next(
+                    (ref for ref in reference_items if ref["name"] == child["name"]),
+                    None,
+                )
+
+                # Copy formula from the matching reference if available
                 new_child_value = list(child["values"])
-                new_child_value.insert(0, "")
+                if matching_reference:
+                    formula_index = (
+                        len(new_child_value) - 1
+                    )  # Assuming formula is the last value
+                    if formula_index >= 0:
+                        new_child_value[formula_index] = matching_reference["values"][
+                            -1
+                        ]
+
+                new_child_value.insert(0, "")  # Add placeholders for columns
                 new_child_value.insert(0, "")
                 new_child_value.insert(0, "")
                 child.update({"values": new_child_value})
 
+        # Add the new GWM items to the appropriate location
         if isinstance(selected_node, list) and selected_GWMitems_copy:
             # Handle adding to list of strings (last level)
             print(f"Adding matched WMs: {selected_GWMitems_copy}")
@@ -526,6 +594,39 @@ class TreeDataManager_treeview(TreeDataManager):
             # Handle adding matched WMs to regular children
             print(f"Adding matched WMs: {selected_GWMitems_copy}")
             selected_node["children"].extend(selected_GWMitems_copy)
+
+    # def match_GWMitems_to_stdFam(
+    #     self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems
+    # ):
+    #     """Add specified matched WMs to the children of the selected node."""
+    #     _, parent_node, selected_node = self.get_node_path(
+    #         data_kind, grandparent_name, parent_name, child_name
+    #     )
+    #     selected_GWMitems_copy = deepcopy(selected_GWMitems)
+
+    #     for selected_GWMitem in selected_GWMitems_copy:
+    #         new_values = list(selected_GWMitem["values"])
+    #         new_values.insert(0, "")
+    #         new_values.insert(0, "")
+    #         new_values.insert(0, "")
+    #         selected_GWMitem.update({"values": new_values})
+
+    #         children = list(selected_GWMitem["children"])
+    #         for child in children:
+    #             new_child_value = list(child["values"])
+    #             new_child_value.insert(0, "")
+    #             new_child_value.insert(0, "")
+    #             new_child_value.insert(0, "")
+    #             child.update({"values": new_child_value})
+
+    #     if isinstance(selected_node, list) and selected_GWMitems_copy:
+    #         # Handle adding to list of strings (last level)
+    #         print(f"Adding matched WMs: {selected_GWMitems_copy}")
+    #         parent_node["children"].extend(selected_GWMitems_copy)
+    #     elif selected_node and "children" in selected_node and selected_GWMitems_copy:
+    #         # Handle adding matched WMs to regular children
+    #         print(f"Adding matched WMs: {selected_GWMitems_copy}")
+    #         selected_node["children"].extend(selected_GWMitems_copy)
 
 
 class TreeDataManager_treesheet(TreeDataManager):

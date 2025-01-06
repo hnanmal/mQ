@@ -196,7 +196,8 @@ class TreeViewContextMenu:
         self.menu.add_command(label="Delete Item", command=self.delete_item)
         if "copy_GWM" in funcs:
             self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
-
+        elif "copy_SWM" in funcs:
+            self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
 
@@ -220,6 +221,10 @@ class TreeViewContextMenu:
 
     def copy_GWM(self):
         func = self.funcs.get("copy_GWM")
+        func()
+
+    def copy_SWM(self):
+        func = self.funcs.get("copy_SWM")
         func()
 
     def add_top_item(self):
@@ -700,10 +705,10 @@ class TeamStd_GWMTreeView:
         print(f"path: {path}")
 
         self.treeDataManager.copy_node(
-            self.data_kind,
-            # selected_item_name,
-            path,
-            new_name,
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=1,
         )
         state.observer_manager.notify_observers(state)
 
@@ -741,35 +746,80 @@ class TeamStd_GWMTreeView:
     def delete_item(self):
         state = self.state
 
+        # Get the selected item ID
         selected_item_id = self.treeview.tree.selection()
-        selected_item_name = go(
-            selected_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
-        parent_item_id = self.treeview.tree.parent(selected_item_id)
-        parent_item_name = go(
-            parent_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
-        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-        grand_parent_item_name = go(
-            grand_parent_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
+        if not selected_item_id:
+            print("No item selected.")
+            return
+        selected_item_id = selected_item_id[0]  # Handle single selection case
 
-        self.treeDataManager.delete_node(
-            self.data_kind,
-            # selected_item_name,
-            [grand_parent_item_name, parent_item_name, selected_item_name],
-        )
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        # Get the full path of the selected item
+        full_path = get_full_path(selected_item_id)
+        print(f"Deleting item with path: {full_path}")
+
+        # Validate the constructed path
+        if not full_path:
+            print("Could not construct a valid path for the selected item.")
+            return
+
+        # Pass the full path to the delete_node method
+        try:
+            self.treeDataManager.delete_node(self.data_kind, full_path)
+            print(f"Successfully deleted item with path: {full_path}")
+        except Exception as e:
+            print(f"Error deleting item with path {full_path}: {e}")
+
+        # Notify observers about the state update
         state.observer_manager.notify_observers(state)
+
+    # def delete_item(self):
+    #     state = self.state
+
+    #     selected_item_id = self.treeview.tree.selection()
+    #     selected_item_name = go(
+    #         selected_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
+    #     parent_item_name = go(
+    #         parent_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+    #     grand_parent_item_name = go(
+    #         grand_parent_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+
+    #     self.treeDataManager.delete_node(
+    #         self.data_kind,
+    #         # selected_item_name,
+    #         [grand_parent_item_name, parent_item_name, selected_item_name],
+    #     )
+    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+    #     state.observer_manager.notify_observers(state)
 
 
 class PjtStd_GWMTreeView(TeamStd_GWMTreeView):
@@ -925,7 +975,8 @@ class TeamStd_SWMTreeView:
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
-        headers = ["분류", "S-WM", "Item"]
+        # headers = ["분류", "S-WM", "Item"]
+        headers = ["분류-1", "분류-2", "S-WM"]
         hdr_widths = [127, 60, 100]
 
         # Compose TreeView, Style Manager, and State Observer
@@ -961,6 +1012,7 @@ class TeamStd_SWMTreeView:
             add_top=self.add_top_item,
             add=self.add_item,
             delete=self.delete_item,
+            copy_SWM=self.copy_SWM,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
@@ -1086,6 +1138,55 @@ class TeamStd_SWMTreeView:
         )
         return list(reversed(parent_ids))
 
+    def copy_SWM(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "_Copy"
+
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=2,
+        )
+        state.observer_manager.notify_observers(state)
+
     def add_top_item(self):
         state = self.state
         # Prompt the user for the new item name
@@ -1120,20 +1221,80 @@ class TeamStd_SWMTreeView:
     def delete_item(self):
         state = self.state
 
+        # Get the selected item ID
         selected_item_id = self.treeview.tree.selection()
-        selected_item_name = go(
-            selected_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
+        if not selected_item_id:
+            print("No item selected.")
+            return
+        selected_item_id = selected_item_id[0]  # Handle single selection case
 
-        self.treeDataManager.delete_node(
-            self.data_kind,
-            selected_item_name,
-        )
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        # Get the full path of the selected item
+        full_path = get_full_path(selected_item_id)
+        print(f"Deleting item with path: {full_path}")
+
+        # Validate the constructed path
+        if not full_path:
+            print("Could not construct a valid path for the selected item.")
+            return
+
+        # Pass the full path to the delete_node method
+        try:
+            self.treeDataManager.delete_node(self.data_kind, full_path)
+            print(f"Successfully deleted item with path: {full_path}")
+        except Exception as e:
+            print(f"Error deleting item with path {full_path}: {e}")
+
+        # Notify observers about the state update
         state.observer_manager.notify_observers(state)
+
+    # def delete_item(self):
+    #     state = self.state
+
+    #     selected_item_id = self.treeview.tree.selection()
+    #     selected_item_name = go(
+    #         selected_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
+    #     parent_item_name = go(
+    #         parent_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+    #     grand_parent_item_name = go(
+    #         grand_parent_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+
+    #     self.treeDataManager.delete_node(
+    #         self.data_kind,
+    #         # selected_item_name,
+    #         [grand_parent_item_name, parent_item_name, selected_item_name],
+    #     )
+    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+    #     state.observer_manager.notify_observers(state)
 
 
 ###################for common_input################################################################
@@ -1628,20 +1789,65 @@ class TeamStd_FamlistTreeView:
     def delete_item(self):
         state = self.state
 
+        # Get the selected item ID
         selected_item_id = self.treeview.tree.selection()
-        selected_item_name = go(
-            selected_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
+        if not selected_item_id:
+            print("No item selected.")
+            return
+        selected_item_id = selected_item_id[0]  # Handle single selection case
 
-        self.treeDataManager.delete_node(
-            self.data_kind,
-            selected_item_name,
-        )
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        # Get the full path of the selected item
+        full_path = get_full_path(selected_item_id)
+        print(f"Deleting item with path: {full_path}")
+
+        # Validate the constructed path
+        if not full_path:
+            print("Could not construct a valid path for the selected item.")
+            return
+
+        # Pass the full path to the delete_node method
+        try:
+            self.treeDataManager.delete_node(self.data_kind, full_path)
+            print(f"Successfully deleted item with path: {full_path}")
+        except Exception as e:
+            print(f"Error deleting item with path {full_path}: {e}")
+
+        # Notify observers about the state update
         state.observer_manager.notify_observers(state)
+
+    # def delete_item(self):
+    #     state = self.state
+
+    #     selected_item_id = self.treeview.tree.selection()
+    #     selected_item_name = go(
+    #         selected_item_id,
+    #         lambda x: self.treeview.tree.item(x, "values"),
+    #         filter(lambda x: x != ""),
+    #         list,
+    #     )[0]
+
+    #     self.treeDataManager.delete_node(
+    #         self.data_kind,
+    #         selected_item_name,
+    #     )
+    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+    #     state.observer_manager.notify_observers(state)
 
 
 class TeamStd_calcDict_TreeView:

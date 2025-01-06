@@ -12,7 +12,7 @@ from src.controllers.widget.widgets import (
 )
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
-    TeamStd_WMsSheetView,
+    TeamStd_FamlistSheetTreeView,
 )
 from src.views.widget.treeview_utils import (
     TeamStd_FamlistTreeView,
@@ -178,9 +178,9 @@ def create_stdFamList_tab(state, subtab_notebook):
     )
 
     stdFamlist_treeview = TeamStd_FamlistTreeView(state, section2, view_level=3)
-    # DefaultTreeViewStyleManager.apply_style(stdFamlist_treeview.treeview.tree)
-    # DefaultTreeViewStyleManager.apply_alternate_row_colors(stdFamlist_treeview.treeview)
     stdFamlist_treeview.treeview.tree.column(0, width=0, minwidth=0, stretch=False)
+
+    # stdFamlist_treeview = TeamStd_FamlistSheetTreeView(state, section2, view_level=3)
 
     selected_item = ttk.Label(
         selected_item_label_area,
@@ -192,13 +192,9 @@ def create_stdFamList_tab(state, subtab_notebook):
     selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
     selected_item.pack(side="left", padx=5, pady=5, anchor="w")
 
-    # stdFamlist_treeview2 = TeamStd_WMsSheetView(state, section2)
-
     ##############################################################
     ## section 3###########
 
-    # std_GWMTreeView.treeview.toggle_tree_lock(lock=True)
-    # std_GWMTreeView.treeview.expand_tree_to_level(level=1)
     stdFamilyTypeMatching_treeview = TeamStd_calcDict_TreeView(
         state,
         section3,
@@ -206,16 +202,13 @@ def create_stdFamList_tab(state, subtab_notebook):
         data_kind=stdFamlist_treeview.data_kind,
         view_level=3,
     )
-    # DefaultTreeViewStyleManager.apply_alternate_row_colors(
-    #     stdFamilyTypeMatching_treeview.treeview.tree
-    # )
     state.std_matching_treeview_Familylist = stdFamilyTypeMatching_treeview
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
-            stdFamlist_treeview,
+            # stdFamlist_treeview,
             stdFamilyTypeMatching_treeview,
             std_GWMTreeView,
             std_SWMTreeView,

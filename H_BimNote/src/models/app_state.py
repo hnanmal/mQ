@@ -56,6 +56,11 @@ class AppState:
         except:
             pass
 
+        try:
+            self.pjtStd_WMselect_sheetview_SWM.update(self)
+        except:
+            pass
+
     ################### 옵저버 관련 #################################
 
     # 통합 상태 업데이트 함수
