@@ -10,6 +10,7 @@ from src.views.lower_tabs.pjt_group_WM_tabs import (
 )
 from src.views.lower_tabs.pjt_std_main_tab import create_pjtStd_Main_tab
 from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
+from src.views.lower_tabs.pjt_familylist_tab import create_pjt_familylist_tab
 
 
 def create_tab_with_subtabs(state, notebook, tab_name, subtab_names):
@@ -64,6 +65,7 @@ def create_project_apply_tab(state, notebook):
 
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
+    famlist_tab = create_pjt_familylist_tab(state, subtab_notebook)
     for subtab_name in subtab_names:
         subtab_frame = ttk.Frame(subtab_notebook)
         subtab_notebook.add(subtab_frame, text=subtab_name)

@@ -22,7 +22,7 @@ def create_pjtApply_Main_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Project Main")
+    subtab_notebook.add(working_tab, text="Project Apply Main")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -116,7 +116,7 @@ def create_pjtApply_Main_tab(state, subtab_notebook):
     TabNavigationButton(
         parent=section2,
         notebook=subtab_notebook,
-        tab_index=2,
+        tab_index=1,
         button_text="→ 모델링이 없다면: \n\n    Project Apply 탭으로 이동",
     )
 

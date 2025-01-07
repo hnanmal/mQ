@@ -99,13 +99,6 @@ def create_common_input_tab(state, subtab_notebook):
     column_b_frame = ttk.Frame(section1)
     column_b_frame.pack(side="right", fill="y", expand=True)
 
-    data = std_commonInput_treeview.treeview.tree
-
-    # # Insert labels for Column B values with custom colors
-    # for index, item in enumerate(data):
-    #     label = ttk.Label(column_b_frame, text=item[1], bootstyle="info")
-    #     label.pack(pady=5)
-
     # ##############################################################
     # ## section 2###########
 

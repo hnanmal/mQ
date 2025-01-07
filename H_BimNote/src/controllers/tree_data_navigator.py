@@ -557,76 +557,46 @@ class TreeDataManager_treeview(TreeDataManager):
 
             # Copy formulas for the children if they match a reference item
             children = list(selected_GWMitem.get("children", []))
-            reference_items = (
+            reference_item = (
                 selected_node.get("children", [])
                 if isinstance(selected_node, dict)
                 else []
-            )
+            )[0]
             for child in children:
                 # Find a matching reference child by name
                 matching_reference = next(
-                    (ref for ref in reference_items if ref["name"] == child["name"]),
+                    (
+                        ref
+                        for ref in reference_item["children"]
+                        if ref["name"] == child["name"]
+                    ),
                     None,
                 )
 
                 # Copy formula from the matching reference if available
-                new_child_value = list(child["values"])
+                new_child_value = list(child["values"])  # The new child's values
                 if matching_reference:
                     formula_index = (
-                        len(new_child_value) - 1
+                        len(matching_reference["values"]) - 1
                     )  # Assuming formula is the last value
-                    if formula_index >= 0:
-                        new_child_value[formula_index] = matching_reference["values"][
-                            -1
-                        ]
+                    new_child_value[-1] = matching_reference["values"][formula_index]
 
-                new_child_value.insert(0, "")  # Add placeholders for columns
+                # Add placeholders for columns
+                new_child_value.insert(0, "")
                 new_child_value.insert(0, "")
                 new_child_value.insert(0, "")
                 child.update({"values": new_child_value})
 
+            # Update the children of the derived item
+            selected_GWMitem.update({"children": children})
+
         # Add the new GWM items to the appropriate location
         if isinstance(selected_node, list) and selected_GWMitems_copy:
             # Handle adding to list of strings (last level)
-            print(f"Adding matched WMs: {selected_GWMitems_copy}")
             parent_node["children"].extend(selected_GWMitems_copy)
         elif selected_node and "children" in selected_node and selected_GWMitems_copy:
             # Handle adding matched WMs to regular children
-            print(f"Adding matched WMs: {selected_GWMitems_copy}")
             selected_node["children"].extend(selected_GWMitems_copy)
-
-    # def match_GWMitems_to_stdFam(
-    #     self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems
-    # ):
-    #     """Add specified matched WMs to the children of the selected node."""
-    #     _, parent_node, selected_node = self.get_node_path(
-    #         data_kind, grandparent_name, parent_name, child_name
-    #     )
-    #     selected_GWMitems_copy = deepcopy(selected_GWMitems)
-
-    #     for selected_GWMitem in selected_GWMitems_copy:
-    #         new_values = list(selected_GWMitem["values"])
-    #         new_values.insert(0, "")
-    #         new_values.insert(0, "")
-    #         new_values.insert(0, "")
-    #         selected_GWMitem.update({"values": new_values})
-
-    #         children = list(selected_GWMitem["children"])
-    #         for child in children:
-    #             new_child_value = list(child["values"])
-    #             new_child_value.insert(0, "")
-    #             new_child_value.insert(0, "")
-    #             new_child_value.insert(0, "")
-    #             child.update({"values": new_child_value})
-
-    #     if isinstance(selected_node, list) and selected_GWMitems_copy:
-    #         # Handle adding to list of strings (last level)
-    #         print(f"Adding matched WMs: {selected_GWMitems_copy}")
-    #         parent_node["children"].extend(selected_GWMitems_copy)
-    #     elif selected_node and "children" in selected_node and selected_GWMitems_copy:
-    #         # Handle adding matched WMs to regular children
-    #         print(f"Adding matched WMs: {selected_GWMitems_copy}")
-    #         selected_node["children"].extend(selected_GWMitems_copy)
 
 
 class TreeDataManager_treesheet(TreeDataManager):

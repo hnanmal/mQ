@@ -22,7 +22,7 @@ def create_pjtStd_Main_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Project Main")
+    subtab_notebook.add(working_tab, text="Project Standard Main")
 
     working_tab_common_area = ttk.Frame(
         working_tab,

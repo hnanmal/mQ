@@ -411,6 +411,36 @@ class BaseTreeView:
         for root in root_items:
             expand_item(root, 1)
 
+    def remove_items_with_rule(self, data_list, _depth, _rule):
+        """
+        Removes items with an underscore in their 'name' at depth 2, along with their children.
+
+        Parameters:
+            data_list (list): A list of hierarchical data structures.
+
+        Returns:
+            list: Cleaned data with specified items removed.
+        """
+
+        def clean_children(children, depth):
+            cleaned_children = []
+            for child in children:
+                # At depth 2, check for underscores in the 'name' field
+                if depth == _depth and _rule in child.get("name", ""):
+                    continue  # Skip this item and its children
+                # Recursively clean if 'children' field exists
+                if "children" in child:
+                    child["children"] = clean_children(child["children"], depth + 1)
+                cleaned_children.append(child)
+            return cleaned_children
+
+        # Process each top-level item in the list
+        for item in data_list:
+            if "children" in item:
+                item["children"] = clean_children(item["children"], _depth)
+
+        return data_list
+
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
         for node in data:
@@ -494,9 +524,10 @@ class BaseTreeView:
 
 
 class TeamStd_GWMTreeView:
-    def __init__(self, state, parent, view_level=2):
+    def __init__(self, state, parent, showmode="team", view_level=2):
         self.state = state
         self.data_kind = "std-GWM"
+        self.showmode = showmode
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
@@ -564,8 +595,17 @@ class TeamStd_GWMTreeView:
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
+            if self.showmode == "team":
+                data = self.treeview.remove_items_with_rule(
+                    state.team_std_info[self.data_kind]["children"],
+                    _depth=2,
+                    _rule="::",
+                )
+                # data = state.team_std_info[self.data_kind]["children"]
+            else:
+                data = state.team_std_info[self.data_kind]["children"]
+
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
@@ -673,7 +713,7 @@ class TeamStd_GWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "_Copy"
+        new_name = selected_item_name + "::copy"
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -787,39 +827,6 @@ class TeamStd_GWMTreeView:
 
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)
-
-    # def delete_item(self):
-    #     state = self.state
-
-    #     selected_item_id = self.treeview.tree.selection()
-    #     selected_item_name = go(
-    #         selected_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
-    #     parent_item_name = go(
-    #         parent_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-    #     grand_parent_item_name = go(
-    #         grand_parent_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-
-    #     self.treeDataManager.delete_node(
-    #         self.data_kind,
-    #         # selected_item_name,
-    #         [grand_parent_item_name, parent_item_name, selected_item_name],
-    #     )
-    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-    #     state.observer_manager.notify_observers(state)
 
 
 class PjtStd_GWMTreeView(TeamStd_GWMTreeView):
@@ -966,10 +973,10 @@ class TeamStd_WMmatching_TreeView:
 
 
 class TeamStd_SWMTreeView:
-    def __init__(self, state, parent, view_level=2):
+    def __init__(self, state, parent, showmode="team", view_level=2):
         self.state = state
         self.data_kind = "std-SWM"
-
+        self.showmode = showmode
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
@@ -1038,8 +1045,16 @@ class TeamStd_SWMTreeView:
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
+            if self.showmode == "team":
+                data = self.treeview.remove_items_with_rule(
+                    state.team_std_info[self.data_kind]["children"],
+                    _depth=2,
+                    _rule="::",
+                )
+            else:
+                data = state.team_std_info[self.data_kind]["children"]
+
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
@@ -1148,7 +1163,7 @@ class TeamStd_SWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "_Copy"
+        new_name = selected_item_name + "::copy"
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -1301,9 +1316,10 @@ class TeamStd_SWMTreeView:
 
 
 class TeamStd_CommonInputTreeView:
-    def __init__(self, state, parent, view_level=2):
+    def __init__(self, state, parent, data_kind="common-input", view_level=2):
         self.state = state
-        self.data_kind = "common-input"
+        # self.data_kind = "common-input"
+        self.data_kind = data_kind
 
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
@@ -1481,19 +1497,46 @@ class TeamStd_CommonInputTreeView:
     def delete_item(self):
         state = self.state
 
+        # Get the selected item ID
         selected_item_id = self.treeview.tree.selection()
-        selected_item_name = go(
-            selected_item_id,
-            lambda x: self.treeview.tree.item(x, "values"),
-            filter(lambda x: x != ""),
-            list,
-        )[0]
+        if not selected_item_id:
+            print("No item selected.")
+            return
+        selected_item_id = selected_item_id[0]  # Handle single selection case
 
-        self.treeDataManager.delete_node(
-            self.data_kind,
-            selected_item_name,
-        )
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        # Get the full path of the selected item
+        full_path = get_full_path(selected_item_id)
+        print(f"Deleting item with path: {full_path}")
+
+        # Validate the constructed path
+        if not full_path:
+            print("Could not construct a valid path for the selected item.")
+            return
+
+        # Pass the full path to the delete_node method
+        try:
+            self.treeDataManager.delete_node(self.data_kind, full_path)
+            print(f"Successfully deleted item with path: {full_path}")
+        except Exception as e:
+            print(f"Error deleting item with path {full_path}: {e}")
+
+        # Notify observers about the state update
         state.observer_manager.notify_observers(state)
 
 
@@ -1501,10 +1544,11 @@ class TeamStd_CommonInputTreeView:
 
 
 class TeamStd_FamlistTreeView:
-    def __init__(self, state, parent, view_level=2):
+    def __init__(self, state, parent, title="Standard Family List", view_level=2):
         self.state = state
         self.data_kind = "std-familylist"
         self.view_level = view_level
+        self.title = title
 
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
@@ -1526,6 +1570,7 @@ class TeamStd_FamlistTreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        tree_frame.pack()
         self.tree_frame = tree_frame
 
         # Add ComboBox for selecting view level
@@ -1589,9 +1634,11 @@ class TeamStd_FamlistTreeView:
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
-    def set_title(self, parent):
-        title_font = ttk.font.Font(family="맑은 고딕", size=12)
-        title_label = ttk.Label(parent, text="Standard Family List", font=title_font)
+    def set_title(self, parent, text=None):
+        if not text:
+            text = self.title
+        title_font = ttk.font.Font(family="맑은 고딕", size=11)
+        title_label = ttk.Label(parent, text=text, font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
     def update(self, event=None, view_level=None):
