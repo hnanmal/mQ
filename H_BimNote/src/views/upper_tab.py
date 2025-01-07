@@ -10,7 +10,8 @@ from src.views.lower_tabs.pjt_group_WM_tabs import (
 )
 from src.views.lower_tabs.pjt_std_main_tab import create_pjtStd_Main_tab
 from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
-from src.views.lower_tabs.pjt_familylist_tab import create_pjt_familylist_tab
+from src.views.lower_tabs.pjt_family_assign_tab import create_pjt_familylist_tab
+from src.views.lower_tabs.pjt_family_list_tabs import create_pjtFamList_tab
 
 
 def create_tab_with_subtabs(state, notebook, tab_name, subtab_names):
@@ -53,7 +54,7 @@ def create_project_standard_tab(state, notebook):
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
-    # std_Famlist_tab = create_stdFamList_tab(state, subtab_notebook)
+    std_Famlist_tab = create_pjtFamList_tab(state, subtab_notebook)
 
 
 def create_project_apply_tab(state, notebook):

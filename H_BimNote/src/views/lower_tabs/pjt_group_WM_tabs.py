@@ -101,7 +101,11 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    pjtStdGWM_treeview = TeamStd_GWMTreeView(state, section1)
+    pjtStdGWM_treeview = TeamStd_GWMTreeView(
+        state,
+        section1,
+        showmode="project",
+    )
     # pjtStdGWM_treeview = PjtStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(pjtStdGWM_treeview.treeview.tree)
     state.pjtStdGWM_treeview = pjtStdGWM_treeview
@@ -237,7 +241,11 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    pjtStdSWM_treeview = TeamStd_SWMTreeView(state, section1)
+    pjtStdSWM_treeview = TeamStd_SWMTreeView(
+        state,
+        section1,
+        showmode="project",
+    )
     # pjtStdGWM_treeview = PjtStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(pjtStdSWM_treeview.treeview.tree)
     state.pjtStdSWM_treeview = pjtStdSWM_treeview

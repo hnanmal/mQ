@@ -411,7 +411,7 @@ class BaseTreeView:
         for root in root_items:
             expand_item(root, 1)
 
-    def remove_items_with_rule(self, data_list, _depth, _rule):
+    def remove_items_with_rule(self, _data_list, _depth, _rule):
         """
         Removes items with an underscore in their 'name' at depth 2, along with their children.
 
@@ -421,11 +421,12 @@ class BaseTreeView:
         Returns:
             list: Cleaned data with specified items removed.
         """
+        data_list = deepcopy(_data_list)
 
         def clean_children(children, depth):
             cleaned_children = []
             for child in children:
-                # At depth 2, check for underscores in the 'name' field
+                # At _depth , check for _rule in the 'name' field
                 if depth == _depth and _rule in child.get("name", ""):
                     continue  # Skip this item and its children
                 # Recursively clean if 'children' field exists
@@ -437,7 +438,8 @@ class BaseTreeView:
         # Process each top-level item in the list
         for item in data_list:
             if "children" in item:
-                item["children"] = clean_children(item["children"], _depth)
+                # item["children"] = clean_children(item["children"], _depth)
+                item["children"] = clean_children(item["children"], 1)
 
         return data_list
 
@@ -598,10 +600,9 @@ class TeamStd_GWMTreeView:
             if self.showmode == "team":
                 data = self.treeview.remove_items_with_rule(
                     state.team_std_info[self.data_kind]["children"],
-                    _depth=2,
+                    _depth=1,
                     _rule="::",
                 )
-                # data = state.team_std_info[self.data_kind]["children"]
             else:
                 data = state.team_std_info[self.data_kind]["children"]
 
@@ -1048,7 +1049,7 @@ class TeamStd_SWMTreeView:
             if self.showmode == "team":
                 data = self.treeview.remove_items_with_rule(
                     state.team_std_info[self.data_kind]["children"],
-                    _depth=2,
+                    _depth=1,
                     _rule="::",
                 )
             else:
@@ -1544,9 +1545,12 @@ class TeamStd_CommonInputTreeView:
 
 
 class TeamStd_FamlistTreeView:
-    def __init__(self, state, parent, title="Standard Family List", view_level=2):
+    def __init__(
+        self, state, parent, title="Standard Family List", showmode="team", view_level=2
+    ):
         self.state = state
         self.data_kind = "std-familylist"
+        self.showmode = showmode
         self.view_level = view_level
         self.title = title
 
@@ -1658,8 +1662,16 @@ class TeamStd_FamlistTreeView:
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
+            if self.showmode == "team":
+                data = self.treeview.remove_items_with_rule(
+                    state.team_std_info[self.data_kind]["children"],
+                    _depth=3,
+                    _rule="::",
+                )
+                print(f"\n걸러진데이터!\n")
+            else:
+                data = state.team_std_info[self.data_kind]["children"]
             # Clear the TreeView and reload data from the updated state
-            data = state.team_std_info[self.data_kind]["children"]
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
