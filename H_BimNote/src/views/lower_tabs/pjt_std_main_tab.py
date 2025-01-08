@@ -78,7 +78,6 @@ def create_pjtStd_Main_tab(state, subtab_notebook):
         # weight="bold",
     )
 
-    # Place tksheet in Project Main tab
     ##############################################################
     ## tab_common_area###########
 

@@ -17,6 +17,7 @@ from src.core.file_utils import load_from_json
 from src.views.upper_tab import (
     create_project_apply_tab,
     create_project_standard_tab,
+    create_recentBnotes_tab,
     create_team_standard_tab,
 )
 from src.views.app_ui_setup import initialize_app
@@ -41,6 +42,8 @@ def main():
     splash.wait_window()  # Wait for the splash screen to close
 
     # Create parent tabs within the notebook
+    create_recentBnotes_tab(state, notebook)
+
     create_team_standard_tab(state, notebook)
 
     create_project_standard_tab(state, notebook)
@@ -48,7 +51,7 @@ def main():
     create_project_apply_tab(state, notebook)
 
     ## 팀스탠다드 자동 임포트
-    load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
+    # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
 
     root.deiconify()
     root.state("zoomed")
@@ -56,7 +59,7 @@ def main():
     ## 어플리케이션 시작시 메시지
     state.log_widget.write("어서오세요!\n")
 
-    notebook.select(1)
+    notebook.select(0)
 
     # # Handle window close event
     # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))

@@ -26,7 +26,7 @@ def create_pjtFamList_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Standard Family List")
+    subtab_notebook.add(working_tab, text="Project Family List")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -179,7 +179,11 @@ def create_pjtFamList_tab(state, subtab_notebook):
     )
 
     stdFamlist_treeview = TeamStd_FamlistTreeView(
-        state, section2, showmode="project", view_level=3
+        state,
+        section2,
+        title="Project Family List",
+        showmode="project",
+        view_level=3,
     )
     stdFamlist_treeview.treeview.tree.column(0, width=0, minwidth=0, stretch=False)
 

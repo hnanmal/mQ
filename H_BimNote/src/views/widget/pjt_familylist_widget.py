@@ -22,6 +22,7 @@ class StdFamilyListWidget(tk.Frame):
             self.state,
             parent,
             title="Family List: 레빗타입을 할당할 대상을 선택해주세요",
+            showmode="project_assign",
         )
 
         teamStd_FamlistTreeView.treeview.tree.column(

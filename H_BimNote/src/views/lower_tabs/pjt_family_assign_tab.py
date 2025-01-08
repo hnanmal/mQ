@@ -30,7 +30,7 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Project Family List Assign")
+    subtab_notebook.add(working_tab, text="Project Family Assign")
 
     working_tab_common_area = ttk.Frame(
         working_tab,

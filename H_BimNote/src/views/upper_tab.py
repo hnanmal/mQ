@@ -1,6 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
+from PIL import ImageTk, Image
+from PIL.Image import Resampling
+
+from src.core.fp_utils import *
+from src.core.file_utils import load_from_json
 from src.views.lower_tabs.group_WM_tabs import create_stdGWM_tab, create_stdSWM_tab
 from src.views.lower_tabs.common_input_tab import create_common_input_tab
 from src.views.lower_tabs.std_family_list_tabs import create_stdFamList_tab
@@ -12,9 +19,11 @@ from src.views.lower_tabs.pjt_std_main_tab import create_pjtStd_Main_tab
 from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
 from src.views.lower_tabs.pjt_family_assign_tab import create_pjt_familylist_tab
 from src.views.lower_tabs.pjt_family_list_tabs import create_pjtFamList_tab
+from src.views.lower_tabs.std_main_tab import create_std_Main_tab
+from src.views.widget.widget import select_tab
 
 
-def create_tab_with_subtabs(state, notebook, tab_name, subtab_names):
+def create_tab_with_subtabs(state, notebook, tab_name):
     # Create the main tab
     main_frame = ttk.Frame(notebook)
     notebook.add(main_frame, text=tab_name)
@@ -31,13 +40,137 @@ def create_tab_with_subtabs(state, notebook, tab_name, subtab_names):
     return subtab_notebook
 
 
-def create_team_standard_tab(state, notebook):
-    subtab_names = ["Lower Tab 1", "Lower Tab 2"]
+def create_recentBnotes_tab(state, notebook):
+    # Create a style
+    frame_bgcolor = "#ebf7ee"
+    style = ttk.Style()
+    style.configure("Custom.TFrame", background=frame_bgcolor)
 
-    subtab_notebook = create_tab_with_subtabs(
-        state, notebook, "Team Standard", subtab_names
+    main_frame = ttk.Frame(notebook)
+    notebook.add(
+        main_frame,
+        # text="Recent Bnotes",
+        text="  Home  ",
     )
 
+    working_tab_paned_area = ttk.Frame(
+        main_frame,
+        # width=600,
+        height=3000,
+    )
+    working_tab_paned_area.pack(expand=True, fill="both")
+
+    working_tab_paned_window = tk.PanedWindow(
+        working_tab_paned_area,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    working_tab_paned_window.pack(expand=True, fill="both")
+
+    section1 = ttk.Frame(
+        working_tab_paned_area,
+        width=200,
+        height=3000,
+        style="Custom.TFrame",
+    )
+    section2 = ttk.Frame(
+        working_tab_paned_area,
+        width=2000,
+        height=3000,
+    )
+
+    working_tab_paned_window.add(section1, minsize=200)
+    working_tab_paned_window.paneconfigure(section1, height=3000)
+
+    working_tab_paned_window.add(section2, minsize=1500)
+    working_tab_paned_window.paneconfigure(section2, height=3000)
+
+    ##############################################################
+    ## section 1###########
+    logo_area = ttk.Frame(
+        section1,
+        width=200,
+        style="Custom.TFrame",
+    )
+    logo_area.pack(side=tk.TOP, anchor="center")
+
+    logo_img_ = Image.open("resource/app_logo_maintab.png")
+    logo_img_ = logo_img_.resize((180, 180), resample=Resampling.LANCZOS)
+    logo_img = ImageTk.PhotoImage(logo_img_)
+
+    tk.Label.image = logo_img
+
+    logo_label = tk.Label(logo_area, image=logo_img)
+    logo_label.configure(bg=frame_bgcolor)
+    logo_label.pack(side=tk.TOP, padx=50, pady=20, anchor="center")
+
+    menu_area = ttk.Frame(
+        section1,
+        width=200,
+        style="Custom.TFrame",
+    )
+    menu_area.pack(side=tk.TOP, padx=10, anchor="center")
+
+    def open_move_tab_func(path=None):
+        if path:
+            load_result = load_from_json(state, _file_path=path)
+        else:
+            load_result = load_from_json(state)
+        if load_result:
+            # notebook.select(2)
+            select_tab(notebook, 2, subtab_index=0)
+            pass
+
+    open_bnote_btn = ttk.Button(
+        menu_area,
+        text="작성된 Bnote 열기",
+        width=20,
+        command=open_move_tab_func,
+        bootstyle=SUCCESS,
+    )
+    open_bnote_btn.pack(side=tk.TOP, padx=20, pady=50, anchor="ne")
+
+    start_withStd_btn = ttk.Button(
+        menu_area,
+        text="신규 프로젝트 시작\n(by Team Standard)",
+        width=20,
+        command=lambda: open_move_tab_func(
+            path="resource/PlantArch_BIM Standard.bnote"
+        ),
+        bootstyle=INFO,
+    )
+    start_withStd_btn.pack(side=tk.TOP, padx=20, anchor="ne")
+
+    ##############################################################
+    ## section 2###########
+    recent_notes_area = ttk.Frame(
+        section2,
+        width=600,
+    )
+    recent_notes_area.pack(padx=20, side=tk.TOP, anchor="nw")
+
+    title_label = ttk.Label(
+        recent_notes_area,
+        text="Recent Bnotes",
+        font=("Arial", 16),
+        bootstyle=INFO,
+    )
+    title_label.pack(
+        padx=20,
+        pady=20,
+        side=tk.TOP,
+        anchor="nw",
+    )
+
+    return notebook
+
+
+def create_team_standard_tab(state, notebook):
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "Team Standard")
+
+    # Add each subtab
+    main_tab = create_std_Main_tab(state, subtab_notebook)
     g_wm_tab = create_stdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_stdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
@@ -45,28 +178,19 @@ def create_team_standard_tab(state, notebook):
 
 
 def create_project_standard_tab(state, notebook):
-    subtab_names = ["Lower Tab 1", "Lower Tab 2"]
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "Project Standard")
 
-    subtab_notebook = create_tab_with_subtabs(
-        state, notebook, "Project Standard", subtab_names
-    )
+    # Add each subtab
     main_tab = create_pjtStd_Main_tab(state, subtab_notebook)
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
-    std_Famlist_tab = create_pjtFamList_tab(state, subtab_notebook)
+    pjt_Famlist_tab = create_pjtFamList_tab(state, subtab_notebook)
 
 
 def create_project_apply_tab(state, notebook):
-    subtab_names = ["Lower Tab 1", "Lower Tab 2"]
-
-    subtab_notebook = create_tab_with_subtabs(
-        state, notebook, "Project Apply", subtab_names
-    )
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "Project Apply")
 
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
     famlist_tab = create_pjt_familylist_tab(state, subtab_notebook)
-    for subtab_name in subtab_names:
-        subtab_frame = ttk.Frame(subtab_notebook)
-        subtab_notebook.add(subtab_frame, text=subtab_name)

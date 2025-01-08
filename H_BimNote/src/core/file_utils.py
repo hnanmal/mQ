@@ -31,6 +31,7 @@ def load_from_json(state, _file_path=None):
     else:
         file_path = filedialog.askopenfilename(filetypes=state.filetypes)
         if not file_path:
+            state.log_widget.write("파일 로드 취소\n")
             return  # 파일 경로가 없으면 로드 취소
 
     # JSON 파일에서 데이터 로드
@@ -58,9 +59,11 @@ def load_from_json(state, _file_path=None):
             # state.update_project_info(loaded_data.get("project_info", {}))
             # state.family_standard_data = loaded_data.get("family_standard_data", {})
 
-        print(f"Data successfully loaded from {file_path}")
+        state.log_widget.write(f"Data successfully loaded from {file_path}\n")
+        return True
     except Exception as e:
-        print(f"Error loading data from JSON: {e}")
+        state.log_widget.write(f"Error loading data from JSON: {e}\n")
+        return False
 
 
 def load_from_excel(state, _file_path=None):

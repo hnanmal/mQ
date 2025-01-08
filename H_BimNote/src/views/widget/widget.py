@@ -6,6 +6,9 @@ from ttkbootstrap.constants import *
 
 def select_tab(notebook, parent_index, subtab_index=None):
     """Select a parent tab and optionally a subtab."""
+    # Disable event handlers if any
+    notebook.unbind("<<NotebookTabChanged>>")
+
     notebook.select(parent_index)  # Select the parent tab
     if subtab_index is not None:  # If a subtab is specified
         parent_tab = notebook.nametowidget(

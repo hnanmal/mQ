@@ -409,7 +409,10 @@ class BaseTreeView:
         # Expand all root items initially
         root_items = self.tree.get_children("")
         for root in root_items:
-            expand_item(root, 1)
+            try:
+                expand_item(root, 1)
+            except:
+                pass
 
     def remove_items_with_rule(self, _data_list, _depth, _rule):
         """
@@ -536,7 +539,7 @@ class TeamStd_GWMTreeView:
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "G-WM", "Item"]
-        hdr_widths = [127, 60, 100]
+        hdr_widths = [107, 80, 100]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -985,7 +988,7 @@ class TeamStd_SWMTreeView:
         self.selected_item.trace_add("write", state._notify_selected_change)
         # headers = ["분류", "S-WM", "Item"]
         headers = ["분류-1", "분류-2", "S-WM"]
-        hdr_widths = [127, 60, 100]
+        hdr_widths = [107, 80, 100]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1279,39 +1282,6 @@ class TeamStd_SWMTreeView:
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)
 
-    # def delete_item(self):
-    #     state = self.state
-
-    #     selected_item_id = self.treeview.tree.selection()
-    #     selected_item_name = go(
-    #         selected_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-    #     parent_item_id = self.treeview.tree.parent(selected_item_id)
-    #     parent_item_name = go(
-    #         parent_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-    #     grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
-    #     grand_parent_item_name = go(
-    #         grand_parent_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-
-    #     self.treeDataManager.delete_node(
-    #         self.data_kind,
-    #         # selected_item_name,
-    #         [grand_parent_item_name, parent_item_name, selected_item_name],
-    #     )
-    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-    #     state.observer_manager.notify_observers(state)
-
 
 ###################for common_input################################################################
 
@@ -1577,11 +1547,40 @@ class TeamStd_FamlistTreeView:
         tree_frame.pack()
         self.tree_frame = tree_frame
 
+        button_frame = ttk.Frame(tree_frame, width=600)
+        button_frame.pack()
+
+        # Add filter button
+        valid_names = ["1.1", "2.1"]
+
+        if showmode != "team":
+            filter_button = ttk.Button(
+                button_frame,
+                text="Filter Unused",
+                command=lambda: self.update(self, filter_mode=True),
+                bootstyle="INFO",
+            )
+            filter_button.pack(padx=10, pady=5, side="left")
+
+            # Add Reset button
+            reset_button = ttk.Button(
+                button_frame,
+                text="Reset TreeView",
+                command=lambda: self.update(self, filter_mode=False),
+                bootstyle="INFO",
+            )
+            reset_button.pack(padx=10, pady=5, side="left")
+
         # Add ComboBox for selecting view level
+        if showmode == "project_assign":
+            combo_range = list(range(1, 3))
+        else:
+            combo_range = list(range(1, 5))
+
         self.level_combobox = ttk.Combobox(
             # tree_frame, values=list(range(1, len(headers) + 1)), state="readonly"
-            tree_frame,
-            values=list(range(1, 5)),
+            button_frame,
+            values=combo_range,
             state="readonly",
         )
         self.level_combobox.current(view_level - 1)  # Set default level
@@ -1645,7 +1644,39 @@ class TeamStd_FamlistTreeView:
         title_label = ttk.Label(parent, text=text, font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
 
-    def update(self, event=None, view_level=None):
+    def remove_items_unused(self, _data_list, _depth, _rulelist):
+        """
+        Removes items with an underscore in their 'name' at depth 2, along with their children.
+
+        Parameters:
+            data_list (list): A list of hierarchical data structures.
+
+        Returns:
+            list: Cleaned data with specified items removed.
+        """
+        data_list = deepcopy(_data_list)
+
+        def clean_children(children, depth):
+            cleaned_children = []
+            for child in children:
+                # At _depth , check for _rule in the 'name' field
+                if depth == _depth and child.get("name", "") not in _rulelist:
+                    continue  # Skip this item and its children
+                # Recursively clean if 'children' field exists
+                if "children" in child:
+                    child["children"] = clean_children(child["children"], depth + 1)
+                cleaned_children.append(child)
+            return cleaned_children
+
+        # Process each top-level item in the list
+        for item in data_list:
+            if "children" in item:
+                # item["children"] = clean_children(item["children"], _depth)
+                item["children"] = clean_children(item["children"], 1)
+
+        return data_list
+
+    def update(self, event=None, view_level=None, filter_mode=False):
         state = self.state
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -1670,7 +1701,14 @@ class TeamStd_FamlistTreeView:
                 )
                 print(f"\n걸러진데이터!\n")
             else:
-                data = state.team_std_info[self.data_kind]["children"]
+                if filter_mode:
+                    data = self.remove_items_unused(
+                        state.team_std_info[self.data_kind]["children"],
+                        _depth=2,
+                        _rulelist=["1.1", "2.1"],
+                    )
+                else:
+                    data = state.team_std_info[self.data_kind]["children"]
             # Clear the TreeView and reload data from the updated state
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
@@ -1889,24 +1927,6 @@ class TeamStd_FamlistTreeView:
 
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)
-
-    # def delete_item(self):
-    #     state = self.state
-
-    #     selected_item_id = self.treeview.tree.selection()
-    #     selected_item_name = go(
-    #         selected_item_id,
-    #         lambda x: self.treeview.tree.item(x, "values"),
-    #         filter(lambda x: x != ""),
-    #         list,
-    #     )[0]
-
-    #     self.treeDataManager.delete_node(
-    #         self.data_kind,
-    #         selected_item_name,
-    #     )
-    #     # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-    #     state.observer_manager.notify_observers(state)
 
 
 class TeamStd_calcDict_TreeView:
