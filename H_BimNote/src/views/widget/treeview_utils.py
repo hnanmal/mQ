@@ -42,7 +42,7 @@ class DefaultTreeViewStyleManager:
         style.configure(
             "Hover.Treeview", background="#d3d3d3", padding=(2, 2)
         )  # Light gray hover color
-        style.configure("Treeview.Heading", font=("Arial Narrow", 10, "normal"))
+        style.configure("Treeview.Heading", font=("Arial Narrow", 8, "normal"))
         treeview.configure(style="Treeview")
 
     @staticmethod
@@ -1573,7 +1573,7 @@ class TeamStd_FamlistTreeView:
 
         # Add ComboBox for selecting view level
         if showmode == "project_assign":
-            combo_range = list(range(1, 3))
+            combo_range = list(range(1, 4))
         else:
             combo_range = list(range(1, 5))
 
