@@ -3,6 +3,8 @@ from tkinter import ttk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
+from src.core.fp_utils import *
+
 
 def select_tab(notebook, parent_index, subtab_index=None):
     """Select a parent tab and optionally a subtab."""
@@ -87,10 +89,6 @@ class WidgetSwitcher:
         self.show_widget(selected_widget_name)
 
 
-import tkinter as tk
-from tkinter import ttk
-
-
 class TabNavigationButton(tk.Frame):
     def __init__(
         self, parent, notebook, tab_index, button_text="Go to Tab", *args, **kwargs
@@ -126,3 +124,51 @@ class TabNavigationButton(tk.Frame):
             self.notebook.select(self.tab_index)
         except tk.TclError:
             print(f"Error: Tab index {self.tab_index} is out of range.")
+
+
+class Builing_select_combobox:
+    def __init__(self, state, parent):
+        self.state = state
+        self.data_kind = "project-buildinglist"
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+        self.frame = ttk.Frame(parent)
+        self.frame.pack(padx=10, side="left", anchor="nw")
+
+        text_label = ttk.Label(self.frame, text="작업대상 건물을 선택해주세요: ")
+        text_label.pack(side="left", anchor="w", padx=5)
+
+        self.combovalues = []
+
+        self.combobox = ttk.Combobox(self.frame, values=self.combovalues)
+        self.combobox.pack(side="left", anchor="nw", padx=5)
+
+        # Bind the <<ComboboxSelected>> event to the handler
+        self.combobox.bind(
+            "<<ComboboxSelected>>", lambda event: self.on_combobox_select(event, state)
+        )
+
+    # Event handler for combo box selection
+    def on_combobox_select(self, event, state):
+        selected_value = event.widget.get()  # Get the selected value from the combo box
+        self.update_selected_value(selected_value)
+
+    def update_selected_value(self, value):
+        state = self.state
+        state.current_building = value
+        print(f"State updated: selected_value = {state.current_building}")
+
+    def update(self, event=None):
+        state = self.state
+
+        if self.data_kind in state.team_std_info:
+            self.combovalues = go(
+                state.team_std_info[self.data_kind]["children"],
+                map(lambda node: node["name"]),
+                list,
+            )
+            self.combobox.config(values=self.combovalues)
+            try:
+                self.combobox.set(state.current_building)
+            except:
+                pass

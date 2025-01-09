@@ -98,7 +98,8 @@ def create_pjtApply_Main_tab(state, subtab_notebook):
     )
     pjt_buildingList_area.pack(side=tk.TOP, anchor="nw")
 
-    building_list_widget = BuildingList_TreeView(state, pjt_buildingList_area)
+    pjt_building_list = BuildingList_TreeView(state, pjt_buildingList_area)
+    state.pjt_building_list = pjt_building_list
 
     ##############################################################
     ## section 2###########

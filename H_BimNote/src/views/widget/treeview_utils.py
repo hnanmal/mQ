@@ -1548,7 +1548,7 @@ class TeamStd_FamlistTreeView:
         self.tree_frame = tree_frame
 
         button_frame = ttk.Frame(tree_frame, width=600)
-        button_frame.pack()
+        button_frame.pack(pady=10)
 
         # Add filter button
         valid_names = ["1.1", "2.1"]
@@ -2193,21 +2193,55 @@ class TeamStd_calcDict_TreeView:
         state.observer_manager.notify_observers(state)
 
 
-class BuildingList_TreeView(ttk.Frame):
-    def __init__(self, state, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.pack(fill="both", expand=True)
+class BuildingList_TreeView:
+    def __init__(self, state, parent, view_level=2, *args, **kwargs):
+        # super().__init__(parent, *args, **kwargs)
+        # self.pack(fill="both", expand=True)
         self.state = state
-        self.data_kind = "std-familylist"
+        self.data_kind = "project-buildinglist"
+        self.treeDataManager = TreeDataManager_treeview(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+        self.selected_item = tk.StringVar()
+        self.selected_item.trace_add("write", state._notify_selected_change)
 
+        self.frame = ttk.Frame(parent)
+        self.frame.pack(fill="both", expand=True)
         # Title Label
-        ttk.Label(self, text="Building List", font=("Arial", 16)).pack(pady=10)
+        ttk.Label(self.frame, text="Building List", font=("Arial", 16)).pack(pady=10)
+
+        # Input Field
+        ttk.Label(self.frame, text="Enter Building Name:", font=("Arial", 12)).pack(
+            pady=5
+        )
+        self.entry = ttk.Entry(self.frame, font=("Arial", 12), bootstyle=SECONDARY)
+        self.entry.pack(pady=5, fill="x", padx=10)
+
+        # Buttons for Add and Delete
+        button_frame = ttk.Frame(self.frame)
+        button_frame.pack(pady=10)
+
+        ttk.Button(
+            button_frame,
+            text="Add Building",
+            command=self.add_building,
+            bootstyle=SUCCESS,
+        ).pack(side="left", padx=5)
+        ttk.Button(
+            button_frame,
+            text="Delete Building",
+            command=self.delete_item,
+            bootstyle=DANGER,
+        ).pack(side="left", padx=5)
+
+        # Status Label
+        self.status_label = ttk.Label(self.frame, text="", font=("Arial", 10))
+        self.status_label.pack(pady=5)
 
         headers = ["Building Name"]
         hdr_widths = [400]
 
         # Compose TreeView, Style Manager, and State Observer
-        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        tree_frame = ttk.Frame(self.frame, width=600, height=2000)
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
@@ -2226,65 +2260,131 @@ class BuildingList_TreeView(ttk.Frame):
         # set treeview_editor class
         self.treeviewEditor = TreeviewEditor(state, self)
 
-        # Input Field
-        ttk.Label(self, text="Enter Building Name:", font=("Arial", 12)).pack(pady=5)
-        self.entry = ttk.Entry(self, font=("Arial", 12), bootstyle=SECONDARY)
-        self.entry.pack(pady=5, fill="x", padx=10)
-
-        # Buttons for Add and Delete
-        button_frame = ttk.Frame(self)
-        button_frame.pack(pady=10)
-
-        ttk.Button(
-            button_frame,
-            text="Add Building",
-            command=self.add_building,
-            bootstyle=SUCCESS,
-        ).pack(side="left", padx=5)
-        ttk.Button(
-            button_frame,
-            text="Delete Building",
-            command=self.delete_building,
-            bootstyle=DANGER,
-        ).pack(side="left", padx=5)
-
-        # Status Label
-        self.status_label = ttk.Label(self, text="", font=("Arial", 10))
-        self.status_label.pack(pady=5)
-
     def add_building(self):
         """Add a building name to the TreeView."""
+        state = self.state
         building_name = self.entry.get().strip()
-        print(f"building_name: {building_name}")
+        state.log_widget.write(f"building_name: {building_name}")
         if building_name:
-            self.treeview.tree.insert(
-                "",
-                "end",
-                text=building_name,
-                values=[building_name],
-            )  # Add the building to the TreeView
+            self.treeDataManager.add_top_level_node(self.data_kind, building_name)
+
             self.entry.delete(0, "end")  # Clear the entry field
             self.status_label.config(
                 text=f"Building '{building_name}' added successfully.",
                 bootstyle=SUCCESS,
             )
+            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
         else:
             self.status_label.config(
                 text="Please enter a building name.", bootstyle=DANGER
             )
-        print(self.treeview.tree.item(self.treeview.tree.get_children("")))
+        state.log_widget.write(
+            self.treeview.tree.item(self.treeview.tree.get_children(""))
+        )
 
     def delete_building(self):
         """Delete the selected building from the TreeView."""
-        selected_item = self.treeview.tree.selection()
-        if selected_item:
-            building_name = self.treeview.tree.item(selected_item, "text")
-            self.treeview.tree.delete(selected_item)
-            self.status_label.config(
-                text=f"Building '{building_name}' deleted successfully.",
-                bootstyle=SUCCESS,
+        state = self.state
+        selected_item_id = self.treeview.tree.selection()
+        if selected_item_id:
+            selected_item_name = go(
+                selected_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+
+            self.treeDataManager.delete_node(
+                self.data_kind,
+                [selected_item_name],
             )
+            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
         else:
             self.status_label.config(
                 text="Please select a building to delete.", bootstyle=DANGER
             )
+
+    def delete_item(self):
+        state = self.state
+
+        # Get the selected item ID
+        selected_item_id = self.treeview.tree.selection()
+        if not selected_item_id:
+            state.log_widget.write("No item selected.")
+            self.status_label.config(
+                text="Please select a building to delete.", bootstyle=DANGER
+            )
+            return
+        selected_item_id = selected_item_id[0]  # Handle single selection case
+
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        # Get the full path of the selected item
+        full_path = get_full_path(selected_item_id)
+        print(f"Deleting item with path: {full_path}")
+
+        # Validate the constructed path
+        if not full_path:
+            print("Could not construct a valid path for the selected item.")
+            return
+
+        # Pass the full path to the delete_node method
+        try:
+            self.treeDataManager.delete_node(self.data_kind, full_path)
+            state.log_widget.write(f"Successfully deleted item with path: {full_path}")
+            self.status_label.config(text="Successfully deleted.", bootstyle=DANGER)
+        except Exception as e:
+            print(f"Error deleting item with path {full_path}: {e}")
+
+        # Notify observers about the state update
+        state.observer_manager.notify_observers(state)
+
+    def update(self, event=None, view_level=None):
+        state = self.state
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+
+        selected_item_id = self.treeview.tree.focus()
+        origin_indices = None
+
+        # Extract origin indices if a valid item is focused
+        if selected_item_id:
+            try:
+                origin_indices = self.treeview.get_item_indices(selected_item_id)
+                print(origin_indices, "!!!")
+            except Exception as e:
+                print(f"origin_indices 추출 실패: {e}")
+
+        """Update the TreeView whenever the state changes."""
+        if self.data_kind in state.team_std_info:
+            data = state.team_std_info[self.data_kind]["children"]
+
+            # Clear the TreeView and reload data from the updated state
+            self.treeview.clear_treeview()
+            self.treeview.insert_data_with_levels(data)
+
+            self.treeview.expand_tree_to_level(level=view_level)
+
+        # Reselect the item if possible
+        if origin_indices:
+            try:
+                self.treeview.select_item_by_indices(origin_indices)
+            except Exception as e:
+                state.log_widget.write(f"Item selection failed: {e}")
+
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")

@@ -24,6 +24,7 @@ class AppState:
         self.selectedWMs = []
         self.selectedGWMitems = []
         self.selected_matchedWMs = []
+        self.current_building = None
 
         self.wm_group_data = {}
         self.lock_status = {}
@@ -58,6 +59,16 @@ class AppState:
 
         try:
             self.pjtStd_WMselect_sheetview_SWM.update(self)
+        except:
+            pass
+
+        try:
+            self.building_list.update(self)
+        except:
+            pass
+
+        try:
+            self.builing_select_combobox.update(self)
         except:
             pass
 

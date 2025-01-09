@@ -220,7 +220,27 @@ class TreeDataManager:
                 print(f"Invalid data kind: {data_kind}")
                 return
 
-            # Ensure the path includes the parent's path and the target node name
+            # Handle top-level nodes
+            if len(path) == 1:
+                # The node is a top-level node; directly search and remove it
+                target_name = path[0]
+                top_level_nodes = self.team_std_info[data_kind]["children"]
+                target_node = next(
+                    (
+                        node
+                        for node in top_level_nodes
+                        if node.get("name") == target_name
+                    ),
+                    None,
+                )
+                if not target_node:
+                    print(f"Could not find top-level node '{target_name}'.")
+                    return
+                top_level_nodes.remove(target_node)
+                print(f"Deleted top-level node: {target_name}")
+                return
+
+            # Handle non-top-level nodes
             parent_path = path[:-1]
             target_name = path[-1]
 

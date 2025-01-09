@@ -162,16 +162,14 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 200, 25, 2000])
-        # self.sheet.align_columns({0: "center"})
+        # self.sheet.set_column_widths([25, 200, 25, 2000])
+        self.sheet.set_column_widths([25, 200, 25, 1000])
+
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
-        # self.sheet.set_options(font=("Arial Narrow", 10, "normal"))
-        # self.sheet.set_options(font=("RomanS", 9, "normal"))
-        self.sheet.set_options(font=("Simplex", 9, "normal"))
-        # self.sheet.set_options(font=("Arial", 9, "normal"))
-        # self.sheet.set_options(font=("디자인하우스 Light", 11, "normal"))
-        self.sheet.set_options(default_row_height=30)
+        self.sheet.set_options(font=("Arial", 10, "normal"))
+
+        # self.sheet.set_options(default_row_height=40)
 
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
@@ -202,16 +200,27 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         if column == 0:
             if project_GWM:
                 spec = project_GWM[-1]
+                unit = project_GWM[-2]
             else:
                 spec = go(
-                    self.sheet.get_cell_data(row, 3).split(" | "),
+                    self.sheet.get_cell_data(row, 3),
+                    lambda x: x.replace("\n", ""),
+                    lambda x: x.split(" | "),
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+            unit = go(
+                self.sheet.get_cell_data(row, 3),
+                lambda x: x.replace("\n", ""),
+                lambda x: x.split(" | ")[-3],
+            )
         elif column == 1:
             spec = event["value"]
-            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+            unit = go(
+                self.sheet.get_cell_data(row, 3),
+                lambda x: x.replace("\n", ""),
+                lambda x: x.split(" | ")[-3],
+            )
 
         # if row_check_status:
         self.state.team_std_info["project-GWM"].update(
@@ -235,6 +244,58 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             checked_rows, highlight_index=False, bg="#D3F9D8"
         )  # Light green
 
+    def wrap_text(self, text, width):
+        """
+        Wrap text to fit within a given width, handling long words properly.
+        """
+        if not text or not isinstance(text, str):
+            return text
+        max_chars_per_line = max(1, width // 7)  # Approximate character width in pixels
+
+        words = text.split()  # Split into words
+        lines = []
+        current_line = ""
+
+        for word in words:
+            while len(word) > max_chars_per_line:  # Split long words into chunks
+                lines.append(word[:max_chars_per_line])
+                word = word[max_chars_per_line:]
+
+            if len(current_line) + len(word) + 1 > max_chars_per_line:
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line = f"{current_line} {word}".strip()
+
+        if current_line:
+            lines.append(current_line)
+
+        return "\n".join(lines)
+
+    def apply_wrap(self, tgt_idx, tgt_width=None):
+        """
+        Apply wrapping to all cells based on their column widths.
+        """
+        wrapped_data = []
+        # for row_index, row in enumerate(self.sheet.get_sheet_data()):
+        for row_index, row in enumerate(self.sheet.get_sheet_data()):
+            wrapped_row = []
+            for col_index, cell in enumerate(row):
+                if col_index == tgt_idx:
+                    if tgt_width:
+                        width = tgt_width
+                    else:
+                        width = self.sheet.column_width(col_index)
+                    wrapped_row.append(self.wrap_text(cell, width))
+                else:
+                    wrapped_row.append(cell)
+            wrapped_data.append(wrapped_row)
+
+        print(f"col width: {width}")
+        # print(f"시트 data: {self.sheet.get_sheet_data()}")
+        # print(f"시트 분할문자: {wrapped_data}")
+        self.sheet.set_sheet_data(wrapped_data)
+
     def update(self, event=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
@@ -242,6 +303,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.state.log_widget.write(
             f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
         )
+        self.setup_column_style()
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -320,6 +382,16 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
                             # self.treeview.insert_data_with_levels(wrapped_data)
                             self.sheet.set_sheet_data(wrapped_data)
+
+                            ###########test#################
+                            self.apply_wrap(tgt_idx=3, tgt_width=1000)
+                            self.sheet.set_all_cell_sizes_to_text()
+                            self.sheet.set_all_row_heights(
+                                height=50,
+                                only_set_if_too_small=True,
+                            )
+                            ###########test#################
+
                             self.sheet.see(tgt_rowIdx, 0)
                         else:
                             self.state.log_widget.write(
@@ -415,16 +487,14 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 200, 25, 2000])
-        # self.sheet.align_columns({0: "center"})
+        # self.sheet.set_column_widths([25, 200, 25, 2000])
+        self.sheet.set_column_widths([25, 200, 25, 1000])
+
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
-        # self.sheet.set_options(font=("Arial Narrow", 10, "normal"))
-        # self.sheet.set_options(font=("RomanS", 9, "normal"))
-        self.sheet.set_options(font=("Simplex", 9, "normal"))
-        # self.sheet.set_options(font=("Arial", 9, "normal"))
-        # self.sheet.set_options(font=("디자인하우스 Light", 11, "normal"))
-        self.sheet.set_options(default_row_height=30)
+        self.sheet.set_options(font=("Arial", 10, "normal"))
+
+        # self.sheet.set_options(default_row_height=30)
 
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
@@ -455,16 +525,28 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         if column == 0:
             if project_SWM:
                 spec = project_SWM[-1]
+                unit = project_SWM[-2]
             else:
                 spec = go(
-                    self.sheet.get_cell_data(row, 3).split(" | "),
+                    self.sheet.get_cell_data(row, 3),
+                    lambda x: x.replace("\n", ""),
+                    lambda x: x.split(" | "),
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+                unit = go(
+                    self.sheet.get_cell_data(row, 3),
+                    lambda x: x.replace("\n", ""),
+                    lambda x: x.split(" | ")[-3],
+                )
+            # unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
         elif column == 1:
             spec = event["value"]
-            unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+            unit = go(
+                self.sheet.get_cell_data(row, 3),
+                lambda x: x.replace("\n", ""),
+                lambda x: x.split(" | ")[-3],
+            )
 
         # if row_check_status:
         self.state.team_std_info["project-SWM"].update(
@@ -487,6 +569,58 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.sheet.highlight_rows(
             checked_rows, highlight_index=False, bg="#D3F9D8"
         )  # Light green
+
+    def wrap_text(self, text, width):
+        """
+        Wrap text to fit within a given width, handling long words properly.
+        """
+        if not text or not isinstance(text, str):
+            return text
+        max_chars_per_line = max(1, width // 7)  # Approximate character width in pixels
+
+        words = text.split()  # Split into words
+        lines = []
+        current_line = ""
+
+        for word in words:
+            while len(word) > max_chars_per_line:  # Split long words into chunks
+                lines.append(word[:max_chars_per_line])
+                word = word[max_chars_per_line:]
+
+            if len(current_line) + len(word) + 1 > max_chars_per_line:
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line = f"{current_line} {word}".strip()
+
+        if current_line:
+            lines.append(current_line)
+
+        return "\n".join(lines)
+
+    def apply_wrap(self, tgt_idx, tgt_width=None):
+        """
+        Apply wrapping to all cells based on their column widths.
+        """
+        wrapped_data = []
+        # for row_index, row in enumerate(self.sheet.get_sheet_data()):
+        for row_index, row in enumerate(self.sheet.get_sheet_data()):
+            wrapped_row = []
+            for col_index, cell in enumerate(row):
+                if col_index == tgt_idx:
+                    if tgt_width:
+                        width = tgt_width
+                    else:
+                        width = self.sheet.column_width(col_index)
+                    wrapped_row.append(self.wrap_text(cell, width))
+                else:
+                    wrapped_row.append(cell)
+            wrapped_data.append(wrapped_row)
+
+        print(f"col width: {width}")
+        # print(f"시트 data: {self.sheet.get_sheet_data()}")
+        # print(f"시트 분할문자: {wrapped_data}")
+        self.sheet.set_sheet_data(wrapped_data)
 
     def update(self, event=None):
         state = self.state
@@ -573,6 +707,16 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
                             # self.treeview.insert_data_with_levels(wrapped_data)
                             self.sheet.set_sheet_data(wrapped_data)
+
+                            ###########test#################
+                            self.apply_wrap(tgt_idx=3, tgt_width=1000)
+                            self.sheet.set_all_cell_sizes_to_text()
+                            self.sheet.set_all_row_heights(
+                                height=50,
+                                only_set_if_too_small=True,
+                            )
+                            ###########test#################
+
                             self.sheet.see(tgt_rowIdx, 0)
                         else:
                             self.state.log_widget.write(

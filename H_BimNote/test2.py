@@ -1,115 +1,70 @@
-from pathlib import Path
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
-from ttkbootstrap.style import Bootstyle
+from tksheet import Sheet
+import tkinter as tk
 
 
-IMG_PATH = Path(__file__).parent / "assets"
-
-
-class CollapsingFrame(ttk.Frame):
-    """A collapsible frame widget that opens and closes with a click."""
-
-    def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
-        self.columnconfigure(0, weight=1)
-        self.cumulative_rows = 0
-
-        # widget images
-        self.images = [
-            # ttk.PhotoImage(file=IMG_PATH / "icons8_double_up_24px.png"),
-            # ttk.PhotoImage(file=IMG_PATH / "icons8_double_right_24px.png"),
-            # ttk.PhotoImage(file=IMG_PATH),
-            ttk.PhotoImage(file="resource/check.png"),
-            ttk.PhotoImage(file="resource/uncheck.png"),
-        ]
-
-    def add(self, child, title="", bootstyle=PRIMARY, **kwargs):
-        """Add a child to the collapsible frame
-
-        Parameters:
-
-            child (Frame):
-                The child frame to add to the widget.
-
-            title (str):
-                The title appearing on the collapsible section header.
-
-            bootstyle (str):
-                The style to apply to the collapsible section header.
-
-            **kwargs (Dict):
-                Other optional keyword arguments.
-        """
-        if child.winfo_class() != "TFrame":
-            return
-
-        style_color = Bootstyle.ttkstyle_widget_color(bootstyle)
-        frm = ttk.Frame(self, bootstyle=style_color)
-        frm.grid(row=self.cumulative_rows, column=0, sticky=EW)
-
-        # header title
-        header = ttk.Label(master=frm, text=title, bootstyle=(style_color, INVERSE))
-        if kwargs.get("textvariable"):
-            header.configure(textvariable=kwargs.get("textvariable"))
-        header.pack(side=LEFT, fill=BOTH, padx=10)
-
-        # header toggle button
-        def _func(c=child):
-            return self._toggle_open_close(c)
-
-        btn = ttk.Button(
-            master=frm, image=self.images[0], bootstyle=style_color, command=_func
+class WordWrapSheetApp:
+    def __init__(self, root):
+        self.root = root
+        self.sheet = Sheet(
+            root,
+            data=[["Short text", "This is a long piece of text that needs wrapping."]],
+            height=200,
+            width=400,
         )
-        btn.pack(side=RIGHT)
+        self.sheet.pack(expand=True, fill="both")
 
-        # assign toggle button to child so that it can be toggled
-        child.btn = btn
-        child.grid(row=self.cumulative_rows + 1, column=0, sticky=NSEW)
+        # Bind column width change to trigger wrapping
+        self.sheet.extra_bindings([("column_width_resize_end", self.on_column_resize)])
 
-        # increment the row assignment
-        self.cumulative_rows += 2
+        # Initial wrapping
+        self.apply_wrap()
 
-    def _toggle_open_close(self, child):
-        """Open or close the section and change the toggle button
-        image accordingly.
-
-        Parameters:
-
-            child (Frame):
-                The child element to add or remove from grid manager.
+    def wrap_text(self, text, width):
         """
-        if child.winfo_viewable():
-            child.grid_remove()
-            child.btn.configure(image=self.images[1])
-        else:
-            child.grid()
-            child.btn.configure(image=self.images[0])
+        Wrap text to fit within a given width.
+        """
+        if not text or not isinstance(text, str):
+            return text
+        max_chars_per_line = max(1, width // 7)  # Approximate character width in pixels
+        words = text.split()
+        lines = []
+        current_line = ""
+
+        for word in words:
+            if len(current_line) + len(word) + 1 > max_chars_per_line:
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line = f"{current_line} {word}".strip()
+
+        if current_line:
+            lines.append(current_line)
+
+        return "\n".join(lines)
+
+    def apply_wrap(self):
+        """
+        Apply wrapping to all cells based on their column widths.
+        """
+        wrapped_data = []
+        for row_index, row in enumerate(self.sheet.get_sheet_data()):
+            wrapped_row = []
+            for col_index, cell in enumerate(row):
+                width = self.sheet.column_width(col_index)
+                wrapped_row.append(self.wrap_text(cell, width))
+            wrapped_data.append(wrapped_row)
+
+        self.sheet.set_sheet_data(wrapped_data)
+
+    def on_column_resize(self, event):
+        """
+        Re-wrap text when columns are resized.
+        """
+        self.apply_wrap()
 
 
 if __name__ == "__main__":
-
-    app = ttk.Window(minsize=(300, 1))
-
-    cf = CollapsingFrame(app)
-    cf.pack(fill=BOTH)
-
-    # option group 1
-    group1 = ttk.Frame(cf, padding=10)
-    for x in range(5):
-        ttk.Checkbutton(group1, text=f"Option {x + 1}").pack(fill=X)
-    cf.add(child=group1, title="Option Group 1")
-
-    # option group 2
-    group2 = ttk.Frame(cf, padding=10)
-    for x in range(5):
-        ttk.Checkbutton(group2, text=f"Option {x + 1}").pack(fill=X)
-    cf.add(group2, title="Option Group 2", bootstyle=DANGER)
-
-    # option group 3
-    group3 = ttk.Frame(cf, padding=10)
-    for x in range(5):
-        ttk.Checkbutton(group3, text=f"Option {x + 1}").pack(fill=X)
-    cf.add(group3, title="Option Group 3", bootstyle=SUCCESS)
-
-    app.mainloop()
+    root = tk.Tk()
+    root.title("Word Wrap in tksheet")
+    app = WordWrapSheetApp(root)
+    root.mainloop()

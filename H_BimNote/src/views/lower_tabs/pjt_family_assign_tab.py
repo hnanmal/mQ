@@ -24,6 +24,8 @@ from src.views.widget.treeview_utils import (
     PjtStd_GWMTreeView,
 )
 from src.views.widget.pjt_familylist_widget import StdFamilyListWidget
+from src.views.widget.widget import Builing_select_combobox
+from src.views.widget.assign_widget import ModelType_entry
 
 
 def create_pjt_familylist_tab(state, subtab_notebook):
@@ -62,17 +64,23 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
+        width=400,
+        height=3000,
+    )
+
+    section3 = ttk.Frame(
+        working_tab_paned_area,
         width=2000,
         height=3000,
     )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    # working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section3, minsize=600)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=2000, height=3000)
-    # working_tab_paned_window.paneconfigure(section3, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=400, height=3000)
+    working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -92,8 +100,15 @@ def create_pjt_familylist_tab(state, subtab_notebook):
             "edit" if edit_mode_button.cget("text") == "Locked Mode" else "locked"
         ),
     )
-    edit_mode_button.pack(anchor="w", pady=5)
+    edit_mode_button.pack(side="left", anchor="nw", pady=5)
+
+    builing_select_combobox = Builing_select_combobox(state, working_tab_common_area)
+    state.builing_select_combobox = builing_select_combobox
 
     ##############################################################
     ## section 1###########
     pjt_famlist = StdFamilyListWidget(state, section1)
+
+    ##############################################################
+    ## section 2###########
+    modelType_entry = ModelType_entry(state, section2, pjt_famlist)

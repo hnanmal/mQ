@@ -15,7 +15,9 @@ class StdFamilyListWidget(tk.Frame):
         frame = ttk.Frame(parent)
         frame.pack()
 
-        self.set_familylist(frame)
+        familylist = self.set_familylist(frame)
+
+        self.selected_item = familylist.selected_item
 
     def set_familylist(self, parent):
         teamStd_FamlistTreeView = TeamStd_FamlistTreeView(
@@ -40,3 +42,5 @@ class StdFamilyListWidget(tk.Frame):
         teamStd_FamlistTreeView.treeview.tree.column(
             "Description", width=0, minwidth=0, stretch=False
         )
+
+        return teamStd_FamlistTreeView
