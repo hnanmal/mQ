@@ -18,22 +18,22 @@ class MultiLineInputFrame(tk.Frame):
         self.v_scrollbar = ttk.Scrollbar(self.text_frame, orient=tk.VERTICAL)
         self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Horizontal scrollbar
-        self.h_scrollbar = ttk.Scrollbar(self.text_frame, orient=tk.HORIZONTAL)
-        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        # # Horizontal scrollbar
+        # self.h_scrollbar = ttk.Scrollbar(self.text_frame, orient=tk.HORIZONTAL)
+        # self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Text widget for multi-line input
         self.text_widget = tk.Text(
             self.text_frame,
             wrap=tk.NONE,  # Use scrollbars for wrapping
             yscrollcommand=self.v_scrollbar.set,
-            xscrollcommand=self.h_scrollbar.set,
+            # xscrollcommand=self.h_scrollbar.set,
         )
         self.text_widget.pack(fill=tk.BOTH, expand=True)
 
         # Configure scrollbars
         self.v_scrollbar.config(command=self.text_widget.yview)
-        self.h_scrollbar.config(command=self.text_widget.xview)
+        # self.h_scrollbar.config(command=self.text_widget.xview)
 
     def get_text(self):
         """Retrieve the text from the Text widget."""

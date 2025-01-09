@@ -115,7 +115,7 @@ def create_pjtApply_Main_tab(state, subtab_notebook):
         parent=section2,
         notebook=subtab_notebook,
         tab_index=1,
-        button_text="→ 모델링이 없다면: \n\n    Project Apply 탭으로 이동",
+        button_text="→ 모델링이 없다면: \n\n    Project Family Assign 탭으로 이동",
     )
 
     ##############################################################

@@ -16,7 +16,7 @@ class ModelType_entry:
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.relate_widget = relate_widget
         self.selected_item_relate_widget = relate_widget.selected_item
-        self.state_observer = StateObserver(state, lambda e: self.update(e))
+        # self.state_observer = StateObserver(state, lambda e: self.update(e))
 
         self.frame = ttk.Frame(parent)
         self.frame.pack(padx=10, side="left", anchor="nw")

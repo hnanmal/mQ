@@ -1558,7 +1558,7 @@ class TeamStd_FamlistTreeView:
                 button_frame,
                 text="Filter Unused",
                 command=lambda: self.update(self, filter_mode=True),
-                bootstyle="INFO",
+                bootstyle="info-outline",
             )
             filter_button.pack(padx=10, pady=5, side="left")
 
@@ -1567,7 +1567,7 @@ class TeamStd_FamlistTreeView:
                 button_frame,
                 text="Reset TreeView",
                 command=lambda: self.update(self, filter_mode=False),
-                bootstyle="INFO",
+                bootstyle="info-outline",
             )
             reset_button.pack(padx=10, pady=5, side="left")
 
@@ -1578,14 +1578,14 @@ class TeamStd_FamlistTreeView:
             combo_range = list(range(1, 5))
 
         self.level_combobox = ttk.Combobox(
-            # tree_frame, values=list(range(1, len(headers) + 1)), state="readonly"
             button_frame,
             values=combo_range,
             state="readonly",
+            width=7,
         )
         self.level_combobox.current(view_level - 1)  # Set default level
         self.level_combobox.bind("<<ComboboxSelected>>", self.on_level_selected)
-        self.level_combobox.pack(pady=5)
+        self.level_combobox.pack(padx=10, pady=5)
 
         self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)

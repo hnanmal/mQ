@@ -30,9 +30,9 @@ class StdFamilyListWidget(tk.Frame):
         teamStd_FamlistTreeView.treeview.tree.column(
             0, width=0, minwidth=0, stretch=False
         )
-        # teamStd_FamlistTreeView.treeview.tree.column(
-        #     "GWM/SWM", width=0, minwidth=0, stretch=False
-        # )
+        teamStd_FamlistTreeView.treeview.tree.column(
+            "Family Name", width=170, minwidth=170, stretch=True
+        )
         teamStd_FamlistTreeView.treeview.tree.column(
             "Item", width=0, minwidth=0, stretch=False
         )

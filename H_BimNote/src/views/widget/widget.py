@@ -135,12 +135,18 @@ class Builing_select_combobox:
         self.frame = ttk.Frame(parent)
         self.frame.pack(padx=10, side="left", anchor="nw")
 
-        text_label = ttk.Label(self.frame, text="작업대상 건물을 선택해주세요: ")
+        text_label = ttk.Label(self.frame, text="*** 작업대상 건물을 선택해주세요 ***")
+        text_label.config(foreground="#ff0080")
         text_label.pack(side="left", anchor="w", padx=5)
 
         self.combovalues = []
 
-        self.combobox = ttk.Combobox(self.frame, values=self.combovalues)
+        self.combobox = ttk.Combobox(
+            self.frame,
+            values=self.combovalues,
+            bootstyle="danger",
+            state="readonly",
+        )
         self.combobox.pack(side="left", anchor="nw", padx=5)
 
         # Bind the <<ComboboxSelected>> event to the handler
