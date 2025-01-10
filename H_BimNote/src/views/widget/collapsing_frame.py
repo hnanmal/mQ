@@ -22,22 +22,62 @@ class CollapsingFrame(ttk.Frame):
             ttk.PhotoImage(file=IMG_PATH / "frame_open.png"),
         ]
 
-    def add(self, child, title="", bootstyle=PRIMARY, **kwargs):
+    # def add(self, child, title="", bootstyle=PRIMARY, **kwargs):
+    #     """Add a child to the collapsible frame
+
+    #     Parameters:
+
+    #         child (Frame):
+    #             The child frame to add to the widget.
+
+    #         title (str):
+    #             The title appearing on the collapsible section header.
+
+    #         bootstyle (str):
+    #             The style to apply to the collapsible section header.
+
+    #         **kwargs (Dict):
+    #             Other optional keyword arguments.
+    #     """
+    #     if child.winfo_class() != "TFrame":
+    #         return
+
+    #     style_color = Bootstyle.ttkstyle_widget_color(bootstyle)
+    #     frm = ttk.Frame(self, bootstyle=style_color)
+    #     frm.grid(row=self.cumulative_rows, column=0, sticky=EW)
+
+    #     # header title
+    #     header = ttk.Label(master=frm, text=title, bootstyle=(style_color, INVERSE))
+    #     header.config(font=("Bahnschrift Light SemiCondensed", 12, "bold"))
+    #     if kwargs.get("textvariable"):
+    #         header.configure(textvariable=kwargs.get("textvariable"))
+    #     header.pack(side=LEFT, fill=BOTH, padx=10)
+
+    #     # header toggle button
+    #     def _func(c=child):
+    #         return self._toggle_open_close(c)
+
+    #     btn = ttk.Button(
+    #         master=frm, image=self.images[0], bootstyle=style_color, command=_func
+    #     )
+    #     btn.pack(side=RIGHT)
+
+    #     # assign toggle button to child so that it can be toggled
+    #     child.btn = btn
+    #     child.grid(row=self.cumulative_rows + 1, column=0, sticky=NSEW)
+
+    #     # increment the row assignment
+    #     self.cumulative_rows += 2
+
+    def add(self, child, title="", bootstyle=PRIMARY, collapsed=False, **kwargs):
         """Add a child to the collapsible frame
 
         Parameters:
-
-            child (Frame):
-                The child frame to add to the widget.
-
-            title (str):
-                The title appearing on the collapsible section header.
-
-            bootstyle (str):
-                The style to apply to the collapsible section header.
-
-            **kwargs (Dict):
-                Other optional keyword arguments.
+            child (Frame): The child frame to add to the widget.
+            title (str): The title appearing on the collapsible section header.
+            bootstyle (str): The style to apply to the collapsible section header.
+            collapsed (bool): Whether the group should start collapsed.
+            **kwargs (Dict): Other optional keyword arguments.
         """
         if child.winfo_class() != "TFrame":
             return
@@ -65,6 +105,11 @@ class CollapsingFrame(ttk.Frame):
         # assign toggle button to child so that it can be toggled
         child.btn = btn
         child.grid(row=self.cumulative_rows + 1, column=0, sticky=NSEW)
+
+        # Start collapsed if specified
+        if collapsed:
+            child.grid_remove()
+            btn.configure(image=self.images[1])
 
         # increment the row assignment
         self.cumulative_rows += 2
@@ -97,7 +142,7 @@ if __name__ == "__main__":
     group1 = ttk.Frame(cf, padding=10)
     for x in range(5):
         ttk.Checkbutton(group1, text=f"Option {x + 1}").pack(fill=X)
-    cf.add(child=group1, title="Option Group 1")
+    cf.add(child=group1, title="Option Group 1", collapsed=True)
 
     # option group 2
     group2 = ttk.Frame(cf, padding=10)

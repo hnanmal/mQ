@@ -1,14 +1,24 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.views.widget.new_window import open_tab_in_new_window
+
 
 class MultiLineInputFrame(tk.Frame):
-    def __init__(self, parent, label_text="Enter text:", *args, **kwargs):
+    def __init__(self, state, parent, label_text="Enter text:", *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
         # Label for the text input
         self.label = ttk.Label(self, text=label_text)
         self.label.pack(side=tk.TOP, anchor="w", pady=(0, 5))
+
+        # Add a button to open Tab 1 in a new window
+        open_button = ttk.Button(
+            self,
+            text="Rvt Summary",
+            command=lambda: open_tab_in_new_window(state),
+        )
+        open_button.pack(pady=10, padx=2, side=tk.TOP, anchor="w")
 
         # Frame for Text widget and Scrollbars
         self.text_frame = tk.Frame(self)

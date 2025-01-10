@@ -166,4 +166,9 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     customWM_area = ttk.Frame(cf, padding=10)
     for x in range(35):
         ttk.Checkbutton(customWM_area, text=f"Option {x + 1}").pack(fill=X)
-    cf.add(child=customWM_area, title="User addition WM items", bootstyle="info")
+    cf.add(
+        child=customWM_area,
+        title="User addition WM items",
+        bootstyle="info",
+        collapsed=True,
+    )

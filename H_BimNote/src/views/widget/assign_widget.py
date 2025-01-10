@@ -189,7 +189,9 @@ class ModelType_entry:
         label_dynamic.pack(padx=2, side="left", anchor="w")
 
     def create_rvtType_entry(self, frame):
+        state = self.state
         self.rvtType_entry = MultiLineInputFrame(
+            state,
             frame,
             label_text="Enter Revit Type",
         )

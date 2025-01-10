@@ -1996,7 +1996,7 @@ class TeamStd_calcDict_TreeView:
         )
 
     def set_title(self, parent):
-        title_font = ttk.font.Font(family="맑은 고딕", size=12)
+        title_font = ttk.font.Font(family="맑은 고딕", size=9)
         title_label = ttk.Label(
             parent, text="Matched WMs for Selected Standard Types", font=title_font
         )

@@ -194,3 +194,5 @@ def create_project_apply_tab(state, notebook):
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
     famlist_tab = create_pjt_familylist_tab(state, subtab_notebook)
+
+    state.pjt_apply_notebook = subtab_notebook
