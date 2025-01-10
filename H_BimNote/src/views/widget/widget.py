@@ -6,6 +6,35 @@ from ttkbootstrap.constants import *
 from src.core.fp_utils import *
 
 
+def open_dialog(root, textStr):
+    # Create a new Toplevel window
+    dialog = tk.Toplevel(root)
+    dialog.title("Dialog Window")
+    dialog.geometry("300x150")  # Set the size of the dialog
+
+    # Disable interaction with the main window until the dialog is closed
+    dialog.transient(root)  # Set dialog to be a child of the main window
+    dialog.grab_set()  # Grab all input focus
+
+    # Add a label to the dialog
+    label = ttk.Label(dialog, text=textStr)
+    label.pack(pady=10)
+
+    # Add a button to close the dialog
+    close_button = ttk.Button(
+        dialog,
+        text="Close",
+        command=dialog.destroy,
+        bootstyle="danger",
+    )
+    close_button.pack(pady=10)
+
+    # Center the dialog relative to the root window
+    x = root.winfo_x() + (root.winfo_width() // 2) - (300 // 2)
+    y = root.winfo_y() + (root.winfo_height() // 2) - (150 // 2)
+    dialog.geometry(f"300x150+{x}+{y}")
+
+
 def select_tab(notebook, parent_index, subtab_index=None):
     """Select a parent tab and optionally a subtab."""
     # Disable event handlers if any
@@ -159,10 +188,13 @@ class Builing_select_combobox:
         selected_value = event.widget.get()  # Get the selected value from the combo box
         self.update_selected_value(selected_value)
 
+        state.observer_manager.notify_observers(state)
+
     def update_selected_value(self, value):
         state = self.state
-        state.current_building = value
-        print(f"State updated: selected_value = {state.current_building}")
+        # state.current_building = value
+        state.current_building.set(value)
+        print(f"State updated: selected_value = {state.current_building.get()}")
 
     def update(self, event=None):
         state = self.state
@@ -175,6 +207,24 @@ class Builing_select_combobox:
             )
             self.combobox.config(values=self.combovalues)
             try:
-                self.combobox.set(state.current_building)
+                self.combobox.set(state.current_building.get())
             except:
                 pass
+
+
+class Current_building_label:
+    def __init__(self, state, parent):
+        self.state = state
+        self.data_kind = "project-buildinglist"
+        # self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+        self.frame = ttk.Frame(parent)
+        self.frame.pack(side="top", padx=5, pady=5, anchor="nw")
+
+        text_label = ttk.Label(self.frame, text="Current Building :")
+        text_label.config(font=("Arial", 14, "normal"))
+        text_label.pack(side="left", anchor="w", padx=5)
+
+        building_label = ttk.Label(self.frame, textvariable=state.current_building)
+        building_label.config(font=("Arial", 14, "normal"), foreground="#ff0080")
+        building_label.pack(side="left", anchor="w", padx=5)

@@ -13,22 +13,26 @@ class StdFamilyListWidget(tk.Frame):
         self.state = state
         # self.init_ui()
         frame = ttk.Frame(parent)
-        frame.pack()
+        frame.pack(fill="both", padx=3)
 
         familylist = self.set_familylist(frame)
 
         self.selected_item = familylist.selected_item
+        self.data_kind = familylist.data_kind
 
     def set_familylist(self, parent):
         teamStd_FamlistTreeView = TeamStd_FamlistTreeView(
             self.state,
             parent,
-            title="Family List: 레빗타입을 할당할 대상을 선택해주세요",
+            title="대상 건물에 존재하는 부재종류를 선택해 주세요",
             showmode="project_assign",
         )
 
         teamStd_FamlistTreeView.treeview.tree.column(
             0, width=0, minwidth=0, stretch=False
+        )
+        teamStd_FamlistTreeView.treeview.tree.column(
+            "No", width=25, minwidth=25, stretch=True
         )
         teamStd_FamlistTreeView.treeview.tree.column(
             "Family Name", width=170, minwidth=170, stretch=True
@@ -41,6 +45,12 @@ class StdFamilyListWidget(tk.Frame):
         )
         teamStd_FamlistTreeView.treeview.tree.column(
             "Description", width=0, minwidth=0, stretch=False
+        )
+        teamStd_FamlistTreeView.treeview.tree.column(
+            "GWM/SWM", width=40, minwidth=40, stretch=True
+        )
+        teamStd_FamlistTreeView.treeview.tree.column(
+            "표준산출유형 번호", width=40, minwidth=40, stretch=True
         )
 
         return teamStd_FamlistTreeView

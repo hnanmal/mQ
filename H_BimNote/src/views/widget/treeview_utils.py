@@ -1544,15 +1544,13 @@ class TeamStd_FamlistTreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
-        tree_frame.pack()
+        tree_frame.pack(fill="both")
         self.tree_frame = tree_frame
 
         button_frame = ttk.Frame(tree_frame, width=600)
         button_frame.pack(pady=10)
 
         # Add filter button
-        valid_names = ["1.1", "2.1"]
-
         if showmode != "team":
             filter_button = ttk.Button(
                 button_frame,
@@ -1680,6 +1678,19 @@ class TeamStd_FamlistTreeView:
         state = self.state
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
+        self.valid_names = []
+        if (
+            state.team_std_info.get("project-assigntype")
+            and state.current_building.get() != "건물을 선택하세요"
+        ):
+            self.valid_names = go(
+                state.team_std_info.get("project-assigntype").get("children"),
+                filter(lambda x: x["values"][1] == state.current_building.get()),
+                map(lambda x: x["values"][-1]),
+                map(lambda x: x.split(" | ")[-1]),
+                list,
+            )
+
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
 
@@ -1705,7 +1716,7 @@ class TeamStd_FamlistTreeView:
                     data = self.remove_items_unused(
                         state.team_std_info[self.data_kind]["children"],
                         _depth=2,
-                        _rulelist=["1.1", "2.1"],
+                        _rulelist=self.valid_names,
                     )
                 else:
                     data = state.team_std_info[self.data_kind]["children"]
@@ -1951,7 +1962,7 @@ class TeamStd_calcDict_TreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
-        self.add_update_button(tree_frame)
+        self.update_button = self.add_update_button(tree_frame)
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
@@ -2002,6 +2013,7 @@ class TeamStd_calcDict_TreeView:
             command=lambda: self.update_target_byRef("common-input"),
         )
         update_button.pack(padx=10, side="left")
+        return update_button
 
     def update_target_byRef(self, dbKey):
         state = self.state
@@ -2242,6 +2254,7 @@ class BuildingList_TreeView:
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(self.frame, width=600, height=2000)
+        tree_frame.pack()
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)

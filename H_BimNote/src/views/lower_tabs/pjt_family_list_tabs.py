@@ -202,21 +202,21 @@ def create_pjtFamList_tab(state, subtab_notebook):
     ##############################################################
     ## section 3###########
 
-    stdFamilyTypeMatching_treeview = TeamStd_calcDict_TreeView(
+    std_calcDict_TreeView = TeamStd_calcDict_TreeView(
         state,
         section3,
         relate_widget=stdFamlist_treeview,
         data_kind=stdFamlist_treeview.data_kind,
         view_level=3,
     )
-    state.std_matching_treeview_Familylist = stdFamilyTypeMatching_treeview
+    state.std_calcDict_TreeView = std_calcDict_TreeView
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
             # stdFamlist_treeview,
-            stdFamilyTypeMatching_treeview,
+            std_calcDict_TreeView,
             std_GWMTreeView,
             std_SWMTreeView,
         ],

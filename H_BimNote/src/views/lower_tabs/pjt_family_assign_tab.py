@@ -22,10 +22,12 @@ from src.views.widget.treeview_utils import (
     TeamStd_WMmatching_TreeView,
     TeamStd_SWMTreeView,
     PjtStd_GWMTreeView,
+    TeamStd_calcDict_TreeView,
 )
 from src.views.widget.pjt_familylist_widget import StdFamilyListWidget
-from src.views.widget.widget import Builing_select_combobox
-from src.views.widget.assign_widget import ModelType_entry
+from src.views.widget.widget import Builing_select_combobox, Current_building_label
+from src.views.widget.assign_widget import ModelType_entry, TypeAssign_treeview
+from src.views.widget.collapsing_frame import CollapsingFrame
 
 
 def create_pjt_familylist_tab(state, subtab_notebook):
@@ -74,13 +76,27 @@ def create_pjt_familylist_tab(state, subtab_notebook):
         height=3000,
     )
 
-    working_tab_paned_window.add(section1, minsize=400)
-    working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section1)
+    working_tab_paned_window.add(section2)
+    working_tab_paned_window.add(section3)
 
-    working_tab_paned_window.paneconfigure(section1, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=400, height=3000)
-    working_tab_paned_window.paneconfigure(section3, height=3000)
+    working_tab_paned_window.paneconfigure(
+        section1,
+        minsize=100,
+        # maxsize=1000,
+        height=3000,
+    )
+    working_tab_paned_window.paneconfigure(
+        section2,
+        minsize=400,
+        width=400,
+        height=3000,
+    )
+    working_tab_paned_window.paneconfigure(
+        section3,
+        minsize=1100,
+        height=3000,
+    )
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -111,4 +127,43 @@ def create_pjt_familylist_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 2###########
-    modelType_entry = ModelType_entry(state, section2, pjt_famlist)
+    curBuilding_widget = Current_building_label(state, section2)
+
+    modelType_entry = ModelType_entry(state, section2, relate_widget=pjt_famlist)
+
+    typeAssign_treeview = TypeAssign_treeview(
+        state, section2, relate_widget=modelType_entry
+    )
+    state.typeAssign_treeview = typeAssign_treeview
+
+    # calc_dict Area
+    calc_dict_area = ttk.Frame(section2)
+    calc_dict_area.pack(fill="x", side="bottom", anchor="s", padx=20)
+    pjtAssign_calcDict_TreeView = TeamStd_calcDict_TreeView(
+        state,
+        calc_dict_area,
+        relate_widget=pjt_famlist,
+        view_level=3,
+    )
+    pjtAssign_calcDict_TreeView.treeview.tree.config(height=4)
+    # pjtAssign_calcDict_TreeView.update_button.pack_forget()
+    state.pjtAssign_calcDict_TreeView = pjtAssign_calcDict_TreeView
+
+    ##############################################################
+    ## section 3###########
+    cf = CollapsingFrame(section3)
+    cf.pack(fill=BOTH)
+
+    suggestWM_area = ttk.Frame(cf, padding=10)
+    for x in range(35):
+        ttk.Checkbutton(suggestWM_area, text=f"Option {x + 1}").pack(fill=X)
+    # StdFamilyListWidget(state, suggestWM_area)
+    cf.add(
+        child=suggestWM_area, title="Suggested Standard WM items", bootstyle="primary"
+    )
+
+    # option group 2
+    customWM_area = ttk.Frame(cf, padding=10)
+    for x in range(35):
+        ttk.Checkbutton(customWM_area, text=f"Option {x + 1}").pack(fill=X)
+    cf.add(child=customWM_area, title="User addition WM items", bootstyle="info")

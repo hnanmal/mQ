@@ -24,7 +24,8 @@ class AppState:
         self.selectedWMs = []
         self.selectedGWMitems = []
         self.selected_matchedWMs = []
-        self.current_building = None
+        self.current_building = tk.StringVar()
+        self.current_building.set("건물을 선택하세요")
 
         self.wm_group_data = {}
         self.lock_status = {}
@@ -48,7 +49,7 @@ class AppState:
             pass
 
         try:
-            self.std_matching_treeview_Familylist.update(self)
+            self.std_calcDict_TreeView.update(self)
         except:
             pass
 
@@ -69,6 +70,16 @@ class AppState:
 
         try:
             self.builing_select_combobox.update(self)
+        except:
+            pass
+
+        try:
+            self.pjtAssign_calcDict_TreeView.update(self)
+        except:
+            pass
+
+        try:
+            self.typeAssign_treeview.update(self)
         except:
             pass
 
