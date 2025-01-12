@@ -437,7 +437,9 @@ class TreeDataManager_treeview(TreeDataManager):
 
             # Update the values for the item
             new_values = list(selected_GWMitem["values"])
-            new_values.insert(0, "")  # Add placeholders for columns
+            # new_values[2] = data_kind
+            # new_values.insert(0, data_kind)  # Add placeholders for columns
+            new_values.insert(0, "")
             new_values.insert(0, "")
             new_values.insert(0, "")
             selected_GWMitem.update({"values": new_values})

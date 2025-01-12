@@ -161,7 +161,7 @@ class AppState:
             sorted,
             list,
         )
-        print(selectedGWMitems)
+        print(f"!!!match_GWM_to_stdFam: {selectedGWMitems}")
         related_widget.selected_item.get().split(" | ")
         grandparent_item_name, parent_item_name, selected_item_name = (
             related_widget.selected_item.get().split(" | ")
@@ -169,6 +169,7 @@ class AppState:
 
         # Use TreeDataNavigator to remove matched WMs
         treeDataManager = TreeDataManager_treeview(self, related_widget)
+        print(f"!!!match_GWM_to_stdFam: {data_kind}")
         treeDataManager.match_GWMitems_to_stdFam(
             data_kind,
             grandparent_item_name,

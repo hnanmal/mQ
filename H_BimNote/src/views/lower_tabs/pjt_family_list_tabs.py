@@ -115,17 +115,6 @@ def create_pjtFamList_tab(state, subtab_notebook):
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_SWMTreeView.tree_frame.pack_forget()
 
-    # std_GWMTreeView.tree_frame.pack(
-    #     side="left",
-    #     padx=20,
-    #     pady=5,
-    # )
-    # std_SWMTreeView.tree_frame.pack(
-    #     side="left",
-    #     padx=10,
-    #     pady=5,
-    # )
-
     widgetSwitcher = WidgetSwitcher(
         std_matching_widget_area,
         {
