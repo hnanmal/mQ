@@ -136,7 +136,11 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
     std_matching_treeview.treeview.tree.config(height=800)
-    state.std_matching_treeview_GWM = std_matching_treeview
+
+    ######### notify_targets 등록 ###############################################
+    # state.std_matching_treeview_GWM = std_matching_treeview
+    state.notify_targets.append(std_matching_treeview)
+    #############################################################################
 
     std_matching_btn_area = ttk.Frame(
         section2,
@@ -321,7 +325,11 @@ def create_stdSWM_tab(state, subtab_notebook):
     )
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
     std_matching_treeview.treeview.tree.config(height=800)
-    state.std_matching_treeview_SWM = std_matching_treeview
+
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(std_matching_treeview)
+    #############################################################################
+    # state.std_matching_treeview_SWM = std_matching_treeview
 
     std_matching_btn_area = ttk.Frame(
         section2,

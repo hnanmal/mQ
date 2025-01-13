@@ -12,6 +12,7 @@ from src.controllers.widget.widgets import (
 )
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
+    ProjectApply_GWMSWM_Selcet_SheetView,
     ProjectStd_WM_Selcet_SheetView_SWM,
     TeamStd_WMsSheetView,
     ProjectStd_WM_Selcet_SheetView_GWM,
@@ -134,7 +135,10 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     typeAssign_treeview = TypeAssign_treeview(
         state, section2, relate_widget=modelType_entry
     )
-    state.typeAssign_treeview = typeAssign_treeview
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(typeAssign_treeview)
+    #############################################################################
+    # state.typeAssign_treeview = typeAssign_treeview
 
     # calc_dict Area
     calc_dict_area = ttk.Frame(section2)
@@ -146,24 +150,54 @@ def create_pjt_familylist_tab(state, subtab_notebook):
         view_level=3,
     )
     pjtAssign_calcDict_TreeView.treeview.tree.config(height=4)
-    # pjtAssign_calcDict_TreeView.update_button.pack_forget()
-    state.pjtAssign_calcDict_TreeView = pjtAssign_calcDict_TreeView
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(pjtAssign_calcDict_TreeView)
+    #############################################################################
+    # state.pjtAssign_calcDict_TreeView = pjtAssign_calcDict_TreeView
 
     ##############################################################
     ## section 3###########
     cf = CollapsingFrame(section3)
     cf.pack(fill=BOTH)
 
-    suggestWM_area = ttk.Frame(cf, padding=10)
-    for x in range(35):
-        ttk.Checkbutton(suggestWM_area, text=f"Option {x + 1}").pack(fill=X)
+    suggestWM_area = ttk.Frame(
+        cf,
+        # padding=10,
+    )
+
+    projectApply_GWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
+        state,
+        suggestWM_area,
+        pjt_famlist,
+        typeAssign_treeview,
+    )
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(projectApply_GWM_Selcet_SheetView)
+    #############################################################################
+
+    projectApply_SWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
+        state,
+        suggestWM_area,
+        pjt_famlist,
+        typeAssign_treeview,
+        wm_mode="[ SWM ]",
+    )
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(projectApply_SWM_Selcet_SheetView)
+    #############################################################################
+
+    # for x in range(35):
+    #     ttk.Checkbutton(suggestWM_area, text=f"Option {x + 1}").pack(fill=X)
     # StdFamilyListWidget(state, suggestWM_area)
     cf.add(
         child=suggestWM_area, title="Suggested Standard WM items", bootstyle="primary"
     )
 
     # option group 2
-    customWM_area = ttk.Frame(cf, padding=10)
+    customWM_area = ttk.Frame(
+        cf,
+        # padding=10,
+    )
     for x in range(35):
         ttk.Checkbutton(customWM_area, text=f"Option {x + 1}").pack(fill=X)
     cf.add(

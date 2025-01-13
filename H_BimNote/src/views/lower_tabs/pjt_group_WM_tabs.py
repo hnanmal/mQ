@@ -143,7 +143,9 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
         state, std_matching_widget_area, pjtStdGWM_treeview
     )
     ## 체크표시만 pjt-GWM에 GMW-WM 항목별로 저장하고, 시트불러올때는 std-GWM불러온뒤 체크표시만 pjt-GWM으로 업데이트 하면 어떤가?
-    state.pjtStd_WMselect_sheetview_GWM = pjtStd_WMselect_sheetview_GWM
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(pjtStd_WMselect_sheetview_GWM)
+    #############################################################################
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
@@ -248,6 +250,7 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
     )
     # pjtStdGWM_treeview = PjtStd_GWMTreeView(state, section1)
     DefaultTreeViewStyleManager.apply_style(pjtStdSWM_treeview.treeview.tree)
+
     state.pjtStdSWM_treeview = pjtStdSWM_treeview
 
     ##############################################################
@@ -283,7 +286,10 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
         state, std_matching_widget_area, pjtStdSWM_treeview
     )
     ## 체크표시만 pjt-GWM에 GMW-WM 항목별로 저장하고, 시트불러올때는 std-GWM불러온뒤 체크표시만 pjt-GWM으로 업데이트 하면 어떤가?
-    state.pjtStd_WMselect_sheetview_SWM = pjtStd_WMselect_sheetview_SWM
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(pjtStd_WMselect_sheetview_SWM)
+    #############################################################################
+    # state.pjtStd_WMselect_sheetview_SWM = pjtStd_WMselect_sheetview_SWM
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(

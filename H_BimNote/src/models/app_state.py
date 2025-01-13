@@ -14,6 +14,7 @@ class AppState:
     def __init__(self, log_widget):
         # self._state = {}  ## 필요 없으면 나중에 삭제
         self.observer_manager = ObserverManager()
+        self.notify_targets = []
         self.DefaultTreeViewStyleManager = DefaultTreeViewStyleManager
         # self.treeDataManager = TreeDataManager(self, related_widget)
 
@@ -26,6 +27,7 @@ class AppState:
         self.selected_matchedWMs = []
         self.current_building = tk.StringVar()
         self.current_building.set("건물을 선택하세요")
+        self.switch_widget_status = tk.StringVar()
 
         self.wm_group_data = {}
         self.lock_status = {}
@@ -38,50 +40,66 @@ class AppState:
         self.undo_stack = []
 
     def _notify_selected_change(self, *args):
-        try:
-            self.std_matching_treeview_GWM.update(self)
-        except:
-            pass
+        for noti_tgt in self.notify_targets:
+            try:
+                noti_tgt.update(self)
+            except:
+                pass
 
-        try:
-            self.std_matching_treeview_SWM.update(self)
-        except:
-            pass
+        # try:
+        #     self.std_matching_treeview_GWM.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.std_calcDict_TreeView.update(self)
-        except:
-            pass
+        # try:
+        #     self.std_matching_treeview_SWM.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.pjtStd_WMselect_sheetview_GWM.update(self)
-        except:
-            pass
+        # try:
+        #     self.std_calcDict_TreeView.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.pjtStd_WMselect_sheetview_SWM.update(self)
-        except:
-            pass
+        # try:
+        #     self.pjtStd_WMselect_sheetview_GWM.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.building_list.update(self)
-        except:
-            pass
+        # try:
+        #     self.pjtStd_WMselect_sheetview_SWM.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.builing_select_combobox.update(self)
-        except:
-            pass
+        # try:
+        #     self.building_list.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.pjtAssign_calcDict_TreeView.update(self)
-        except:
-            pass
+        # try:
+        #     self.builing_select_combobox.update(self)
+        # except:
+        #     pass
 
-        try:
-            self.typeAssign_treeview.update(self)
-        except:
-            pass
+        # try:
+        #     self.pjtAssign_calcDict_TreeView.update(self)
+        # except:
+        #     pass
+
+        # try:
+        #     self.typeAssign_treeview.update(self)
+        # except:
+        #     pass
+
+        # try:
+        #     self.widgetSwitcher_team.update(self)
+        # except:
+        #     pass
+
+        # try:
+        #     self.widgetSwitcher_pjt.update(self)
+        # except:
+        #     pass
 
     ################### 옵저버 관련 #################################
 
@@ -169,7 +187,6 @@ class AppState:
 
         # Use TreeDataNavigator to remove matched WMs
         treeDataManager = TreeDataManager_treeview(self, related_widget)
-        print(f"!!!match_GWM_to_stdFam: {data_kind}")
         treeDataManager.match_GWMitems_to_stdFam(
             data_kind,
             grandparent_item_name,

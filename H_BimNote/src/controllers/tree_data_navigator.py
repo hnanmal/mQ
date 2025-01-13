@@ -1,4 +1,5 @@
 from copy import deepcopy
+from src.core.fp_utils import *
 
 
 class TreeDataManager:
@@ -371,6 +372,7 @@ class TreeDataManager:
 class TreeDataManager_treeview(TreeDataManager):
     def __init__(self, state, related_widget=None):
         super().__init__(state, related_widget=related_widget)
+        self.state = state
 
     def match_wms_to_stdType(
         self, data_kind, grandparent_name, parent_name, child_name, selected_wms
@@ -382,11 +384,11 @@ class TreeDataManager_treeview(TreeDataManager):
 
         if isinstance(selected_node, list) and selected_wms:
             # Handle adding to list of strings (last level)
-            print(f"Adding matched WMs: {selected_wms}")
+            self.state.log_widget.write(f"\nAdding matched WMs: {selected_wms}\n")
             parent_node["children"].extend(selected_wms)
         elif selected_node and "children" in selected_node and selected_wms:
             # Handle adding matched WMs to regular children
-            print(f"Adding matched WMs: {selected_wms}")
+            self.state.log_widget.write(f"\nAdding matched WMs: {selected_wms}\n")
             selected_node["children"].extend(selected_wms)
 
     def remove_matched_wms(
@@ -399,13 +401,13 @@ class TreeDataManager_treeview(TreeDataManager):
 
         if isinstance(selected_node, list):
             # Handle removal from list of strings (last level)
-            print(f"Removing matched WMs: {matched_wms}")
+            self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
             parent_node["children"] = [
                 child for child in selected_node if child not in matched_wms
             ]
         elif selected_node and "children" in selected_node:
             # Handle removal from regular children
-            print(f"Removing matched WMs: {matched_wms}")
+            self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
             selected_node["children"] = [
                 child for child in selected_node["children"] if child not in matched_wms
             ]
@@ -414,6 +416,8 @@ class TreeDataManager_treeview(TreeDataManager):
         self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems
     ):
         """Add specified matched WMs to the children of the selected node, recognizing derived items by inclusion."""
+        state = self.state
+
         _, parent_node, selected_node = self.get_node_path(
             data_kind, grandparent_name, parent_name, child_name
         )
@@ -421,6 +425,7 @@ class TreeDataManager_treeview(TreeDataManager):
 
         # Get existing child names for recognition of derivatives
         existing_names = {child["name"] for child in selected_node.get("children", [])}
+        self.state.log_widget.write(f"\n0. existing_names: {existing_names}\n")
 
         for selected_GWMitem in selected_GWMitems_copy:
             # Check if the item is a derivative by inclusion
@@ -428,29 +433,46 @@ class TreeDataManager_treeview(TreeDataManager):
             derived_from = next(
                 (name for name in existing_names if base_name.startswith(name)), None
             )
-
+            self.state.log_widget.write(f"\n1. derived_from: {derived_from}\n")
             if derived_from:
                 # Recognized as a derived item, update its name to include base name
                 selected_GWMitem["name"] = (
                     base_name  # The name already represents the derived item
                 )
+            self.state.log_widget.write(
+                f"\n2. selected_GWMitem_name: {selected_GWMitem['name']}\n"
+            )
 
             # Update the values for the item
             new_values = list(selected_GWMitem["values"])
-            # new_values[2] = data_kind
-            # new_values.insert(0, data_kind)  # Add placeholders for columns
+            new_values[2] = f"[ {state.switch_widget_status.get()} ]"
             new_values.insert(0, "")
             new_values.insert(0, "")
             new_values.insert(0, "")
             selected_GWMitem.update({"values": new_values})
+            self.state.log_widget.write(f"\n3. new_values: {new_values}\n")
 
             # Copy formulas for the children if they match a reference item
             children = list(selected_GWMitem.get("children", []))
-            reference_item = (
-                selected_node.get("children", [])
-                if isinstance(selected_node, dict)
-                else []
-            )[0]
+            reference_item_ = go(
+                (
+                    selected_node.get("children", [])
+                    if isinstance(selected_node, dict)
+                    else []
+                ),
+                filter(lambda x: x["name"] == derived_from),
+                list,
+            )
+            if len(reference_item_) > 0:
+                reference_item = reference_item_[0]
+            else:
+                reference_item = {
+                    "name": "",
+                    "values": [],
+                    "children": [],
+                }
+
+            self.state.log_widget.write(f"\n4. reference_item: {reference_item}\n")
             for child in children:
                 # Find a matching reference child by name
                 matching_reference = next(
@@ -460,6 +482,9 @@ class TreeDataManager_treeview(TreeDataManager):
                         if ref["name"] == child["name"]
                     ),
                     None,
+                )
+                self.state.log_widget.write(
+                    f"\n5. matching_reference: {matching_reference}\n"
                 )
 
                 # Copy formula from the matching reference if available

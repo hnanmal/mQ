@@ -350,6 +350,74 @@ class BaseTreeView:
             self.tree.unbind("<<TreeviewOpen>>")
             self.tree.unbind("<<TreeviewClose>>")
 
+    def ensure_item_visible_at_level(self, item_id, level):
+        """
+        Ensure the given item or its closest ancestor is visible at the specified level.
+
+        Parameters:
+            item_id (str): The ID of the item to check.
+            level (int): The target level to ensure visibility.
+
+        Returns:
+            str: The ID of the closest visible ancestor or the item itself.
+        """
+        tree = self.tree
+        current_level = 0
+        current_item = item_id
+
+        while current_item:
+            # Calculate the item's depth in the hierarchy
+            parent = tree.parent(current_item)
+            if not parent:
+                current_level = 1
+            else:
+                current_level += 1
+
+            # If the item's level is within the visible range, return it
+            if current_level <= level:
+                tree.see(current_item)
+                return current_item
+
+            # Otherwise, move up to the parent
+            current_item = parent
+
+        # If no visible ancestor is found, return None
+        return None
+
+    def bring_item_to_top(self, item_id):
+        """
+        Ensure the given item_id is shown at the top of the Treeview view.
+
+        Parameters:
+            item_id (str): The ID of the item to bring to the top.
+        """
+        treeview = self.tree
+        if not item_id:
+            return  # No item selected
+
+        # Make sure the item is visible
+        treeview.see(item_id)
+
+        # Get the list of all visible items
+        def get_visible_items(tree, parent=""):
+            visible = []
+            for child in tree.get_children(parent):
+                visible.append(child)
+                visible.extend(get_visible_items(tree, child))
+            return visible
+
+        visible_items = get_visible_items(treeview)
+
+        # Find the index of the selected item
+        if item_id in visible_items:
+            item_index = visible_items.index(item_id)
+
+            # Calculate the scroll fraction and move the view
+            total_items = len(visible_items)
+            if total_items > 0:
+                fraction = item_index / total_items
+                treeview.yview_moveto(fraction)
+
     def collapse_all_items(self):
         """Recursively collapse all items in the Treeview."""
 
@@ -1202,7 +1270,8 @@ class TeamStd_SWMTreeView:
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
-            name_depth=2,
+            # name_depth=2,
+            name_depth=1,
         )
         state.observer_manager.notify_observers(state)
 
@@ -1724,7 +1793,12 @@ class TeamStd_FamlistTreeView:
             self.treeview.clear_treeview()
             self.treeview.insert_data_with_levels(data)
 
-            self.treeview.expand_tree_to_level(level=view_level)
+            self.on_level_selected(event=None)
+
+            # try:
+            #     self.treeview.expand_tree_to_level(level=view_level)
+            # except:
+            #     pass
 
         # Reselect the item if possible
         if origin_indices:
@@ -1733,7 +1807,12 @@ class TeamStd_FamlistTreeView:
             except Exception as e:
                 self.state.log_widget.write(f"Item selection failed: {e}")
 
-        self.on_level_selected(event=None)
+        # Apply row colors dynamically
+        DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
+            self.treeview.tree
+        )
+
+        # self.on_level_selected(event=None)
 
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
@@ -1749,8 +1828,10 @@ class TeamStd_FamlistTreeView:
                 self.last_selected_item
                 and self.last_selected_item not in selected_item_id
             ):
-                original_tag = self.treeview.item(self.last_selected_item, "tags")[0]
-                self.treeview.item(self.last_selected_item, tags=(original_tag,))
+                original_tag = self.treeview.tree.item(self.last_selected_item, "tags")[
+                    0
+                ]
+                self.treeview.tree.item(self.last_selected_item, tags=(original_tag,))
 
             # 현재 선택된 항목의 스타일을 변경
             if selected_item_id:
@@ -1829,16 +1910,30 @@ class TeamStd_FamlistTreeView:
         """Handle combo box selection and expand the tree to the selected level."""
         try:
             selected_level = int(self.level_combobox.get())
+
+            # Expand the tree to the selected level
             self.treeview.expand_tree_to_level(level=selected_level)
-            # 트리뷰 데이터를 갱신하거나 레벨을 변경한 후 호출
+
+            # Apply row colors dynamically
             DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
                 self.treeview.tree
             )
-            if self.treeview.tree.focus():
-                selected_item = self.treeview.tree.focus()
-                # print(selected_item)
-                # self.treeview.tree.see(selected_item)
-                self.place_selected_item_at_top(self.treeview.tree)
+
+            # Handle focused item visibility
+            focused_item = self.treeview.tree.focus()
+            if focused_item:
+                # Ensure the item is visible at the selected level
+                visible_item = self.treeview.ensure_item_visible_at_level(
+                    focused_item, selected_level
+                )
+                if visible_item:
+                    self.treeview.bring_item_to_top(visible_item)
+                    self.treeview.tree.focus(visible_item)
+            else:
+                # Optionally, focus on the first visible item if no item is focused
+                first_root = self.treeview.tree.get_children("")[0]
+                self.treeview.bring_item_to_top(first_root)
+                self.treeview.tree.focus(first_root)
 
         except ValueError as e:
             self.state.log_widget.write(f"Invalid level selected: {e}")

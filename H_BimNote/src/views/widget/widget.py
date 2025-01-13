@@ -61,7 +61,7 @@ class StateObserver:
 
 class WidgetSwitcher:
     def __init__(
-        self, parent_frame, widgets, default_selection=None, default_width=300
+        self, state, parent_frame, widgets, default_selection=None, default_width=300
     ):
         """
         Initialize the WidgetSwitcher.
@@ -70,11 +70,14 @@ class WidgetSwitcher:
         :param widgets: A dictionary of widget names and corresponding widgets to be switched.
         :param default_selection: The widget to display initially. Defaults to the first widget if not provided.
         """
+        self.state = state
         self.parent_frame = parent_frame
         self.widgets = (
             widgets  # A dictionary of widget names and corresponding widget objects
         )
         self.default_width = default_width
+
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
 
         # Create combo box for widget selection
         self.combo_box = ttk.Combobox(
@@ -85,10 +88,12 @@ class WidgetSwitcher:
         # Set default selection
         if default_selection:
             self.combo_box.set(default_selection)
+            state.switch_widget_status.set(default_selection)
         else:
             # Default to the first widget in the list if none is specified
             default_widget = list(self.widgets.keys())[0]
             self.combo_box.set(default_widget)
+            state.switch_widget_status.set(default_widget)
 
         # Hide all widgets initially
         for widget in self.widgets.values():
@@ -100,8 +105,21 @@ class WidgetSwitcher:
         # Bind the combo box to the switching method
         self.combo_box.bind("<<ComboboxSelected>>", self.on_combo_box_selected)
 
+    def update(self, event=None):
+        state = self.state
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+
+        widget_name = state.switch_widget_status.get()
+        print(f"\n\n{widget_name}\n\n")
+
+        self.show_widget(widget_name)
+        self.combo_box.set(widget_name)
+
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
+
     def show_widget(self, widget_name):
         """Show the selected widget and hide the others."""
+        state = self.state
         # Hide all widgets
         for widget in self.widgets.values():
             widget.pack_forget()
@@ -112,10 +130,17 @@ class WidgetSwitcher:
             selected_widget.pack(fill=tk.BOTH, expand=True)
             selected_widget.config(width=self.default_width)
 
+            # state.switch_widget_status.set(widget_name)
+            state.log_widget.write(f"switch status: {widget_name}")
+
     def on_combo_box_selected(self, event):
         """Handle the combo box selection change event."""
+        state = self.state
         selected_widget_name = self.combo_box.get()
+        state.switch_widget_status.set(selected_widget_name)
         self.show_widget(selected_widget_name)
+        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        state.observer_manager.notify_observers(state)
 
 
 class TabNavigationButton(tk.Frame):

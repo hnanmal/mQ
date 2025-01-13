@@ -123,6 +123,7 @@ def create_stdFamList_tab(state, subtab_notebook):
     # )
 
     widgetSwitcher = WidgetSwitcher(
+        state,
         std_matching_widget_area,
         {
             "GWM": std_GWMTreeView.tree_frame,
@@ -131,6 +132,10 @@ def create_stdFamList_tab(state, subtab_notebook):
         default_selection="GWM",
         default_width=600,
     )
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(widgetSwitcher)
+    #############################################################################
+    # state.widgetSwitcher_pjt = widgetSwitcher
 
     std_matching_btn_area = ttk.Frame(
         section1,
@@ -192,21 +197,24 @@ def create_stdFamList_tab(state, subtab_notebook):
     ##############################################################
     ## section 3###########
 
-    stdFamilyTypeMatching_treeview = TeamStd_calcDict_TreeView(
+    std_calcDict_TreeView = TeamStd_calcDict_TreeView(
         state,
         section3,
         relate_widget=stdFamlist_treeview,
         data_kind=stdFamlist_treeview.data_kind,
         view_level=3,
     )
-    state.std_matching_treeview_Familylist = stdFamilyTypeMatching_treeview
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(std_calcDict_TreeView)
+    #############################################################################
+    # state.std_matching_treeview_Familylist = std_calcDict_TreeView
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
             # stdFamlist_treeview,
-            stdFamilyTypeMatching_treeview,
+            std_calcDict_TreeView,
             std_GWMTreeView,
             std_SWMTreeView,
         ],
