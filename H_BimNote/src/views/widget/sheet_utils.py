@@ -955,7 +955,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
 
         self.setup_column_style()
         # 초기 데이터 로드
-        self.update()
+        # self.update()
 
     def setup_column_style(self):
         self.sheet.set_column_widths([25, 100, 100])
@@ -1096,12 +1096,9 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         self.state.log_widget.write(
             f"선택아이템 출력 : {self.selected_item_relate_widget_std.get()}"
         )
+        self.sheet.set_sheet_data([])
         self.setup_column_style()
 
-        existDatas = self.sheet.get_sheet_data()
-        self.sheet.set_sheet_data([])
-        for idx, value in enumerate(existDatas):
-            self.sheet.del_dropdown(idx, 2)
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
             grand_parent_item_name, parent_item_name, selected_item_name = (
@@ -1142,25 +1139,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                             self.sheet.clear()
 
                             # Wrap the children of the selected node for insertion
-                            # wrapped_data = go(
-                            #     selected_node["children"],
-                            #     filter(lambda x: x["values"][5] == self.wm_mode),
-                            #     # map(lambda x: x["name"]),
-                            #     map(
-                            #         lambda x: [
-                            #             "",
-                            #             x["name"],
-                            #             go(
-                            #                 x,
-                            #                 lambda y: list(
-                            #                     map(lambda z: z["name"], y["children"])
-                            #                 ),
-                            #             ),
-                            #         ]
-                            #     ),
-                            #     list,
-                            # )
-
                             # wrapped_data = []
                             pool = go(
                                 # deepcopy,
@@ -1174,64 +1152,51 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 list,
                             )
 
-                            # self.sheet.set_data(
-                            #     "A1",
-                            #     [
-                            #         ["", "A", "B", "C"],
-                            #         ["1", "A1", "B1", "C1"],
-                            #         ["2", "A2", "B2", "C2"],
-                            #     ],
-                            # )
-                            # self.sheet.set_sheet_data(wrapped_data)
+                            dropdowns = go(
+                                pool,
+                                map(lambda x: x["children"]),
+                                map(lambda x: list(map(lambda y: y["name"], x))),
+                                list,
+                            )
+                            # print(dropdowns)
+
                             self.sheet.set_sheet_data([])
                             self.sheet.del_dropdown()
 
-                            for idx, node in enumerate(pool):
-                                self.sheet.insert_row(
-                                    idx=idx,
-                                    row=[True, node["name"], ""],
+                            self.sheet.set_sheet_data(wrapped_data)
+
+                            for idx, row in enumerate(self.sheet):
+                                self.sheet.create_dropdown(
+                                    idx,
+                                    2,
+                                    values=dropdowns[idx],
                                 )
 
-                                dropdown_values = go(
-                                    node["children"],
-                                    map(lambda x: x["name"]),
-                                    list,
-                                )
-                                self.sheet.create_dropdown(
-                                    idx, 2, values=dropdown_values
-                                )
+                            # for idx, node in enumerate(pool):
+                            #     self.sheet.set_row_data(
+                            #         r=idx,
+                            #         values=[True, node["name"], ""],
+                            #     )
+                            # self.sheet.insert_row(
+                            #     idx=idx,
+                            #     row=[True, node["name"], ""],
+                            # )
+
+                            #     dropdown_values = go(
+                            #         node["children"],
+                            #         map(lambda x: x["name"]),
+                            #         list,
+                            #     )
+                            #     self.sheet.create_dropdown(
+                            #         idx, 2, values=dropdown_values
+                            #     )
 
                             # print(f"\npool_data::: {pool}\n")
 
                             selected_item_str = (
                                 self.selected_item_relate_widget_std.get()
                             )
-                            # decided_WM = state.team_std_info["project-GWM"].get(
-                            #     selected_item_str, None
-                            # )
 
-                            # tgt_rowIdx = 0
-                            # if decided_WM:
-                            #     for idx, row in enumerate(wrapped_data):
-                            #         if decided_WM[0] in row[-1]:
-                            #             row[0] = True
-                            #             row[1] = decided_WM[-1]
-                            #             row[2] = decided_WM[-2]
-                            #             tgt_rowIdx = idx
-
-                            # self.treeview.insert_data_with_levels(wrapped_data)
-                            # self.sheet.set_sheet_data(wrapped_data)
-
-                            # ###########test#################
-                            # self.apply_wrap(tgt_idx=3, tgt_width=1000)
-                            # self.sheet.set_all_cell_sizes_to_text()
-                            # self.sheet.set_all_row_heights(
-                            #     height=50,
-                            #     only_set_if_too_small=True,
-                            # )
-                            # ###########test#################
-
-                            # self.sheet.see(tgt_rowIdx, 0)
                         else:
                             self.state.log_widget.write(
                                 f"Selected item '{selected_item_name}' not found."
