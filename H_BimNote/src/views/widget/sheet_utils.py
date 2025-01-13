@@ -898,7 +898,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             show_y_scrollbar=True,
             # show_header=False,
             # show_row_index=False,
-            width=300,
+            width=350,
             height=175,
         )
         self.sheet.pack(
@@ -958,7 +958,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 100, 100])
+        self.sheet.set_column_widths([25, 100, 180])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
@@ -1148,7 +1148,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                             )
                             wrapped_data = go(
                                 pool,
-                                map(lambda x: [False, x["name"], ""]),
+                                map(lambda x: [True, x["name"], ""]),
                                 list,
                             )
 
@@ -1171,27 +1171,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                     2,
                                     values=dropdowns[idx],
                                 )
-
-                            # for idx, node in enumerate(pool):
-                            #     self.sheet.set_row_data(
-                            #         r=idx,
-                            #         values=[True, node["name"], ""],
-                            #     )
-                            # self.sheet.insert_row(
-                            #     idx=idx,
-                            #     row=[True, node["name"], ""],
-                            # )
-
-                            #     dropdown_values = go(
-                            #         node["children"],
-                            #         map(lambda x: x["name"]),
-                            #         list,
-                            #     )
-                            #     self.sheet.create_dropdown(
-                            #         idx, 2, values=dropdown_values
-                            #     )
-
-                            # print(f"\npool_data::: {pool}\n")
 
                             selected_item_str = (
                                 self.selected_item_relate_widget_std.get()
