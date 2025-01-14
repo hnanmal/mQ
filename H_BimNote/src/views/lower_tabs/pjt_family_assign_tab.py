@@ -1,3 +1,4 @@
+from src.core.fp_utils import *
 import tkinter as tk
 import tkinter.font
 
@@ -160,14 +161,30 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     cf = CollapsingFrame(section3)
     cf.pack(fill=BOTH)
 
-    suggestWM_area = ttk.Frame(
+    main_area = ttk.Frame(
         cf,
         # padding=10,
     )
 
+    suggestWM_area = ttk.Frame(
+        main_area,
+        # padding=10,
+    )
+    suggestWM_area.pack(anchor="nw")
+
+    GWMarea = ttk.Frame(
+        suggestWM_area,
+    )
+    GWMarea.pack(side="left", anchor="nw")
+
+    SWMarea = ttk.Frame(
+        suggestWM_area,
+    )
+    SWMarea.pack(side="left", anchor="nw")
+
     projectApply_GWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
         state,
-        suggestWM_area,
+        GWMarea,
         pjt_famlist,
         typeAssign_treeview,
     )
@@ -177,7 +194,7 @@ def create_pjt_familylist_tab(state, subtab_notebook):
 
     projectApply_SWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
         state,
-        suggestWM_area,
+        SWMarea,
         pjt_famlist,
         typeAssign_treeview,
         wm_mode="[ SWM ]",
@@ -186,12 +203,71 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     state.notify_targets.append(projectApply_SWM_Selcet_SheetView)
     #############################################################################
 
-    # for x in range(35):
-    #     ttk.Checkbutton(suggestWM_area, text=f"Option {x + 1}").pack(fill=X)
-    # StdFamilyListWidget(state, suggestWM_area)
-    cf.add(
-        child=suggestWM_area, title="Suggested Standard WM items", bootstyle="primary"
+    ## attach, detach 버튼 구간
+    button_frame = ttk.Frame(main_area)
+    button_frame.pack(padx=10, pady=10, side="bottom", anchor="nw")
+
+    def get_checked_GWMSWM(GWMwidget, SWMwidget):
+        chked_GWM_obj = projectApply_GWM_Selcet_SheetView.get_checked()
+        chked_SWM_obj = projectApply_SWM_Selcet_SheetView.get_checked()
+
+        if chked_GWM_obj:
+            chked_GWM = go(
+                chked_GWM_obj.keys(),
+                list,
+                filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                map(lambda x: [x[0], x[1] + 1]),
+                list,
+                map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            # chked_GWM = chked_GWM_obj
+        else:
+            chked_GWM = []
+
+        if chked_SWM_obj:
+            chked_SWM = go(
+                chked_SWM_obj.keys(),
+                list,
+                filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                map(lambda x: [x[0], x[1] + 2]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+        else:
+            chked_SWM = []
+
+        res = {
+            "chked_GWM": chked_GWM,
+            "chked_SWM": chked_SWM,
+        }
+
+        state.log_widget.write(str(res))
+
+        return res
+
+    attach_button = ttk.Button(
+        button_frame,
+        # text="Attach\nto the Std Type",
+        text="⬇",
+        command=lambda: get_checked_GWMSWM(
+            projectApply_GWM_Selcet_SheetView,
+            projectApply_SWM_Selcet_SheetView,
+        ),
+        bootstyle="outline",
     )
+    attach_button.pack(padx=10, anchor="center", side="left")
+
+    detach_button = ttk.Button(
+        button_frame,
+        # text="Detach\nfrom the Std Type",
+        text="⬆",
+        bootstyle="warning-outline",
+    )
+    detach_button.pack(padx=10, anchor="center", side="left")
+
+    cf.add(child=main_area, title="Suggested Standard WM items", bootstyle="primary")
 
     # option group 2
     customWM_area = ttk.Frame(
@@ -199,10 +275,11 @@ def create_pjt_familylist_tab(state, subtab_notebook):
         # padding=10,
     )
     for x in range(35):
-        ttk.Checkbutton(customWM_area, text=f"Option {x + 1}").pack(fill=X)
+        ttk.Checkbutton(customWM_area, text=f"WM {x + 1}").pack(fill=X)
     cf.add(
         child=customWM_area,
-        title="User addition WM items",
+        # title="Final WM Registration per Rvt Type",
         bootstyle="info",
         collapsed=True,
+        textvariable=state.selected_rvtTypes_forLabel,
     )

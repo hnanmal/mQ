@@ -898,15 +898,18 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             show_y_scrollbar=True,
             # show_header=False,
             # show_row_index=False,
-            width=350,
-            height=175,
+            width=450,
+            height=350,
+            # treeview=True,
         )
         self.sheet.pack(
             expand=True,
+            side="left",
+            fill="none",
             # fill="both",
             # padx=5,
             # pady=5,
-            anchor="w",
+            anchor="nw",
         )
 
         # config enable_bindings
@@ -940,31 +943,40 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
 
-        # 상태 변경 감지를 위한 옵저버 설정
-        self.state_observer = StateObserver(state, lambda e: self.update(e))
-
     def setup_sheet(self):
         # 헤더 설정
-        headers = ["Use", "GWM/SWM", "Item"]
+        if self.wm_mode == "[ GWM ]":
+            headers = ["Use", "GWM", "Item", "수식"]
+        elif self.wm_mode == "[ SWM ]":
+            headers = ["Use", "SWM", "Item", "수식"]
+
         self.sheet.headers(
             headers,
         )
 
         # Create checkboxes in the First column
-        self.sheet.checkbox("A", checked=True)
+        # self.sheet.checkbox("A", checked=True)
 
         self.setup_column_style()
         # 초기 데이터 로드
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 100, 180])
+        self.sheet.set_column_widths([25, 100, 180, 100])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
-        self.sheet.set_options(font=("Arial", 10, "normal"))
+        self.sheet.set_options(font=("Arial", 8, "normal"))
+        self.sheet.set_options(default_row_height=16)
 
-        # self.sheet.set_options(default_row_height=40)
+    def get_checked(self):
+        state = self.state
+        res = go(
+            self.sheet.get_checkboxes(),
+        )
+        return res
+
+        print(f"aaa:::  {a}")
 
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
@@ -974,55 +986,11 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         selected_item_str = self.selected_item_relate_widget_std.get()
         project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
 
-        # row = event["row"]
-        # column = event["column"]
-        # for r in range(self.sheet.get_total_rows()):
-        #     if r != row:
-        #         self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
+        # self.ddd.append()
 
-        # # Ensure the clicked checkbox remains selected
-        # self.sheet.set_cell_data(row, 0, True)
-
-        # loc = list(event["cells"]["table"].keys())[0]
-        # row_check_status = event["value"]
-
-        # self.state.log_widget.write(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
-
-        # wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
-
-        # if column == 0:
-        #     if project_GWM:
-        #         spec = project_GWM[-1]
-        #         unit = project_GWM[-2]
-        #     else:
-        #         spec = go(
-        #             self.sheet.get_cell_data(row, 3),
-        #             lambda x: x.replace("\n", ""),
-        #             lambda x: x.split(" | "),
-        #             filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
-        #             lambda x: "\n".join(x),
-        #         )
-        #     unit = go(
-        #         self.sheet.get_cell_data(row, 3),
-        #         lambda x: x.replace("\n", ""),
-        #         lambda x: x.split(" | ")[-3],
-        #     )
-        # elif column == 1:
-        #     spec = event["value"]
-        #     unit = go(
-        #         self.sheet.get_cell_data(row, 3),
-        #         lambda x: x.replace("\n", ""),
-        #         lambda x: x.split(" | ")[-3],
-        #     )
-
-        # # if row_check_status:
-        # self.state.team_std_info["project-GWM"].update(
-        #     {selected_item_str: [wm_code, unit, spec]}
-        # )
         self.state.log_widget.write(
             self.state.team_std_info["project-GWM"][selected_item_str]
         )
-        # self.highlight_checked_row()
 
     def highlight_checked_row(self):
         """Update row highlights based on checkbox values."""
@@ -1036,6 +1004,8 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         self.sheet.highlight_rows(
             checked_rows, highlight_index=False, bg="#D3F9D8"
         )  # Light green
+
+        self.sheet.redraw()
 
     def wrap_text(self, text, width):
         """
@@ -1096,7 +1066,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         self.state.log_widget.write(
             f"선택아이템 출력 : {self.selected_item_relate_widget_std.get()}"
         )
-        self.sheet.set_sheet_data([])
         self.setup_column_style()
 
         try:
@@ -1136,8 +1105,9 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                         )
                         if selected_node:
                             # Clear the TreeView and insert the data for the selected node
-                            self.sheet.clear()
-
+                            for idx, row_span in enumerate(self.sheet):
+                                self.sheet.delete_cell_checkbox("all", "all")
+                            self.sheet.set_sheet_data([])
                             # Wrap the children of the selected node for insertion
                             # wrapped_data = []
                             pool = go(
@@ -1146,31 +1116,41 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 filter(lambda x: x["values"][5] == self.wm_mode),
                                 list,
                             )
-                            wrapped_data = go(
+                            wrapped_data_ = go(
                                 pool,
-                                map(lambda x: [True, x["name"], ""]),
+                                map(lambda x: ["", x["name"], ""]),
                                 list,
                             )
 
                             dropdowns = go(
                                 pool,
                                 map(lambda x: x["children"]),
-                                map(lambda x: list(map(lambda y: y["name"], x))),
+                                map(
+                                    lambda x: list(
+                                        map(lambda y: [y["name"], y["values"][-1]], x)
+                                    )
+                                ),
                                 list,
                             )
-                            # print(dropdowns)
 
-                            self.sheet.set_sheet_data([])
-                            self.sheet.del_dropdown()
+                            wrapped_data = []
+                            for idx, row in enumerate(wrapped_data_):
+                                wrapped_data.append(row)
+                                sub_rows = dropdowns[idx]
+                                for sub_row in sub_rows:
+                                    wrapped_data.append(["", "", *sub_row])
 
                             self.sheet.set_sheet_data(wrapped_data)
 
-                            for idx, row in enumerate(self.sheet):
-                                self.sheet.create_dropdown(
-                                    idx,
-                                    2,
-                                    values=dropdowns[idx],
-                                )
+                            for idx, row_span in enumerate(self.sheet):
+                                if row_span[1] != "" or None:
+                                    if self.wm_mode == "[ GWM ]":
+                                        self.sheet.create_checkbox(
+                                            r=idx, c=0, checked=True
+                                        )
+                                else:
+                                    if self.wm_mode == "[ SWM ]":
+                                        self.sheet.create_checkbox(r=idx, c=0)
 
                             selected_item_str = (
                                 self.selected_item_relate_widget_std.get()
@@ -1205,62 +1185,3 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             self.sheet.enable_bindings()
         else:
             self.sheet.disable_bindings()
-
-
-class TreeviewSheet:
-    def __init__(self, parent, headers):
-        self.sheet = Sheet(parent, headers=headers)
-        self.parent = parent
-
-        # config enable_bindings
-        self.sheet.enable_bindings(
-            "edit_cell",
-            "delete",
-            "single_select",  # Allow single cell selection
-            "drag_select",
-            "row_select",  # Allow row selection
-            "column_select",  # Allow column selection
-            "drag_select",  # Allow drag selection
-            "column_width_resize",
-            "row_height_resize",
-            "double_click_column_resize",
-            "copy",
-            "paste",
-            "ctrl_click_select",
-            "right_click_popup_menu",
-            "rc_insert_row",
-            "rc_delete_row",
-            "arrowkeys",
-        )
-
-    def insert_data(self, item, parent=None):
-        pass
-
-    def clear_sheet(self):
-        pass
-
-    def get_sheet_data(self):
-        pass
-
-    def toggle_sheet_lock(self, lock=True):
-        pass
-
-    def collapse_all_items(self):
-        pass
-
-    def expand_all_items(self):
-        pass
-
-    def expand_tree_to_level(self, level):
-        pass
-
-    def insert_data_with_levels(self, data, parents_id=""):
-        pass
-
-    def get_item_indices(self, selected_item_id):
-        pass
-
-    def select_item_by_indices(self, indices):
-        pass
-
-    ####

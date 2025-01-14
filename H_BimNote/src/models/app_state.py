@@ -27,6 +27,10 @@ class AppState:
         self.selected_matchedWMs = []
         self.current_building = tk.StringVar()
         self.current_building.set("건물을 선택하세요")
+        # self.selected_rvtTypes = []
+        self.selected_rvtTypes = tk.StringVar()
+        self.selected_rvtTypes_forLabel = tk.StringVar()
+
         self.switch_widget_status = tk.StringVar()
 
         self.wm_group_data = {}

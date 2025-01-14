@@ -1818,6 +1818,12 @@ class TeamStd_FamlistTreeView:
 
     def on_item_selected(self, event):
         # Get the currently selected item
+        state = self.state
+
+        # 레빗 타입 별 WM 입력 오류 방지를 위한 초기화
+        state.selected_rvtTypes.set(None)
+        state.selected_rvtTypes_forLabel.set(None)
+
         selected_item_id = self.treeview.tree.focus()
         try:
             # # Reset the tag for the previously selected item to 'normal'

@@ -41,7 +41,16 @@ class CollapsingFrame(ttk.Frame):
 
         # header title
         header = ttk.Label(master=frm, text=title, bootstyle=(style_color, INVERSE))
-        header.config(font=("Bahnschrift Light SemiCondensed", 12, "bold"))
+        if kwargs.get("fontsize"):
+            header.config(
+                font=(
+                    "Bahnschrift Light SemiCondensed",
+                    kwargs.get("fontsize"),
+                    "normal",
+                )
+            )
+        else:
+            header.config(font=("Bahnschrift Light SemiCondensed", 12, "normal"))
         if kwargs.get("textvariable"):
             header.configure(textvariable=kwargs.get("textvariable"))
         header.pack(side=LEFT, fill=BOTH, padx=10)

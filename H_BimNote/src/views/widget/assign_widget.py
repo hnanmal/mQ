@@ -52,6 +52,7 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             button_frame,
             # text="Detach\nfrom the Std Type",
             text="⬆",
+            command=self.delete_item,
             bootstyle="warning-outline",
         )
         self.detach_button.pack(padx=10, anchor="center", side="left")
@@ -76,6 +77,33 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         # set treeview_editor class
         self.treeviewEditor = TreeviewEditor(state, self)
+
+        # Bind selection events
+        self.treeview.tree.bind(
+            "<<TreeviewSelect>>", lambda e: self.on_item_selected(e)
+        )
+
+    def on_item_selected(self, event):
+        state = self.state
+        selected_item_ids = self.treeview.tree.selection()
+        # selected_item_ids_str = ",".join(selected_item_ids)
+        selected_item_names = go(
+            selected_item_ids,
+            map(lambda x: self.treeview.tree.item(x, "text")),
+            list,
+        )
+        selected_item_names_str = ",,".join(selected_item_names)
+        state.selected_rvtTypes.set(selected_item_names_str)
+
+        if len(selected_item_names) == 1:
+            selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ]"
+        else:
+            selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
+
+        state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
+        state.log_widget.write(
+            f"\n 선택된 레빗 타입 : {'  ,  '.join(selected_item_names)}\n"
+        )
 
     def update(self, event=None, view_level=None):
         state = self.state
@@ -147,13 +175,65 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
                 )
                 self.relate_widget.entry.clear_text()  # Clear the entry field
 
-                # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-                state.observer_manager.notify_observers(state)
             else:
                 state.log_widget.write("Please enter a revit type name.")
 
         for item_name in item_names:
             _add(item_name)
+
+        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+        state.observer_manager.notify_observers(state)
+
+    def delete_item(self):
+        state = self.state
+
+        # Get the selected item ID
+        selected_item_ids = self.treeview.tree.selection()
+        if not selected_item_ids:
+            print("No item selected.")
+            return
+        # selected_item_id = selected_item_id[0]  # Handle single selection case
+
+        # Build the full path to the selected item
+        def get_full_path(item_id):
+            path = []
+            current_item_id = item_id
+            while current_item_id:
+                # Get the name of the current item
+                item_values = self.treeview.tree.item(current_item_id, "values")
+                item_name = next(
+                    (v for v in item_values if v), None
+                )  # Get the first non-empty value
+                if item_name:
+                    path.insert(0, item_name)  # Add to the beginning of the path
+                # Move to the parent item
+                current_item_id = self.treeview.tree.parent(current_item_id)
+            return path
+
+        return_str = []
+        for selected_item_id in selected_item_ids:
+            # Get the full path of the selected item
+            full_path = get_full_path(selected_item_id)
+            print(f"Deleting item with path: {full_path}")
+
+            # Validate the constructed path
+            if not full_path:
+                print("Could not construct a valid path for the selected item.")
+                return
+
+            # Pass the full path to the delete_node method
+            try:
+                self.treeDataManager.delete_node(self.data_kind, full_path)
+                print(f"Successfully deleted item with path: {full_path}")
+            except Exception as e:
+                print(f"Error deleting item with path {full_path}: {e}")
+
+            return_str.append(self.treeview.tree.item(selected_item_id, "text"))
+
+        self.relate_widget.entry.set_text("\n".join(return_str))
+
+        # Notify observers about the state update
+        state.observer_manager.notify_observers(state)
 
 
 class ModelType_entry:
