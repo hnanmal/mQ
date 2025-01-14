@@ -946,9 +946,9 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
     def setup_sheet(self):
         # 헤더 설정
         if self.wm_mode == "[ GWM ]":
-            headers = ["Use", "GWM", "Item", "수식"]
+            headers = ["Use", "GWM", "분류", "Item", "수식"]
         elif self.wm_mode == "[ SWM ]":
-            headers = ["Use", "SWM", "Item", "수식"]
+            headers = ["Use", "SWM", "분류", "Item", "수식"]
 
         self.sheet.headers(
             headers,
@@ -962,12 +962,12 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 100, 180, 100])
+        self.sheet.set_column_widths([25, 80, 0, 120, 100])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
         self.sheet.set_options(font=("Arial", 8, "normal"))
-        self.sheet.set_options(default_row_height=16)
+        self.sheet.set_options(default_row_height=18)
 
     def get_checked(self):
         state = self.state
@@ -975,8 +975,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             self.sheet.get_checkboxes(),
         )
         return res
-
-        print(f"aaa:::  {a}")
 
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
@@ -1138,7 +1136,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 wrapped_data.append(row)
                                 sub_rows = dropdowns[idx]
                                 for sub_row in sub_rows:
-                                    wrapped_data.append(["", "", *sub_row])
+                                    wrapped_data.append(["", "", row[1], *sub_row])
 
                             self.sheet.set_sheet_data(wrapped_data)
 

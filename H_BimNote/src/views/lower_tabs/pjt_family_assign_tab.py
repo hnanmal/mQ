@@ -174,11 +174,17 @@ def create_pjt_familylist_tab(state, subtab_notebook):
 
     GWMarea = ttk.Frame(
         suggestWM_area,
+        relief="ridge",
+        borderwidth=3,
+        # bootstyle="outline",
     )
     GWMarea.pack(side="left", anchor="nw")
 
     SWMarea = ttk.Frame(
         suggestWM_area,
+        relief="ridge",
+        borderwidth=3,
+        # bootstyle="outline",
     )
     SWMarea.pack(side="left", anchor="nw")
 
@@ -204,35 +210,74 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     #############################################################################
 
     ## attach, detach 버튼 구간
-    button_frame = ttk.Frame(main_area)
-    button_frame.pack(padx=10, pady=10, side="bottom", anchor="nw")
+    button_frame = ttk.Frame(
+        main_area,
+        # relief="ridge",
+        # borderwidth=3,
+    )
+    button_frame.pack(
+        expand=True,
+        fill="x",
+        padx=300,
+        pady=10,
+        side="bottom",
+        anchor="center",
+    )
 
     def get_checked_GWMSWM(GWMwidget, SWMwidget):
         chked_GWM_obj = projectApply_GWM_Selcet_SheetView.get_checked()
+        chked_GWM_all = projectApply_GWM_Selcet_SheetView.sheet.get_sheet_data()
         chked_SWM_obj = projectApply_SWM_Selcet_SheetView.get_checked()
 
         if chked_GWM_obj:
-            chked_GWM = go(
+            ref_keys = go(
                 chked_GWM_obj.keys(),
                 list,
                 filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                map(lambda x: [x[0], x[1] + 1]),
-                list,
-                map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 1)),
                 list,
             )
-            # chked_GWM = chked_GWM_obj
+            # print(ref_keys)
+            chked_GWM = go(
+                chked_GWM_all,
+                # list,
+                # filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                filter(lambda x: x[0] != True),
+                filter(lambda x: x[2] in ref_keys),
+                # filter(
+                #     lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 2)
+                #     in ref_keys
+                # ),
+                # map(lambda x: [x[0], x[1] + 2]),
+                # list,
+                # map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
         else:
             chked_GWM = []
 
         if chked_SWM_obj:
-            chked_SWM = go(
+            chked_SWM_lv1 = go(
                 chked_SWM_obj.keys(),
                 list,
                 filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
                 map(lambda x: [x[0], x[1] + 2]),
                 list,
                 map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM_lv2 = go(
+                chked_SWM_obj.keys(),
+                list,
+                filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                map(lambda x: [x[0], x[1] + 3]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM = go(
+                zip(chked_SWM_lv1, chked_SWM_lv2),
+                map(lambda x: " | ".join(x)),
                 list,
             )
         else:
@@ -249,7 +294,6 @@ def create_pjt_familylist_tab(state, subtab_notebook):
 
     attach_button = ttk.Button(
         button_frame,
-        # text="Attach\nto the Std Type",
         text="⬇",
         command=lambda: get_checked_GWMSWM(
             projectApply_GWM_Selcet_SheetView,
@@ -257,15 +301,24 @@ def create_pjt_familylist_tab(state, subtab_notebook):
         ),
         bootstyle="outline",
     )
-    attach_button.pack(padx=10, anchor="center", side="left")
+    attach_button.pack(
+        # expand=True,
+        padx=30,
+        anchor="center",
+        side="left",
+    )
 
     detach_button = ttk.Button(
         button_frame,
-        # text="Detach\nfrom the Std Type",
         text="⬆",
         bootstyle="warning-outline",
     )
-    detach_button.pack(padx=10, anchor="center", side="left")
+    detach_button.pack(
+        # expand=True,
+        padx=10,
+        anchor="center",
+        side="left",
+    )
 
     cf.add(child=main_area, title="Suggested Standard WM items", bootstyle="primary")
 
