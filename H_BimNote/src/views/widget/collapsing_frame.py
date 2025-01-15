@@ -38,6 +38,7 @@ class CollapsingFrame(ttk.Frame):
         style_color = Bootstyle.ttkstyle_widget_color(bootstyle)
         frm = ttk.Frame(self, bootstyle=style_color)
         frm.grid(row=self.cumulative_rows, column=0, sticky=EW)
+        self.frm = frm
 
         # header title
         header = ttk.Label(master=frm, text=title, bootstyle=(style_color, INVERSE))
@@ -91,6 +92,8 @@ class CollapsingFrame(ttk.Frame):
         else:
             child.grid()
             child.btn.configure(image=self.images[0])
+        self.frm.update_idletasks()
+        self.frm.update()
 
 
 if __name__ == "__main__":

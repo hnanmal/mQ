@@ -56,10 +56,6 @@ class WMapply_button:
         attach_button = ttk.Button(
             button_frame,
             text="⬇",
-            # command=lambda: self.get_checked_GWMSWM(
-            #     self.GWMwidget,
-            #     self.SWMwidget,
-            # ),
             command=self.match_WM_to_rvtType,
             bootstyle="outline",
         )
@@ -86,6 +82,21 @@ class WMapply_button:
 
     def get_checked_GWMSWM(self, GWMwidget, SWMwidget):
         state = self.state
+
+        pjt_gwm_data = state.team_std_info.get("project-GWM")
+        pjt_swm_data = state.team_std_info.get("project-SWM")
+        WMs = state.team_std_info.get("WMs")
+
+        WMsStr = go(
+            WMs,
+            map(lambda x: list(map(str, x))),
+            map(lambda x: filter(lambda x: x != "0", x)),
+            map(lambda x: filter(lambda x: x != "", x)),
+            map(lambda x: filter(lambda x: x != " ", x)),
+            map(lambda x: filter(lambda x: x != "ㅤ", x)),  #  공백 특수 문자
+            map(lambda x: " | ".join(x)),
+            list,
+        )
 
         current_building = state.current_building.get()
         selected_stdType = self.familylist_widget.selected_item.get()
@@ -122,6 +133,41 @@ class WMapply_button:
         chked_GWM_all = GWMwidget.sheet.get_sheet_data()
         chked_SWM_obj = SWMwidget.get_checked()
 
+        def find_matched_pjtGWM(name):
+            res = go(
+                pjt_gwm_data.keys(),
+                list,
+                filter(lambda x: name in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
+
+        def find_matched_pjtSWM(name):
+            res = go(
+                pjt_swm_data.keys(),
+                list,
+                filter(lambda x: name in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
+
+        def find_wmStr(wmcode):
+            res = go(
+                WMsStr,
+                filter(lambda x: wmcode in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
+
         if chked_GWM_obj:
             ref_keys = go(
                 chked_GWM_obj.keys(),
@@ -130,26 +176,46 @@ class WMapply_button:
                 map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 1)),
                 list,
             )
-            # print(ref_keys)
-            chked_GWM = go(
+            eff_chked_GWM = go(
                 chked_GWM_all,
-                # list,
-                # filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
                 filter(lambda x: x[0] != True),
                 filter(lambda x: x[2] in ref_keys),
+                list,
+            )
+
+            # print(ref_keys)
+            chked_GWM = go(
+                eff_chked_GWM,
                 map(
                     lambda x: [
                         "GWM",
                         std_type_name,
                         " | ".join([x[2], x[3]]),
-                        x[-2],
+                        pjt_gwm_data.get(
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                        )[0],
+                        pjt_gwm_data.get(
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                        )[2],
                         x[-1],
+                        pjt_gwm_data.get(
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                        )[1],
+                        x[-2],
                     ]
                 ),
                 list,
             )
+
+            chked_GWM_data = []
+            for i in chked_GWM:
+                x = deepcopy(i)
+                print(i[3])
+                x[3] = find_wmStr(i[3])
+                chked_GWM_data.append(x)
+
         else:
-            chked_GWM = []
+            chked_GWM_data = []
 
         if chked_SWM_obj:
             filtered_chked_SWM = go(
@@ -198,18 +264,34 @@ class WMapply_button:
                         "SWM",
                         std_type_name,
                         " | ".join([x[0], x[1]]),
-                        x[-2],
+                        pjt_swm_data.get(
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                        )[0],
+                        pjt_swm_data.get(
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                        )[2],
                         x[-1],
+                        pjt_swm_data.get(
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                        )[1],
+                        x[-2],
                     ]
                 ),
                 list,
             )
+
+            chked_SWM_data = []
+            for i in chked_SWM:
+                x = deepcopy(i)
+                print(i[3])
+                x[3] = find_wmStr(i[3])
+                chked_SWM_data.append(x)
         else:
-            chked_SWM = []
+            chked_SWM_data = []
 
         res = {
-            "chked_GWM": chked_GWM,
-            "chked_SWM": chked_SWM,
+            "chked_GWM": chked_GWM_data,
+            "chked_SWM": chked_SWM_data,
         }
 
         state.log_widget.write(str(res))

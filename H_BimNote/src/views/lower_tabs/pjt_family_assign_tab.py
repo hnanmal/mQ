@@ -227,15 +227,17 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         tgt_widget=None,
     )
 
-    cf.add(child=main_area, title="Suggested Standard WM items", bootstyle="primary")
+    cf.add(
+        child=main_area,
+        title="Suggested Standard WM items",
+        bootstyle="info",
+    )
 
     # option group 2
     customWM_area = ttk.Frame(
         cf,
         # padding=10,
     )
-    # for x in range(35):
-    #     ttk.Checkbutton(customWM_area, text=f"WM {x + 1}").pack(fill=X)
 
     project_WM_perRVT_SheetView = Project_WM_perRVT_SheetView(
         state, customWM_area, typeAssign_treeview
@@ -248,10 +250,10 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     cf.add(
         child=customWM_area,
         # title="Final WM Registration per Rvt Type",
-        bootstyle="info",
         # collapsed=True,
         collapsed=False,
         textvariable=state.selected_rvtTypes_forLabel,
+        bootstyle="primary",
     )
 
     return working_tab

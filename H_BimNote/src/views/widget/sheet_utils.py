@@ -1054,8 +1054,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             wrapped_data.append(wrapped_row)
 
         print(f"col width: {width}")
-        # print(f"시트 data: {self.sheet.get_sheet_data()}")
-        # print(f"시트 분할문자: {wrapped_data}")
+
         self.sheet.set_sheet_data(wrapped_data)
 
     def update(self, event=None):
@@ -1205,17 +1204,14 @@ class Project_WM_perRVT_SheetView:
             parent,
             show_x_scrollbar=False,
             show_y_scrollbar=True,
-            # show_header=False,
-            # show_row_index=False,
-            width=1000,
-            height=350,
-            # treeview=True,
+            width=1200,
+            # height=350,
         )
         self.sheet.pack(
             expand=True,
             side="left",
-            fill="none",
-            # fill="both",
+            # fill="none",
+            fill="both",
             # padx=5,
             # pady=5,
             anchor="nw",
@@ -1251,11 +1247,21 @@ class Project_WM_perRVT_SheetView:
 
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
+        # self.setup_column_style()
 
     def setup_sheet(self):
         # 헤더 설정
 
-        headers = ["분류", "Std", "Item", "Work Master", "수식", "단위", "산출유형"]
+        headers = [
+            "분류",
+            "Std",
+            "Item",
+            "Work Master",
+            "Spec",
+            "수식",
+            "단위",
+            "산출유형",
+        ]
 
         self.sheet.headers(
             headers,
@@ -1263,14 +1269,14 @@ class Project_WM_perRVT_SheetView:
 
         # Create checkboxes in the First column
         # self.sheet.checkbox("A", checked=True)
-        self.sheet.set_sheet_data([])
         self.setup_column_style()
 
+        self.sheet.set_sheet_data([])
         # 초기 데이터 로드
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([35, 0, 85, 500, 100, 35, 30])
+        self.sheet.set_column_widths([35, 0, 125, 450, 250, 100, 35, 30])
 
         # self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1284,6 +1290,7 @@ class Project_WM_perRVT_SheetView:
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         self.sheet.set_sheet_data([])
+        self.setup_column_style()
 
         current_building = state.current_building
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
@@ -1309,6 +1316,67 @@ class Project_WM_perRVT_SheetView:
             )
 
             self.sheet.set_sheet_data(target_data)
-
+            self.setup_column_style()
+            self.apply_wrap(
+                tgt_idx=3,
+                # tgt_width=600,
+            )
+            # self.sheet.set_all_cell_sizes_to_text()
+            self.sheet.set_all_row_heights(
+                height=50,
+                only_set_if_too_small=True,
+            )
+            # self.sheet.set_all_cell_sizes_to_text()
         self.setup_column_style()
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
+
+    def wrap_text(self, text, width):
+        """
+        Wrap text to fit within a given width, handling long words properly.
+        """
+        if not text or not isinstance(text, str):
+            return text
+        max_chars_per_line = max(1, width // 7)  # Approximate character width in pixels
+
+        words = text.split()  # Split into words
+        lines = []
+        current_line = ""
+
+        for word in words:
+            while len(word) > max_chars_per_line:  # Split long words into chunks
+                lines.append(word[:max_chars_per_line])
+                word = word[max_chars_per_line:]
+
+            if len(current_line) + len(word) + 1 > max_chars_per_line:
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line = f"{current_line} {word}".strip()
+
+        if current_line:
+            lines.append(current_line)
+
+        return "\n".join(lines)
+
+    def apply_wrap(self, tgt_idx, tgt_width=None):
+        """
+        Apply wrapping to all cells based on their column widths.
+        """
+        wrapped_data = []
+        # for row_index, row in enumerate(self.sheet.get_sheet_data()):
+        for row_index, row in enumerate(self.sheet.get_sheet_data()):
+            wrapped_row = []
+            for col_index, cell in enumerate(row):
+                if col_index == tgt_idx:
+                    if tgt_width:
+                        width = tgt_width
+                    else:
+                        width = self.sheet.column_width(col_index)
+                    wrapped_row.append(self.wrap_text(cell, width))
+                else:
+                    wrapped_row.append(cell)
+            wrapped_data.append(wrapped_row)
+
+        print(f"col width: {width}")
+
+        self.sheet.set_sheet_data(wrapped_data)
