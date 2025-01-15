@@ -21,6 +21,240 @@ from src.views.widget.treeview_editor import TreeviewEditor
 ## >> 다중선택 이랑 스타일 복사 두개 다 있어야 할거 같다
 
 
+class WMapply_button:
+    def __init__(self, state, parent, ref_widgets, tgt_widget, *args, **kwargs):
+        self.state = state
+        self.data_kind = self.data_kind = "project-assigntype-WM"
+
+        self.ref_widgets = ref_widgets
+        self.familylist_widget = ref_widgets[0]
+        self.GWMwidget = ref_widgets[1]
+        self.SWMwidget = ref_widgets[2]
+        self.typeAssign_treeview = ref_widgets[3]
+
+        self.tgt_widget = tgt_widget
+
+        ## set ui
+        self.set_ui(parent)
+
+    def set_ui(self, parent):
+        state = self.state
+        button_frame = ttk.Frame(
+            parent,
+            # relief="ridge",
+            # borderwidth=3,
+        )
+        button_frame.pack(
+            expand=True,
+            fill="x",
+            padx=300,
+            pady=10,
+            side="bottom",
+            anchor="center",
+        )
+
+        attach_button = ttk.Button(
+            button_frame,
+            text="⬇",
+            # command=lambda: self.get_checked_GWMSWM(
+            #     self.GWMwidget,
+            #     self.SWMwidget,
+            # ),
+            command=self.match_WM_to_rvtType,
+            bootstyle="outline",
+        )
+        attach_button.pack(
+            # expand=True,
+            padx=30,
+            anchor="center",
+            side="left",
+        )
+
+        detach_button = ttk.Button(
+            button_frame,
+            text="⬆",
+            bootstyle="warning-outline",
+        )
+        detach_button.pack(
+            # expand=True,
+            padx=10,
+            anchor="center",
+            side="left",
+        )
+
+        return button_frame
+
+    def get_checked_GWMSWM(self, GWMwidget, SWMwidget):
+        state = self.state
+
+        current_building = state.current_building.get()
+        selected_stdType = self.familylist_widget.selected_item.get()
+        selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
+        if current_building == "건물을 선택하세요":
+            open_dialog(
+                state.root,
+                "건물을 선택하셔야 합니다.",
+            )
+            return
+        if not selected_stdType:
+            open_dialog(
+                state.root,
+                "좌측 표준타입을 선택하셔야 합니다.",
+            )
+            return
+        if not selected_rvtTypes_ids:
+            open_dialog(
+                state.root,
+                "중앙의 레빗타입을 선택하셔야 합니다.",
+            )
+            return
+
+        # std_type_no = self.familylist_widget.selected_item.split(" | ")[-1]
+        std_type_name = go(
+            self.familylist_widget.tree,
+            lambda x: x.selection()[0],
+            lambda x: self.familylist_widget.tree.item(x, "values"),
+            lambda x: x[3],  ## type name 위치
+        )
+        # print(f"std_type_name :: {std_type_name}")
+
+        chked_GWM_obj = GWMwidget.get_checked()
+        chked_GWM_all = GWMwidget.sheet.get_sheet_data()
+        chked_SWM_obj = SWMwidget.get_checked()
+
+        if chked_GWM_obj:
+            ref_keys = go(
+                chked_GWM_obj.keys(),
+                list,
+                filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 1)),
+                list,
+            )
+            # print(ref_keys)
+            chked_GWM = go(
+                chked_GWM_all,
+                # list,
+                # filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                filter(lambda x: x[0] != True),
+                filter(lambda x: x[2] in ref_keys),
+                map(
+                    lambda x: [
+                        "GWM",
+                        std_type_name,
+                        " | ".join([x[2], x[3]]),
+                        x[-2],
+                        x[-1],
+                    ]
+                ),
+                list,
+            )
+        else:
+            chked_GWM = []
+
+        if chked_SWM_obj:
+            filtered_chked_SWM = go(
+                chked_SWM_obj.keys(),
+                list,
+                filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM_lv1 = go(
+                filtered_chked_SWM,
+                map(lambda x: [x[0], x[1] + 2]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM_lv2 = go(
+                filtered_chked_SWM,
+                map(lambda x: [x[0], x[1] + 3]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM_formula = go(
+                filtered_chked_SWM,
+                map(lambda x: [x[0], x[1] + 5]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM_calcNo = go(
+                filtered_chked_SWM,
+                map(lambda x: [x[0], x[1] + 4]),
+                list,
+                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
+                list,
+            )
+            chked_SWM = go(
+                zip(
+                    chked_SWM_lv1,
+                    chked_SWM_lv2,
+                    chked_SWM_calcNo,
+                    chked_SWM_formula,
+                ),
+                map(
+                    lambda x: [
+                        "SWM",
+                        std_type_name,
+                        " | ".join([x[0], x[1]]),
+                        x[-2],
+                        x[-1],
+                    ]
+                ),
+                list,
+            )
+        else:
+            chked_SWM = []
+
+        res = {
+            "chked_GWM": chked_GWM,
+            "chked_SWM": chked_SWM,
+        }
+
+        state.log_widget.write(str(res))
+
+        return res
+
+    def match_WM_to_rvtType(
+        self,
+    ):
+        state = self.state
+
+        data = state.team_std_info.get("project-assigntype")
+        gwm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)["chked_GWM"]
+        swm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)["chked_SWM"]
+
+        selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
+        selected_rvtTypes_values = go(
+            selected_rvtTypes_ids,
+            map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "values")),
+            list,
+        )
+
+        match_assigntype = lambda selected_rvtTypes_value: go(
+            data["children"],
+            filter(lambda x: x["values"][0] == selected_rvtTypes_value[0]),
+            filter(lambda x: x["values"][1] == selected_rvtTypes_value[1]),
+            filter(lambda x: x["values"][2] == selected_rvtTypes_value[2]),
+            list,
+            lambda x: x[0],
+        )
+
+        # Get the full path of the selected item
+        for selected_rvtTypes_value in selected_rvtTypes_values:
+            matched_assigntype = match_assigntype(selected_rvtTypes_value)
+            total_WM_data = gwm_data + swm_data
+            matched_assigntype["children"].extend(total_WM_data)
+
+            print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
+            print(f"matched_assigntype: {matched_assigntype['children']}")
+            print(f"total_WM_data: {total_WM_data}")
+
+        ## project_WM_perRVT_SheetView 업데이트
+        state.project_WM_perRVT_SheetView.update()
+
+
 class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 선택항목 반영하도록 수정필요
     def __init__(self, state, parent, relate_widget, view_level=2, *args, **kwargs):
         self.state = state
@@ -101,6 +335,10 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
 
         state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
+
+        ## project_WM_perRVT_SheetView 업데이트
+        state.project_WM_perRVT_SheetView.update()
+
         state.log_widget.write(
             f"\n 선택된 레빗 타입 : {'  ,  '.join(selected_item_names)}\n"
         )

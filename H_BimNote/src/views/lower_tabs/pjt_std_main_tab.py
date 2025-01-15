@@ -17,12 +17,11 @@ from src.views.widget.html_viewer import BrowserWidget
 from src.views.widget.pjt_main_widget import ProjectInfoWidget, ProjectStdDashboard
 
 
-def create_pjtStd_Main_tab(state, subtab_notebook):
+def create_pjtStd_Main_tab(state, subtab_notebook, exe_mode=None):
 
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Project Standard Main")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -45,6 +44,9 @@ def create_pjtStd_Main_tab(state, subtab_notebook):
         bg="#e3e3e3",
     )
     working_tab_paned_window.pack(expand=True, fill="both")
+
+    if not exe_mode:
+        subtab_notebook.add(working_tab, text="Project Standard Main")
 
     section1 = ttk.Frame(
         working_tab_paned_area,
@@ -107,3 +109,5 @@ def create_pjtStd_Main_tab(state, subtab_notebook):
     ProjectStdDashboard(state, pjt_stdDashboard_area)
     ##############################################################
     ## section 3###########
+
+    return working_tab_paned_window

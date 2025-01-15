@@ -13,6 +13,7 @@ from src.controllers.widget.widgets import (
 )
 from src.views.widget.sheet_utils import (
     # add_edit_mode_radio_buttons,
+    Project_WM_perRVT_SheetView,
     ProjectApply_GWMSWM_Selcet_SheetView,
     ProjectStd_WM_Selcet_SheetView_SWM,
     TeamStd_WMsSheetView,
@@ -28,15 +29,18 @@ from src.views.widget.treeview_utils import (
 )
 from src.views.widget.pjt_familylist_widget import StdFamilyListWidget
 from src.views.widget.widget import Builing_select_combobox, Current_building_label
-from src.views.widget.assign_widget import ModelType_entry, TypeAssign_treeview
+from src.views.widget.assign_widget import (
+    ModelType_entry,
+    TypeAssign_treeview,
+    WMapply_button,
+)
 from src.views.widget.collapsing_frame import CollapsingFrame
 
 
-def create_pjt_familylist_tab(state, subtab_notebook):
+def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Project Family Assign")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -60,12 +64,14 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     )
     working_tab_paned_window.pack(expand=True, fill="both")
 
+    if not exe_mode:
+        subtab_notebook.add(working_tab, text="Project Family Assign")
+
     section1 = ttk.Frame(
         working_tab_paned_area,
         width=1000,
         height=3000,
     )
-    # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
         width=400,
@@ -209,115 +215,16 @@ def create_pjt_familylist_tab(state, subtab_notebook):
     state.notify_targets.append(projectApply_SWM_Selcet_SheetView)
     #############################################################################
 
-    ## attach, detach 버튼 구간
-    button_frame = ttk.Frame(
+    wm_apply_button = WMapply_button(
+        state,
         main_area,
-        # relief="ridge",
-        # borderwidth=3,
-    )
-    button_frame.pack(
-        expand=True,
-        fill="x",
-        padx=300,
-        pady=10,
-        side="bottom",
-        anchor="center",
-    )
-
-    def get_checked_GWMSWM(GWMwidget, SWMwidget):
-        chked_GWM_obj = projectApply_GWM_Selcet_SheetView.get_checked()
-        chked_GWM_all = projectApply_GWM_Selcet_SheetView.sheet.get_sheet_data()
-        chked_SWM_obj = projectApply_SWM_Selcet_SheetView.get_checked()
-
-        if chked_GWM_obj:
-            ref_keys = go(
-                chked_GWM_obj.keys(),
-                list,
-                filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 1)),
-                list,
-            )
-            # print(ref_keys)
-            chked_GWM = go(
-                chked_GWM_all,
-                # list,
-                # filter(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                filter(lambda x: x[0] != True),
-                filter(lambda x: x[2] in ref_keys),
-                # filter(
-                #     lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1] + 2)
-                #     in ref_keys
-                # ),
-                # map(lambda x: [x[0], x[1] + 2]),
-                # list,
-                # map(lambda x: GWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                list,
-            )
-        else:
-            chked_GWM = []
-
-        if chked_SWM_obj:
-            chked_SWM_lv1 = go(
-                chked_SWM_obj.keys(),
-                list,
-                filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                map(lambda x: [x[0], x[1] + 2]),
-                list,
-                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                list,
-            )
-            chked_SWM_lv2 = go(
-                chked_SWM_obj.keys(),
-                list,
-                filter(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                map(lambda x: [x[0], x[1] + 3]),
-                list,
-                map(lambda x: SWMwidget.sheet.get_cell_data(r=x[0], c=x[1])),
-                list,
-            )
-            chked_SWM = go(
-                zip(chked_SWM_lv1, chked_SWM_lv2),
-                map(lambda x: " | ".join(x)),
-                list,
-            )
-        else:
-            chked_SWM = []
-
-        res = {
-            "chked_GWM": chked_GWM,
-            "chked_SWM": chked_SWM,
-        }
-
-        state.log_widget.write(str(res))
-
-        return res
-
-    attach_button = ttk.Button(
-        button_frame,
-        text="⬇",
-        command=lambda: get_checked_GWMSWM(
+        ref_widgets=[
+            pjt_famlist,
             projectApply_GWM_Selcet_SheetView,
             projectApply_SWM_Selcet_SheetView,
-        ),
-        bootstyle="outline",
-    )
-    attach_button.pack(
-        # expand=True,
-        padx=30,
-        anchor="center",
-        side="left",
-    )
-
-    detach_button = ttk.Button(
-        button_frame,
-        text="⬆",
-        bootstyle="warning-outline",
-    )
-    detach_button.pack(
-        # expand=True,
-        padx=10,
-        anchor="center",
-        side="left",
+            typeAssign_treeview,
+        ],
+        tgt_widget=None,
     )
 
     cf.add(child=main_area, title="Suggested Standard WM items", bootstyle="primary")
@@ -327,12 +234,24 @@ def create_pjt_familylist_tab(state, subtab_notebook):
         cf,
         # padding=10,
     )
-    for x in range(35):
-        ttk.Checkbutton(customWM_area, text=f"WM {x + 1}").pack(fill=X)
+    # for x in range(35):
+    #     ttk.Checkbutton(customWM_area, text=f"WM {x + 1}").pack(fill=X)
+
+    project_WM_perRVT_SheetView = Project_WM_perRVT_SheetView(
+        state, customWM_area, typeAssign_treeview
+    )
+    ######### notify_targets 등록 ###############################################
+    state.notify_targets.append(project_WM_perRVT_SheetView)
+    #############################################################################
+    state.project_WM_perRVT_SheetView = project_WM_perRVT_SheetView
+
     cf.add(
         child=customWM_area,
         # title="Final WM Registration per Rvt Type",
         bootstyle="info",
-        collapsed=True,
+        # collapsed=True,
+        collapsed=False,
         textvariable=state.selected_rvtTypes_forLabel,
     )
+
+    return working_tab

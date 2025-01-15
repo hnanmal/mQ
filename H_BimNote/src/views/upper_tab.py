@@ -22,6 +22,8 @@ from src.views.lower_tabs.pjt_family_list_tabs import create_pjtFamList_tab
 from src.views.lower_tabs.std_main_tab import create_std_Main_tab
 from src.views.widget.widget import select_tab
 
+# from src.views.widget.new_window import open_tab_in_new_window
+
 
 def create_tab_with_subtabs(state, notebook, tab_name):
     # Create the main tab
@@ -182,10 +184,25 @@ def create_project_standard_tab(state, notebook):
 
     # Add each subtab
     main_tab = create_pjtStd_Main_tab(state, subtab_notebook)
+    # g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
     common_input_tab = create_common_input_tab(state, subtab_notebook)
     pjt_Famlist_tab = create_pjtFamList_tab(state, subtab_notebook)
+
+    tab_funcs = [
+        create_pjtStd_Main_tab,
+        create_pjtStdGWM_tab,
+        create_pjtStdSWM_tab,
+        create_common_input_tab,
+        create_pjtFamList_tab,
+    ]
+
+    # # Bind double-click event to the tabs
+    # subtab_notebook.bind(
+    #     "<Double-1>",
+    #     lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, e),
+    # )
 
 
 def create_project_apply_tab(state, notebook):
@@ -194,5 +211,16 @@ def create_project_apply_tab(state, notebook):
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
     famlist_tab = create_pjt_familylist_tab(state, subtab_notebook)
+
+    tab_funcs = [
+        create_pjtApply_Main_tab,
+        create_pjt_familylist_tab,
+    ]
+
+    # # Bind double-click event to the tabs
+    # subtab_notebook.bind(
+    #     "<Double-1>",
+    #     lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, e),
+    # )
 
     state.pjt_apply_notebook = subtab_notebook

@@ -47,10 +47,13 @@ def define_styles():
     # style.configure("lefttab.TNotebook", tabposition="wn")
 
 
-def initialize_app(root):
+def initialize_app(root, _state=None):
 
     log_widget = setup_logging_frame(root)
     state = AppState(log_widget)
+    if _state:
+        state = _state
+        return state
     state.root = root
 
     state.defaultextension = ".bnote"

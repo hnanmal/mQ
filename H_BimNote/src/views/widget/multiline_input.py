@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.views.widget.new_window import open_tab_in_new_window
+from src.views.widget.new_window import open_tab_in_new_window_rvtSummary
 
 
 class MultiLineInputFrame(tk.Frame):
@@ -16,7 +16,7 @@ class MultiLineInputFrame(tk.Frame):
         open_button = ttk.Button(
             self,
             text="Rvt Summary",
-            command=lambda: open_tab_in_new_window(state),
+            command=lambda: open_tab_in_new_window_rvtSummary(state),
         )
         open_button.pack(pady=10, padx=2, side=tk.TOP, anchor="w")
 

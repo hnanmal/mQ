@@ -39,8 +39,8 @@ class AppState:
         self.clipboard_data = None  # 추가: 클립보드 데이터를 저장하는 필드
 
         self.team_std_info = {}
-        self.project_std_info = {}
-        self.project_apply_info = {}
+        # self.project_std_info = {}
+        # self.project_apply_info = {}
         self.undo_stack = []
 
     def _notify_selected_change(self, *args):
@@ -49,61 +49,6 @@ class AppState:
                 noti_tgt.update(self)
             except:
                 pass
-
-        # try:
-        #     self.std_matching_treeview_GWM.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.std_matching_treeview_SWM.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.std_calcDict_TreeView.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.pjtStd_WMselect_sheetview_GWM.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.pjtStd_WMselect_sheetview_SWM.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.building_list.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.builing_select_combobox.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.pjtAssign_calcDict_TreeView.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.typeAssign_treeview.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.widgetSwitcher_team.update(self)
-        # except:
-        #     pass
-
-        # try:
-        #     self.widgetSwitcher_pjt.update(self)
-        # except:
-        #     pass
 
     ################### 옵저버 관련 #################################
 

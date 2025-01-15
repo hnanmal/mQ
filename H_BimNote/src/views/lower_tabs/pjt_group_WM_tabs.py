@@ -25,11 +25,10 @@ from src.views.widget.treeview_utils import (
 )
 
 
-def create_pjtStdGWM_tab(state, subtab_notebook):
+def create_pjtStdGWM_tab(state, subtab_notebook, exe_mode=None):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Pjt G-WM")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -52,6 +51,9 @@ def create_pjtStdGWM_tab(state, subtab_notebook):
         bg="#e3e3e3",
     )
     working_tab_paned_window.pack(expand=True, fill="both")
+
+    if not exe_mode:
+        subtab_notebook.add(working_tab, text="Pjt G-WM")
 
     section1 = ttk.Frame(
         working_tab_paned_area,
@@ -308,4 +310,4 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
     # Set the initial state to "Locked Mode"
     edit_mode_manager.set_edit_mode("locked")
 
-    return working_tab
+    return working_tab_paned_window

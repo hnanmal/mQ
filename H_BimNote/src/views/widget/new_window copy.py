@@ -3,20 +3,28 @@ from tkinter import ttk
 from ttkbootstrap import Style
 
 from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
+from src.views.app_ui_setup import initialize_app
 
 
 # def open_tab_in_new_window(parent_notebook, tab_index):
-def open_tab_in_new_window_rvtSummary(state):
+def open_tab_in_new_window(state, _notebook, tab_funcs, event=None):
     """Open the contents of a specific tab in a new window."""
     # Create a new window
-    new_window = tk.Toplevel()
+    root = state.root
+    new_window = tk.Toplevel(root)
+    # new_window = tk.Toplevel()
     new_window.title("Rvt Summary Window")
-    new_window.geometry("700x900")
+    new_window.geometry("1000x900")
 
     # Set the new window to always be on top
     new_window.attributes("-topmost", True)
 
-    create_pjtApply_Main_tab(state, new_window, exe_mode="new_window").pack()
+    # state = initialize_app(new_window, _state=state)
+
+    # Get the index of the clicked tab
+    clicked_tab_index = _notebook.index("@%d,%d" % (event.x, event.y))
+    tab_func = tab_funcs[clicked_tab_index]
+    tab_func(state, new_window, exe_mode="new_window")  # .pack()
 
     # # Clone the tab's content into the new window
     # selected_tab = parent_notebook.nametowidget(parent_notebook.tabs()[tab_index])
@@ -71,7 +79,7 @@ def main():
     open_button = ttk.Button(
         root,
         text="Open Tab 1 in New Window",
-        command=lambda: open_tab_in_new_window_rvtSummary(notebook, 0),
+        command=lambda: open_tab_in_new_window(notebook, 0),
     )
     open_button.pack(pady=10)
 

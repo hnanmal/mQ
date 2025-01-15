@@ -898,7 +898,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             show_y_scrollbar=True,
             # show_header=False,
             # show_row_index=False,
-            width=450,
+            width=470,
             height=350,
             # treeview=True,
         )
@@ -946,9 +946,9 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
     def setup_sheet(self):
         # 헤더 설정
         if self.wm_mode == "[ GWM ]":
-            headers = ["Use", "GWM", "분류", "Item", "수식"]
+            headers = ["Use", "GWM", "분류", "Item", "산출\n유형", "수식"]
         elif self.wm_mode == "[ SWM ]":
-            headers = ["Use", "SWM", "분류", "Item", "수식"]
+            headers = ["Use", "SWM", "분류", "Item", "산출\n유형", "수식"]
 
         self.sheet.headers(
             headers,
@@ -962,10 +962,11 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 80, 0, 120, 100])
+        self.sheet.set_column_widths([25, 80, 0, 120, 35, 100])
 
         self.sheet["A"].align("center")
-        self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
+        self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
+        self.sheet.set_options(header_height="")
         self.sheet.set_options(font=("Arial", 8, "normal"))
         self.sheet.set_options(default_row_height=18)
 
@@ -1102,6 +1103,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                             None,
                         )
                         if selected_node:
+                            calc_no = selected_node["values"][-1]
                             # Clear the TreeView and insert the data for the selected node
                             for idx, row_span in enumerate(self.sheet):
                                 self.sheet.delete_cell_checkbox("all", "all")
@@ -1116,7 +1118,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                             )
                             wrapped_data_ = go(
                                 pool,
-                                map(lambda x: ["", x["name"], ""]),
+                                map(lambda x: ["", x["name"], calc_no]),
                                 list,
                             )
 
@@ -1136,6 +1138,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 wrapped_data.append(row)
                                 sub_rows = dropdowns[idx]
                                 for sub_row in sub_rows:
+                                    sub_row.insert(1, row[-1])
                                     wrapped_data.append(["", "", row[1], *sub_row])
 
                             self.sheet.set_sheet_data(wrapped_data)
@@ -1183,3 +1186,129 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             self.sheet.enable_bindings()
         else:
             self.sheet.disable_bindings()
+
+
+class Project_WM_perRVT_SheetView:
+    def __init__(
+        self,
+        state,
+        parent,
+        typeAssign_treeview,
+    ):
+        self.state = state
+        self.data_kind = "project-assigntype"
+        self.treeDataManager = TreeDataManager_treesheet(state, self)
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+        self.typeAssign_treeview = typeAssign_treeview
+        self.sheet = Sheet(
+            parent,
+            show_x_scrollbar=False,
+            show_y_scrollbar=True,
+            # show_header=False,
+            # show_row_index=False,
+            width=1000,
+            height=350,
+            # treeview=True,
+        )
+        self.sheet.pack(
+            expand=True,
+            side="left",
+            fill="none",
+            # fill="both",
+            # padx=5,
+            # pady=5,
+            anchor="nw",
+        )
+
+        # config enable_bindings
+        self.sheet.enable_bindings(
+            "edit_cell",
+            "delete",
+            "single_select",  # Allow single cell selection
+            "drag_select",
+            "row_select",  # Allow row selection
+            "column_select",  # Allow column selection
+            "drag_select",  # Allow drag selection
+            "column_width_resize",
+            "row_height_resize",
+            "double_click_column_resize",
+            "copy",
+            "paste",
+            "ctrl_click_select",
+            "right_click_popup_menu",
+            "rc_insert_row",
+            "rc_delete_row",
+            "arrowkeys",
+        )
+
+        # Bind checkbox clicks
+        self.sheet.extra_bindings(
+            [
+                ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+            ]
+        )
+
+        # 초기 데이터 로드 및 시트 설정
+        self.setup_sheet()
+
+    def setup_sheet(self):
+        # 헤더 설정
+
+        headers = ["분류", "Std", "Item", "Work Master", "수식", "단위", "산출유형"]
+
+        self.sheet.headers(
+            headers,
+        )
+
+        # Create checkboxes in the First column
+        # self.sheet.checkbox("A", checked=True)
+        self.sheet.set_sheet_data([])
+        self.setup_column_style()
+
+        # 초기 데이터 로드
+        # self.update()
+
+    def setup_column_style(self):
+        self.sheet.set_column_widths([35, 0, 85, 500, 100, 35, 30])
+
+        # self.sheet["A"].align("center")
+        self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
+        self.sheet.set_options(header_height="")
+        self.sheet.set_options(font=("Arial", 8, "normal"))
+        self.sheet.set_options(default_row_height=18)
+
+    def update(self, event=None):
+        state = self.state
+        data = state.team_std_info.get("project-assigntype")
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+
+        self.sheet.set_sheet_data([])
+
+        current_building = state.current_building
+        selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
+        selected_rvtTypes_name = go(
+            selected_rvtTypes_ids,
+            map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "text")),
+            list,
+            lambda x: x[0],
+        )
+        selected_rvtTypes_values = go(
+            selected_rvtTypes_ids,
+            map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "values")),
+            list,
+        )
+
+        if data:
+            target_data = go(
+                data["children"],
+                filter(lambda x: x["name"] == selected_rvtTypes_name),
+                list,
+                lambda x: x[0],
+                lambda x: x["children"],
+            )
+
+            self.sheet.set_sheet_data(target_data)
+
+        self.setup_column_style()
+        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
