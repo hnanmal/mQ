@@ -32,6 +32,8 @@ class AppState:
         self.selected_rvtTypes_forLabel = tk.StringVar()
 
         self.switch_widget_status = tk.StringVar()
+        self.suggest_area_open_status = True
+        self.rvt_wm_isShort = True
 
         self.wm_group_data = {}
         self.lock_status = {}

@@ -1193,23 +1193,35 @@ class Project_WM_perRVT_SheetView:
         state,
         parent,
         typeAssign_treeview,
+        *args,
+        **kwargs,
     ):
         self.state = state
+        self.kwargs = kwargs
         self.data_kind = "project-assigntype"
         self.treeDataManager = TreeDataManager_treesheet(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e))
 
         self.typeAssign_treeview = typeAssign_treeview
-        self.sheet = Sheet(
-            parent,
-            show_x_scrollbar=False,
-            show_y_scrollbar=True,
-            width=1200,
-            # height=350,
-        )
+        if kwargs.get("height"):
+            self.sheet = Sheet(
+                parent,
+                show_x_scrollbar=True,
+                show_y_scrollbar=True,
+                width=1200,
+                height=kwargs.get("height"),
+            )
+        else:
+            self.sheet = Sheet(
+                parent,
+                show_x_scrollbar=True,
+                show_y_scrollbar=True,
+                width=1200,
+                # height=350,
+            )
         self.sheet.pack(
             expand=True,
-            side="left",
+            side="top",
             # fill="none",
             fill="both",
             # padx=5,
@@ -1241,12 +1253,15 @@ class Project_WM_perRVT_SheetView:
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
-                ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+                ("end_edit_cell", lambda e: self.on_change_sheet(e)),
+                ("end_delete_rows", lambda e: self.on_change_sheet(e)),
+                ## 신규행 추가시 (std)SWM > MISC > All Items > All WM 항목 추가할수 있는 함수 바인딩 필요
             ]
         )
 
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
+        # self.renew_sheet_height()
         # self.setup_column_style()
 
     def setup_sheet(self):
@@ -1274,6 +1289,22 @@ class Project_WM_perRVT_SheetView:
         self.sheet.set_sheet_data([])
         # 초기 데이터 로드
         # self.update()
+
+    def rollback_sheet_height(self):
+        self.sheet.config(
+            height=350,
+        )
+        self.sheet.update_idletasks()
+        self.sheet.update()
+        print(f"\n 시트크기 복원 \n")
+
+    def renew_sheet_height(self):
+        self.sheet.config(
+            height=750,
+        )
+        self.sheet.update_idletasks()
+        self.sheet.update()
+        print(f"\n 시트크기 확장 \n")
 
     def setup_column_style(self):
         self.sheet.set_column_widths([35, 0, 125, 450, 250, 100, 35, 30])
@@ -1377,6 +1408,44 @@ class Project_WM_perRVT_SheetView:
                     wrapped_row.append(cell)
             wrapped_data.append(wrapped_row)
 
-        print(f"col width: {width}")
+        # print(f"col width: {width}")
 
         self.sheet.set_sheet_data(wrapped_data)
+
+    def on_change_sheet(self, e=None):
+        state = self.state
+
+        data = state.team_std_info.get("project-assigntype")
+        selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
+        selected_rvtTypes_values = go(
+            selected_rvtTypes_ids,
+            map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "values")),
+            list,
+        )
+
+        match_assigntype = lambda selected_rvtTypes_value: go(
+            data["children"],
+            filter(lambda x: x["values"][0] == selected_rvtTypes_value[0]),
+            filter(lambda x: x["values"][1] == selected_rvtTypes_value[1]),
+            filter(lambda x: x["values"][2] == selected_rvtTypes_value[2]),
+            list,
+            lambda x: x[0],
+        )
+
+        sheet_data = go(
+            self.sheet.get_sheet_data(),
+            map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),
+            list,
+        )
+
+        # Get the full path of the selected item
+        for selected_rvtTypes_value in selected_rvtTypes_values:
+            matched_assigntype = match_assigntype(selected_rvtTypes_value)
+            # print(f"\n matched_assigntype:: {matched_assigntype}\n")
+
+            new_WM_data = sheet_data
+            matched_assigntype["children"] = []
+            matched_assigntype["children"].extend(new_WM_data)
+
+        ## project_WM_perRVT_SheetView 업데이트
+        state.project_WM_perRVT_SheetView.update()

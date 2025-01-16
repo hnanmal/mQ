@@ -210,7 +210,7 @@ class WMapply_button:
             chked_GWM_data = []
             for i in chked_GWM:
                 x = deepcopy(i)
-                print(i[3])
+                # print(i[3])
                 x[3] = find_wmStr(i[3])
                 chked_GWM_data.append(x)
 
@@ -283,7 +283,7 @@ class WMapply_button:
             chked_SWM_data = []
             for i in chked_SWM:
                 x = deepcopy(i)
-                print(i[3])
+                # print(i[3])
                 x[3] = find_wmStr(i[3])
                 chked_SWM_data.append(x)
         else:
@@ -329,9 +329,9 @@ class WMapply_button:
             total_WM_data = gwm_data + swm_data
             matched_assigntype["children"].extend(total_WM_data)
 
-            print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
-            print(f"matched_assigntype: {matched_assigntype['children']}")
-            print(f"total_WM_data: {total_WM_data}")
+            # print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
+            # print(f"matched_assigntype: {matched_assigntype['children']}")
+            # print(f"total_WM_data: {total_WM_data}")
 
         ## project_WM_perRVT_SheetView 업데이트
         state.project_WM_perRVT_SheetView.update()
@@ -501,8 +501,10 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         for item_name in item_names:
             _add(item_name)
 
-        # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-        state.observer_manager.notify_observers(state)
+        # print(f"\n item_names  ::  {item_names}\n")
+        if item_names != [""]:
+            # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
 
     def delete_item(self):
         state = self.state

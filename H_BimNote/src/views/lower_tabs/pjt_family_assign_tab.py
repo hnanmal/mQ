@@ -164,7 +164,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     ##############################################################
     ## section 3###########
-    cf = CollapsingFrame(section3)
+    cf = CollapsingFrame(state, section3)
     cf.pack(fill=BOTH)
 
     main_area = ttk.Frame(
@@ -231,6 +231,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         child=main_area,
         title="Suggested Standard WM items",
         bootstyle="info",
+        suggest_area=True,
     )
 
     # option group 2
@@ -238,9 +239,34 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         cf,
         # padding=10,
     )
+    state.customWM_area = customWM_area
+
+    def toggle_height(state):
+        if state.rvt_wm_isShort == True:
+            state.project_WM_perRVT_SheetView.renew_sheet_height()
+            state.rvt_wm_isShort = False
+        else:
+            state.project_WM_perRVT_SheetView.rollback_sheet_height()
+            state.rvt_wm_isShort = True
+
+    renew_button = tk.Button(
+        customWM_area,
+        text="시트 높이조정",
+        font=("Arial Narrow", 8, "normal"),
+        command=lambda: toggle_height(state),
+    )
+    renew_button.config(
+        width=12,
+        height=1,
+    )
+    renew_button.pack(side="top", anchor="ne")
 
     project_WM_perRVT_SheetView = Project_WM_perRVT_SheetView(
-        state, customWM_area, typeAssign_treeview
+        state,
+        customWM_area,
+        typeAssign_treeview,
+        height=375,
+        # height=100,
     )
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(project_WM_perRVT_SheetView)

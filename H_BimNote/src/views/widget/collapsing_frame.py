@@ -11,10 +11,11 @@ IMG_PATH = Path(__file__).parent.parent.parent.parent / "resource"
 class CollapsingFrame(ttk.Frame):
     """A collapsible frame widget that opens and closes with a click."""
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, _state, master, **kwargs):
         super().__init__(master, **kwargs)
         self.columnconfigure(0, weight=1)
         self.cumulative_rows = 0
+        self._state = _state
 
         # widget images
         self.images = [
@@ -32,6 +33,7 @@ class CollapsingFrame(ttk.Frame):
             collapsed (bool): Whether the group should start collapsed.
             **kwargs (Dict): Other optional keyword arguments.
         """
+        self.kwargs = kwargs
         if child.winfo_class() != "TFrame":
             return
 
@@ -73,6 +75,17 @@ class CollapsingFrame(ttk.Frame):
         if collapsed:
             child.grid_remove()
             btn.configure(image=self.images[1])
+            if kwargs.get("suggest_area") and hasattr(
+                self._state, "project_WM_perRVT_SheetView"
+            ):
+                self._state.project_WM_perRVT_SheetView.renew_sheet_height()
+                pass
+        else:
+            if kwargs.get("suggest_area") and hasattr(
+                self._state, "project_WM_perRVT_SheetView"
+            ):
+                self._state.project_WM_perRVT_SheetView.rollback_sheet_height()
+                pass
 
         # increment the row assignment
         self.cumulative_rows += 2
@@ -86,14 +99,22 @@ class CollapsingFrame(ttk.Frame):
             child (Frame):
                 The child element to add or remove from grid manager.
         """
+        kwargs = self.kwargs
         if child.winfo_viewable():
             child.grid_remove()
             child.btn.configure(image=self.images[1])
+            if kwargs.get("suggest_area") and hasattr(
+                self._state, "project_WM_perRVT_SheetView"
+            ):
+                self._state.project_WM_perRVT_SheetView.renew_sheet_height()
+                pass
         else:
             child.grid()
             child.btn.configure(image=self.images[0])
-        self.frm.update_idletasks()
-        self.frm.update()
+            if kwargs.get("suggest_area") and hasattr(
+                self._state, "project_WM_perRVT_SheetView"
+            ):
+                self._state.project_WM_perRVT_SheetView.rollback_sheet_height()
 
 
 if __name__ == "__main__":
