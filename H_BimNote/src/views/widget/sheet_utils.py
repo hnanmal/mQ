@@ -1325,12 +1325,17 @@ class Project_WM_perRVT_SheetView:
 
         current_building = state.current_building
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
-        selected_rvtTypes_name = go(
+        selected_rvtTypes_names = go(
             selected_rvtTypes_ids,
             map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "text")),
             list,
-            lambda x: x[0],
+            # lambda x: x[0],
         )
+        try:
+            selected_rvtTypes_name = selected_rvtTypes_names[0]
+        except:
+            selected_rvtTypes_name = ""
+
         selected_rvtTypes_values = go(
             selected_rvtTypes_ids,
             map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "values")),
@@ -1338,26 +1343,29 @@ class Project_WM_perRVT_SheetView:
         )
 
         if data:
-            target_data = go(
-                data["children"],
-                filter(lambda x: x["name"] == selected_rvtTypes_name),
-                list,
-                lambda x: x[0],
-                lambda x: x["children"],
-            )
+            try:
+                target_data = go(
+                    data["children"],
+                    filter(lambda x: x["name"] == selected_rvtTypes_name),
+                    list,
+                    lambda x: x[0],
+                    lambda x: x["children"],
+                )
 
-            self.sheet.set_sheet_data(target_data)
-            self.setup_column_style()
-            self.apply_wrap(
-                tgt_idx=3,
-                # tgt_width=600,
-            )
-            # self.sheet.set_all_cell_sizes_to_text()
-            self.sheet.set_all_row_heights(
-                height=50,
-                only_set_if_too_small=True,
-            )
-            # self.sheet.set_all_cell_sizes_to_text()
+                self.sheet.set_sheet_data(target_data)
+                self.setup_column_style()
+                self.apply_wrap(
+                    tgt_idx=3,
+                    # tgt_width=600,
+                )
+                # self.sheet.set_all_cell_sizes_to_text()
+                self.sheet.set_all_row_heights(
+                    height=50,
+                    only_set_if_too_small=True,
+                )
+            except:
+                state.log_widget.write(f"\n유효한 target_data 없음\n")
+
         self.setup_column_style()
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 

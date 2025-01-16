@@ -142,6 +142,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     typeAssign_treeview = TypeAssign_treeview(
         state, section2, relate_widget=modelType_entry
     )
+    state.typeAssign_treeview = typeAssign_treeview
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(typeAssign_treeview)
     #############################################################################
@@ -249,17 +250,19 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
             state.project_WM_perRVT_SheetView.rollback_sheet_height()
             state.rvt_wm_isShort = True
 
-    renew_button = tk.Button(
-        customWM_area,
-        text="시트 높이조정",
-        font=("Arial Narrow", 8, "normal"),
-        command=lambda: toggle_height(state),
-    )
-    renew_button.config(
-        width=12,
-        height=1,
-    )
-    renew_button.pack(side="top", anchor="ne")
+    state.toggle_height = toggle_height
+
+    # renew_button = tk.Button(
+    #     customWM_area,
+    #     text="시트 높이조정",
+    #     font=("Arial Narrow", 8, "normal"),
+    #     command=lambda: toggle_height(state),
+    # )
+    # renew_button.config(
+    #     width=12,
+    #     height=1,
+    # )
+    # renew_button.pack(side="top", anchor="ne")
 
     project_WM_perRVT_SheetView = Project_WM_perRVT_SheetView(
         state,

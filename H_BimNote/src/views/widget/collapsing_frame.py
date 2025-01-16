@@ -60,6 +60,7 @@ class CollapsingFrame(ttk.Frame):
 
         # header toggle button
         def _func(c=child):
+            self._state.toggle_height(self._state)
             return self._toggle_open_close(c)
 
         btn = ttk.Button(

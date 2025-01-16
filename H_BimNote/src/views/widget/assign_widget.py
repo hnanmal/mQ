@@ -121,6 +121,12 @@ class WMapply_button:
             return
 
         # std_type_no = self.familylist_widget.selected_item.split(" | ")[-1]
+        std_type_no = go(
+            self.familylist_widget.tree,
+            lambda x: x.selection()[0],
+            lambda x: self.familylist_widget.tree.item(x, "values"),
+            lambda x: x[2],  ## type name 위치
+        )
         std_type_name = go(
             self.familylist_widget.tree,
             lambda x: x.selection()[0],
@@ -411,12 +417,24 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         selected_item_names_str = ",,".join(selected_item_names)
         state.selected_rvtTypes.set(selected_item_names_str)
 
-        if len(selected_item_names) == 1:
-            selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ]"
-        else:
-            selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
+        # if len(selected_item_names) == 1:
+        #     selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ]"
+        # else:
+        #     selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
 
-        state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
+        # state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
+
+        try:
+            if len(selected_item_names) == 1:
+                selected_item_names_str_forLabel = (
+                    f"선택 : [ {selected_item_names[0]} ]"
+                )
+            else:
+                selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
+
+            state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
+        except:
+            pass
 
         ## project_WM_perRVT_SheetView 업데이트
         state.project_WM_perRVT_SheetView.update()
@@ -446,6 +464,8 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             self.treeview.insert_data_with_levels(data)
 
             self.treeview.expand_tree_to_level(level=view_level)
+        elif not selected_stdType:
+            self.treeview.clear_treeview()
 
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 

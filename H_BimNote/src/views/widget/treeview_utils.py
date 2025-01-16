@@ -1823,6 +1823,9 @@ class TeamStd_FamlistTreeView:
         # 레빗 타입 별 WM 입력 오류 방지를 위한 초기화
         state.selected_rvtTypes.set(None)
         state.selected_rvtTypes_forLabel.set(None)
+        # 표준타입 미입력시 직전 선택 내용 잔존 방지지
+        state.typeAssign_treeview.treeview.clear_treeview()
+        state.project_WM_perRVT_SheetView.sheet.set_sheet_data([])
 
         selected_item_id = self.treeview.tree.focus()
         try:
@@ -1842,7 +1845,7 @@ class TeamStd_FamlistTreeView:
             # 현재 선택된 항목의 스타일을 변경
             if selected_item_id:
                 for item in selected_item_id:
-                    self.treeview.item(item, tags=("selected",))
+                    self.treeview.tree.item(item, tags=("selected",))
         except Exception as e:
             self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
