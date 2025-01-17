@@ -175,25 +175,31 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     suggestWM_area = ttk.Frame(
         main_area,
-        # padding=10,
+        # relief="ridge",
+        # borderwidth=3,
     )
-    suggestWM_area.pack(anchor="nw")
+    suggestWM_area.pack(expand=True, fill="x", pady=3, anchor="center")
 
     GWMarea = ttk.Frame(
         suggestWM_area,
-        relief="ridge",
-        borderwidth=3,
-        # bootstyle="outline",
+        # relief="sunken",
+        # borderwidth=3,
     )
-    GWMarea.pack(side="left", anchor="nw")
+    GWMarea.pack(expand=True, fill="x", side="left", anchor="center")
+
+    separator = ttk.Separator(
+        suggestWM_area,
+        orient="vertical",
+        bootstyle="default",
+    )
+    separator.pack(side="left", fill="y", padx=5)
 
     SWMarea = ttk.Frame(
         suggestWM_area,
-        relief="ridge",
-        borderwidth=3,
-        # bootstyle="outline",
+        # relief="sunken",
+        # borderwidth=3,
     )
-    SWMarea.pack(side="left", anchor="nw")
+    SWMarea.pack(expand=True, fill="x", side="left", anchor="center")
 
     projectApply_GWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
         state,
@@ -231,7 +237,8 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     cf.add(
         child=main_area,
         title="Suggested Standard WM items",
-        bootstyle="info",
+        # bootstyle="info",
+        bootstyle="primary",
         suggest_area=True,
     )
 
@@ -252,18 +259,6 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     state.toggle_height = toggle_height
 
-    # renew_button = tk.Button(
-    #     customWM_area,
-    #     text="시트 높이조정",
-    #     font=("Arial Narrow", 8, "normal"),
-    #     command=lambda: toggle_height(state),
-    # )
-    # renew_button.config(
-    #     width=12,
-    #     height=1,
-    # )
-    # renew_button.pack(side="top", anchor="ne")
-
     project_WM_perRVT_SheetView = Project_WM_perRVT_SheetView(
         state,
         customWM_area,
@@ -282,7 +277,23 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         # collapsed=True,
         collapsed=False,
         textvariable=state.selected_rvtTypes_forLabel,
-        bootstyle="primary",
+        bootstyle="info",
     )
+
+    # Register widgets with EditModeManager
+    edit_mode_manager.register_widgets(
+        mode_button=edit_mode_button,
+        tree_views=[
+            pjt_famlist.familylist,
+        ],
+        # tree_ctrl_btn=[
+        #     add_button,
+        #     del_button,
+        # ],
+        # sheet=WMs_sheet,
+    )
+
+    # Set the initial state to "Locked Mode"
+    edit_mode_manager.set_edit_mode("locked")
 
     return working_tab

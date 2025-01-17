@@ -30,7 +30,8 @@ def main():
 
     # Apply ttkbootstrap theme
     style = ttk.Style()
-    style.theme_use("sandstone")  # Use your preferred ttkbootstrap theme
+    # style.theme_use("sandstone")  # Use your preferred ttkbootstrap theme
+    style.theme_use("cosmo")  # Use your preferred ttkbootstrap theme
     ################
 
     notebook, state = initialize_app(root)

@@ -47,7 +47,8 @@ class WMapply_button:
         button_frame.pack(
             expand=True,
             fill="x",
-            padx=300,
+            # padx=430,
+            padx=10,
             pady=10,
             side="bottom",
             anchor="center",
@@ -55,28 +56,30 @@ class WMapply_button:
 
         attach_button = ttk.Button(
             button_frame,
-            text="⬇",
+            text="⬇     산출항목 결정하기     ⬇",
+            width=100,
             command=self.match_WM_to_rvtType,
-            bootstyle="outline",
+            # bootstyle="outline",
+            bootstyle="info-outline",
         )
         attach_button.pack(
             # expand=True,
             padx=30,
             anchor="center",
-            side="left",
+            # side="left",
         )
 
-        detach_button = ttk.Button(
-            button_frame,
-            text="⬆",
-            bootstyle="warning-outline",
-        )
-        detach_button.pack(
-            # expand=True,
-            padx=10,
-            anchor="center",
-            side="left",
-        )
+        # detach_button = ttk.Button(
+        #     button_frame,
+        #     text="⬆",
+        #     bootstyle="warning-outline",
+        # )
+        # detach_button.pack(
+        #     # expand=True,
+        #     padx=10,
+        #     anchor="center",
+        #     side="left",
+        # )
 
         return button_frame
 
@@ -335,9 +338,9 @@ class WMapply_button:
             total_WM_data = gwm_data + swm_data
             matched_assigntype["children"].extend(total_WM_data)
 
-            # print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
-            # print(f"matched_assigntype: {matched_assigntype['children']}")
-            # print(f"total_WM_data: {total_WM_data}")
+            print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
+            print(f"matched_assigntype: {matched_assigntype['children']}")
+            print(f"total_WM_data: {total_WM_data}")
 
         ## project_WM_perRVT_SheetView 업데이트
         state.project_WM_perRVT_SheetView.update()

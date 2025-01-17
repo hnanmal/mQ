@@ -101,7 +101,7 @@ def create_recentBnotes_tab(state, notebook):
     logo_img_ = logo_img_.resize((180, 180), resample=Resampling.LANCZOS)
     logo_img = ImageTk.PhotoImage(logo_img_)
 
-    tk.Label.image = logo_img
+    tk.Label.image1 = logo_img
 
     logo_label = tk.Label(logo_area, image=logo_img)
     logo_label.configure(bg=frame_bgcolor)
@@ -129,7 +129,7 @@ def create_recentBnotes_tab(state, notebook):
         text="작성된 Bnote 열기",
         width=20,
         command=open_move_tab_func,
-        bootstyle=SUCCESS,
+        bootstyle="primary-outline",
     )
     open_bnote_btn.pack(side=tk.TOP, padx=20, pady=50, anchor="ne")
 
@@ -140,7 +140,7 @@ def create_recentBnotes_tab(state, notebook):
         command=lambda: open_move_tab_func(
             path="resource/PlantArch_BIM Standard.bnote"
         ),
-        bootstyle=INFO,
+        bootstyle="info-outline",
     )
     start_withStd_btn.pack(side=tk.TOP, padx=20, anchor="ne")
 

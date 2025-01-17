@@ -1846,6 +1846,7 @@ class TeamStd_FamlistTreeView:
             if selected_item_id:
                 for item in selected_item_id:
                     self.treeview.tree.item(item, tags=("selected",))
+
         except Exception as e:
             self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
@@ -1898,6 +1899,17 @@ class TeamStd_FamlistTreeView:
             )
             # Register the last selected item
             self.last_selected_item = selected_item_id
+
+            def select_first_item(tree):
+                children = tree.get_children()  # Get all children of the root
+                if children:
+                    first_item = children[0]
+                    tree.selection_set(first_item)  # Select the first item
+                    tree.focus(first_item)  # Set focus to the first item
+                    tree.see(first_item)  # Ensure the first item is visible
+                    # tree.focus_set()
+
+            select_first_item(state.typeAssign_treeview.treeview.tree)
 
         except Exception as e:
             self.state.log_widget.write(f"Error processing selected item details: {e}")

@@ -291,9 +291,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                     wrapped_row.append(cell)
             wrapped_data.append(wrapped_row)
 
-        print(f"col width: {width}")
-        # print(f"시트 data: {self.sheet.get_sheet_data()}")
-        # print(f"시트 분할문자: {wrapped_data}")
         self.sheet.set_sheet_data(wrapped_data)
 
     def update(self, event=None):
@@ -617,9 +614,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                     wrapped_row.append(cell)
             wrapped_data.append(wrapped_row)
 
-        print(f"col width: {width}")
-        # print(f"시트 data: {self.sheet.get_sheet_data()}")
-        # print(f"시트 분할문자: {wrapped_data}")
         self.sheet.set_sheet_data(wrapped_data)
 
     def update(self, event=None):
@@ -896,20 +890,18 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             parent,
             show_x_scrollbar=False,
             show_y_scrollbar=True,
-            # show_header=False,
-            # show_row_index=False,
-            width=470,
+            # width=470,
             height=350,
             # treeview=True,
         )
         self.sheet.pack(
             expand=True,
             side="left",
-            fill="none",
+            fill="x",
             # fill="both",
             # padx=5,
             # pady=5,
-            anchor="nw",
+            anchor="center",
         )
 
         # config enable_bindings
@@ -946,9 +938,9 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
     def setup_sheet(self):
         # 헤더 설정
         if self.wm_mode == "[ GWM ]":
-            headers = ["Use", "GWM", "분류", "Item", "산출\n유형", "수식"]
+            headers = ["Use", "GWM", "분류", "Item", "산출유형", "수식"]
         elif self.wm_mode == "[ SWM ]":
-            headers = ["Use", "SWM", "분류", "Item", "산출\n유형", "수식"]
+            headers = ["Use", "SWM", "분류", "Item", "산출유형", "수식"]
 
         self.sheet.headers(
             headers,
@@ -962,7 +954,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 80, 0, 120, 35, 100])
+        self.sheet.set_column_widths([25, 80, 0, 150, 40, 210])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1052,8 +1044,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                 else:
                     wrapped_row.append(cell)
             wrapped_data.append(wrapped_row)
-
-        print(f"col width: {width}")
 
         self.sheet.set_sheet_data(wrapped_data)
 
@@ -1216,7 +1206,7 @@ class Project_WM_perRVT_SheetView:
                 parent,
                 show_x_scrollbar=True,
                 show_y_scrollbar=True,
-                width=1200,
+                # width=1200,
                 # height=350,
             )
         self.sheet.pack(
@@ -1307,7 +1297,7 @@ class Project_WM_perRVT_SheetView:
         print(f"\n 시트크기 확장 \n")
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([35, 0, 125, 450, 250, 100, 35, 30])
+        self.sheet.set_column_widths([35, 0, 125, 400, 250, 170, 35, 35])
 
         # self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1322,6 +1312,55 @@ class Project_WM_perRVT_SheetView:
 
         self.sheet.set_sheet_data([])
         self.setup_column_style()
+
+        pjt_gwm_data = state.team_std_info.get("project-GWM")
+        pjt_swm_data = state.team_std_info.get("project-SWM")
+        WMs = state.team_std_info.get("WMs")
+        WMsStr = go(
+            WMs,
+            map(lambda x: list(map(str, x))),
+            map(lambda x: filter(lambda x: x != "0", x)),
+            map(lambda x: filter(lambda x: x != "", x)),
+            map(lambda x: filter(lambda x: x != " ", x)),
+            map(lambda x: filter(lambda x: x != "ㅤ", x)),  #  공백 특수 문자
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+
+        def find_matched_pjtGWM(name):
+            res = go(
+                pjt_gwm_data.keys(),
+                list,
+                filter(lambda x: name in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
+
+        def find_matched_pjtSWM(name):
+            res = go(
+                pjt_swm_data.keys(),
+                list,
+                filter(lambda x: name in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
+
+        def find_wmStr(wmcode):
+            res = go(
+                WMsStr,
+                filter(lambda x: wmcode in x),
+                list,
+            )
+            try:
+                return res[0]
+            except:
+                return ""
 
         current_building = state.current_building
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
@@ -1351,6 +1390,26 @@ class Project_WM_perRVT_SheetView:
                     lambda x: x[0],
                     lambda x: x["children"],
                 )
+
+                for wm in target_data:
+                    # wm = deepcopy(_wm)
+                    if wm[0] == "GWM":
+                        matched_item = find_matched_pjtGWM(wm[2])
+                        wm[3] = find_wmStr(
+                            pjt_gwm_data.get(matched_item, ["", "", ""])[0]
+                        )
+                        wm[4] = pjt_gwm_data.get(matched_item, ["", "", ""])[2]
+                        wm[6] = pjt_gwm_data.get(matched_item, ["", "", ""])[1]
+                    elif wm[0] == "SWM":
+                        matched_item = find_matched_pjtSWM(wm[2])
+                        wm[3] = find_wmStr(
+                            pjt_swm_data.get(matched_item, ["", "", ""])[0]
+                        )
+                        wm[4] = pjt_swm_data.get(matched_item, ["", "", ""])[2]
+                        wm[6] = pjt_swm_data.get(matched_item, ["", "", ""])[1]
+                    else:
+                        matched_item = ""
+                    print(f"\n matched_item::: {matched_item} \n")
 
                 self.sheet.set_sheet_data(target_data)
                 self.setup_column_style()
@@ -1415,8 +1474,6 @@ class Project_WM_perRVT_SheetView:
                 else:
                     wrapped_row.append(cell)
             wrapped_data.append(wrapped_row)
-
-        # print(f"col width: {width}")
 
         self.sheet.set_sheet_data(wrapped_data)
 

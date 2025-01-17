@@ -75,7 +75,7 @@ class ProjectInfoWidget:
     def init_ui(self):
         """Initialize the user interface for project info input."""
         self.frame.config(width=600)
-        self.frame.pack(side=tk.TOP, anchor="nw")
+        self.frame.pack(side=tk.TOP, anchor="center")
 
         # Project Name
         ttk.Label(self.frame, text="Project Name:", font=("Arial", 16)).pack(pady=10)
@@ -104,7 +104,7 @@ class ProjectInfoWidget:
         # Update button to store changes in state
         self.update_button = ttk.Button(
             self.frame,
-            text="Regiter to BNOTE",
+            text="BNOTE에 프로젝트 이름 등록",
             bootstyle="success",
             command=self.modify_state,
         )

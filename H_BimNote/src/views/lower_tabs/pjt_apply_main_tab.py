@@ -80,15 +80,15 @@ def create_pjtApply_Main_tab(state, subtab_notebook, exe_mode=None):
         ##############################################################
         ## tab_common_area###########
 
-        # Create an "Edit Mode" / "Locked Mode" button
-        edit_mode_button = tk.Button(
-            working_tab_common_area,
-            text="Locked Mode",
-            command=lambda: edit_mode_manager.set_edit_mode(
-                "edit" if edit_mode_button.cget("text") == "Locked Mode" else "locked"
-            ),
-        )
-        edit_mode_button.pack(anchor="w", pady=5)
+        # # Create an "Edit Mode" / "Locked Mode" button
+        # edit_mode_button = tk.Button(
+        #     working_tab_common_area,
+        #     text="Locked Mode",
+        #     command=lambda: edit_mode_manager.set_edit_mode(
+        #         "edit" if edit_mode_button.cget("text") == "Locked Mode" else "locked"
+        #     ),
+        # )
+        # edit_mode_button.pack(anchor="w", pady=5)
 
         ##############################################################
         ## section 1###########
