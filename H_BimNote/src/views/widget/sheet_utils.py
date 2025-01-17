@@ -151,7 +151,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
     def setup_sheet(self):
         # 헤더 설정
-        headers = ["Use", "Spec", "Unit", "Work Master"]
+        headers = ["Use", "Spec", "Unit", "Work Master", "Gauge Code"]
         self.sheet.headers(headers)
 
         # Create checkboxes in the First column
@@ -163,7 +163,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
     def setup_column_style(self):
         # self.sheet.set_column_widths([25, 200, 25, 2000])
-        self.sheet.set_column_widths([25, 200, 25, 1000])
+        self.sheet.set_column_widths([25, 200, 25, 1000, 50])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
@@ -201,6 +201,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             if project_GWM:
                 spec = project_GWM[-1]
                 unit = project_GWM[-2]
+                gauge = project_GWM[1]
             else:
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
@@ -209,11 +210,12 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-            unit = go(
-                self.sheet.get_cell_data(row, 3),
-                lambda x: x.replace("\n", ""),
-                lambda x: x.split(" | ")[-3],
-            )
+            # unit = go(
+            #     self.sheet.get_cell_data(row, 3),
+            #     lambda x: x.replace("\n", ""),
+            #     lambda x: x.split(" | ")[-3],
+            # )
+            # gauge = self.sheet.get_cell_data(row, 4)
         elif column == 1:
             spec = event["value"]
             unit = go(
@@ -221,10 +223,19 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 lambda x: x.replace("\n", ""),
                 lambda x: x.split(" | ")[-3],
             )
+            gauge = self.sheet.get_cell_data(row, 4)
+        elif column == 4:
+            spec = self.sheet.get_cell_data(row, 1)
+            unit = go(
+                self.sheet.get_cell_data(row, 3),
+                lambda x: x.replace("\n", ""),
+                lambda x: x.split(" | ")[-3],
+            )
+            gauge = event["value"]
 
         # if row_check_status:
         self.state.team_std_info["project-GWM"].update(
-            {selected_item_str: [wm_code, unit, spec]}
+            {selected_item_str: [wm_code, gauge, unit, spec]}
         )
         self.state.log_widget.write(
             self.state.team_std_info["project-GWM"][selected_item_str]
@@ -358,6 +369,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                         ),
                                         x.split(" | ")[-3],
                                         x,
+                                        "",
                                     ]
                                 ),
                                 list,
@@ -371,10 +383,11 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                             tgt_rowIdx = 0
                             if decided_WM:
                                 for idx, row in enumerate(wrapped_data):
-                                    if decided_WM[0] in row[-1]:
+                                    if decided_WM[0] in row[-2]:
                                         row[0] = True
                                         row[1] = decided_WM[-1]
                                         row[2] = decided_WM[-2]
+                                        row[4] = decided_WM[1]
                                         tgt_rowIdx = idx
 
                             # self.treeview.insert_data_with_levels(wrapped_data)
@@ -473,7 +486,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
     def setup_sheet(self):
         # 헤더 설정
-        headers = ["Use", "Spec", "Unit", "Work Master"]
+        headers = ["Use", "Spec", "Unit", "Work Master", "Gauge Code"]
         self.sheet.headers(headers)
 
         # Create checkboxes in the First column
@@ -485,7 +498,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
     def setup_column_style(self):
         # self.sheet.set_column_widths([25, 200, 25, 2000])
-        self.sheet.set_column_widths([25, 200, 25, 1000])
+        self.sheet.set_column_widths([25, 200, 25, 1000, 50])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
@@ -523,6 +536,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             if project_SWM:
                 spec = project_SWM[-1]
                 unit = project_SWM[-2]
+                gauge = project_SWM[1]
             else:
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
@@ -531,11 +545,11 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-                unit = go(
-                    self.sheet.get_cell_data(row, 3),
-                    lambda x: x.replace("\n", ""),
-                    lambda x: x.split(" | ")[-3],
-                )
+                # unit = go(
+                #     self.sheet.get_cell_data(row, 3),
+                #     lambda x: x.replace("\n", ""),
+                #     lambda x: x.split(" | ")[-3],
+                # )
             # unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
         elif column == 1:
             spec = event["value"]
@@ -544,10 +558,19 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                 lambda x: x.replace("\n", ""),
                 lambda x: x.split(" | ")[-3],
             )
+            gauge = self.sheet.get_cell_data(row, 4)
+        elif column == 4:
+            spec = self.sheet.get_cell_data(row, 1)
+            unit = go(
+                self.sheet.get_cell_data(row, 3),
+                lambda x: x.replace("\n", ""),
+                lambda x: x.split(" | ")[-3],
+            )
+            gauge = event["value"]
 
         # if row_check_status:
         self.state.team_std_info["project-SWM"].update(
-            {selected_item_str: [wm_code, unit, spec]}
+            {selected_item_str: [wm_code, gauge, unit, spec]}
         )
         self.state.log_widget.write(
             self.state.team_std_info["project-SWM"][selected_item_str]
@@ -680,6 +703,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                                         ),
                                         x.split(" | ")[-3],
                                         x,
+                                        "",
                                     ]
                                 ),
                                 list,
@@ -693,10 +717,11 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                             tgt_rowIdx = 0
                             if decided_WM:
                                 for idx, row in enumerate(wrapped_data):
-                                    if decided_WM[0] in row[-1]:
+                                    if decided_WM[0] in row[-2]:
                                         row[0] = True
                                         row[1] = decided_WM[-1]
                                         row[2] = decided_WM[-2]
+                                        row[4] = decided_WM[1]
                                         tgt_rowIdx = idx
 
                             # self.treeview.insert_data_with_levels(wrapped_data)
@@ -1262,6 +1287,7 @@ class Project_WM_perRVT_SheetView:
             "Std",
             "Item",
             "Work Master",
+            "Gauge Code",
             "Spec",
             "수식",
             "단위",
@@ -1271,9 +1297,6 @@ class Project_WM_perRVT_SheetView:
         self.sheet.headers(
             headers,
         )
-
-        # Create checkboxes in the First column
-        # self.sheet.checkbox("A", checked=True)
         self.setup_column_style()
 
         self.sheet.set_sheet_data([])
@@ -1297,7 +1320,7 @@ class Project_WM_perRVT_SheetView:
         print(f"\n 시트크기 확장 \n")
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([35, 0, 125, 400, 250, 170, 35, 35])
+        self.sheet.set_column_widths([35, 0, 125, 400, 30, 250, 170, 35, 35])
 
         # self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1398,15 +1421,17 @@ class Project_WM_perRVT_SheetView:
                         wm[3] = find_wmStr(
                             pjt_gwm_data.get(matched_item, ["", "", ""])[0]
                         )
-                        wm[4] = pjt_gwm_data.get(matched_item, ["", "", ""])[2]
-                        wm[6] = pjt_gwm_data.get(matched_item, ["", "", ""])[1]
+                        wm[4] = pjt_gwm_data.get(matched_item, ["", "", ""])[1]
+                        wm[5] = pjt_gwm_data.get(matched_item, ["", "", ""])[3]
+                        wm[7] = pjt_gwm_data.get(matched_item, ["", "", ""])[2]
                     elif wm[0] == "SWM":
                         matched_item = find_matched_pjtSWM(wm[2])
                         wm[3] = find_wmStr(
                             pjt_swm_data.get(matched_item, ["", "", ""])[0]
                         )
-                        wm[4] = pjt_swm_data.get(matched_item, ["", "", ""])[2]
-                        wm[6] = pjt_swm_data.get(matched_item, ["", "", ""])[1]
+                        wm[4] = pjt_swm_data.get(matched_item, ["", "", ""])[1]
+                        wm[5] = pjt_swm_data.get(matched_item, ["", "", ""])[3]
+                        wm[7] = pjt_swm_data.get(matched_item, ["", "", ""])[2]
                     else:
                         matched_item = ""
                     print(f"\n matched_item::: {matched_item} \n")

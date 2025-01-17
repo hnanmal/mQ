@@ -69,18 +69,6 @@ class WMapply_button:
             # side="left",
         )
 
-        # detach_button = ttk.Button(
-        #     button_frame,
-        #     text="⬆",
-        #     bootstyle="warning-outline",
-        # )
-        # detach_button.pack(
-        #     # expand=True,
-        #     padx=10,
-        #     anchor="center",
-        #     side="left",
-        # )
-
         return button_frame
 
     def get_checked_GWMSWM(self, GWMwidget, SWMwidget):
@@ -205,11 +193,14 @@ class WMapply_button:
                         )[0],
                         pjt_gwm_data.get(
                             find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
-                        )[2],
+                        )[1],
+                        pjt_gwm_data.get(
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                        )[3],
                         x[-1],
                         pjt_gwm_data.get(
                             find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
-                        )[1],
+                        )[2],
                         x[-2],
                     ]
                 ),
@@ -278,11 +269,14 @@ class WMapply_button:
                         )[0],
                         pjt_swm_data.get(
                             find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
-                        )[2],
+                        )[1],
+                        pjt_swm_data.get(
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                        )[3],
                         x[-1],
                         pjt_swm_data.get(
                             find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
-                        )[1],
+                        )[2],
                         x[-2],
                     ]
                 ),
