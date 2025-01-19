@@ -136,6 +136,12 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             "arrowkeys",
         )
 
+        # # Initialize the search manager
+        # self.search_manager = SheetSearchManager(self.sheetview.sheet, self.state)
+
+        # # Add Search Box
+        # self.add_search_box(self.title_frame)
+
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
@@ -171,6 +177,41 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         # self.sheet.set_options(default_row_height=40)
 
+    def add_search_box(self, parent):
+        """Add search box to filter the sheet data."""
+        search_frame = ttk.Frame(parent)
+        search_frame.pack(padx=5, pady=5, anchor="w")
+
+        # Search Label
+        search_label = ttk.Label(search_frame, text="Search:")
+        search_label.pack(side="left", padx=5)
+
+        # Search Entry
+        self.search_entry = ttk.Entry(search_frame, width=20)
+        self.search_entry.pack(side="left", padx=5)
+        self.search_entry.bind(
+            "<Return>",
+            lambda e: self.search_manager.search_sheet_data(self.search_entry.get()),
+        )
+
+        # Search Button
+        search_button = ttk.Button(
+            search_frame,
+            text="Search",
+            command=lambda: self.search_manager.search_sheet_data(
+                self.search_entry.get()
+            ),
+        )
+        search_button.pack(side="left", padx=5)
+
+        # Reset Button
+        reset_button = ttk.Button(
+            search_frame,
+            text="Reset",
+            command=lambda: self.search_manager.reset_search(self.search_entry),
+        )
+        reset_button.pack(side="left", padx=5)
+
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
         self.state.log_widget.write(
@@ -203,6 +244,12 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 unit = project_GWM[-2]
                 gauge = project_GWM[1]
             else:
+                gauge = self.sheet.get_cell_data(row, 4)
+                unit = go(
+                    self.sheet.get_cell_data(row, 3),
+                    lambda x: x.replace("\n", ""),
+                    lambda x: x.split(" | ")[-3],
+                )
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
@@ -210,12 +257,17 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-            # unit = go(
-            #     self.sheet.get_cell_data(row, 3),
-            #     lambda x: x.replace("\n", ""),
-            #     lambda x: x.split(" | ")[-3],
-            # )
-            # gauge = self.sheet.get_cell_data(row, 4)
+                self.state.team_std_info["project-GWM"].update(
+                    {
+                        selected_item_str: [
+                            wm_code,
+                            gauge,
+                            unit,
+                            spec,
+                        ]
+                    }
+                )
+
         elif column == 1:
             spec = event["value"]
             unit = go(
@@ -538,6 +590,12 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                 unit = project_SWM[-2]
                 gauge = project_SWM[1]
             else:
+                gauge = self.sheet.get_cell_data(row, 4)
+                unit = go(
+                    self.sheet.get_cell_data(row, 3),
+                    lambda x: x.replace("\n", ""),
+                    lambda x: x.split(" | ")[-3],
+                )
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
@@ -545,12 +603,16 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                     filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
                     lambda x: "\n".join(x),
                 )
-                # unit = go(
-                #     self.sheet.get_cell_data(row, 3),
-                #     lambda x: x.replace("\n", ""),
-                #     lambda x: x.split(" | ")[-3],
-                # )
-            # unit = self.sheet.get_cell_data(row, 3).split(" | ")[-3]
+                self.state.team_std_info["project-SWM"].update(
+                    {
+                        selected_item_str: [
+                            wm_code,
+                            gauge,
+                            unit,
+                            spec,
+                        ]
+                    }
+                )
         elif column == 1:
             spec = event["value"]
             unit = go(
@@ -1375,11 +1437,14 @@ class Project_WM_perRVT_SheetView:
                 return ""
 
         def find_wmStr(wmcode):
-            res = go(
-                WMsStr,
-                filter(lambda x: wmcode in x),
-                list,
-            )
+            if wmcode == "":
+                return ""
+            else:
+                res = go(
+                    WMsStr,
+                    filter(lambda x: wmcode in x),
+                    list,
+                )
             try:
                 return res[0]
             except:
@@ -1419,19 +1484,22 @@ class Project_WM_perRVT_SheetView:
                     if wm[0] == "GWM":
                         matched_item = find_matched_pjtGWM(wm[2])
                         wm[3] = find_wmStr(
-                            pjt_gwm_data.get(matched_item, ["", "", ""])[0]
+                            pjt_gwm_data.get(matched_item, ["", "", "", ""])[0]
                         )
-                        wm[4] = pjt_gwm_data.get(matched_item, ["", "", ""])[1]
-                        wm[5] = pjt_gwm_data.get(matched_item, ["", "", ""])[3]
-                        wm[7] = pjt_gwm_data.get(matched_item, ["", "", ""])[2]
+                        wm[4] = pjt_gwm_data.get(matched_item, ["", "", "", ""])[1]
+                        wm[5] = pjt_gwm_data.get(matched_item, ["", "", "", ""])[3]
+                        wm[7] = pjt_gwm_data.get(matched_item, ["", "", "", ""])[2]
                     elif wm[0] == "SWM":
                         matched_item = find_matched_pjtSWM(wm[2])
                         wm[3] = find_wmStr(
-                            pjt_swm_data.get(matched_item, ["", "", ""])[0]
+                            pjt_swm_data.get(matched_item, ["", "", "", ""])[0]
                         )
-                        wm[4] = pjt_swm_data.get(matched_item, ["", "", ""])[1]
-                        wm[5] = pjt_swm_data.get(matched_item, ["", "", ""])[3]
-                        wm[7] = pjt_swm_data.get(matched_item, ["", "", ""])[2]
+                        wm[4] = pjt_swm_data.get(matched_item, ["", "", "", ""])[1]
+                        wm[5] = pjt_swm_data.get(matched_item, ["", "", "", ""])[3]
+                        wm[7] = pjt_swm_data.get(matched_item, ["", "", "", ""])[2]
+                    elif wm[0] == "etc":
+                        matched_item = ""
+                        wm[3] = find_wmStr(wm[3])
                     else:
                         matched_item = ""
                     print(f"\n matched_item::: {matched_item} \n")

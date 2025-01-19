@@ -189,17 +189,21 @@ class WMapply_button:
                         std_type_name,
                         " | ".join([x[2], x[3]]),
                         pjt_gwm_data.get(
-                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])),
+                            ["", "", "", ""],
                         )[0],
                         pjt_gwm_data.get(
-                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])),
+                            ["", "", "", ""],
                         )[1],
                         pjt_gwm_data.get(
-                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])),
+                            ["", "", "", ""],
                         )[3],
                         x[-1],
                         pjt_gwm_data.get(
-                            find_matched_pjtGWM(" | ".join([x[2], x[3]])), ["", "", ""]
+                            find_matched_pjtGWM(" | ".join([x[2], x[3]])),
+                            ["", "", "", ""],
                         )[2],
                         x[-2],
                     ]
@@ -265,17 +269,21 @@ class WMapply_button:
                         std_type_name,
                         " | ".join([x[0], x[1]]),
                         pjt_swm_data.get(
-                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])),
+                            ["", "", "", ""],
                         )[0],
                         pjt_swm_data.get(
-                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])),
+                            ["", "", "", ""],
                         )[1],
                         pjt_swm_data.get(
-                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])),
+                            ["", "", "", ""],
                         )[3],
                         x[-1],
                         pjt_swm_data.get(
-                            find_matched_pjtSWM(" | ".join([x[0], x[1]])), ["", "", ""]
+                            find_matched_pjtSWM(" | ".join([x[0], x[1]])),
+                            ["", "", "", ""],
                         )[2],
                         x[-2],
                     ]
