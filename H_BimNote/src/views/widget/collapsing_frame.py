@@ -6,6 +6,7 @@ from ttkbootstrap.style import Bootstyle
 
 IMG_PATH = Path(__file__).parent.parent.parent.parent / "resource"
 # IMG_PATH = Path(__file__).parent / "resource"
+# IMG_PATH = "resource"
 
 
 class CollapsingFrame(ttk.Frame):

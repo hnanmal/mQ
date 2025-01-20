@@ -110,7 +110,7 @@ def create_pjtApply_Main_tab(state, subtab_notebook, exe_mode=None):
         )
         pjt_rvtSummary_area.pack(padx=20, side=tk.TOP, anchor="nw")
 
-        FilePathRegister(pjt_rvtSummary_area)
+        # FilePathRegister(pjt_rvtSummary_area)
 
         TabNavigationButton(
             parent=section2,
@@ -122,17 +122,18 @@ def create_pjtApply_Main_tab(state, subtab_notebook, exe_mode=None):
         ##############################################################
         ## section 3###########
 
-        browser = BrowserWidget(
-            section3,
-            html_file="C:/Users/HEC/Pictures/RVT Summary.html",
-            # url="https://www.google.com",
-        )
+        # browser = BrowserWidget(
+        #     section3,
+        #     # html_file="recource/RVT Summary.html",
+        #     html_file="",
+        #     # url="https://www.google.com",
+        # )
 
-        browser.pack(fill="both", expand=True, padx=10, pady=10)
+        # browser.pack(fill="both", expand=True, padx=10, pady=10)
         # browser.start_webview()
 
         # Save the browser widget in state for later shutdown
-        state.browser_widget = browser
+        # state.browser_widget = browser
 
     elif exe_mode == "new_window":
         section3 = ttk.Frame(

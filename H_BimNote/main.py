@@ -4,10 +4,10 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
-from tkinterdnd2 import TkinterDnD
+# from tkinterdnd2 import TkinterDnD
 
 # from tkinter.ttk import Progressbar
-
+# from pathlib import Path
 from PIL import ImageTk, Image
 
 # import time
@@ -24,9 +24,11 @@ from src.views.app_ui_setup import initialize_app
 
 
 def main():
+    icon_path = "resource/app_logo_maintab.ico"
     # root = tk.Tk()
     # root = ttk.Window(themename="journal")
-    root = TkinterDnD.Tk()
+    root = ttk.Window()
+    # root = TkinterDnD.Tk()
 
     # Apply ttkbootstrap theme
     style = ttk.Style()
@@ -64,7 +66,7 @@ def main():
 
     # # Handle window close event
     # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))
-
+    root.iconbitmap(icon_path)
     root.mainloop()
 
 

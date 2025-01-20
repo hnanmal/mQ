@@ -248,7 +248,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 unit = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
-                    lambda x: x.split(" | ")[-3],
+                    lambda x: x.split("|")[-3].strip(),
                 )
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
@@ -273,7 +273,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             unit = go(
                 self.sheet.get_cell_data(row, 3),
                 lambda x: x.replace("\n", ""),
-                lambda x: x.split(" | ")[-3],
+                lambda x: x.split("|")[-3].strip(),
             )
             gauge = self.sheet.get_cell_data(row, 4)
         elif column == 4:
@@ -281,7 +281,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             unit = go(
                 self.sheet.get_cell_data(row, 3),
                 lambda x: x.replace("\n", ""),
-                lambda x: x.split(" | ")[-3],
+                lambda x: x.split("|")[-3].strip(),
             )
             gauge = event["value"]
 
@@ -594,7 +594,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                 unit = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
-                    lambda x: x.split(" | ")[-3],
+                    lambda x: x.split("|")[-3].strip(),
                 )
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
@@ -613,12 +613,14 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                         ]
                     }
                 )
+                print(f"셀데이터 ---:::{self.sheet.get_cell_data(row, 3)}")
+                print(f"unit ---:::{unit}")
         elif column == 1:
             spec = event["value"]
             unit = go(
                 self.sheet.get_cell_data(row, 3),
                 lambda x: x.replace("\n", ""),
-                lambda x: x.split(" | ")[-3],
+                lambda x: x.split("|")[-3].strip(),
             )
             gauge = self.sheet.get_cell_data(row, 4)
         elif column == 4:
@@ -626,7 +628,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             unit = go(
                 self.sheet.get_cell_data(row, 3),
                 lambda x: x.replace("\n", ""),
-                lambda x: x.split(" | ")[-3],
+                lambda x: x.split("|")[-3].strip(),
             )
             gauge = event["value"]
 
@@ -782,7 +784,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                                     if decided_WM[0] in row[-2]:
                                         row[0] = True
                                         row[1] = decided_WM[-1]
-                                        row[2] = decided_WM[-2]
+                                        row[2] = decided_WM[-2]  ## unit
                                         row[4] = decided_WM[1]
                                         tgt_rowIdx = idx
 

@@ -57,9 +57,9 @@ def initialize_app(root, _state=None):
     state.root = root
 
     state.defaultextension = ".bnote"
-    state.filetypes = [("B'note files", "*.bnote")]
+    state.filetypes = [("B-note files", "*.bnote")]
 
-    root.title("B'note - Hyundai Engineering Plant Architecture Bim Note")
+    root.title("B-note :: Hyundai Engineering Plant Architecture Bim Note")
     root.geometry("1400x900+100+100")
     root.state("zoomed")
 
@@ -102,6 +102,9 @@ def initialize_app(root, _state=None):
     root.bind("<Control-o>", lambda e: load_from_json(state))
 
     # print("starting log widget\n")
-    state.log_widget.write("starting log widget\n")
+    try:
+        state.log_widget.write("starting log widget\n")
+    except:
+        pass
 
     return notebook, state
