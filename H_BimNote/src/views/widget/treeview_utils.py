@@ -198,6 +198,7 @@ class TreeViewContextMenu:
             self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
         elif "copy_SWM" in funcs:
             self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
+        self.menu.add_command(label="하위위항목 복사", command=self.copy_item)
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
 
@@ -225,6 +226,10 @@ class TreeViewContextMenu:
 
     def copy_SWM(self):
         func = self.funcs.get("copy_SWM")
+        func()
+
+    def copy_item(self):
+        func = self.funcs.get("copy_item")
         func()
 
     def add_top_item(self):
@@ -643,6 +648,7 @@ class TeamStd_GWMTreeView:
             add=self.add_item,
             delete=self.delete_item,
             copy_GWM=self.copy_GWM,
+            copy_item=self.copy_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
@@ -692,6 +698,7 @@ class TeamStd_GWMTreeView:
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
+        state = self.state
         treeDataManager = TreeDataManager_treeview(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
@@ -702,6 +709,7 @@ class TeamStd_GWMTreeView:
 
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
+        state.selected_GWMSWM = self.treeview.tree.item(selected_item_id, "values")
         self.treeview.last_selected_item = selected_item_id
 
         try:
@@ -821,6 +829,57 @@ class TeamStd_GWMTreeView:
             path=path,
             new_name=new_name,
             name_depth=1,
+            # name_depth=[1, 2],
+        )
+        state.observer_manager.notify_observers(state)
+
+    def copy_item(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "::copy"
+
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=2,
+            # name_depth=[1, 2],
         )
         state.observer_manager.notify_observers(state)
 
@@ -1092,6 +1151,7 @@ class TeamStd_SWMTreeView:
             add=self.add_item,
             delete=self.delete_item,
             copy_SWM=self.copy_SWM,
+            copy_item=self.copy_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
 
@@ -1142,16 +1202,19 @@ class TeamStd_SWMTreeView:
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
+        state = self.state
         treeDataManager = TreeDataManager_treeview(self.state)
         try:
             # Reset the tag for the previously selected item to 'normal'
             if self.last_selected_item:
                 self.treeview.tree.item(self.last_selected_item, tags=("normal",))
+
         except Exception as e:
             self.state.log_widget.write(f"Error resetting last selected item tag: {e}")
 
         # Get the currently selected item
         selected_item_id = self.treeview.tree.focus()
+        state.selected_GWMSWM = self.treeview.tree.item(selected_item_id, "values")
         self.treeview.last_selected_item = selected_item_id
 
         try:
@@ -1270,8 +1333,58 @@ class TeamStd_SWMTreeView:
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
-            # name_depth=2,
             name_depth=1,
+            # name_depth=[1, 2],
+        )
+        state.observer_manager.notify_observers(state)
+
+    def copy_item(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "::copy"
+
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=2,
+            # name_depth=[1, 2],
         )
         state.observer_manager.notify_observers(state)
 

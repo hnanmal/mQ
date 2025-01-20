@@ -27,7 +27,7 @@ class AppState:
         self.selected_matchedWMs = []
         self.current_building = tk.StringVar()
         self.current_building.set("건물을 선택하세요")
-        # self.selected_rvtTypes = []
+        self.selected_GWMSWM = None
         self.selected_rvtTypes = tk.StringVar()
         self.selected_rvtTypes_forLabel = tk.StringVar()
 
@@ -125,16 +125,20 @@ class AppState:
     def match_GWM_to_stdFam(self, related_widget):
         print("match_wms_to_stdType_시작")
         data_kind = related_widget.data_kind
+        print(f"data_kind:::::{data_kind}")
         selectedGWMitems = go(
             self.selectedGWMitems,
             sorted,
             list,
         )
+        print(f"{self.selected_GWMSWM}")
+
         print(f"!!!match_GWM_to_stdFam: {selectedGWMitems}")
         related_widget.selected_item.get().split(" | ")
         grandparent_item_name, parent_item_name, selected_item_name = (
             related_widget.selected_item.get().split(" | ")
         )
+        print(f'related_widget:: {related_widget.selected_item.get().split(" | ")}')
 
         # Use TreeDataNavigator to remove matched WMs
         treeDataManager = TreeDataManager_treeview(self, related_widget)

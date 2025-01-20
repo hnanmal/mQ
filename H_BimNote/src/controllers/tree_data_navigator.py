@@ -68,12 +68,26 @@ class TreeDataManager:
 
         # Navigate to the grandparent node
         data = self.team_std_info[data_kind]["children"]
+        # if data_kind == "std-familylist" and grandparent_name != "Top":
+        #     data = self.find_node_by_name(data, "Top")
         grandparent_node = self.find_node_by_name(data, grandparent_name)
+        print(f"grandparent_name::::::::::{grandparent_name}")
+
         if not grandparent_node:
+            #     ## 패밀리 리스트 레벨4
+            #     data = self.find_node_by_name(data, "Top")["children"]
+            #     grandparent_node = self.find_node_by_name(data, grandparent_name)
+
+            # print(f"grandparent_name::::::::::{grandparent_name}")
+            #     print(f"grandparent_node::::::::::{grandparent_node}")
+            # else:
             return None, None, None
 
         # Navigate to the parent node
         parent_node = self.find_node_by_name(grandparent_node["children"], parent_name)
+
+        print(f"parent_name::::::::::{parent_name}")
+        # print(f"parent_node::::::::::{parent_node}")
         if not parent_node:
             return None, None, None
 
@@ -85,6 +99,10 @@ class TreeDataManager:
 
         # Navigate to the selected child node
         child_node = self.find_node_by_name(parent_node["children"], child_name)
+
+        print(f"child_name::::::::::{child_name}")
+        # print(f"child_node::::::::::{child_node}")
+
         return grandparent_node, parent_node, child_node
 
     def get_node_depth(self, node):
@@ -331,6 +349,7 @@ class TreeDataManager:
                 new_values = node["values"][:]
                 # if depth == 1:
                 if depth == name_depth:
+                    # if depth in name_depth:
                     new_values[depth] = new_name
 
                 copied_node = {
@@ -421,96 +440,117 @@ class TreeDataManager_treeview(TreeDataManager):
         _, parent_node, selected_node = self.get_node_path(
             data_kind, grandparent_name, parent_name, child_name
         )
+        print(f"grandparent name:::::{grandparent_name}")
+        print(f"parent_name:::::{parent_name}")
+        print(f"selected_name:::::{child_name}")
+
+        # print(f"grandparent 노드:::::{_}")
+        # print(f"parent_node:::::{parent_node}")
+        # print(f"selected_node:::::{selected_node}")
         selected_GWMitems_copy = deepcopy(selected_GWMitems)
 
-        # Get existing child names for recognition of derivatives
-        existing_names = {child["name"] for child in selected_node.get("children", [])}
-        self.state.log_widget.write(f"\n0. existing_names: {existing_names}\n")
+        if grandparent_name == "Top":
 
-        for selected_GWMitem in selected_GWMitems_copy:
-            # Check if the item is a derivative by inclusion
-            base_name = selected_GWMitem["name"]
-            derived_from = next(
-                (name for name in existing_names if base_name.startswith(name)), None
-            )
-            self.state.log_widget.write(f"\n1. derived_from: {derived_from}\n")
-            if derived_from:
-                # Recognized as a derived item, update its name to include base name
-                selected_GWMitem["name"] = (
-                    base_name  # The name already represents the derived item
-                )
-            self.state.log_widget.write(
-                f"\n2. selected_GWMitem_name: {selected_GWMitem['name']}\n"
-            )
+            # Get existing child names for recognition of derivatives
+            existing_names = {
+                child["name"] for child in selected_node.get("children", [])
+            }
+            print(f"\n0. existing_names: {existing_names}\n")
+            self.state.log_widget.write(f"\n0. existing_names: {existing_names}\n")
 
-            # Update the values for the item
-            new_values = list(selected_GWMitem["values"])
-            new_values[2] = f"[ {state.switch_widget_status.get()} ]"
-            new_values.insert(0, "")
-            new_values.insert(0, "")
-            new_values.insert(0, "")
-            selected_GWMitem.update({"values": new_values})
-            self.state.log_widget.write(f"\n3. new_values: {new_values}\n")
-
-            # Copy formulas for the children if they match a reference item
-            children = list(selected_GWMitem.get("children", []))
-            reference_item_ = go(
-                (
-                    selected_node.get("children", [])
-                    if isinstance(selected_node, dict)
-                    else []
-                ),
-                filter(lambda x: x["name"] == derived_from),
-                list,
-            )
-            if len(reference_item_) > 0:
-                reference_item = reference_item_[0]
-            else:
-                reference_item = {
-                    "name": "",
-                    "values": [],
-                    "children": [],
-                }
-
-            self.state.log_widget.write(f"\n4. reference_item: {reference_item}\n")
-            for child in children:
-                # Find a matching reference child by name
-                matching_reference = next(
-                    (
-                        ref
-                        for ref in reference_item["children"]
-                        if ref["name"] == child["name"]
-                    ),
+            for selected_GWMitem in selected_GWMitems_copy:
+                # Check if the item is a derivative by inclusion
+                base_name = selected_GWMitem["name"]
+                derived_from = next(
+                    (name for name in existing_names if base_name.startswith(name)),
                     None,
                 )
+                self.state.log_widget.write(f"\n1. derived_from: {derived_from}\n")
+                if derived_from:
+                    # Recognized as a derived item, update its name to include base name
+                    selected_GWMitem["name"] = (
+                        base_name  # The name already represents the derived item
+                    )
                 self.state.log_widget.write(
-                    f"\n5. matching_reference: {matching_reference}\n"
+                    f"\n2. selected_GWMitem_name: {selected_GWMitem['name']}\n"
                 )
 
-                # Copy formula from the matching reference if available
-                new_child_value = list(child["values"])  # The new child's values
-                if matching_reference:
-                    formula_index = (
-                        len(matching_reference["values"]) - 1
-                    )  # Assuming formula is the last value
-                    new_child_value[-1] = matching_reference["values"][formula_index]
+                # Update the values for the item
+                new_values = list(selected_GWMitem["values"])
+                new_values[2] = f"[ {state.switch_widget_status.get()} ]"
+                new_values.insert(0, "")
+                new_values.insert(0, "")
+                new_values.insert(0, "")
+                selected_GWMitem.update({"values": new_values})
+                self.state.log_widget.write(f"\n3. new_values: {new_values}\n")
 
-                # Add placeholders for columns
-                new_child_value.insert(0, "")
-                new_child_value.insert(0, "")
-                new_child_value.insert(0, "")
-                child.update({"values": new_child_value})
+                # Copy formulas for the children if they match a reference item
+                children = list(selected_GWMitem.get("children", []))
+                reference_item_ = go(
+                    (
+                        selected_node.get("children", [])
+                        if isinstance(selected_node, dict)
+                        else []
+                    ),
+                    filter(lambda x: x["name"] == derived_from),
+                    list,
+                )
+                if len(reference_item_) > 0:
+                    reference_item = reference_item_[0]
+                else:
+                    reference_item = {
+                        "name": "",
+                        "values": [],
+                        "children": [],
+                    }
 
-            # Update the children of the derived item
-            selected_GWMitem.update({"children": children})
+                self.state.log_widget.write(f"\n4. reference_item: {reference_item}\n")
+                for child in children:
+                    # Find a matching reference child by name
+                    matching_reference = next(
+                        (
+                            ref
+                            for ref in reference_item["children"]
+                            if ref["name"] == child["name"]
+                        ),
+                        None,
+                    )
+                    self.state.log_widget.write(
+                        f"\n5. matching_reference: {matching_reference}\n"
+                    )
 
-        # Add the new GWM items to the appropriate location
-        if isinstance(selected_node, list) and selected_GWMitems_copy:
-            # Handle adding to list of strings (last level)
-            parent_node["children"].extend(selected_GWMitems_copy)
-        elif selected_node and "children" in selected_node and selected_GWMitems_copy:
-            # Handle adding matched WMs to regular children
-            selected_node["children"].extend(selected_GWMitems_copy)
+                    # Copy formula from the matching reference if available
+                    new_child_value = list(child["values"])  # The new child's values
+                    if matching_reference:
+                        formula_index = (
+                            len(matching_reference["values"]) - 1
+                        )  # Assuming formula is the last value
+                        new_child_value[-1] = matching_reference["values"][
+                            formula_index
+                        ]
+
+                    # Add placeholders for columns
+                    new_child_value.insert(0, "")
+                    new_child_value.insert(0, "")
+                    new_child_value.insert(0, "")
+                    child.update({"values": new_child_value})
+
+                # Update the children of the derived item
+                selected_GWMitem.update({"children": children})
+
+            # Add the new GWM items to the appropriate location
+            if isinstance(selected_node, list) and selected_GWMitems_copy:
+                # Handle adding to list of strings (last level)
+                parent_node["children"].extend(selected_GWMitems_copy)
+            elif (
+                selected_node and "children" in selected_node and selected_GWMitems_copy
+            ):
+                # Handle adding matched WMs to regular children
+                selected_node["children"].extend(selected_GWMitems_copy)
+
+        else:
+            selected_GWMitem
+            pass
 
 
 class TreeDataManager_treesheet(TreeDataManager):
