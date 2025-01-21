@@ -27,7 +27,8 @@ def define_styles():
         foreground="black",
         padding=[70, 0],
         # font=("Helvetica", 12, "bold"),
-        font=("Arial", 12, "normal"),
+        # font=("Arial", 12, "normal"),
+        font=("resource/RIDIBatang.otf", 12, "normal"),
     )
 
     # Define a custom style for the subtabs
@@ -42,7 +43,8 @@ def define_styles():
         background="lightblue",
         foreground="darkblue",
         # padding=[50, 0],
-        font=("Arial", 11, "normal"),
+        # font=("Arial", 11, "normal"),
+        font=("resource/RIDIBatang.otf", 11, "normal"),
     )
     # style.configure("lefttab.TNotebook", tabposition="wn")
 

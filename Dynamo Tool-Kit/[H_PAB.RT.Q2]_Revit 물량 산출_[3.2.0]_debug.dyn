@@ -6607,7 +6607,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbuilding_name = IN[0]\r\nbnote_data = IN[1]\r\nall_elemNames, all_elems = IN[2]\r\n\r\n# Place your code below this line\r\n\r\nbnote_revitTypes_inBuilding = go(\r\n    bnote_data[\"project-assigntype\"][\"children\"],\r\n    filter(lambda x: list(x[\"values\"])[1]==building_name),\r\n    list,\r\n)\r\n\r\nbnote_revitType_names_inBuilding = go(\r\n    bnote_revitTypes_inBuilding,\r\n    map(lambda x: x[\"name\"]),\r\n    list,\r\n)\r\n\r\nall_eff_elems = go(\r\n    zip(all_elemNames, all_elems),\r\n    filter(lambda x: x[0] in bnote_revitType_names_inBuilding),\r\n    map(lambda x: \\\r\n        {\r\n            \"name\": x[0],\r\n            \"elem\": x[1],\r\n        }\r\n    ),\r\n    list,\r\n)\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return round(calc_v,3)\r\n\r\ndef calc_elem(elem_dic):\r\n    def check_Str(_str):\r\n        try:\r\n            float(_str)\r\n            return False\r\n        except:\r\n            return True\r\n    \r\n    elem = elem_dic[\"elem\"]\r\n    elem_dic.update(\r\n        {\r\n            \"GUID\": elem.GetParameterValueByName(\"IfcGUID\"),\r\n        }\r\n    )\r\n    \r\n    tgt_bnoteType = go(\r\n        bnote_revitTypes_inBuilding,\r\n        filter(lambda x: x[\"name\"]==elem_dic[\"name\"]),\r\n        list,\r\n    )[0]\r\n    \r\n    tgt_bnoteType_wmlist = go(\r\n        list(list(tgt_bnoteType[\"children\"])),\r\n        list,\r\n    )\r\n    \r\n    calcType_no = list(list(tgt_bnoteType[\"children\"])[0])[-1]\r\n    \r\n    tgt_bnote_calcdict = go(\r\n        bnote_data[\"std-calcdict\"][\"children\"],\r\n        filter( lambda x: x[\"name\"]==calcType_no ),\r\n        list,\r\n    )[0]\r\n    param_list = go(\r\n        tgt_bnote_calcdict[\"children\"],list,\r\n        map(lambda x: x[\"values\"]), list,\r\n        map(lambda x: list(x)[1:]),\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n        list,\r\n    )\r\n    calc_param_list = go(\r\n        param_list,\r\n        map( lambda x: [ x[0], get_param_value(elem, x[1])] if check_Str(x[1]) else [x[0], float(x[1]) ] ),\r\n        list,\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n    )\r\n    \r\n    def calc_formula(formula, calc_param_list):\r\n        tmp_formula = formula\r\n        if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n            for n,v in calc_param_list:\r\n                tmp_formula = tmp_formula.replace(n, str(v))\r\n            try:\r\n                calc_result = eval(tmp_formula.strip(\"=\")), \"계산 성공\"\r\n            except:\r\n                calc_result = 0, \"계산 실패 - 수식 혹은 파라미터가 유효하지 않음\"\r\n        else:\r\n            tmp_formula = formula\r\n            calc_result = 0, \"토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망\"\r\n        \r\n        #return formula, tmp_formula, *calc_result\r\n        \r\n        return {\r\n            \"수식\": formula,\r\n            \"대입수식\": tmp_formula,\r\n            \"산출결과\": calc_result[0],\r\n            \"산출로그\": calc_result[1],\r\n        }\r\n    wm_dict_hdrs = [\"분류\", \"표준타입\", \"세분류\", \"wm\", \"gauge\", \"add_spec\", \"수식\", \"단위\", \"산출유형\"]\r\n    wm_dicts = go(\r\n        tgt_bnoteType_wmlist,\r\n        map( lambda x: dict(zip(wm_dict_hdrs, x)) ),\r\n        list,\r\n    )\r\n    \r\n    \r\n    tgt_bnoteType_wm_calcvalue = []\r\n    for wm_dict in wm_dicts:\r\n        wm_dict.update(\r\n            calc_formula(wm_dict[\"수식\"], calc_param_list)\r\n        )\r\n        tgt_bnoteType_wm_calcvalue.append(wm_dict)\r\n    \r\n    \r\n    elem_dic.update(\r\n        {\r\n            \"물량\": tgt_bnoteType_wm_calcvalue,\r\n        }\r\n    )\r\n    \r\n    #return tgt_bnoteType_wm_calcvalue\r\n    #return tgt_bnoteType_wmlist\r\n    return elem_dic\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = calc_elem(all_eff_elems[195])\r\n\r\nOUT = map(calc_elem, all_eff_elems)\r\n#OUT = all_eff_elems[29]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbuilding_name = IN[0]\r\nbnote_data = IN[1]\r\nall_elemNames, all_elems = IN[2]\r\nbnote_path = IN[3]\r\n\r\n# Place your code below this line\r\n\r\nbnote_revitTypes_inBuilding = go(\r\n    bnote_data[\"project-assigntype\"][\"children\"],\r\n    filter(lambda x: list(x[\"values\"])[1]==building_name),\r\n    list,\r\n)\r\n\r\nbnote_revitType_names_inBuilding = go(\r\n    bnote_revitTypes_inBuilding,\r\n    map(lambda x: x[\"name\"]),\r\n    list,\r\n)\r\n\r\nall_eff_elems = go(\r\n    zip(all_elemNames, all_elems),\r\n    filter(lambda x: x[0] in bnote_revitType_names_inBuilding),\r\n    map(lambda x: \\\r\n        {\r\n            \"name\": x[0],\r\n            \"elem\": x[1],\r\n        }\r\n    ),\r\n    list,\r\n)\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return round(calc_v,3)\r\n\r\ndef calc_elem(elem_dic):\r\n    def check_Str(_str):\r\n        try:\r\n            float(_str)\r\n            return False\r\n        except:\r\n            return True\r\n    \r\n    elem = elem_dic[\"elem\"]\r\n    elem_dic.update(\r\n        {\r\n            \"GUID\": elem.GetParameterValueByName(\"IfcGUID\"),\r\n        }\r\n    )\r\n    \r\n    tgt_bnoteType = go(\r\n        bnote_revitTypes_inBuilding,\r\n        filter(lambda x: x[\"name\"]==elem_dic[\"name\"]),\r\n        list,\r\n    )[0]\r\n    \r\n    tgt_bnoteType_wmlist = go(\r\n        list(list(tgt_bnoteType[\"children\"])),\r\n        #map( lambda x: [ list(x)[:5], list(x)[3].split(\" | \")[0], list(x)[6:] ] ),\r\n        list,\r\n    )\r\n    \r\n    calcType_no = list(list(tgt_bnoteType[\"children\"])[0])[-1]\r\n    \r\n    tgt_bnote_calcdict = go(\r\n        bnote_data[\"std-calcdict\"][\"children\"],\r\n        filter( lambda x: x[\"name\"]==calcType_no ),\r\n        list,\r\n    )[0]\r\n    param_list = go(\r\n        tgt_bnote_calcdict[\"children\"],list,\r\n        map(lambda x: x[\"values\"]), list,\r\n        map(lambda x: list(x)[1:]),\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n        list,\r\n    )\r\n    calc_param_list = go(\r\n        param_list,\r\n        map( lambda x: [ x[0], get_param_value(elem, x[1])] if check_Str(x[1]) else [x[0], float(x[1]) ] ),\r\n        list,\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n    )\r\n    \r\n    def calc_formula(formula, calc_param_list):\r\n        tmp_formula = formula\r\n        if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n            for n,v in calc_param_list:\r\n                tmp_formula = tmp_formula.replace(n, str(v))\r\n            try:\r\n                calc_result = eval(tmp_formula.strip(\"=\")), \"계산 성공\"\r\n            except:\r\n                calc_result = 0, \"계산 실패 - 수식 혹은 파라미터가 유효하지 않음\"\r\n        else:\r\n            tmp_formula = formula\r\n            calc_result = 0, \"토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망\"\r\n        \r\n        #return formula, tmp_formula, *calc_result\r\n        \r\n        return {\r\n            \"수식\": \"'\"+formula,\r\n            \"대입수식\": \"'\"+tmp_formula,\r\n            \"산출결과\": calc_result[0],\r\n            \"산출로그\": calc_result[1],\r\n        }\r\n    wm_dict_hdrs = [\r\n        \"분류\", \"표준타입\", \"세분류\", \"wm\", \"gauge\",\r\n        \"add_spec\", \"수식\", \"단위\", \"산출유형\",\r\n        ]\r\n    wm_dicts = go(\r\n        tgt_bnoteType_wmlist,\r\n        map( lambda x: dict(zip(wm_dict_hdrs, x)) ),\r\n        list,\r\n    )\r\n    \r\n    \r\n    tgt_bnoteType_wm_calcvalue = []\r\n    for wm_dict in wm_dicts:\r\n        wm_dict.update(\r\n            calc_formula(wm_dict[\"수식\"], calc_param_list)\r\n        )\r\n        wm_code = wm_dict[\"wm\"].split(\"|\")[0].strip()\r\n        \r\n        try:\r\n            wm_desc = wm_dict[\"wm\"].split(\" | \")[7]\r\n        except:\r\n            wm_desc = \"\"\r\n            \r\n        wm_spec = go(\r\n            wm_dict[\"wm\"].split(\" | \")[9:-4],\r\n            filter( lambda x: not x.isnumeric() ),\r\n            filter(lambda x: not ( (\"(   )\" in x) or (\"(   )\" in x) or (\"(  )\" in x)) ),\r\n            lambda x: \"\\n\".join(x),\r\n        )\r\n        \r\n        wm_dict.update(\r\n            {\r\n                \"wm_code\": wm_code,\r\n                \"wm_desc\": wm_desc,\r\n                \"wm_spec\": wm_spec,\r\n            }\r\n        )\r\n        tgt_bnoteType_wm_calcvalue.append(wm_dict)\r\n    \r\n    \r\n    elem_dic.update(\r\n        {\r\n            \"물량\": tgt_bnoteType_wm_calcvalue,\r\n        }\r\n    )\r\n    \r\n    #return tgt_bnoteType_wm_calcvalue\r\n    #return tgt_bnoteType_wmlist\r\n    return elem_dic\r\n\r\n\r\n# Flatten the nested structure into a list of rows\r\ndef flatten_data(data):\r\n    flat_data = []\r\n    for dic in data:\r\n        elem_name = dic[\"name\"]\r\n        elem = dic[\"elem\"]\r\n        guid = dic[\"GUID\"]\r\n        for item in dic[\"물량\"]:\r\n            flat_data.append(\r\n                [\r\n                    elem_name,\r\n                    guid,       # GUID\r\n                    item[\"분류\"],\r\n                    item[\"표준타입\"],\r\n                    item[\"세분류\"],\r\n                    item[\"wm_code\"],\r\n                    item[\"gauge\"],\r\n                    item[\"wm_desc\"],\r\n                    item[\"wm_spec\"],\r\n                    item[\"add_spec\"],\r\n                    item[\"수식\"],\r\n                    item[\"대입수식\"],\r\n                    item[\"산출결과\"],\r\n                    item[\"단위\"],\r\n                    item[\"산출유형\"],\r\n                    item[\"산출로그\"],\r\n                ]\r\n            )\r\n    return flat_data\r\n\r\ndata = map(calc_elem, all_eff_elems)\r\n\r\nflat_header = [\r\n    \"name\", \"GUID\", \"분류\", \"표준타입\", \"세분류\", \"wm_code\", \"gauge\", \"Description\", \"Spec.\", \r\n    \"Add_spec.\", \"수식\", \"대입수식\", \"산출결과\", \"단위\", \"산출유형\", \"산출로그\",\r\n    ]\r\n\r\nflat_data = [flat_header]+flatten_data(data)\r\n\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = calc_elem(all_eff_elems[195])\r\n\r\nOUT = flat_data\r\n#OUT = all_eff_elems[29]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -6635,6 +6635,15 @@
           "Id": "b3280a10ccef4c7bae65925fcaa8c7d7",
           "Name": "IN[2]",
           "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "186f48f82a1c485682b2bb14d1e60c3b",
+          "Name": "IN[3]",
+          "Description": "Input #3",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -6738,142 +6747,68 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
-      "Id": "2fdf6988ecc3466bbcbcc8331edf03dd",
+      "FunctionSignature": "DSOffice.Data.ExportToExcel@string,string,int,int,var[][],bool,bool",
+      "Id": "61602c0828af45b08e9d4ba08e123c4a",
       "Inputs": [
         {
-          "Id": "4630ff12e60f41c3931be54e91cd37e7",
-          "Name": "list",
-          "Description": "List to fetch an item from.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": true,
-          "KeepListStructure": true
-        },
-        {
-          "Id": "360886cc233f490ba1cda3d44bbdfd2f",
-          "Name": "index",
-          "Description": "Index of the item to be fetched.\n\nint",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "20a62ff10bc944d29ce47a415501ba10",
-          "Name": "item",
-          "Description": "Item in the list at the given index.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "3;",
-      "Id": "36c1e85591764998b45c1ec757191efa",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "f47e2748dc484927880d27b3eec3de52",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.UniqueItems@var[]..[]",
-      "Id": "087d3365f5794b6d8618cb506d410aa2",
-      "Inputs": [
-        {
-          "Id": "7283faa09dcb49309e8a1588bc4d7eb9",
-          "Name": "list",
-          "Description": "List to filter duplicates out of.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "776851b0a7bd4419aff45321451cfd2b",
-          "Name": "list",
-          "Description": "Filtered list.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Creates a new list containing all unique items in the given list.\n\nList.UniqueItems (list: var[]..[]): var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"물량\"];",
-      "Id": "730a813c580d4a85ab1991d992559065",
-      "Inputs": [
-        {
-          "Id": "b13123063dd842d592f595dd9cf513c6",
-          "Name": "i",
-          "Description": "i",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "6a0bcb323f904a499713030e46d68e58",
-          "Name": "",
-          "Description": "Value of expression at line 1",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DesignScript.Builtin.Dictionary.ValueAtKey@string",
-      "Id": "d4d57cdcfb1d408d9512dc2165261835",
-      "Inputs": [
-        {
-          "Id": "817360356eb34942b58479dca062c59a",
-          "Name": "dictionary",
-          "Description": "DesignScript.Builtin.Dictionary",
+          "Id": "fbf39c4eb4f144dea8c268a39eb9b6ac",
+          "Name": "filePath",
+          "Description": "File representing the Excel workbook\n\nstring",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "a0ad77f6d1a04a44a701a0f71b73590b",
-          "Name": "key",
-          "Description": "The key in the Dictionary to obtain value for\n\nstring",
+          "Id": "905912250ece44c4802a20e1013b72cf",
+          "Name": "sheetName",
+          "Description": "Name of the worksheet containing data\n\nstring",
           "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "5874c17bc43c4b86b607315fbc124e36",
+          "Name": "startRow",
+          "Description": "Start row for writing data. Enter 0 for Row 1, 1 for Row 2, etc.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "632d0c6ca4a545deb79aeaca2b674e5b",
+          "Name": "startColumn",
+          "Description": "Start column for writing data. Enter 0 for Column A, 1 for Column B, etc.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9cec5f39df3f46c7a41036a71b4e1e0c",
+          "Name": "data",
+          "Description": "Data to write to the spreadsheet\n\nvar[][]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "0af28e5617124fc29d1dd28315df4fcf",
+          "Name": "overWrite",
+          "Description": "Toggle to clear spreadsheet before writing\n\nbool\nDefault value : false",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "ed1c2c16231041c3a4ba1dd3b6c5c67c",
+          "Name": "writeAsString",
+          "Description": "Toggle to switch between writing Excel file as strings\n\nbool\nDefault value : false",
+          "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
@@ -6881,9 +6816,9 @@
       ],
       "Outputs": [
         {
-          "Id": "771b5d340f794291b637c6d42832facb",
-          "Name": "value",
-          "Description": "Value at the specified key or null if it is not set",
+          "Id": "ccb8bd50f00a45dd9d223749527c8c9d",
+          "Name": "data",
+          "Description": "Rows of data from the Excel worksheet",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -6891,17 +6826,27 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Obtain the value at a specified key\n\nDictionary.ValueAtKey (key: string): var[]..[]"
+      "Description": "Write data to a Microsoft Excel spreadsheet. Data is written by row with sublists to be written in successive rows. Rows and columns are zero-indexed; for example, the value in the data list at [0,0] will be written to cell A1. Null values and empty lists are written to Excel as empty cells. This node requires Microsoft Excel to be installed.\n\nData.ExportToExcel (filePath: string, sheetName: string, startRow: int, startColumn: int, data: var[][], overWrite: bool = false, writeAsString: bool = false): var[][]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "\"add_spec\";",
-      "Id": "cc40173c641e4b24b5a5e178aa4b718d",
-      "Inputs": [],
+      "Code": "file_path;",
+      "Id": "bd8ed44feec247a78ae809825cea1454",
+      "Inputs": [
+        {
+          "Id": "c227cff349f54879a38ccebc89a12bb5",
+          "Name": "file_path",
+          "Description": "file_path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
       "Outputs": [
         {
-          "Id": "870ef905b7f04ba68f43213bf60b273f",
+          "Id": "853e29894a7f406ea316fa910009bbb6",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -6912,6 +6857,138 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "file_path;",
+      "Id": "dda916deccba4b38bfa2da173a5e8e2a",
+      "Inputs": [
+        {
+          "Id": "1b7fc4b0c16d4b2dab16f83f7a804f15",
+          "Name": "file_path",
+          "Description": "file_path",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a610ca938bb345579138c8cfba124342",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nimport datetime\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbnote_path = IN[0]\r\n# Place your code below this line\r\n\r\ndef make_excel_path(bnote_path):\r\n    seg = bnote_path.split(\"\\\\\")\r\n    bnote_name = seg[-1].split(\".bnote\")[0]\r\n    now = datetime.datetime.now()\r\n    stamp = now.strftime(\"%m%d-%I%M%S\")\r\n    excel_name = f\"{bnote_name}_excel_qty_result_{stamp}\"\r\n    excel_path = \"\\\\\".join(seg[:-1]) +\"\\\\\"+ excel_name\r\n\r\n    return excel_path\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = make_excel_path(bnote_path)",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "7d0d7409100c4ff896fcb986872e3086",
+      "Inputs": [
+        {
+          "Id": "3750450756114ab39b45aa2bfdba91b7",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5d3513289bcb46d5a3cd70c150fe525c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "\"calc\";",
+      "Id": "e1f85200c4fb4716af75e6ed168bbd66",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b49d7a4716ea4fadb356cfca2b355a7e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "0;",
+      "Id": "62788dd820ce4d1fa5d6fe5d7c962675",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8ae1f925a3c949fca6710dc09c8f8edf",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "NodeType": "ExtensionNode",
+      "Id": "a371bfcc143f46fda2bd1bc0ab0b261c",
+      "Inputs": [
+        {
+          "Id": "595ef50df32c47b092ebd7541d39e017",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "99c8362ace42479ab9808a6a35fe0fd4",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualize the node's output"
     }
   ],
   "Connectors": [
@@ -7966,6 +8043,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "8756bdd46b784387a804d239ef080404",
+      "End": "c227cff349f54879a38ccebc89a12bb5",
+      "Id": "0221e1e9a9b147d495c071f34db8fd38",
+      "IsHidden": "False"
+    },
+    {
       "Start": "6a96e72cc96a4e049acf5ffb0a48db4e",
       "End": "1a8cbfb1186e4447b4fbfd80f6b58ec3",
       "Id": "f4abb53e30574202a96d8bdbaa2b052d",
@@ -8297,8 +8380,14 @@
     },
     {
       "Start": "fe06d80845274df7be0b4a3585337d75",
-      "End": "b13123063dd842d592f595dd9cf513c6",
-      "Id": "e7fd98f2fd0940d3bc7103ae8411a985",
+      "End": "9cec5f39df3f46c7a41036a71b4e1e0c",
+      "Id": "04227c80ff15486a95db261d8b273930",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fe06d80845274df7be0b4a3585337d75",
+      "End": "595ef50df32c47b092ebd7541d39e017",
+      "Id": "2c6f088cfb474aedaff110884d67a249",
       "IsHidden": "False"
     },
     {
@@ -8314,27 +8403,39 @@
       "IsHidden": "False"
     },
     {
-      "Start": "20a62ff10bc944d29ce47a415501ba10",
-      "End": "7283faa09dcb49309e8a1588bc4d7eb9",
-      "Id": "ce341d7586054f908ba384b6381e9137",
+      "Start": "853e29894a7f406ea316fa910009bbb6",
+      "End": "1b7fc4b0c16d4b2dab16f83f7a804f15",
+      "Id": "f02e428b2bca46da9e7db86ebc7dde06",
       "IsHidden": "False"
     },
     {
-      "Start": "f47e2748dc484927880d27b3eec3de52",
-      "End": "360886cc233f490ba1cda3d44bbdfd2f",
-      "Id": "82ae20c51ae54e98a8a6780f1a1995e3",
+      "Start": "a610ca938bb345579138c8cfba124342",
+      "End": "3750450756114ab39b45aa2bfdba91b7",
+      "Id": "9f8c1eb4531a4c4cb169daf4e6357902",
       "IsHidden": "False"
     },
     {
-      "Start": "6a0bcb323f904a499713030e46d68e58",
-      "End": "817360356eb34942b58479dca062c59a",
-      "Id": "cee0ef1606354b069df5094596fb90ea",
+      "Start": "5d3513289bcb46d5a3cd70c150fe525c",
+      "End": "fbf39c4eb4f144dea8c268a39eb9b6ac",
+      "Id": "3add85a2149c40de9b4097d2774213b6",
       "IsHidden": "False"
     },
     {
-      "Start": "870ef905b7f04ba68f43213bf60b273f",
-      "End": "a0ad77f6d1a04a44a701a0f71b73590b",
-      "Id": "46f3f699e6a44b44b2f61649fa3acc49",
+      "Start": "b49d7a4716ea4fadb356cfca2b355a7e",
+      "End": "905912250ece44c4802a20e1013b72cf",
+      "Id": "2538fbd410464067b3d36155a707b0aa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8ae1f925a3c949fca6710dc09c8f8edf",
+      "End": "5874c17bc43c4b86b607315fbc124e36",
+      "Id": "f83e6cccefb74b43a02e0eeef9537b79",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8ae1f925a3c949fca6710dc09c8f8edf",
+      "End": "632d0c6ca4a545deb79aeaca2b674e5b",
+      "Id": "653de952cb9445b2afe01003d87fdb68",
       "IsHidden": "False"
     }
   ],
@@ -8347,7 +8448,9 @@
         "79390c9ce7774e469399c480c2fd9540",
         "e4bace56c16d462b8e637e17ad1a1046",
         "7f5e0c25b593402094aa786410d940b1",
-        "8ab3accc47f6452a95570634f44f527d"
+        "8ab3accc47f6452a95570634f44f527d",
+        "bd8ed44feec247a78ae809825cea1454",
+        "dda916deccba4b38bfa2da173a5e8e2a"
       ]
     },
     {
@@ -9811,7 +9914,7 @@
         "Id": "f9ab0355b99247939ae33d23f1c2f9aa",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
+        "Excluded": true,
         "X": -8764.9201831191949,
         "Y": 353.85500079560632
       },
@@ -10322,8 +10425,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3818.8246718034934,
-        "Y": 1445.7378123660014
+        "X": -3809.7119078228125,
+        "Y": 1132.8662490292845
       },
       {
         "Name": "Code Block",
@@ -10356,14 +10459,14 @@
         "Y": -289.0306840543692
       },
       {
-        "Name": "Python Script",
+        "Name": "calculation",
         "ShowGeometry": true,
         "Id": "5891c7103b90448abe6c00a8938cc404",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -3182.1771244813003,
-        "Y": 1637.9205869534956
+        "X": -3226.76497016165,
+        "Y": 1606.8683372832518
       },
       {
         "Name": "1. Family List 경로 입력",
@@ -10396,64 +10499,74 @@
         "Y": 1019.7345097595819
       },
       {
-        "Name": "List.GetItemAtIndex",
+        "Name": "Data.ExportToExcel",
         "ShowGeometry": true,
-        "Id": "2fdf6988ecc3466bbcbcc8331edf03dd",
+        "Id": "61602c0828af45b08e9d4ba08e123c4a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2475.3995607434886,
-        "Y": 2275.6517062749572
+        "X": -1945.1113367966018,
+        "Y": 1530.6864403497525
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "36c1e85591764998b45c1ec757191efa",
+        "Id": "bd8ed44feec247a78ae809825cea1454",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2698.8226803455195,
-        "Y": 2247.7824334379166
-      },
-      {
-        "Name": "List.UniqueItems",
-        "ShowGeometry": true,
-        "Id": "087d3365f5794b6d8618cb506d410aa2",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -2186.9738838869657,
-        "Y": 2262.63498485503
+        "X": -8152.0247593175718,
+        "Y": 653.01231139066715
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "730a813c580d4a85ab1991d992559065",
+        "Id": "dda916deccba4b38bfa2da173a5e8e2a",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2865.041296750167,
-        "Y": 1209.665094579741
+        "X": -6387.2769507081057,
+        "Y": 1545.937940948802
       },
       {
-        "Name": "Dictionary.ValueAtKey",
+        "Name": "make excel path",
         "ShowGeometry": true,
-        "Id": "d4d57cdcfb1d408d9512dc2165261835",
+        "Id": "7d0d7409100c4ff896fcb986872e3086",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2396.8543419512048,
-        "Y": 1208.8378270804117
+        "X": -3777.5515188811019,
+        "Y": 1500.1758534137823
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "cc40173c641e4b24b5a5e178aa4b718d",
+        "Id": "e1f85200c4fb4716af75e6ed168bbd66",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2608.8435863626751,
-        "Y": 1305.8790355991684
+        "X": -2214.783421549143,
+        "Y": 1589.6154804170269
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "62788dd820ce4d1fa5d6fe5d7c962675",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2211.7041458799295,
+        "Y": 1734.56064754322
+      },
+      {
+        "Name": "Watch",
+        "ShowGeometry": true,
+        "Id": "a371bfcc143f46fda2bd1bc0ab0b261c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2533.1146602232043,
+        "Y": 1735.1813172795635
       }
     ],
     "Annotations": [
@@ -10891,8 +11004,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 3403.4567962228975,
-    "Y": -1584.1606138348757,
-    "Zoom": 1.0158525741777549
+    "X": 3328.6454710769476,
+    "Y": -1079.7795811522785,
+    "Zoom": 0.86845501684139315
   }
 }

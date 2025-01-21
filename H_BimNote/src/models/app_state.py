@@ -13,6 +13,7 @@ from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
 class AppState:
     def __init__(self, log_widget):
         # self._state = {}  ## 필요 없으면 나중에 삭제
+        self.global_font = "resource/RIDIBatang.otf"
         self.observer_manager = ObserverManager()
         self.notify_targets = []
         self.DefaultTreeViewStyleManager = DefaultTreeViewStyleManager

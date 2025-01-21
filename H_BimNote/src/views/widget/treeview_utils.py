@@ -198,7 +198,7 @@ class TreeViewContextMenu:
             self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
         elif "copy_SWM" in funcs:
             self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
-        self.menu.add_command(label="하위위항목 복사", command=self.copy_item)
+        self.menu.add_command(label="하위항목 복사", command=self.copy_item)
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
 
@@ -1114,7 +1114,7 @@ class TeamStd_SWMTreeView:
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         # headers = ["분류", "S-WM", "Item"]
-        headers = ["분류-1", "분류-2", "S-WM"]
+        headers = ["분류-1", "S-WM", "Item"]
         hdr_widths = [107, 80, 100]
 
         # Compose TreeView, Style Manager, and State Observer

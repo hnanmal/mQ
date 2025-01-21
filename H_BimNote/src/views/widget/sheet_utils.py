@@ -7,6 +7,8 @@ from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk, simpledialog
 from tksheet import Sheet
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 from src.controllers.widget.widgets import toggle_stdGWM_widget_mode
 from src.views.widget.widget import StateObserver

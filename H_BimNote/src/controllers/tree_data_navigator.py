@@ -61,26 +61,24 @@ class TreeDataManager:
                 return None
         return current_node
 
-    def get_node_path(self, data_kind, grandparent_name, parent_name, child_name):
+    def get_node_path(
+        self, data_kind, grandparent_name, parent_name, child_name, _data=None
+    ):
         """Navigate to the specified node based on grandparent, parent, and child names."""
         if data_kind not in self.team_std_info:
             return None, None, None
 
         # Navigate to the grandparent node
         data = self.team_std_info[data_kind]["children"]
+        if _data:
+            data = _data
+
         # if data_kind == "std-familylist" and grandparent_name != "Top":
         #     data = self.find_node_by_name(data, "Top")
         grandparent_node = self.find_node_by_name(data, grandparent_name)
         print(f"grandparent_name::::::::::{grandparent_name}")
 
         if not grandparent_node:
-            #     ## 패밀리 리스트 레벨4
-            #     data = self.find_node_by_name(data, "Top")["children"]
-            #     grandparent_node = self.find_node_by_name(data, grandparent_name)
-
-            # print(f"grandparent_name::::::::::{grandparent_name}")
-            #     print(f"grandparent_node::::::::::{grandparent_node}")
-            # else:
             return None, None, None
 
         # Navigate to the parent node
@@ -549,8 +547,93 @@ class TreeDataManager_treeview(TreeDataManager):
                 selected_node["children"].extend(selected_GWMitems_copy)
 
         else:
-            selected_GWMitem
-            pass
+            data = self.team_std_info[data_kind]["children"][0]["children"]
+            _, parent_node, selected_node = self.get_node_path(
+                data_kind,
+                grandparent_name,
+                parent_name,
+                child_name,
+                _data=data,
+            )
+
+            selected_GWMitem = {
+                "name": state.selected_GWMSWM[2],
+                "values": ["", "", "", "", "", state.selected_GWMSWM[2], ""],
+                "children": [],
+            }
+
+            existing_names = {
+                child["name"] for child in selected_node.get("children", [])
+            }
+            print(f"\n0. existing_names: {existing_names}\n")
+
+            base_name = selected_GWMitem["name"]
+            derived_from = next(
+                (name for name in existing_names if base_name.startswith(name)),
+                None,
+            )
+            print(f"\n1. derived_from: {derived_from}\n")
+            if derived_from:
+                # Recognized as a derived item, update its name to include base name
+                selected_GWMitem["name"] = (
+                    base_name  # The name already represents the derived item
+                )
+            print(f"\n2. selected_GWMitem_name: {selected_GWMitem['name']}\n")
+
+            reference_item_ = go(
+                (
+                    selected_node.get("children", [])
+                    if isinstance(selected_node, dict)
+                    else []
+                ),
+                filter(lambda x: x["name"] == derived_from),
+                list,
+            )
+
+            print(f"selected_GWMSWM::: {state.selected_GWMSWM}")
+
+            print(f"selected_GWMitem :: {selected_GWMitem}")
+
+            if len(reference_item_) > 0:
+                reference_item = reference_item_[0]
+            else:
+                reference_item = {
+                    "name": "",
+                    "values": [],
+                    "children": [],
+                }
+
+            print(f"\n4. reference_item: {reference_item}\n")
+
+            matching_reference = reference_item
+            print(f"\n5. matching_reference: {matching_reference}\n")
+
+            # Copy formula from the matching reference if available
+            new_child_value = list(selected_GWMitem["values"])  # The new child's values
+            if matching_reference:
+                formula_index = (
+                    len(matching_reference["values"]) - 1
+                )  # Assuming formula is the last value
+                new_child_value[-1] = matching_reference["values"][formula_index]
+
+            # Add placeholders for columns
+            # new_child_value.insert(0, "")
+            # new_child_value.insert(0, "")
+            # new_child_value.insert(0, "")
+
+            # # Update the children of the derived item
+            selected_GWMitem.update({"values": new_child_value})
+            # selected_GWMitem.update({"children": children})
+
+            # Add the new GWM items to the appropriate location
+            if isinstance(selected_node, list) and selected_GWMitem:
+                # Handle adding to list of strings (last level)
+                parent_node["children"].append(selected_GWMitem)
+                print(f'parent_node["children"]:::{parent_node["children"]}')
+            elif selected_node and "children" in selected_node and selected_GWMitem:
+                # Handle adding matched WMs to regular children
+                selected_node["children"].append(selected_GWMitem)
+                print(f'selected_node["children"]:::{selected_node["children"]}')
 
 
 class TreeDataManager_treesheet(TreeDataManager):
