@@ -47,7 +47,7 @@ def create_pjtStd_Main_tab(state, subtab_notebook, exe_mode=None):
     working_tab_paned_window.pack(expand=True, fill="both")
 
     if not exe_mode:
-        subtab_notebook.add(working_tab, text="Project Standard Main")
+        subtab_notebook.add(working_tab, text="Project Main")
 
     section1 = ttk.Frame(
         working_tab_paned_area,

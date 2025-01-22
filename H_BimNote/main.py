@@ -16,6 +16,7 @@ from PIL import ImageTk, Image
 from src.core.file_utils import load_from_json
 from src.views.upper_tab import (
     create_project_apply_tab,
+    create_project_report_tab,
     create_project_standard_tab,
     create_recentBnotes_tab,
     create_team_standard_tab,
@@ -52,6 +53,8 @@ def main():
     create_project_standard_tab(state, notebook)
 
     create_project_apply_tab(state, notebook)
+
+    create_project_report_tab(state, notebook)
 
     ## 팀스탠다드 자동 임포트
     # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")

@@ -26,7 +26,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Std G-WM")
+    subtab_notebook.add(working_tab, text="Standard Group Work Master")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
@@ -221,7 +221,7 @@ def create_stdSWM_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Std S-WM")
+    subtab_notebook.add(working_tab, text="Standard Single Work Master")
 
     working_tab_common_area = ttk.Frame(
         working_tab,

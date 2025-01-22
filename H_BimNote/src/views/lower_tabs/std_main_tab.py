@@ -14,7 +14,7 @@ def create_std_Main_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Team Standard Main")
+    subtab_notebook.add(working_tab, text=" Guidelines  ")
 
     working_tab_common_area = ttk.Frame(
         working_tab,

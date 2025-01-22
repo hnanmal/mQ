@@ -42,7 +42,7 @@ def create_pjtApply_Main_tab(state, subtab_notebook, exe_mode=None):
     working_tab_paned_window.pack(expand=True, fill="both")
 
     if not exe_mode:
-        subtab_notebook.add(working_tab, text="Project Apply Main")
+        subtab_notebook.add(working_tab, text="Project Input Main")
 
         section1 = ttk.Frame(
             working_tab_paned_area,

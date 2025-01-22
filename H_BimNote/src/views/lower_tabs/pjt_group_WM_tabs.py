@@ -53,7 +53,7 @@ def create_pjtStdGWM_tab(state, subtab_notebook, exe_mode=None):
     working_tab_paned_window.pack(expand=True, fill="both")
 
     if not exe_mode:
-        subtab_notebook.add(working_tab, text="Pjt G-WM")
+        subtab_notebook.add(working_tab, text=" Project Group Work Master  ")
 
     section1 = ttk.Frame(
         working_tab_paned_area,
@@ -173,7 +173,7 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
-    subtab_notebook.add(working_tab, text="Pjt S-WM")
+    subtab_notebook.add(working_tab, text=" Project Single Work Master  ")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
