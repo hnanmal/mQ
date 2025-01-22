@@ -524,7 +524,7 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
                 state.log_widget.write("Please enter a revit type name.")
 
         for item_name in item_names:
-            _add(item_name)
+            _add(item_name.strip())
 
         # print(f"\n item_names  ::  {item_names}\n")
         if item_names != [""]:
