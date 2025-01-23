@@ -5,14 +5,21 @@ from tkinter import filedialog, ttk
 
 import openpyxl
 
+from src.views.widget.widget import open_dialog
 
-def save_to_json_teamStdInfo(state):
+
+def save_to_json_teamStdInfo(state, _file_path=None):
     # 파일 저장 위치 선택
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=state.defaultextension, filetypes=state.filetypes
-    )
-    if not file_path:
-        return  # 파일 경로가 없으면 저장 취소
+    if _file_path:
+        file_path = _file_path
+    else:
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=state.defaultextension, filetypes=state.filetypes
+        )
+        if file_path:
+            state.current_filepath = file_path
+        else:
+            return  # 파일 경로가 없으면 저장 취소
 
     # 상태 객체에서 데이터를 저장
     try:
@@ -20,6 +27,10 @@ def save_to_json_teamStdInfo(state):
             json.dump(state.team_std_info, file, indent=4, ensure_ascii=False)
             # json.dump(state.project_info, file, indent=4, ensure_ascii=False)
         print(f"Data successfully saved to {file_path}")
+        open_dialog(
+            state.root,
+            f"데이터가 \n\n ◾ {state.current_filepath} \n\n에 저장 되었습니다.",
+        )
     except Exception as e:
         print(f"Error saving data to JSON: {e}")
 
@@ -28,9 +39,13 @@ def load_from_json(state, _file_path=None):
     # 파일 열기 위치 선택
     if _file_path:
         file_path = _file_path
+
+        state.current_filepath = file_path
     else:
         file_path = filedialog.askopenfilename(filetypes=state.filetypes)
-        if not file_path:
+        if file_path:
+            state.current_filepath = file_path
+        else:
             state.log_widget.write("파일 로드 취소\n")
             return  # 파일 경로가 없으면 로드 취소
 
@@ -68,6 +83,10 @@ def load_from_json(state, _file_path=None):
             # state.family_standard_data = loaded_data.get("family_standard_data", {})
 
         state.log_widget.write(f"Data successfully loaded from {file_path}\n")
+        open_dialog(
+            state.root,
+            f"데이터가 \n\n ◾ {state.current_filepath} \n\n으로부터 로드 되었습니다.",
+        )
         return True
     except Exception as e:
         state.log_widget.write(f"Error loading data from JSON: {e}\n")

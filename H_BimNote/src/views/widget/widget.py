@@ -10,7 +10,9 @@ def open_dialog(root, textStr):
     # Create a new Toplevel window
     dialog = tk.Toplevel(root)
     dialog.title("Dialog Window")
-    dialog.geometry("300x150")  # Set the size of the dialog
+    width = 600
+    height = 200
+    dialog.geometry(f"{width}x{height}")  # Set the size of the dialog
 
     # Disable interaction with the main window until the dialog is closed
     dialog.transient(root)  # Set dialog to be a child of the main window
@@ -30,9 +32,9 @@ def open_dialog(root, textStr):
     close_button.pack(pady=10)
 
     # Center the dialog relative to the root window
-    x = root.winfo_x() + (root.winfo_width() // 2) - (300 // 2)
-    y = root.winfo_y() + (root.winfo_height() // 2) - (150 // 2)
-    dialog.geometry(f"300x150+{x}+{y}")
+    x = root.winfo_x() + (root.winfo_width() // 2) - (width // 2)
+    y = root.winfo_y() + (root.winfo_height() // 2) - (height // 2)
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
 
 
 def select_tab(notebook, parent_index, subtab_index=None):

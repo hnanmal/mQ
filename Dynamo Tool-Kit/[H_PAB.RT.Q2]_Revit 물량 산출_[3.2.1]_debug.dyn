@@ -17,7 +17,7 @@
       "Name": "▶ 2. B-note 파일 경로 입력 >>",
       "Type": "string",
       "Type2": "string",
-      "Value": "debug bnote\\20250122_jyp\\PCB_2_copy.bnote",
+      "Value": "debug bnote\\20250122_jyp\\PCB_3 2.bnote",
       "Description": "Allows you to select a file on the system to get its file path.",
       "SelectedIndex": 0
     },
@@ -26,7 +26,7 @@
       "Name": "▶ 1. Building Name (B-note 상의 이름과 동일해야 합니다.) >>",
       "Type": "string",
       "Type2": "string",
-      "Value": "PCB",
+      "Value": "Sample Building",
       "Description": "Creates a string.",
       "SelectedIndex": 0
     }
@@ -34,7 +34,7 @@
   "Outputs": [
     {
       "Id": "a371bfcc143f46fda2bd1bc0ab0b261c",
-      "Name": "Updated B-note",
+      "Name": "dynamo-calculation 항목이 확인된다면 B-note에서 리프레시 버튼을 누르세요.",
       "Type": "unknown",
       "InitialValue": "",
       "Description": "Visualize the node's output"
@@ -2513,8 +2513,8 @@
     },
     {
       "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\Dynamo Tool-Kit\\debug bnote\\20250122_jyp\\PCB_2_copy.bnote",
-      "InputValue": "debug bnote\\20250122_jyp\\PCB_2_copy.bnote",
+      "HintPath": "D:\\mk\\mQ\\Dynamo Tool-Kit\\debug bnote\\20250122_jyp\\PCB_3 2.bnote",
+      "InputValue": "debug bnote\\20250122_jyp\\PCB_3 2.bnote",
       "NodeType": "ExtensionNode",
       "Id": "8ab3accc47f6452a95570634f44f527d",
       "Inputs": [],
@@ -3087,7 +3087,7 @@
     {
       "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
       "NodeType": "StringInputNode",
-      "InputValue": "PCB",
+      "InputValue": "Sample Building",
       "Id": "27abd63e169b454abe252d0ef9f4f35d",
       "Inputs": [],
       "Outputs": [
@@ -3137,7 +3137,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\nimport json\r\n\r\ndef load_from_json(_file_path=None):\r\n    # 파일 열기 위치 선택\r\n    if _file_path:\r\n        file_path = _file_path\r\n\r\n    # JSON 파일에서 데이터 로드\r\n    try:\r\n        with open(file_path, \"r\", encoding=\"utf-8\") as file:\r\n            loaded_data = json.load(file)\r\n\r\n        print(f\"Data successfully loaded from {file_path}\\n\")\r\n        return loaded_data\r\n    except Exception as e:\r\n        print(f\"Error loading data from JSON: {e}\\n\")\r\n        return False\r\n\r\ndef save_to_json_teamStdInfo(file_path, data):\r\n    # 상태 객체에서 데이터를 저장\r\n    try:\r\n        with open(file_path, \"w\", encoding=\"utf-8\") as file:\r\n            json.dump(data, file, indent=4, ensure_ascii=False)\r\n            # json.dump(state.project_info, file, indent=4, ensure_ascii=False)\r\n        print(f\"Data successfully saved to {file_path}\")\r\n    except Exception as e:\r\n        print(f\"Error saving data to JSON: {e}\")\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbuilding_name = IN[0]\r\nbnote_path = IN[1]\r\nbnote_data = deepcopy( load_from_json(_file_path=bnote_path) )\r\nall_elemNames, all_elems = IN[2]\r\ncategory_names = IN[3]\r\n\r\n\r\n# Place your code below this line\r\n\r\nbnote_revitTypes_inBuilding = go(\r\n    bnote_data[\"project-assigntype\"][\"children\"],\r\n    filter(lambda x: list(x[\"values\"])[1]==building_name),\r\n    list,\r\n)\r\n\r\nbnote_revitType_names_inBuilding = go(\r\n    bnote_revitTypes_inBuilding,\r\n    map(lambda x: x[\"name\"]),\r\n    list,\r\n)\r\n\r\nall_eff_elems = go(\r\n    zip(all_elemNames, all_elems),\r\n    filter(lambda x: x[0] in bnote_revitType_names_inBuilding),\r\n    map(lambda x: \\\r\n        {\r\n            \"name\": x[0],\r\n            \"elem\": x[1],\r\n        }\r\n    ),\r\n    list,\r\n)\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return round(calc_v,3)\r\n\r\ndef calc_elem(elem_dic):\r\n    def check_Str(_str):\r\n        try:\r\n            float(_str)\r\n            return False\r\n        except:\r\n            return True\r\n    \r\n    elem = elem_dic[\"elem\"]\r\n    elem_dic.update(\r\n        {\r\n            \"GUID\": elem.GetParameterValueByName(\"IfcGUID\"),\r\n        }\r\n    )\r\n    \r\n    tgt_bnoteType = go(\r\n        bnote_revitTypes_inBuilding,\r\n        filter(lambda x: x[\"name\"]==elem_dic[\"name\"]),\r\n        list,\r\n    )[0]\r\n    \r\n    stdType_no = tgt_bnoteType[\"values\"][-1].split(\" | \")[-1]\r\n    \r\n    cat_no = str(stdType_no).split(\".\")[0]\r\n    \r\n    cat_name = go(\r\n        category_names,\r\n        filter( lambda x: x.startswith(cat_no) ),\r\n        list,\r\n    )[0]\r\n    \r\n    tgt_bnoteType_wmlist = go(\r\n        list(list(tgt_bnoteType[\"children\"])),\r\n        #map( lambda x: [ list(x)[:5], list(x)[3].split(\" | \")[0], list(x)[6:] ] ),\r\n        list,\r\n    )\r\n    \r\n\r\n#    calcType_no = list(list(tgt_bnoteType[\"children\"])[0])[-1]\r\n#\r\n#    \r\n#    tgt_bnote_calcdict = go(\r\n#        bnote_data[\"std-calcdict\"][\"children\"],\r\n#        filter( lambda x: x[\"name\"]==calcType_no ),\r\n#        list,\r\n#    )[0]\r\n#    param_list = go(\r\n#        tgt_bnote_calcdict[\"children\"],list,\r\n#        map(lambda x: x[\"values\"]), list,\r\n#        map(lambda x: list(x)[1:]),\r\n#        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n#        list,\r\n#    )\r\n#    calc_param_list = go(\r\n#        param_list,\r\n#        map( lambda x: [ x[0], get_param_value(elem, x[1])] if check_Str(x[1]) else [x[0], float(x[1]) ] ),\r\n#        list,\r\n#        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n#    )\r\n#    \r\n#    def calc_formula(formula, calc_param_list):\r\n#        tmp_formula = formula\r\n#        if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n#            for n,v in calc_param_list:\r\n#                tmp_formula = tmp_formula.replace(n, str(v))\r\n#            try:\r\n#                calc_result = eval(tmp_formula.strip(\"=\")), \"계산 성공\"\r\n#            except:\r\n#                calc_result = 0, \"계산 실패 - 수식 혹은 파라미터가 유효하지 않음\"\r\n#        else:\r\n#            tmp_formula = formula\r\n#            calc_result = 0, \"토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망\"\r\n#        \r\n#        #return formula, tmp_formula, *calc_result\r\n#        \r\n#        return {\r\n#            \"수식\": \"'\"+formula,\r\n#            \"대입수식\": \"'\"+tmp_formula,\r\n#            \"산출결과\": calc_result[0],\r\n#            \"산출로그\": calc_result[1],\r\n#        }\r\n#    wm_dict_hdrs = [\r\n#        \"분류\", \"표준타입\", \"상세분류\", \"wm\", \"gauge\",\r\n#        \"add_spec\", \"수식\", \"단위\", \"산출유형\",\r\n#        ]\r\n#    wm_dicts = go(\r\n#        tgt_bnoteType_wmlist,\r\n#        map( lambda x: dict(zip(wm_dict_hdrs, x)) ),\r\n#        list,\r\n#    )\r\n#    \r\n#    \r\n#    tgt_bnoteType_wm_calcvalue = []\r\n#    for wm_dict in wm_dicts:\r\n#        wm_dict.update(\r\n#            calc_formula(wm_dict[\"수식\"], calc_param_list)\r\n#        )\r\n#        wm_code = wm_dict[\"wm\"].split(\"|\")[0].strip()\r\n#        \r\n#        try:\r\n#            wm_desc = wm_dict[\"wm\"].split(\" | \")[7]\r\n#        except:\r\n#            wm_desc = \"\"\r\n#            \r\n#        wm_spec = go(\r\n#            wm_dict[\"wm\"].split(\" | \")[9:-4],\r\n#            filter( lambda x: not x.isnumeric() ),\r\n#            filter(lambda x: not ( (\"(   )\" in x) or (\"(   )\" in x) or (\"(  )\" in x)) ),\r\n#            lambda x: \"\\n\".join(x),\r\n#        )\r\n#        \r\n#        wm_dict.update(\r\n#            {\r\n#                \"wm_code\": wm_code,\r\n#                \"wm_desc\": wm_desc,\r\n#                \"wm_spec\": wm_spec,\r\n#            }\r\n#        )\r\n#        tgt_bnoteType_wm_calcvalue.append(wm_dict)\r\n#    \r\n#    \r\n#    elem_dic.update(\r\n#        {\r\n#            \"cat\": cat_name,\r\n#            \"stdType_no\": stdType_no,\r\n#            \"물량\": tgt_bnoteType_wm_calcvalue,\r\n#        }\r\n#    )\r\n#    \r\n#    #return tgt_bnoteType_wm_calcvalue\r\n    return tgt_bnoteType\r\n    #return elem_dic\r\n\r\n\r\n## Flatten the nested structure into a list of rows\r\n#def flatten_data(data):\r\n#    flat_data = []\r\n#    for dic in data:\r\n#        cat = dic[\"cat\"]\r\n#        stdType_no = dic[\"stdType_no\"]\r\n#        elem_name = dic[\"name\"]\r\n#        elem = dic[\"elem\"]\r\n#        guid = dic[\"GUID\"]\r\n#        for item in dic[\"물량\"]:\r\n#            flat_data.append(\r\n#                [\r\n#                    cat,\r\n#                    stdType_no,\r\n#                    item[\"표준타입\"],\r\n#                    item[\"분류\"],\r\n#                    elem_name,\r\n#                    guid,\r\n#                    item[\"상세분류\"],\r\n#                    item[\"wm_code\"],\r\n#                    item[\"gauge\"],\r\n#                    item[\"wm_desc\"],\r\n#                    item[\"wm_spec\"],\r\n#                    item[\"add_spec\"],\r\n#                    item[\"수식\"],\r\n#                    item[\"대입수식\"],\r\n#                    item[\"산출결과\"],\r\n#                    item[\"단위\"],\r\n#                    item[\"산출유형\"],\r\n#                    item[\"산출로그\"],\r\n#                ]\r\n#            )\r\n#    return flat_data\r\n\r\ndata = list(map(calc_elem, all_eff_elems))\r\n\r\n#flat_header = [\r\n#    \"카테고리\", \"표준타입번호\", \"표준타입\", \"분류\", \"name\", \"GUID\", \"상세분류\", \r\n#    \"wm_code\", \"gauge\", \"Description\", \"Spec.\", \r\n#    \"Add_spec.\", \"수식\", \"대입수식\", \"산출결과\", \"단위\", \"산출유형\", \"산출로그\",\r\n#    ]\r\n#\r\n#flat_data = [flat_header]+flatten_data(data)\r\n#\r\n#if not bnote_data.get(\"dynamo-calculation\"):\r\n#    bnote_data.update( {\"dynamo-calculation\": {} } )\r\n#\r\n#bnote_data[\"dynamo-calculation\"].update( {building_name: flat_data} )\r\n\r\n\r\n\r\n#save_to_json_teamStdInfo(bnote_path, bnote_data)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = calc_elem(all_eff_elems[195])\r\n\r\nOUT = data\r\n#OUT = bnote_data",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\nimport json\r\n\r\ndef load_from_json(_file_path=None):\r\n    # 파일 열기 위치 선택\r\n    if _file_path:\r\n        file_path = _file_path\r\n\r\n    # JSON 파일에서 데이터 로드\r\n    try:\r\n        with open(file_path, \"r\", encoding=\"utf-8\") as file:\r\n            loaded_data = json.load(file)\r\n\r\n        print(f\"Data successfully loaded from {file_path}\\n\")\r\n        return loaded_data\r\n    except Exception as e:\r\n        print(f\"Error loading data from JSON: {e}\\n\")\r\n        return False\r\n\r\ndef save_to_json_teamStdInfo(file_path, data):\r\n    # 상태 객체에서 데이터를 저장\r\n    try:\r\n        with open(file_path, \"w\", encoding=\"utf-8\") as file:\r\n            json.dump(data, file, indent=4, ensure_ascii=False)\r\n            # json.dump(state.project_info, file, indent=4, ensure_ascii=False)\r\n        print(f\"Data successfully saved to {file_path}\")\r\n    except Exception as e:\r\n        print(f\"Error saving data to JSON: {e}\")\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nbuilding_name = IN[0]\r\nbnote_path = IN[1]\r\nbnote_data = deepcopy( load_from_json(_file_path=bnote_path) )\r\nall_elemNames, all_elems = IN[2]\r\ncategory_names = IN[3]\r\n\r\n\r\n# Place your code below this line\r\n\r\nbnote_revitTypes_inBuilding = go(\r\n    bnote_data[\"project-assigntype\"][\"children\"],\r\n    filter(lambda x: list(x[\"values\"])[1]==building_name),\r\n    list,\r\n)\r\n\r\nbnote_revitType_names_inBuilding = go(\r\n    bnote_revitTypes_inBuilding,\r\n    map(lambda x: x[\"name\"]),\r\n    list,\r\n)\r\n\r\nall_eff_elems = go(\r\n    zip(all_elemNames, all_elems),\r\n    filter(lambda x: x[0] in bnote_revitType_names_inBuilding),\r\n    map(lambda x: \\\r\n        {\r\n            \"name\": x[0],\r\n            \"elem\": x[1],\r\n        }\r\n    ),\r\n    list,\r\n)\r\n\r\ndef get_param_value(elem, name):\r\n    if name not in list(map(lambda x: x.Name, elem.Parameters)):\r\n        calc_v = elem.ElementType.GetParameterValueByName(name)\r\n    elif name == \"H_Room H or CH\":\r\n        if elem.GetParameterValueByName(name)==\"\":\r\n            calc_v = elem.GetParameterValueByName(\"Unbounded Height\")\r\n        else:\r\n            calc_v = elem.GetParameterValueByName(name)\r\n    else:\r\n        calc_v = elem.GetParameterValueByName(name)\r\n    \r\n    if calc_v==\"\":\r\n        calc_v = 0\r\n    \r\n    return round(calc_v,3)\r\n\r\ndef calc_elem(elem_dic):\r\n    def check_Str(_str):\r\n        try:\r\n            float(_str)\r\n            return False\r\n        except:\r\n            return True\r\n    \r\n    elem = elem_dic[\"elem\"]\r\n    elem_dic.update(\r\n        {\r\n            \"GUID\": elem.GetParameterValueByName(\"IfcGUID\"),\r\n        }\r\n    )\r\n    \r\n    tgt_bnoteType = go(\r\n        bnote_revitTypes_inBuilding,\r\n        filter( lambda x: x[\"name\"]==elem_dic[\"name\"] ),\r\n        filter( lambda x: x[\"children\"]!=[] ),\r\n        list,\r\n    )[0]\r\n    \r\n    stdType_no = tgt_bnoteType[\"values\"][-1].split(\" | \")[-1].strip()\r\n    \r\n    cat_no = str(stdType_no).split(\".\")[0]\r\n    \r\n    cat_name = go(\r\n        category_names,\r\n        filter( lambda x: x.startswith(cat_no) ),\r\n        list,\r\n    )[0]\r\n    \r\n    tgt_bnoteType_wmlist = go(\r\n        list(list(tgt_bnoteType[\"children\"])),\r\n        #map( lambda x: [ list(x)[:5], list(x)[3].split(\" | \")[0], list(x)[6:] ] ),\r\n        list,\r\n    )\r\n    \r\n\r\n    calcType_no = list(list(tgt_bnoteType[\"children\"])[0])[-1]\r\n\r\n    \r\n    tgt_bnote_calcdict = go(\r\n        bnote_data[\"std-calcdict\"][\"children\"],\r\n        filter( lambda x: x[\"name\"]==calcType_no ),\r\n        list,\r\n    )[0]\r\n    \r\n    param_list = go(\r\n        tgt_bnote_calcdict[\"children\"],list,\r\n        map(lambda x: x[\"values\"]), list,\r\n        map(lambda x: list(x)[1:]),\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n        list,\r\n    )\r\n    calc_param_list = go(\r\n        param_list,\r\n        map( lambda x: [ x[0], get_param_value(elem, x[1])] if check_Str(x[1]) else [x[0], float(x[1]) ] ),\r\n        list,\r\n        lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),\r\n    )\r\n    \r\n    def calc_formula(formula, calc_param_list):\r\n        tmp_formula = formula\r\n        if tmp_formula != \"=Exca\" and tmp_formula != \"=Back\" and tmp_formula != \"=Disp\":\r\n            for n,v in calc_param_list:\r\n                tmp_formula = tmp_formula.replace(n, str(v))\r\n            try:\r\n                calc_result = eval(tmp_formula.strip(\"=\")), \"계산 성공\"\r\n            except:\r\n                calc_result = 0, \"계산 실패 - 수식 혹은 파라미터가 유효하지 않음\"\r\n        else:\r\n            tmp_formula = formula\r\n            calc_result = 0, \"토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망\"\r\n        \r\n        #return formula, tmp_formula, *calc_result\r\n        \r\n        return {\r\n            \"수식\": \"'\"+formula,\r\n            \"대입수식\": \"'\"+tmp_formula,\r\n            \"산출결과\": calc_result[0],\r\n            \"산출로그\": calc_result[1],\r\n        }\r\n    wm_dict_hdrs = [\r\n        \"분류\", \"표준타입\", \"상세분류\", \"wm\", \"gauge\",\r\n        \"add_spec\", \"수식\", \"단위\", \"산출유형\",\r\n        ]\r\n    wm_dicts = go(\r\n        tgt_bnoteType_wmlist,\r\n        map( lambda x: dict(zip(wm_dict_hdrs, x)) ),\r\n        list,\r\n    )\r\n    \r\n    \r\n    tgt_bnoteType_wm_calcvalue = []\r\n    for wm_dict in wm_dicts:\r\n        wm_dict.update(\r\n            calc_formula(wm_dict[\"수식\"], calc_param_list)\r\n        )\r\n        wm_code = wm_dict[\"wm\"].split(\"|\")[0].strip()\r\n        \r\n        try:\r\n            wm_desc = wm_dict[\"wm\"].split(\" | \")[7]\r\n        except:\r\n            wm_desc = \"\"\r\n            \r\n        wm_spec = go(\r\n            wm_dict[\"wm\"].split(\" | \")[9:-4],\r\n            filter( lambda x: not x.isnumeric() ),\r\n            filter(lambda x: not ( (\"(   )\" in x) or (\"(   )\" in x) or (\"(  )\" in x)) ),\r\n            lambda x: \"\\n\".join(x),\r\n        )\r\n        \r\n        wm_dict.update(\r\n            {\r\n                \"wm_code\": wm_code,\r\n                \"wm_desc\": wm_desc,\r\n                \"wm_spec\": wm_spec,\r\n            }\r\n        )\r\n        tgt_bnoteType_wm_calcvalue.append(wm_dict)\r\n    \r\n    \r\n    elem_dic.update(\r\n        {\r\n            \"cat\": cat_name,\r\n            \"stdType_no\": stdType_no,\r\n            \"물량\": tgt_bnoteType_wm_calcvalue,\r\n        }\r\n    )\r\n    \r\n    #return tgt_bnoteType_wm_calcvalue\r\n    #return tgt_bnoteType\r\n    return elem_dic\r\n\r\n\r\n# Flatten the nested structure into a list of rows\r\ndef flatten_data(data):\r\n    flat_data = []\r\n    for dic in data:\r\n        cat = dic[\"cat\"]\r\n        stdType_no = dic[\"stdType_no\"]\r\n        elem_name = dic[\"name\"]\r\n        #elem = dic[\"elem\"]\r\n        guid = dic[\"GUID\"]\r\n        for item in dic[\"물량\"]:\r\n            flat_data.append(\r\n                [\r\n                    cat,\r\n                    stdType_no,\r\n                    item[\"표준타입\"],\r\n                    item[\"분류\"],\r\n                    elem_name,\r\n                    guid,\r\n                    item[\"상세분류\"],\r\n                    item[\"wm_code\"],\r\n                    item[\"gauge\"],\r\n                    item[\"wm_desc\"],\r\n                    item[\"wm_spec\"],\r\n                    item[\"add_spec\"],\r\n                    item[\"수식\"],\r\n                    item[\"대입수식\"],\r\n                    item[\"산출결과\"],\r\n                    item[\"단위\"],\r\n                    item[\"산출유형\"],\r\n                    item[\"산출로그\"],\r\n                ]\r\n            )\r\n    return flat_data\r\n\r\n##data = list(map(calc_elem, all_eff_elems))\r\n\r\ndata = []\r\nfor e in all_eff_elems:\r\n    try:\r\n        data.append(calc_elem(e))\r\n    except:\r\n        data.append(\r\n            {\r\n                \"cat\": \"-\",\r\n                \"stdType_no\": \"-\",\r\n                \"GUID\": \"-\",\r\n                \"name\": e[\"name\"], #str(e[\"elem\"].GetParameterValueByName(\"Family and Type\").GetParameterValueByName(\"Type Name\")),\r\n                \"물량\": [{\r\n                    \"표준타입\": \"-\",\r\n                    \"분류\": \"-\",\r\n                    \"상세분류\": \"-\",\r\n                    \"wm_code\": \"-\",\r\n                    \"gauge\": \"-\",\r\n                    \"wm_desc\": \"-\",\r\n                    \"wm_spec\": \"-\",\r\n                    \"add_spec\": \"-\",\r\n                    \"수식\": \"-\",\r\n                    \"대입수식\": \"-\",\r\n                    \"산출결과\": 0,\r\n                    \"단위\": \"-\",\r\n                    \"산출유형\": \"-\",\r\n                    \"산출로그\": \"실패 - 레빗타입 WM등록 여부 확인필요\",\r\n                },]\r\n            }\r\n        )\r\n\r\nflat_header = [\r\n    \"카테고리\", \"표준타입번호\", \"표준타입\", \"분류\", \"name\", \"GUID\", \"상세분류\", \r\n    \"wm_code\", \"gauge\", \"Description\", \"Spec.\", \r\n    \"Add_spec.\", \"수식\", \"대입수식\", \"산출결과\", \"단위\", \"산출유형\", \"산출로그\",\r\n    ]\r\n\r\nflat_data = [flat_header]+flatten_data(data)\r\n\r\nif not bnote_data.get(\"dynamo-calculation\"):\r\n    bnote_data.update( {\"dynamo-calculation\": {} } )\r\n\r\nbnote_data[\"dynamo-calculation\"].update( {building_name: flat_data} )\r\n\r\n\r\n\r\n#save_to_json_teamStdInfo(bnote_path, bnote_data)\r\n\r\n# Assign your output to the OUT variable.\r\n#OUT = calc_elem(all_eff_elems[195])\r\n\r\n#OUT = data\r\nOUT = bnote_data",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3482,13 +3482,52 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
-      "NodeType": "CodeBlockNode",
-      "Code": "i[\"values\"];",
-      "Id": "3b5af87d22dd49d8b35e0d057c53dffa",
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
+      "Id": "6bca8fc5796a44b2bb61b274021d6c10",
       "Inputs": [
         {
-          "Id": "e5f5ac4f0cc846c19b7724a1c14b2c97",
+          "Id": "c80115fca5204066bbf7725dd22c8c62",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f4c60323f89c444799fa30d8580927a6",
+          "Name": "parameterName",
+          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "58f43a298143465fb83abf76640221ee",
+          "Name": "var[]..[]",
+          "Description": "var[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"dynamo-calculation\"];",
+      "Id": "244cf0c948e1449da4c35c217e490a87",
+      "Inputs": [
+        {
+          "Id": "2ed11c4536b14598855b3f9ca27ba646",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -3499,7 +3538,37 @@
       ],
       "Outputs": [
         {
-          "Id": "d429e608dbe14ad48a7ad2a54e04fc6a",
+          "Id": "cfec48fcc3154996836cab24fd4634bf",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[\"PCB\"];",
+      "Id": "a873e312d660498cbed3a10c13b3920c",
+      "Inputs": [
+        {
+          "Id": "15c78c36576241d796dfb6cf0ab094bc",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "da5b83b227aa4d7bbcc986ff6acaf57d",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3515,10 +3584,10 @@
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
       "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
-      "Id": "23ee236e2c85414fa14203f326f88fb0",
+      "Id": "e46597387cba418eae42d084cec01e93",
       "Inputs": [
         {
-          "Id": "9adead06756d4c2a826be325db690fc1",
+          "Id": "9f17400fff5b46a29881a1d0f4b77e21",
           "Name": "list",
           "Description": "List to fetch an item from.\n\nvar[]..[]",
           "UsingDefaultValue": false,
@@ -3527,7 +3596,7 @@
           "KeepListStructure": false
         },
         {
-          "Id": "f1d2e7742f6e4e079881ac35811d34ee",
+          "Id": "eaf94e64552e45789f69182aaaebcf78",
           "Name": "index",
           "Description": "Index of the item to be fetched.\n\nint",
           "UsingDefaultValue": false,
@@ -3538,7 +3607,7 @@
       ],
       "Outputs": [
         {
-          "Id": "30034c2e30334531b81880804057106b",
+          "Id": "66c4ae16ea32426dae709195f2c57897",
           "Name": "item",
           "Description": "Item in the list at the given index.",
           "UsingDefaultValue": false,
@@ -3553,12 +3622,71 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "2;",
-      "Id": "5a6b52d8f42644e29495127775eb6cc1",
+      "Code": "17;",
+      "Id": "c837ce43b0fb437dbf71fdd73eb48d3d",
       "Inputs": [],
       "Outputs": [
         {
-          "Id": "b4aa108ff57848dd9e0972d34d591ade",
+          "Id": "a1150cd03cf94aec9f4d30b59609f47e",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
+      "Id": "c42356b035cd44da83a56b687135504e",
+      "Inputs": [
+        {
+          "Id": "f399a5bfd9624b6faab5d84998bec25f",
+          "Name": "list",
+          "Description": "List to fetch an item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": true,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a5bf9a5a8b4c43e78a10b5608b7abdda",
+          "Name": "index",
+          "Description": "Index of the item to be fetched.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "a5e8a98a1baf456b8fccf34923d3acd1",
+          "Name": "item",
+          "Description": "Item in the list at the given index.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "4;",
+      "Id": "ada5b5edd7a24288b3ba89ed54d73505",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "ff3d3225cba94193be14238c26618003",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -3573,11 +3701,11 @@
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "i[146];",
-      "Id": "0f1c27e093d040d4af0e25ee88aa1be9",
+      "Code": "i[108];",
+      "Id": "351ab49db86b4250bb19d9e34bdeaa02",
       "Inputs": [
         {
-          "Id": "4d9b7305be294cb4bb80c22fa476ed47",
+          "Id": "045981e88dc24011a5893f1932eb1e31",
           "Name": "i",
           "Description": "i",
           "UsingDefaultValue": false,
@@ -3588,7 +3716,7 @@
       ],
       "Outputs": [
         {
-          "Id": "7d0f493ba8f0461987097752d502b143",
+          "Id": "1afa0df0a54945cb8eb9b7da8d3bcb36",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -4258,14 +4386,8 @@
     },
     {
       "Start": "fe06d80845274df7be0b4a3585337d75",
-      "End": "e5f5ac4f0cc846c19b7724a1c14b2c97",
-      "Id": "942e32b2f0f4488ebd3391c103bde1cb",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "fe06d80845274df7be0b4a3585337d75",
-      "End": "4d9b7305be294cb4bb80c22fa476ed47",
-      "Id": "36dc9cef482943518d15a05f6fc4b3da",
+      "End": "2ed11c4536b14598855b3f9ca27ba646",
+      "Id": "9cfecac24f2a4fecb975ae221f1fa1ff",
       "IsHidden": "False"
     },
     {
@@ -4317,22 +4439,46 @@
       "IsHidden": "False"
     },
     {
-      "Start": "d429e608dbe14ad48a7ad2a54e04fc6a",
-      "End": "9adead06756d4c2a826be325db690fc1",
-      "Id": "35aa9900910c4495a6d4601ef7ddc799",
+      "Start": "cfec48fcc3154996836cab24fd4634bf",
+      "End": "15c78c36576241d796dfb6cf0ab094bc",
+      "Id": "a97b293030c94f93a6f4ed146d5d406e",
       "IsHidden": "False"
     },
     {
-      "Start": "b4aa108ff57848dd9e0972d34d591ade",
-      "End": "f1d2e7742f6e4e079881ac35811d34ee",
-      "Id": "26e74684c04b489d853cda84a09f0693",
+      "Start": "da5b83b227aa4d7bbcc986ff6acaf57d",
+      "End": "9f17400fff5b46a29881a1d0f4b77e21",
+      "Id": "52064d2758cf4de9a67d43abac4b408c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "da5b83b227aa4d7bbcc986ff6acaf57d",
+      "End": "f399a5bfd9624b6faab5d84998bec25f",
+      "Id": "6efa0632f1194574827ef7d72a3ac971",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "da5b83b227aa4d7bbcc986ff6acaf57d",
+      "End": "045981e88dc24011a5893f1932eb1e31",
+      "Id": "47888de71f144d8580cb2c4b5aefb6b8",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a1150cd03cf94aec9f4d30b59609f47e",
+      "End": "eaf94e64552e45789f69182aaaebcf78",
+      "Id": "27b978e58eb0457aba385e3a619a5d6c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ff3d3225cba94193be14238c26618003",
+      "End": "a5bf9a5a8b4c43e78a10b5608b7abdda",
+      "Id": "131de27316784179a2e1acec839921e7",
       "IsHidden": "False"
     }
   ],
   "Dependencies": [],
   "NodeLibraryDependencies": [
     {
-      "Name": "PCB_2_copy.bnote",
+      "Name": "PCB_3 2.bnote",
       "ReferenceType": "External",
       "Nodes": [
         "8ab3accc47f6452a95570634f44f527d",
@@ -5389,7 +5535,7 @@
         "Y": 1989.2091354939796
       },
       {
-        "Name": "Updated B-note",
+        "Name": "dynamo-calculation 항목이 확인된다면 B-note에서 리프레시 버튼을 누르세요.",
         "ShowGeometry": true,
         "Id": "a371bfcc143f46fda2bd1bc0ab0b261c",
         "IsSetAsInput": false,
@@ -5409,44 +5555,84 @@
         "Y": 844.27028120022919
       },
       {
-        "Name": "Code Block",
+        "Name": "Element.GetParameterValueByName",
         "ShowGeometry": true,
-        "Id": "3b5af87d22dd49d8b35e0d057c53dffa",
+        "Id": "6bca8fc5796a44b2bb61b274021d6c10",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2518.0010388782985,
-        "Y": 807.13878561189517
+        "X": -3341.5552295645257,
+        "Y": 600.76251782340478
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "244cf0c948e1449da4c35c217e490a87",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": -2510.0,
+        "Y": 836.0
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "a873e312d660498cbed3a10c13b3920c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -2163.7403670248332,
+        "Y": 848.92786582291114
       },
       {
         "Name": "List.GetItemAtIndex",
         "ShowGeometry": true,
-        "Id": "23ee236e2c85414fa14203f326f88fb0",
+        "Id": "e46597387cba418eae42d084cec01e93",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2080.9018818547211,
-        "Y": 882.89698212468386
+        "X": -1630.496054818763,
+        "Y": 856.95034005706214
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "5a6b52d8f42644e29495127775eb6cc1",
+        "Id": "c837ce43b0fb437dbf71fdd73eb48d3d",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2249.4454452208138,
-        "Y": 1032.84284248985
+        "X": -1801.94995282226,
+        "Y": 930.46334559355159
+      },
+      {
+        "Name": "List.GetItemAtIndex",
+        "ShowGeometry": true,
+        "Id": "c42356b035cd44da83a56b687135504e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1218.36084409189,
+        "Y": 852.03588798733642
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "0f1c27e093d040d4af0e25ee88aa1be9",
+        "Id": "ada5b5edd7a24288b3ba89ed54d73505",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -2588.0,
-        "Y": 1238.0
+        "X": -1389.8147420953899,
+        "Y": 925.54889352382645
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": true,
+        "Id": "351ab49db86b4250bb19d9e34bdeaa02",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -1617.0629651282197,
+        "Y": 1390.2350698120206
       }
     ],
     "Annotations": [
@@ -5680,8 +5866,8 @@
         "Background": "#FF48B9FF"
       }
     ],
-    "X": 3259.2955072549057,
-    "Y": -1074.7639897339977,
-    "Zoom": 1.2812772266489869
+    "X": 7485.9058470193459,
+    "Y": 373.26659898953972,
+    "Zoom": 0.69500419599508079
   }
 }

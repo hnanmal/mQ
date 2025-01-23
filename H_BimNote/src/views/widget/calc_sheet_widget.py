@@ -38,6 +38,14 @@ class SearchManager:
         )
         self.clear_button.pack(side=tk.LEFT, padx=5)
 
+        self.noti_label = ttk.Label(
+            parent_frame,
+            text="Dynamo 에서 물량 산출을 하기 전, 반드시 B-note의 현재 상태를 저장해 주세요!",
+            font=("맑은고딕", 14, "bold"),
+            foreground="red",
+        )
+        self.noti_label.pack(side=tk.LEFT, padx=5)
+
         # Bind Enter key to search functionality
         self.search_entry.bind("<Return>", lambda event: self.search_sheet())
 
@@ -114,6 +122,7 @@ class ReportSheetWidget(ttk.Frame):
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
         self.sheet.set_options(font=("Arial Narrow", 8, "normal"))
         self.sheet.set_options(set_all_heights_and_widths=True)
+        self.set_colums_widths()
         # self.sheet.set_all_cell_sizes_to_text()
 
         self.sheet.pack(fill=tk.BOTH, expand=True)
@@ -126,6 +135,34 @@ class ReportSheetWidget(ttk.Frame):
 
         # 상태 변경 감지를 위한 옵저버 설정
         self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+    def set_colums_widths(self, hdr_widths=None):
+        # self.sheet.headers(self.column_headers)
+        if hdr_widths:
+            self.sheet.set_column_widths(hdr_widths)
+        else:
+            self.sheet.set_column_widths(
+                [
+                    60,  # 카테고리
+                    70,  # 표준타입번호
+                    140,  # 표준타입
+                    50,  # 분류
+                    200,  # name
+                    150,  # GUID
+                    180,  # 상세분류
+                    100,  # wm_code
+                    50,  # gauge
+                    150,  # description
+                    540,  # Spec.
+                    180,  # Add_spec.
+                    150,  # 수식
+                    200,  # 대입수식
+                    50,  # 산출결과
+                    50,  # 단위
+                    50,  # 산출유형
+                    200,  # 산출로그
+                ]
+            )
 
     def update(self, event=None):
         """Update the Sheet widget whenever the state changes."""
@@ -149,6 +186,7 @@ class ReportSheetWidget(ttk.Frame):
 
         # Ensure cell sizes and redraw
         # self.sheet.set_all_cell_sizes_to_text()
+        self.set_colums_widths()
         self.sheet.redraw()
 
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
@@ -169,8 +207,8 @@ class ReportSheetWidget(ttk.Frame):
             # self.sheet.headers(self.column_headers)
 
             # Extract data
-            # self.data = src_data[1:]
-            self.data = src_data
+            self.data = src_data[1:]
+            # self.data = src_data
 
             # self.sheet.set_sheet_data(self.data)
             print("ok~")
@@ -197,9 +235,9 @@ class ReportSheetWidget(ttk.Frame):
                     if row[target_col_index] is not None
                 )
             )
-            # print(
-            #     f"Updating dropdown for column {header} with values: {unique_values}"
-            # )  # Debugging
+            print(
+                f"Updating dropdown for column {header} with values: {unique_values}"
+            )  # Debugging
             current_value = (
                 current_headers[target_col_index]
                 if target_col_index < len(current_headers)
@@ -255,15 +293,15 @@ class ReportSheetWidget(ttk.Frame):
                 for rn, row in enumerate(self.data)
                 if all(row[c] == e or e == "all" for c, e in enumerate(hdrs))
             ]
-            # self.sheet.display_rows(rows=rows, all_displayed=False)
-            self.sheet.display_rows(rows=rows, all_rows_displayed=False)
+            self.sheet.display_rows(rows=rows, all_displayed=False)
+            # self.sheet.display_rows(rows=rows, all_rows_displayed=False)
             self.add_dropdowns()
             self.sheet.redraw()
 
         # Recompute only the affected dropdown
         # self.add_dropdowns()
-
         # Redraw only once
+        self.set_colums_widths()
         self.sheet.redraw()
 
     def clear_filters(self):
@@ -281,7 +319,7 @@ class ReportSheetWidget(ttk.Frame):
         self.add_dropdowns()
 
         # Ensure everything is redrawn
-        # self.sheet.set_all_cell_sizes_to_text()
+        self.set_colums_widths()
         self.sheet.redraw()
 
 

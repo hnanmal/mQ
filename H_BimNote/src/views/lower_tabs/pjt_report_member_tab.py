@@ -3,6 +3,7 @@ from tkinter import ttk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
+from src.core.file_utils import load_from_json
 from src.views.widget.widget import Builing_select_combobox
 from src.views.widget.calc_sheet_widget import ReportSheetWidget
 
@@ -51,20 +52,23 @@ def create_report_member_tab(state, subtab_notebook, exe_mode=None):
     builing_select_combobox = Builing_select_combobox(state, working_tab_common_area)
     state.builing_select_combobox = builing_select_combobox
 
+    ## refresh 버튼
+    refresh_button = ttk.Button(
+        working_tab_common_area,
+        text="Refresh B-note",
+        command=lambda: load_from_json(state, _file_path=state.current_filepath),
+        bootstyle="info",
+    )
+    refresh_button.pack(anchor="e")
+
     ##############################################################
     ## section 1###########
-    # if state.team_std_info.get("dynamo-calculation"):
-    #     report_member_calc_data = state.team_std_info["dynamo-calculation"].get(
-    #         state.current_building.get(), []
-    #     )
-    #     print("ok~")
-    # else:
-    #     report_member_calc_data = []
 
     report_member_calc_sheet = ReportSheetWidget(
         state, section1, data_kind="dynamo-calculation"
     )
     report_member_calc_sheet.pack(fill=tk.BOTH, expand=True)
+
     ######### notify_targets 등록 ###############################################
     # state.notify_targets.append(report_member_calc_sheet)
     #############################################################################

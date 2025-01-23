@@ -38,7 +38,9 @@ def main():
     ################
 
     notebook, state = initialize_app(root)
+    root.iconbitmap(icon_path)
     root.iconify()
+
     # root.withdraw()  # Hide the main window while splash is shown
     state.root = root
 
@@ -69,7 +71,7 @@ def main():
 
     # # Handle window close event
     # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))
-    root.iconbitmap(icon_path)
+
     root.mainloop()
 
 
