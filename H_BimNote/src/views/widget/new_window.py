@@ -28,6 +28,20 @@ def open_tab_in_new_window_rvtSummary(state):
     #     child_clone.pack(fill=tk.BOTH, expand=True)
 
 
+def open_tab_in_new_window(state, subnotebook, tab_funcs, event=None):
+    # Get the index of the tab that was clicked
+    tab_index = subnotebook.index("@{},{}".format(event.x, event.y))
+    tab_name = subnotebook.tab(tab_index, "text")
+
+    new_window = tk.Toplevel()
+    new_window.title("New Window")
+    new_window.geometry("700x900")
+    frame = ttk.Frame(new_window)
+    frame.pack(expand=True, fill="both")
+
+    tab_funcs[tab_index](state, new_window, exe_mode="new window")
+
+
 def clone_widget(widget, parent):
     """Clone a widget into a new parent."""
     # Clone a Frame (simplifies cloning for this example)

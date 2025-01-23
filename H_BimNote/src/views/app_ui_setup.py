@@ -65,7 +65,7 @@ def initialize_app(root, _state=None):
     root.geometry("1400x900+100+100")
     root.state("zoomed")
 
-    define_styles()
+    # define_styles()
 
     state.tab_bootStyle = "secondary"
 

@@ -45,6 +45,7 @@ def main():
     state.root = root
 
     splash = show_splash_screen()
+
     splash.wait_window()  # Wait for the splash screen to close
 
     # Create parent tabs within the notebook
@@ -72,6 +73,7 @@ def main():
     # # Handle window close event
     # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))
 
+    root.attributes("-topmost", False)
     root.mainloop()
 
 
@@ -92,6 +94,8 @@ def show_splash_screen():
     splash.title("B-Note")
     splash.geometry(f"{splash_width}x{splash_height}")
     splash.overrideredirect(True)  # Remove window decorations (close, minimize, etc.)
+    # Set the new window to always be on top
+    splash.attributes("-topmost", True)
     splash.wm_attributes("-alpha", 0.9)  # Set transparency
 
     # Add branding or loading information

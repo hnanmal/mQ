@@ -98,7 +98,7 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    stdGWM_treeview = TeamStd_GWMTreeView(state, section1)
+    stdGWM_treeview = TeamStd_GWMTreeView(state, section1, showmode="tmp team")
     DefaultTreeViewStyleManager.apply_style(stdGWM_treeview.treeview.tree)
     state.stdGWM_treeview = stdGWM_treeview
 
@@ -289,7 +289,7 @@ def create_stdSWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    stdSWM_treeview = TeamStd_SWMTreeView(state, section1)
+    stdSWM_treeview = TeamStd_SWMTreeView(state, section1, showmode="tmp team")
     DefaultTreeViewStyleManager.apply_style(stdSWM_treeview.treeview.tree)
 
     ##############################################################

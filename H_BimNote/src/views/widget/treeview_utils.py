@@ -190,20 +190,58 @@ class TreeViewContextMenu:
         self.funcs = funcs
         # Create the context menu
         self.menu = ttk.Menu(self.treeview.tree, tearoff=0)
-        self.menu.add_command(label="Add Top Item", command=self.add_top_item)
-        self.menu.add_command(label="Add Item", command=self.add_item)
-        # self.menu.add_command(label="Edit Item", command=self.edit_item)
-        self.menu.add_command(label="Delete Item", command=self.delete_item)
-        if "copy_GWM" in funcs:
-            self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
-        elif "copy_SWM" in funcs:
-            self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
-        self.menu.add_command(label="하위항목 복사", command=self.copy_item)
+        # self.menu.add_command(label="Add Top Item", command=self.add_top_item)
+        # self.menu.add_command(label="Add Item", command=self.add_item)
+        # self.menu.add_command(label="Delete Item", command=self.delete_item)
+        # if "copy_GWM" in funcs:
+        #     self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
+        # elif "copy_SWM" in funcs:
+        #     self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
+        # self.menu.add_command(label="하위항목 복사", command=self.copy_item)
+
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
 
+    def get_clicked_row_values(self, event):
+        """Handle right-click on a Treeview row to get its values."""
+        # Identify the item under the mouse pointer
+        tree = event.widget
+        region = tree.identify("region", event.x, event.y)
+        if region != "cell":  # Ensure the click is on a row
+            return
+
+        item_id = tree.identify_row(event.y)  # Get the item ID
+        if item_id:  # If an item is found
+            values = tree.item(item_id, "values")  # Get the values of the clicked row
+            print(f"Right-clicked row values: {values}")
+            return values
+
+    def find_first_non_empty_index(self, lst):
+        for index, element in enumerate(lst):
+            if element != "":  # Check if the element is not an empty string
+                return index
+        return -1  # Return -1 if no non-empty string is found
+
     def show_context_menu(self, event):
         # Debug statement to check locked status
+        row_values = list(self.get_clicked_row_values(event))
+        tgt_col = self.find_first_non_empty_index(row_values)
+        print(f"target column idx:::{tgt_col}")
+
+        self.menu.delete(0, "end")
+
+        self.menu.add_command(label="Add Top Item", command=self.add_top_item)
+        self.menu.add_command(label="Add Item", command=self.add_item)
+        self.menu.add_command(label="Delete Item", command=self.delete_item)
+
+        if self.data_kind != "std-familylist" and tgt_col == 1:
+            if "copy_GWM" in self.funcs:
+                self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
+            elif "copy_SWM" in self.funcs:
+                self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
+        elif self.data_kind != "std-familylist" and tgt_col == 2:
+            self.menu.add_command(label="하위항목 복사", command=self.copy_item)
+
         self.state.log_widget.write(f"Context Menu Locked Status: {self.locked_status}")
         # Only show the context menu if locked_status is False (unlocked)
         if not self.locked_status:

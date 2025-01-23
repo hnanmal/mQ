@@ -25,7 +25,7 @@ from src.views.lower_tabs.pjt_report_member_tab import create_report_member_tab
 from src.views.lower_tabs.pjt_report_type_tab import create_report_type_tab
 from src.views.lower_tabs.pjt_report_WM_tab import create_report_wm_tab
 
-# from src.views.widget.new_window import open_tab_in_new_window
+from src.views.widget.new_window import open_tab_in_new_window
 
 
 def create_tab_with_subtabs(state, notebook, tab_name):
@@ -242,10 +242,10 @@ def create_project_report_tab(state, notebook):
         create_report_wm_tab,
     ]
 
-    # # Bind double-click event to the tabs
-    # subtab_notebook.bind(
-    #     "<Double-1>",
-    #     lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, e),
-    # )
+    # Bind double-click event to the tabs
+    subtab_notebook.bind(
+        "<Double-1>",
+        lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, event=e),
+    )
 
     state.pjt_report_notebook = subtab_notebook

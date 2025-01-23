@@ -27,6 +27,11 @@ def save_to_json_teamStdInfo(state, _file_path=None):
             json.dump(state.team_std_info, file, indent=4, ensure_ascii=False)
             # json.dump(state.project_info, file, indent=4, ensure_ascii=False)
         print(f"Data successfully saved to {file_path}")
+        state.root.title(
+            "B-note :: Hyundai Engineering Plant Architecture Bim Note"
+            + "\t" * 9
+            + f"[   {state.current_filepath}   ]"
+        )
         open_dialog(
             state.root,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n에 저장 되었습니다.",
@@ -79,10 +84,12 @@ def load_from_json(state, _file_path=None):
                 )[6:]
                 state.update_team_standard_info({"WMs": loadedWMs}, data_kind="WMs")
 
-            # state.update_project_info(loaded_data.get("project_info", {}))
-            # state.family_standard_data = loaded_data.get("family_standard_data", {})
-
         state.log_widget.write(f"Data successfully loaded from {file_path}\n")
+        state.root.title(
+            "B-note :: Hyundai Engineering Plant Architecture Bim Note"
+            + "\t" * 9
+            + f"[   {state.current_filepath}   ]"
+        )
         open_dialog(
             state.root,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n으로부터 로드 되었습니다.",

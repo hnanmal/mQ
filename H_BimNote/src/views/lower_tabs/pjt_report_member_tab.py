@@ -11,6 +11,7 @@ from src.views.widget.calc_sheet_widget import ReportSheetWidget
 def create_report_member_tab(state, subtab_notebook, exe_mode=None):
 
     working_tab = ttk.Frame(subtab_notebook)
+    working_tab.pack(expand=True, fill="both")
 
     working_tab_common_area = ttk.Frame(
         working_tab,
