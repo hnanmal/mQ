@@ -100,7 +100,7 @@ def show_splash_screen():
 
     # Add branding or loading information
     logo_img_ = Image.open("resource/app_logo.png")
-    logo_img_ = logo_img_.resize((300, 300), Image.LANCZOS)
+    logo_img_ = logo_img_.resize((300, 310), Image.LANCZOS)
     logo_img = ImageTk.PhotoImage(logo_img_)
 
     tk.Label.image = logo_img

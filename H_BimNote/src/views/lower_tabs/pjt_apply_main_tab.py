@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.font
 from PIL import Image, ImageTk
+from PIL.Image import Resampling
 from html.parser import HTMLParser
 
 # from tkinter import ttk
@@ -110,18 +111,25 @@ def create_pjtApply_Main_tab(state, subtab_notebook, exe_mode=None):
         )
         pjt_rvtSummary_area.pack(padx=20, side=tk.TOP, anchor="nw")
 
-        # FilePathRegister(pjt_rvtSummary_area)
+        std_main_img_ = Image.open("resource/pjt_input_main.png")
+        std_main_img_ = std_main_img_.resize((800, 800), resample=Resampling.LANCZOS)
+        std_main_img = ImageTk.PhotoImage(std_main_img_)
 
-        TabNavigationButton(
-            parent=section2,
-            notebook=subtab_notebook,
-            tab_index=1,
-            button_text="→ 모델링이 없다면: \n\n    Project Family Assign 탭으로 이동",
-        )
+        tk.Label.image3 = std_main_img
+
+        mainImg_label = tk.Label(pjt_rvtSummary_area, image=std_main_img)
+        # logo_label.configure(bg=frame_bgcolor)
+        mainImg_label.pack(side=tk.TOP, padx=50, pady=20, anchor="center")
+        # FilePathRegister(pjt_rvtSummary_area)
 
         ##############################################################
         ## section 3###########
-
+        TabNavigationButton(
+            parent=section3,
+            notebook=subtab_notebook,
+            tab_index=1,
+            button_text="→ 빌딩을 추가했으면 \n\n    Project Family Assign 탭으로 이동",
+        )
         # browser = BrowserWidget(
         #     section3,
         #     # html_file="recource/RVT Summary.html",

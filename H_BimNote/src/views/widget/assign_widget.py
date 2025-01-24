@@ -305,7 +305,7 @@ class WMapply_button:
             "chked_SWM": chked_SWM_data,
         }
 
-        state.log_widget.write(str(res))
+        print(str(res))
 
         return res
 

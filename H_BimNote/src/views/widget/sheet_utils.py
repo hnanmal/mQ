@@ -838,7 +838,6 @@ class TeamStd_WMsSheetView:
     def __init__(self, state, parent):
         self.state = state
         self.data_kind = "WMs"
-        # headers = ["분류", "G-WM", "Item"]
 
         # Compose TreeView, Style Manager, and State Observer
         self.sheetview = BaseSheetView(parent, headers=None)
@@ -848,16 +847,16 @@ class TeamStd_WMsSheetView:
 
         # Set up UI
         self.title_frame = ttk.Frame(parent)
-        self.title_frame.pack(anchor="w")
+        self.title_frame.pack(anchor="nw")
         self.set_title(self.title_frame)
-        self.sheetview.sheet.pack(expand=True, fill="both")
+        self.sheetview.sheet.pack(expand=True, fill="both", anchor="nw")
         self.sheetview.sheet.header_font(("Arial", 8, "normal"))
         self.sheetview.sheet.set_options(
             font=("Arial Narrow", 9, "normal"),
             default_row_height=30,
             # Bind selection events
         )  # Font name and size
-
+        self.sheetview.sheet.config(height=2000)
         # Initialize the search manager
         self.search_manager = SheetSearchManager(self.sheetview.sheet, self.state)
 
@@ -1348,6 +1347,7 @@ class Project_WM_perRVT_SheetView:
     def setup_sheet(self):
         # 헤더 설정
 
+        ## Note 칼럼 추가 예정
         headers = [
             "분류",
             "Std",
@@ -1358,6 +1358,7 @@ class Project_WM_perRVT_SheetView:
             "수식",
             "단위",
             "산출유형",
+            "Note",
         ]
 
         self.sheet.headers(
@@ -1386,7 +1387,20 @@ class Project_WM_perRVT_SheetView:
         print(f"\n 시트크기 확장 \n")
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([35, 0, 125, 400, 30, 250, 170, 35, 35])
+        self.sheet.set_column_widths(
+            [
+                35,
+                0,
+                125,
+                400,
+                30,
+                250,
+                170,
+                35,
+                35,
+                200,
+            ]
+        )
 
         # self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1460,7 +1474,6 @@ class Project_WM_perRVT_SheetView:
             selected_rvtTypes_ids,
             map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "text")),
             list,
-            # lambda x: x[0],
         )
         try:
             selected_rvtTypes_name = selected_rvtTypes_names[0]
@@ -1558,7 +1571,6 @@ class Project_WM_perRVT_SheetView:
         Apply wrapping to all cells based on their column widths.
         """
         wrapped_data = []
-        # for row_index, row in enumerate(self.sheet.get_sheet_data()):
         for row_index, row in enumerate(self.sheet.get_sheet_data()):
             wrapped_row = []
             for col_index, cell in enumerate(row):
@@ -1594,6 +1606,7 @@ class Project_WM_perRVT_SheetView:
             lambda x: x[0],
         )
 
+        ## Note 칼럼 추가시 변경 사항 없는 지 체크
         sheet_data = go(
             self.sheet.get_sheet_data(),
             map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),

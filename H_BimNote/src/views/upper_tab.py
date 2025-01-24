@@ -47,7 +47,8 @@ def create_tab_with_subtabs(state, notebook, tab_name):
 
 def create_recentBnotes_tab(state, notebook):
     # Create a style
-    frame_bgcolor = "#ebf7ee"
+    # frame_bgcolor = "#ebf7ee"
+    frame_bgcolor = "#e3e3e3"
     style = ttk.Style()
     style.configure("Custom.TFrame", background=frame_bgcolor)
 
@@ -55,7 +56,7 @@ def create_recentBnotes_tab(state, notebook):
     notebook.add(
         main_frame,
         # text="Recent Bnotes",
-        text="  Home  ",
+        text="   Home   ",
     )
 
     working_tab_paned_area = ttk.Frame(
@@ -101,7 +102,7 @@ def create_recentBnotes_tab(state, notebook):
     logo_area.pack(side=tk.TOP, anchor="center")
 
     logo_img_ = Image.open("resource/app_logo_maintab.png")
-    logo_img_ = logo_img_.resize((180, 180), resample=Resampling.LANCZOS)
+    logo_img_ = logo_img_.resize((180, 187), resample=Resampling.LANCZOS)
     logo_img = ImageTk.PhotoImage(logo_img_)
 
     tk.Label.image1 = logo_img
@@ -172,7 +173,7 @@ def create_recentBnotes_tab(state, notebook):
 
 
 def create_team_standard_tab(state, notebook):
-    subtab_notebook = create_tab_with_subtabs(state, notebook, "Team Standard")
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "   Team Standard   ")
 
     # Add each subtab
     main_tab = create_std_Main_tab(state, subtab_notebook)
@@ -183,7 +184,7 @@ def create_team_standard_tab(state, notebook):
 
 
 def create_project_standard_tab(state, notebook):
-    subtab_notebook = create_tab_with_subtabs(state, notebook, "Project Standard")
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "   Project Standard   ")
 
     # Add each subtab
     main_tab = create_pjtStd_Main_tab(state, subtab_notebook)
@@ -208,7 +209,7 @@ def create_project_standard_tab(state, notebook):
 
 
 def create_project_apply_tab(state, notebook):
-    subtab_notebook = create_tab_with_subtabs(state, notebook, "Project Input")
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "   Project Input   ")
 
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
@@ -229,7 +230,7 @@ def create_project_apply_tab(state, notebook):
 
 
 def create_project_report_tab(state, notebook):
-    subtab_notebook = create_tab_with_subtabs(state, notebook, "Project Report")
+    subtab_notebook = create_tab_with_subtabs(state, notebook, "   Project Report   ")
 
     # Add each subtab
     member_report_tab = create_report_member_tab(state, subtab_notebook)

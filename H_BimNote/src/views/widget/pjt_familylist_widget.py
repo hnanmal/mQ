@@ -17,6 +17,7 @@ class StdFamilyListWidget(tk.Frame):
 
         familylist = self.set_familylist(frame)
         self.familylist = familylist
+        self.treeview = familylist.treeview
         self.tree = familylist.treeview.tree
 
         self.selected_item = familylist.selected_item

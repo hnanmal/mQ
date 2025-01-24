@@ -96,7 +96,7 @@ def create_pjtFamList_tab(state, subtab_notebook):
     edit_mode_button.pack(anchor="w", pady=5)
 
     ##############################################################
-    ## section 2###########
+    ## section 1###########
 
     std_matching_widget_area = ttk.Frame(
         section1,
@@ -137,7 +137,7 @@ def create_pjtFamList_tab(state, subtab_notebook):
         width=100,
     )
     std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
-    std_matching_widget_area.pack(side="top", anchor="w")
+    std_matching_widget_area.pack(fill="both", expand=True, side="top", anchor="w")
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
@@ -160,7 +160,7 @@ def create_pjtFamList_tab(state, subtab_notebook):
     )  # Add padding around the button
 
     ##############################################################
-    ## section 1###########
+    ## section 2###########
 
     selected_item_label_area = ttk.Frame(
         section2,

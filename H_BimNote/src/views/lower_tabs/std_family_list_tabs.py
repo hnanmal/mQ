@@ -96,31 +96,24 @@ def create_stdFamList_tab(state, subtab_notebook):
     edit_mode_button.pack(anchor="w", pady=5)
 
     ##############################################################
-    ## section 2###########
+    ## section 1###########
 
     std_matching_widget_area = ttk.Frame(
         section1,
         width=600,
     )
 
-    std_GWMTreeView = TeamStd_GWMTreeView(state, std_matching_widget_area, view_level=1)
+    std_GWMTreeView = TeamStd_GWMTreeView(
+        state, std_matching_widget_area, showmode="tmp_team", view_level=1
+    )
     # std_GWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_GWMTreeView.tree_frame.pack_forget()
 
-    std_SWMTreeView = TeamStd_SWMTreeView(state, std_matching_widget_area, view_level=1)
+    std_SWMTreeView = TeamStd_SWMTreeView(
+        state, std_matching_widget_area, showmode="tmp_team", view_level=1
+    )
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_SWMTreeView.tree_frame.pack_forget()
-
-    # std_GWMTreeView.tree_frame.pack(
-    #     side="left",
-    #     padx=20,
-    #     pady=5,
-    # )
-    # std_SWMTreeView.tree_frame.pack(
-    #     side="left",
-    #     padx=10,
-    #     pady=5,
-    # )
 
     widgetSwitcher = WidgetSwitcher(
         state,
@@ -142,7 +135,7 @@ def create_stdFamList_tab(state, subtab_notebook):
         width=100,
     )
     std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
-    std_matching_widget_area.pack(side="top", anchor="w")
+    std_matching_widget_area.pack(fill="both", expand=True, side="top", anchor="w")
     # Create a button and place it in the window
     add_button = tk.Button(
         std_matching_btn_area,
@@ -165,7 +158,7 @@ def create_stdFamList_tab(state, subtab_notebook):
     )  # Add padding around the button
 
     ##############################################################
-    ## section 1###########
+    ## section 2###########
 
     selected_item_label_area = ttk.Frame(
         section2,
@@ -179,7 +172,9 @@ def create_stdFamList_tab(state, subtab_notebook):
         font=working_tab_font,
     )
 
-    stdFamlist_treeview = TeamStd_FamlistTreeView(state, section2, view_level=3)
+    stdFamlist_treeview = TeamStd_FamlistTreeView(
+        state, section2, showmode="tmp_team", view_level=3
+    )
     stdFamlist_treeview.treeview.tree.column(0, width=0, minwidth=0, stretch=False)
 
     # stdFamlist_treeview = TeamStd_FamlistSheetTreeView(state, section2, view_level=3)

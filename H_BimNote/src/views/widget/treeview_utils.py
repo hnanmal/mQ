@@ -234,6 +234,9 @@ class TreeViewContextMenu:
         self.menu.add_command(label="Add Item", command=self.add_item)
         self.menu.add_command(label="Delete Item", command=self.delete_item)
 
+        if self.data_kind != "std-familylist" and tgt_col == 0:
+            if "copy_Topitem" in self.funcs:
+                self.menu.add_command(label="Top항목 복사", command=self.copy_Topitem)
         if self.data_kind != "std-familylist" and tgt_col == 1:
             if "copy_GWM" in self.funcs:
                 self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
@@ -257,6 +260,10 @@ class TreeViewContextMenu:
         """Setter to update the locked status."""
         self.locked_status = status
         self.state.log_widget.write(f"Locked Status Updated: {self.locked_status}")
+
+    def copy_Topitem(self):
+        func = self.funcs.get("copy_Topitem")
+        func()
 
     def copy_GWM(self):
         func = self.funcs.get("copy_GWM")
@@ -685,6 +692,7 @@ class TeamStd_GWMTreeView:
             add_top=self.add_top_item,
             add=self.add_item,
             delete=self.delete_item,
+            copy_Topitem=self.copy_Topitem,
             copy_GWM=self.copy_GWM,
             copy_item=self.copy_item,
         )
@@ -820,6 +828,57 @@ class TeamStd_GWMTreeView:
             f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
         )
         return list(reversed(parent_ids))
+
+    def copy_Topitem(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "::copy"
+
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=0,
+            # name_depth=[1, 2],
+        )
+        state.observer_manager.notify_observers(state)
 
     def copy_GWM(self):
         state = self.state
@@ -1009,13 +1068,14 @@ class TeamStd_WMmatching_TreeView:
         self.data_kind = data_kind
         self.selected_item_relate_widget = relate_widget.selected_item
         headers = ["Work Master"]
-        hdr_widths = [1000]
+        hdr_widths = [2000]
 
         # Compose TreeView, Style Manager, and State Observer
-        tree_frame = ttk.Frame(parent, width=600, height=2000)
+        tree_frame = ttk.Frame(parent, width=3000, height=1000)
+        tree_frame.pack(expand=True, fill="both")
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
-        self.treeview.tree.config(height=3000)
+        self.treeview.tree.config(height=10)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
 
         # config selection mode
@@ -1188,6 +1248,7 @@ class TeamStd_SWMTreeView:
             add_top=self.add_top_item,
             add=self.add_item,
             delete=self.delete_item,
+            copy_Topitem=self.copy_Topitem,
             copy_SWM=self.copy_SWM,
             copy_item=self.copy_item,
         )
@@ -1325,6 +1386,57 @@ class TeamStd_SWMTreeView:
             f"Parent IDs for selected item '{selected_item_id}': {parent_ids}"
         )
         return list(reversed(parent_ids))
+
+    def copy_Topitem(self):
+        state = self.state
+
+        selected_item_id = self.treeview.tree.selection()
+        selected_item_name = go(
+            selected_item_id,
+            lambda x: self.treeview.tree.item(x, "values"),
+            filter(lambda x: x != ""),
+            list,
+        )[0]
+        new_name = selected_item_name + "::copy"
+
+        parent_item_id = self.treeview.tree.parent(selected_item_id)
+        if parent_item_id:
+            parent_item_name = go(
+                parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            parent_item_name = ""
+
+        grand_parent_item_id = self.treeview.tree.parent(parent_item_id)
+        if grand_parent_item_id:
+            grand_parent_item_name = go(
+                grand_parent_item_id,
+                lambda x: self.treeview.tree.item(x, "values"),
+                filter(lambda x: x != ""),
+                list,
+            )[0]
+        else:
+            grand_parent_item_name = ""
+
+        path = go(
+            [grand_parent_item_name, parent_item_name, selected_item_name],
+            filter(lambda x: x != ""),
+            list,
+        )
+
+        print(f"path: {path}")
+
+        self.treeDataManager.copy_node(
+            data_kind=self.data_kind,
+            path=path,
+            new_name=new_name,
+            name_depth=0,
+            # name_depth=[1, 2],
+        )
+        state.observer_manager.notify_observers(state)
 
     def copy_SWM(self):
         state = self.state
@@ -2212,6 +2324,7 @@ class TeamStd_calcDict_TreeView:
         self.state = state
         # self.data_kind = data_kind
         self.data_kind = "std-calcdict"
+        self.relate_widget = relate_widget
         self.view_level = view_level
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(
@@ -2338,28 +2451,58 @@ class TeamStd_calcDict_TreeView:
         # state.log_widget.write(str(targetData))
         return targetData
 
+    def get_selected_row_values(self, event):
+        """Handle right-click on a Treeview row to get its values."""
+        # Identify the item under the mouse pointer
+        item_id = self.treeview.tree.selection()
+        if item_id:  # If an item is found
+            values = self.treeview.tree.item(
+                item_id, "values"
+            )  # Get the values of the clicked row
+            print(f"Right-clicked row values: {values}")
+            return values
+
     def update(self, event=None, view_level=None):
         view_level = self.view_level
         self.state.log_widget.write(f"view_level {view_level}")
         state = self.state
         """Update the TreeView whenever the state changes."""
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
-        self.state.log_widget.write(
-            f"관련위젯 선택항목 출력 : {self.selected_item_relate_widget.get()}"
-        )
+        print(f"관련위젯 선택항목 출력 : {self.selected_item_relate_widget.get()}")
 
         try:
             # # Split the selected item path to find the grandparent, parent, and selected item names
             pattern = r"^\d+\.\d+$"
-            selected_NoItem = go(
+            _selected_NoItem = go(
                 self.selected_item_relate_widget.get().split(" | "),
+                reversed,
+                list,
+            )
+            selected_NoItem = go(
+                _selected_NoItem,
                 filter(lambda x: re.match(pattern, x)),
                 next,
             )
+            selected_idx = _selected_NoItem.index(selected_NoItem)
+            print(f"selected_idx::~   {selected_idx}")
 
-            # selected_qItem_name = f"Q{selected_item_name}"
-            selected_qItem_name = f"Q{selected_NoItem}"
-            self.state.log_widget.write(f"산출유형번호 : {selected_qItem_name}")
+            std_famtree = self.relate_widget.treeview.tree
+            std_famtree_select = std_famtree.selection()
+
+            if selected_idx == 0:
+                selected_qItem_name = std_famtree.item(std_famtree_select, "values")[-1]
+            elif selected_idx == 1:
+                tgt = std_famtree.parent(std_famtree_select)
+                selected_qItem_name = std_famtree.item(tgt, "values")[-1]
+            elif selected_idx == 2:
+                _parent = std_famtree.parent(std_famtree_select)
+                tgt = std_famtree.parent(_parent)
+                selected_qItem_name = std_famtree.item(tgt, "values")[-1]
+                pass
+
+            print(f"selected_qItem_name::~   {selected_qItem_name}")
+
+            # selected_qItem_name = f"Q{selected_NoItem}"
 
             # Ensure the data kind exists in the team standard information
             if self.data_kind in state.team_std_info:

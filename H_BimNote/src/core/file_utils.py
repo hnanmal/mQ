@@ -29,7 +29,7 @@ def save_to_json_teamStdInfo(state, _file_path=None):
         print(f"Data successfully saved to {file_path}")
         state.root.title(
             "B-note :: Hyundai Engineering Plant Architecture Bim Note"
-            + "\t" * 9
+            + "    " * 25
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(
@@ -87,7 +87,7 @@ def load_from_json(state, _file_path=None):
         state.log_widget.write(f"Data successfully loaded from {file_path}\n")
         state.root.title(
             "B-note :: Hyundai Engineering Plant Architecture Bim Note"
-            + "\t" * 9
+            + "    " * 25
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(

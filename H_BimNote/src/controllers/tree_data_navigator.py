@@ -313,24 +313,30 @@ class TreeDataManager:
 
             # Ensure the path includes the parent's path and the target node name
             parent_path = path[:-1]
-            target_name = path[-1]
+            target_name = path[-1] if path else None
 
-            # Find the parent node
-            parent_node = find_node_by_path(
-                self.team_std_info[data_kind]["children"], parent_path
-            )
+            # Handle the case where the node is a top-level node
+            parent_node = None
+            if parent_path:
+                # Find the parent node for non-top-level nodes
+                parent_node = find_node_by_path(
+                    self.team_std_info[data_kind]["children"], parent_path
+                )
 
-            if not parent_node or "children" not in parent_node:
+            if parent_path and (not parent_node or "children" not in parent_node):
                 print(f"Could not find the parent node for path: {parent_path}")
                 return
 
-            # Find the target node in the parent's children
+            # Get the correct children list (top-level or regular children)
+            children_list = (
+                parent_node["children"]
+                if parent_node
+                else self.team_std_info[data_kind]["children"]
+            )
+
+            # Find the target node in the children list
             selected_node = next(
-                (
-                    node
-                    for node in parent_node["children"]
-                    if node.get("name") == target_name
-                ),
+                (node for node in children_list if node.get("name") == target_name),
                 None,
             )
 
@@ -345,14 +351,11 @@ class TreeDataManager:
                 depth = node["values"].index(node["name"])
 
                 new_values = node["values"][:]
-                # if depth == 1:
                 if depth == name_depth:
-                    # if depth in name_depth:
                     new_values[depth] = new_name
 
                 copied_node = {
                     "name": new_name if new_name else node["name"],
-                    # "values": node["values"][:],  # Copy values
                     "values": new_values,  # Copy values
                 }
 
@@ -377,13 +380,105 @@ class TreeDataManager:
             # Generate a deep copy with a new name
             copied_node = deep_copy_node(selected_node, new_name)
 
-            # Insert the copied node directly after the selected node in the parent's children
-            index = parent_node["children"].index(selected_node)
-            parent_node["children"].insert(index + 1, copied_node)
+            # Insert the copied node directly after the selected node in the children list
+            index = children_list.index(selected_node)
+            children_list.insert(index + 1, copied_node)
             print(f"Copied node '{target_name}' to '{new_name}'.")
 
         except Exception as e:
             print(f"Error copying node: {e}")
+
+    # def copy_node(self, data_kind, path, new_name, name_depth):
+    #     """Copy the selected node and its children, placing the copy directly below the original."""
+    #     try:
+    #         # Find the node by traversing the path
+    #         def find_node_by_path(data, path):
+    #             current_node = None
+    #             for name in path:
+    #                 if isinstance(data, list):
+    #                     current_node = next(
+    #                         (node for node in data if node.get("name") == name), None
+    #                     )
+    #                     if current_node is None:
+    #                         return None
+    #                     data = current_node.get("children", [])
+    #                 else:
+    #                     return None
+    #             return current_node
+
+    #         # Ensure the path includes the parent's path and the target node name
+    #         parent_path = path[:-1]
+    #         target_name = path[-1]
+
+    #         # Find the parent node
+    #         parent_node = find_node_by_path(
+    #             self.team_std_info[data_kind]["children"], parent_path
+    #         )
+
+    #         if not parent_node or "children" not in parent_node:
+    #             print(f"Could not find the parent node for path: {parent_path}")
+    #             return
+
+    #         # Find the target node in the parent's children
+    #         selected_node = next(
+    #             (
+    #                 node
+    #                 for node in parent_node["children"]
+    #                 if node.get("name") == target_name
+    #             ),
+    #             None,
+    #         )
+
+    #         if not selected_node:
+    #             print(f"Could not find the node '{target_name}' to copy.")
+    #             return
+
+    #         # Create a deep copy of the selected node
+    #         def deep_copy_node(node, new_name=None):
+    #             """Deep copy a node, renaming it if a new_name is provided."""
+    #             # Determine the depth level of the selected node
+    #             depth = node["values"].index(node["name"])
+
+    #             new_values = node["values"][:]
+    #             # if depth == 1:
+    #             if depth == name_depth:
+    #                 # if depth in name_depth:
+    #                 new_values[depth] = new_name
+
+    #             copied_node = {
+    #                 "name": new_name if new_name else node["name"],
+    #                 # "values": node["values"][:],  # Copy values
+    #                 "values": new_values,  # Copy values
+    #             }
+
+    #             # Check if the node has children
+    #             if "children" in node:
+    #                 if isinstance(node["children"], list):
+    #                     # Check if children are tree nodes or simple items
+    #                     if all(isinstance(child, dict) for child in node["children"]):
+    #                         # Deep copy child tree nodes
+    #                         copied_node["children"] = [
+    #                             deep_copy_node(child) for child in node["children"]
+    #                         ]
+    #                     else:
+    #                         # Directly copy the list of items
+    #                         copied_node["children"] = node["children"][:]
+    #                 else:
+    #                     # If children is not a list, handle it gracefully
+    #                     copied_node["children"] = []
+
+    #             return copied_node
+
+    #         # Generate a deep copy with a new name
+    #         copied_node = deep_copy_node(selected_node, new_name)
+
+    #         # Insert the copied node directly after the selected node in the parent's children
+    #         index = parent_node["children"].index(selected_node)
+    #         parent_node["children"].insert(index + 1, copied_node)
+    #         print(f"Copied node '{target_name}' to '{new_name}'.")
+
+    #     except Exception as e:
+    #         print(f"Error copying node: {e}")
 
 
 class TreeDataManager_treeview(TreeDataManager):

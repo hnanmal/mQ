@@ -58,22 +58,22 @@ def create_stdGWM_tab(state, subtab_notebook):
     # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=600,
+        width=2000,
         height=3000,
     )
-    section3 = ttk.Frame(
-        working_tab_paned_area,
-        width=600,
-        height=3000,
-    )
+    # section3 = ttk.Frame(
+    #     working_tab_paned_area,
+    #     width=600,
+    #     height=3000,
+    # )
 
     working_tab_paned_window.add(section1, minsize=400)
-    working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    working_tab_paned_window.add(section2, minsize=1000)
+    # working_tab_paned_window.add(section3, minsize=600)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    working_tab_paned_window.paneconfigure(section3, height=3000)
+    working_tab_paned_window.paneconfigure(section2, height=3000)
+    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -98,17 +98,31 @@ def create_stdGWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    stdGWM_treeview = TeamStd_GWMTreeView(state, section1, showmode="tmp team")
+    stdGWM_treeview = TeamStd_GWMTreeView(state, section1, showmode="tmp_team")
     DefaultTreeViewStyleManager.apply_style(stdGWM_treeview.treeview.tree)
     state.stdGWM_treeview = stdGWM_treeview
 
     ##############################################################
     ## section 2###########
-    selected_item_label_area = ttk.Frame(
+    matching_and_WMs_area = ttk.Frame(
         section2,
+        width=3000,
+        height=3000,
+    )
+    matching_and_WMs_area.pack(fill="both", expand=True, side="left", anchor="nw")
+
+    matching_area = ttk.Frame(
+        matching_and_WMs_area,
+        width=3000,
+        # height=100,
+    )
+    matching_area.pack(fill="both", expand=False, side="top", anchor="nw")
+
+    selected_item_label_area = ttk.Frame(
+        matching_area,
         width=600,
     )
-    selected_item_label_area.pack(side=tk.TOP, anchor="w")
+    selected_item_label_area.pack(side=tk.TOP, anchor="nw")
 
     selected_item_label = ttk.Label(
         selected_item_label_area,
@@ -122,12 +136,12 @@ def create_stdGWM_tab(state, subtab_notebook):
         font=working_tab_font,
         foreground="blue",
     )
-    selected_item_label.pack(side="left", padx=5, pady=5, anchor="w")
-    selected_item.pack(side="left", padx=5, pady=5, anchor="w")
+    selected_item_label.pack(side="left", padx=5, pady=5, anchor="nw")
+    selected_item.pack(side="left", padx=5, pady=5, anchor="nw")
 
     std_matching_widget_area = ttk.Frame(
-        section2,
-        width=600,
+        matching_area,
+        width=2000,
     )
 
     std_matching_treeview = TeamStd_WMmatching_TreeView(
@@ -135,7 +149,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     )
 
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
-    std_matching_treeview.treeview.tree.config(height=800)
+    std_matching_treeview.treeview.tree.config(height=7)
 
     ######### notify_targets 등록 ###############################################
     # state.std_matching_treeview_GWM = std_matching_treeview
@@ -143,59 +157,56 @@ def create_stdGWM_tab(state, subtab_notebook):
     #############################################################################
 
     std_matching_btn_area = ttk.Frame(
-        section2,
+        matching_area,
         width=100,
     )
-    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
-    std_matching_widget_area.pack(side="top", anchor="w")
+    std_matching_widget_area.pack(anchor="nw")
+    std_matching_btn_area.pack(padx=5, pady=5, anchor="center")
     # Create a button and place it in the window
-    add_button = tk.Button(
+    add_button = ttk.Button(
         std_matching_btn_area,
-        text="Add 🡇",  # Button text
+        text="Add 🡅",  # Button text
         command=lambda: handle_add_button_press(
             state,
             # data_kind="std-GWM",
             related_widget=stdGWM_treeview,
         ),  # Function to call when clicked
-        font=("Arial", 10),  # Custom font for button text
-        bg="#fffec0",  # Background color
-        fg="black",  # Text color
-        width=8,  # Width of the button
-        height=1,  # Height of the button
-        relief=tk.RAISED,
-    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+        bootstyle="success",
+    )
 
     # state.std_matching_add_btn = add_button
 
     # Create a button and place it in the window
-    del_button = tk.Button(
+    del_button = ttk.Button(
         std_matching_btn_area,
-        text="Del 🡅",  # Button text
+        text="Del 🡇",  # Button text
         command=lambda: handle_del_button_press(
             state,
             # data_kind="std-GWM",
             related_widget=stdGWM_treeview,
         ),  # Function to call when clicked
-        font=("Arial", 10),  # Custom font for button text
-        bg="#fffec0",  # Background color
-        fg="black",  # Text color
-        width=8,  # Width of the button
-        height=1,  # Height of the button
-        relief=tk.RAISED,
-    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-    del_button.pack(
-        side="left", padx=5, pady=5, anchor="nw"
-    )  # Add padding around the button
+        bootstyle="warning",
+    )
+
     add_button.pack(
-        side="left", padx=5, pady=5, anchor="nw"
+        side="left", padx=50, pady=5, anchor="nw"
+    )  # Add padding around the button
+    del_button.pack(
+        side="left", padx=50, pady=5, anchor="nw"
     )  # Add padding around the button
 
     # print(state.std_edit_mode)
 
     ##############################################################
     ## section 3###########
+    WMs_area = ttk.Frame(
+        matching_and_WMs_area,
+        width=2000,
+        height=2000,
+    )
+    WMs_area.pack(fill="both", expand=True, side="top", anchor="nw")
 
-    WMs_sheet = TeamStd_WMsSheetView(state, section3)
+    WMs_sheet = TeamStd_WMsSheetView(state, WMs_area)
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
@@ -250,22 +261,22 @@ def create_stdSWM_tab(state, subtab_notebook):
     )
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=600,
+        width=2000,
         height=3000,
     )
-    section3 = ttk.Frame(
-        working_tab_paned_area,
-        width=600,
-        height=3000,
-    )
+    # section3 = ttk.Frame(
+    #     working_tab_paned_area,
+    #     width=600,
+    #     height=3000,
+    # )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=600)
+    # working_tab_paned_window.add(section3, minsize=600)
 
     working_tab_paned_window.paneconfigure(section1, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=600, height=3000)
-    working_tab_paned_window.paneconfigure(section3, height=3000)
+    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -289,13 +300,27 @@ def create_stdSWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 1###########
-    stdSWM_treeview = TeamStd_SWMTreeView(state, section1, showmode="tmp team")
+    stdSWM_treeview = TeamStd_SWMTreeView(state, section1, showmode="tmp_team")
     DefaultTreeViewStyleManager.apply_style(stdSWM_treeview.treeview.tree)
 
     ##############################################################
     ## section 2###########
-    seleted_item_label_area = ttk.Frame(
+    matching_and_WMs_area = ttk.Frame(
         section2,
+        width=3000,
+        height=3000,
+    )
+    matching_and_WMs_area.pack(fill="both", expand=True, side="left", anchor="nw")
+
+    matching_area = ttk.Frame(
+        matching_and_WMs_area,
+        width=3000,
+        # height=100,
+    )
+    matching_area.pack(fill="both", expand=False, side="top", anchor="nw")
+
+    seleted_item_label_area = ttk.Frame(
+        matching_area,
         width=600,
     )
     seleted_item_label_area.pack(side=tk.TOP, anchor="w")
@@ -316,15 +341,15 @@ def create_stdSWM_tab(state, subtab_notebook):
     seleted_item.pack(side="left", padx=5, pady=5, anchor="w")
 
     std_matching_widget_area = ttk.Frame(
-        section2,
-        width=600,
+        matching_area,
+        width=2000,
     )
 
     std_matching_treeview = TeamStd_WMmatching_TreeView(
         state, std_matching_widget_area, stdSWM_treeview, data_kind="std-SWM"
     )
     DefaultTreeViewStyleManager.apply_style(std_matching_treeview.treeview.tree)
-    std_matching_treeview.treeview.tree.config(height=800)
+    std_matching_treeview.treeview.tree.config(height=7)
 
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(std_matching_treeview)
@@ -332,51 +357,42 @@ def create_stdSWM_tab(state, subtab_notebook):
     # state.std_matching_treeview_SWM = std_matching_treeview
 
     std_matching_btn_area = ttk.Frame(
-        section2,
+        matching_area,
         width=100,
     )
-    std_matching_btn_area.pack(side="top", padx=5, pady=5, anchor="ne")
-    std_matching_widget_area.pack(side="top", anchor="w")
+    std_matching_widget_area.pack(anchor="nw")
+    std_matching_btn_area.pack(padx=5, pady=5, anchor="center")
     # Create a button and place it in the window
-    add_button = tk.Button(
+    add_button = ttk.Button(
         std_matching_btn_area,
-        text="Add 🡇",  # Button text
+        text="Add 🡅",  # Button text
         command=lambda: handle_add_button_press(
             state,
             # data_kind="std-SWM",
             related_widget=stdSWM_treeview,
         ),  # Function to call when clicked
-        font=("Arial", 10),  # Custom font for button text
-        bg="#fffec0",  # Background color
-        fg="black",  # Text color
-        width=8,  # Width of the button
-        height=1,  # Height of the button
-        relief=tk.RAISED,
-    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
+        bootstyle="success",
+    )
 
     # state.std_matching_add_btn = add_button
 
     # Create a button and place it in the window
-    del_button = tk.Button(
+    del_button = ttk.Button(
         std_matching_btn_area,
-        text="Del 🡅",  # Button text
+        text="Del 🡇",  # Button text
         command=lambda: handle_del_button_press(
             state,
             # data_kind="std-SWM",
             related_widget=stdSWM_treeview,
         ),  # Function to call when clicked
-        font=("Arial", 10),  # Custom font for button text
-        bg="#fffec0",  # Background color
-        fg="black",  # Text color
-        width=8,  # Width of the button
-        height=1,  # Height of the button
-        relief=tk.RAISED,
-    )  # Border style: can be FLAT, SUNKEN, RAISED, GROOVE, RIDGE
-    del_button.pack(
-        side="left", padx=5, pady=5, anchor="nw"
-    )  # Add padding around the button
+        bootstyle="warning",
+    )
+
     add_button.pack(
-        side="left", padx=5, pady=5, anchor="nw"
+        side="left", padx=50, pady=5, anchor="nw"
+    )  # Add padding around the button
+    del_button.pack(
+        side="left", padx=50, pady=5, anchor="nw"
     )  # Add padding around the button
     # state.std_matching_del_btn = del_button
 
@@ -384,8 +400,14 @@ def create_stdSWM_tab(state, subtab_notebook):
 
     ##############################################################
     ## section 3###########
+    WMs_area = ttk.Frame(
+        matching_and_WMs_area,
+        width=2000,
+        height=2000,
+    )
+    WMs_area.pack(fill="both", expand=True, side="top", anchor="nw")
 
-    WMs_inSWM_sheet = TeamStd_WMsSheetView(state, section3)
+    WMs_inSWM_sheet = TeamStd_WMsSheetView(state, WMs_area)
 
     # Register widgets with EditModeManager
     edit_mode_manager.register_widgets(
