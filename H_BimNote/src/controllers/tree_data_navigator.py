@@ -570,7 +570,12 @@ class TreeDataManager_treeview(TreeDataManager):
 
                 # Update the values for the item
                 new_values = list(selected_GWMitem["values"])
-                new_values[2] = f"[ {state.switch_widget_status.get()} ]"
+                if len(new_values) < 3:
+                    dummy = (3 - len(new_values)) * [""]
+                    new_values.extend(dummy)
+                    new_values[2] = f"[ {state.switch_widget_status.get()} ]"
+                else:
+                    new_values[2] = f"[ {state.switch_widget_status.get()} ]"
                 new_values.insert(0, "")
                 new_values.insert(0, "")
                 new_values.insert(0, "")
@@ -709,7 +714,10 @@ class TreeDataManager_treeview(TreeDataManager):
                 formula_index = (
                     len(matching_reference["values"]) - 1
                 )  # Assuming formula is the last value
-                new_child_value[-1] = matching_reference["values"][formula_index]
+                try:
+                    new_child_value[-1] = matching_reference["values"][formula_index]
+                except:
+                    new_child_value[-1] = ""
 
             # Add placeholders for columns
             # new_child_value.insert(0, "")

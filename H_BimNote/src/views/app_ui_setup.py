@@ -63,7 +63,7 @@ def initialize_app(root, _state=None):
 
     root.title("B-note :: Hyundai Engineering Plant Architecture Bim Note")
     root.geometry("1400x900+100+100")
-    root.state("zoomed")
+    # root.state("zoomed")
 
     # define_styles()
 
@@ -77,16 +77,18 @@ def initialize_app(root, _state=None):
     menubar.add_cascade(label="File", menu=file_menu)
     file_menu.add_command(
         label="현재 B-note 저장            (Ctrl+S)",
-        command=lambda: save_to_json_teamStdInfo(state),
+        command=lambda: save_to_json_teamStdInfo(
+            state, _file_path=state.current_filepath
+        ),
     )  # save_to_json)
     file_menu.add_command(
         label="다른이름으로 저장          (Ctrl+Shift+S)",
         command=lambda: save_to_json_teamStdInfo(state),
-    )  # save_to_json)
+    )
     file_menu.add_command(
         label="B-note 열기                   (Ctrl+O)",
         command=lambda: load_from_json(state),
-    )  # save_to_json)
+    )
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=root.quit)
 

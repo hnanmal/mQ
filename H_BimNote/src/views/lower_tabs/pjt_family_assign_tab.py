@@ -35,6 +35,8 @@ from src.views.widget.assign_widget import (
     WMapply_button,
 )
 from src.views.widget.collapsing_frame import CollapsingFrame
+from src.views.widget.new_window import open_new_window_byFunc
+from src.views.lower_tabs.group_WM_tabs import create_wmSheet_window
 
 
 def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
@@ -129,15 +131,27 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     builing_select_combobox = Builing_select_combobox(state, working_tab_common_area)
     state.builing_select_combobox = builing_select_combobox
 
+    ### button for new WM sheet
+    wm_newWindow_button = ttk.Button(
+        working_tab_common_area,
+        text="참조용 WM sheet 새창에서 열기",
+        command=lambda: open_new_window_byFunc(
+            state,
+            tab_func=create_wmSheet_window,
+        ),
+    )
+    wm_newWindow_button.pack(anchor="e")
+
     ##############################################################
     ## section 1###########
-    pjt_famlist = StdFamilyListWidget(state, section1)
+    pjt_assign_famlist = StdFamilyListWidget(state, section1)
+    state.pjt_assign_famlist = pjt_assign_famlist
 
     ##############################################################
     ## section 2###########
     curBuilding_widget = Current_building_label(state, section2)
 
-    modelType_entry = ModelType_entry(state, section2, relate_widget=pjt_famlist)
+    modelType_entry = ModelType_entry(state, section2, relate_widget=pjt_assign_famlist)
 
     typeAssign_treeview = TypeAssign_treeview(
         state, section2, relate_widget=modelType_entry
@@ -154,7 +168,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     pjtAssign_calcDict_TreeView = TeamStd_calcDict_TreeView(
         state,
         calc_dict_area,
-        relate_widget=pjt_famlist,
+        relate_widget=pjt_assign_famlist,
         view_level=3,
     )
     pjtAssign_calcDict_TreeView.treeview.tree.config(height=4)
@@ -204,7 +218,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     projectApply_GWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
         state,
         GWMarea,
-        pjt_famlist,
+        pjt_assign_famlist,
         typeAssign_treeview,
     )
     ######### notify_targets 등록 ###############################################
@@ -214,7 +228,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     projectApply_SWM_Selcet_SheetView = ProjectApply_GWMSWM_Selcet_SheetView(
         state,
         SWMarea,
-        pjt_famlist,
+        pjt_assign_famlist,
         typeAssign_treeview,
         wm_mode="[ SWM ]",
     )
@@ -226,7 +240,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         state,
         main_area,
         ref_widgets=[
-            pjt_famlist,
+            pjt_assign_famlist,
             projectApply_GWM_Selcet_SheetView,
             projectApply_SWM_Selcet_SheetView,
             typeAssign_treeview,
@@ -284,7 +298,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     edit_mode_manager.register_widgets(
         mode_button=edit_mode_button,
         tree_views=[
-            pjt_famlist.familylist,
+            pjt_assign_famlist.familylist,
         ],
         # tree_ctrl_btn=[
         #     add_button,

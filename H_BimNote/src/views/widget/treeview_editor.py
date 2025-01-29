@@ -101,7 +101,11 @@ class TreeviewEditor:
         self.entry_widget.destroy()
         self.entry_widget = None
 
-        self.state.on_level_selected(None)
+        # self.state.on_level_selected(None)
+        try:
+            self.impl_treeview.place_selected_item_at_top()
+        except:
+            pass
 
     def on_edit_cancel(self, event):
         # Cancel editing and destroy the Entry widget
@@ -165,4 +169,8 @@ class TreeviewEditor_forAssignTreeview(TreeviewEditor):
         self.entry_widget.destroy()
         self.entry_widget = None
 
-        self.state.on_level_selected(None)
+        # self.state.on_level_selected(None)
+        try:
+            self.impl_treeview.place_selected_item_at_top()
+        except:
+            pass

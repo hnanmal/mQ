@@ -56,7 +56,7 @@ def create_report_member_tab(state, subtab_notebook, exe_mode=None):
     ## refresh 버튼
     refresh_button = ttk.Button(
         working_tab_common_area,
-        text="Refresh B-note",
+        text="↻ Refresh B-note",
         command=lambda: load_from_json(state, _file_path=state.current_filepath),
         bootstyle="info",
     )

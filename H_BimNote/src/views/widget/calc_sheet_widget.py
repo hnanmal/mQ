@@ -6,6 +6,7 @@ import openpyxl
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
+from src.core.fp_utils import *
 from src.views.widget.widget import StateObserver
 
 # from src.views.widget.sheet_utils import SheetSearchManager
@@ -85,6 +86,11 @@ class ReportSheetWidget(ttk.Frame):
 
         # Load data
         self.load_data()
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
 
         # Create a frame for the top controls (button)
         self.control_frame = ttk.Frame(parent)
@@ -99,7 +105,8 @@ class ReportSheetWidget(ttk.Frame):
         # Initialize tksheet widget
         self.sheet = Sheet(
             self,
-            data=self.data,
+            # data=self.data,
+            data=self.total_data,
             column_width=180,
             # theme="dark",
             # theme="light green",
@@ -107,16 +114,17 @@ class ReportSheetWidget(ttk.Frame):
             width=1000,
         )
         self.sheet.enable_bindings(
+            "select_all",
+            "single_select",
+            "drag_select",
+            "row_select",
             "copy",
             "rc_select",
             "arrowkeys",
             "double_click_column_resize",
             "column_width_resize",
             "column_select",
-            "row_select",
-            "drag_select",
-            "single_select",
-            "select_all",
+            "row_height_resize",
         )
 
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
@@ -160,9 +168,251 @@ class ReportSheetWidget(ttk.Frame):
                     50,  # 산출결과
                     50,  # 단위
                     50,  # 산출유형
+                    200,  # Note
                     200,  # 산출로그
                 ]
             )
+        self.sheet.set_options(default_row_height=33)
+
+    def get_manula_item_data(self):
+        ## dynamo 로직 준용
+        def calc_formula(formula, calc_param_list):
+
+            try:
+                tmp_formula = go(
+                    formula.split("\n"),
+                    filter(lambda x: "#" not in x),
+                    list,
+                )[0]
+            except:
+                tmp_formula = ""
+
+            if (
+                tmp_formula != "=Exca"
+                and tmp_formula != "=Back"
+                and tmp_formula != "=Disp"
+            ):
+                for n, v in calc_param_list:
+                    tmp_formula = tmp_formula.replace(n, str(v))
+                try:
+                    calc_result = eval(tmp_formula.strip("=")), "계산 성공"
+                except:
+                    calc_result = 0, "계산 실패 - 수식 혹은 파라미터가 유효하지 않음"
+            else:
+                tmp_formula = formula
+                calc_result = (
+                    0,
+                    "토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망",
+                )
+
+            return {
+                "수식": "'" + formula,
+                "대입수식": "'" + tmp_formula,
+                "산출결과": calc_result[0],
+                "산출로그": calc_result[1],
+            }
+
+        state = self.state
+
+        maunal_node = go(
+            state.team_std_info["project-assigntype"],
+            lambda x: x.get("children"),
+            filter(lambda x: x["values"][1] == state.current_building.get()),
+            filter(lambda x: "14." in x["values"][2].split("|")[1].strip()),
+            # map(lambda x: x["children"]),
+            list,
+        )
+        print(f"maunal_node:: {maunal_node}")
+
+        wm_dict_hdrs = [
+            "분류",
+            "표준타입",
+            "상세분류",
+            "wm",
+            "gauge",
+            # "add_spec",
+            "Add_spec.",
+            "수식",
+            "단위",
+            "산출유형",
+            "Note",
+        ]
+        flatten_hdrs = [
+            "카테고리",
+            "표준타입번호",
+            "표준타입",
+            "분류",
+            "name",
+            "GUID",
+            "상세분류",
+            "wm_code",
+            "gauge",
+            "Description",
+            "Spec.",
+            "Add_spec.",
+            "수식",
+            "대입수식",
+            "산출결과",
+            "단위",
+            "산출유형",
+            "Note",
+            "산출로그",
+        ]
+
+        def calc_and_set_data(node_):
+            node = deepcopy(node_)
+
+            cat = node["values"][2].split("|")[1].strip()
+            std_type_no = node["values"][2].split("|")[2].strip()
+            name = node["name"]
+
+            # calcType_no = list(list(node["children"])[0])[8]
+            # print(f"calcType_no:: {calcType_no}")
+
+            # calcdict = go(
+            #     state.team_std_info["std-calcdict"]["children"],
+            #     filter(lambda x: x["name"] == calcType_no),
+            #     list,
+            # )[0]
+            # print(f"calcdict:: {calcdict}")
+
+            # param_list = go(
+            #     calcdict["children"],
+            #     list,
+            #     map(lambda x: x["values"]),
+            #     list,
+            #     map(lambda x: list(x)[1:]),
+            #     lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),
+            #     list,
+            # )
+            # print(f"param_list:: {param_list}")
+
+            wm_list = go(
+                node["children"],
+                list,
+            )
+
+            wm_dicts = go(
+                wm_list,
+                deepcopy,
+                map(lambda x: dict(zip(wm_dict_hdrs, x))),
+                list,
+            )
+            for wm_dict in wm_dicts:
+                if "Note" not in wm_dict.keys():
+                    wm_dict.update({"Note": ""})
+            print(f"wm_dicts:: {wm_dicts}")
+
+            res = []
+            for wm_dict in wm_dicts:
+                calcType_no = wm_dict["산출유형"]
+                calcdict = go(
+                    state.team_std_info["std-calcdict"]["children"],
+                    filter(lambda x: x["name"] == calcType_no),
+                    list,
+                )[0]
+                # print(f"calcdict:: {calcdict}")
+                param_list = go(
+                    calcdict["children"],
+                    list,
+                    map(lambda x: x["values"]),
+                    list,
+                    map(lambda x: list(x)[1:]),
+                    lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),
+                    list,
+                )
+
+                wm_dict.update(calc_formula(wm_dict["수식"], param_list))
+                wm_code = wm_dict["wm"].split("|")[0].strip()
+
+                try:
+                    wm_desc = wm_dict["wm"].split(" | ")[7]
+                except:
+                    wm_desc = ""
+
+                wm_spec = go(
+                    wm_dict["wm"].split(" | ")[9:-4],
+                    filter(lambda x: not x.isnumeric()),
+                    filter(
+                        lambda x: not (
+                            ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+                        )
+                    ),
+                    lambda x: "\n".join(x),
+                )
+
+                wm_dict.update(
+                    {
+                        "name": name,
+                        "GUID": "수동산출항목",
+                        "카테고리": cat,
+                        "표준타입번호": std_type_no,
+                        "wm_code": wm_code,
+                        "Description": wm_desc,
+                        "Spec.": wm_spec,
+                        "산출로그": "계산 성공",
+                    }
+                )
+                row = []
+                try:
+                    for i in flatten_hdrs:
+                        row.append(wm_dict[i])
+                except:
+                    row = [
+                        "",
+                        "",
+                        wm_dict["표준타입"],
+                        "",
+                        wm_dict["name"],
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                    ]
+                res.append(row)
+            return res
+            # res_.append(wm_dict)
+
+        res = []
+        for node_ in maunal_node:
+            try:
+                rows = calc_and_set_data(node_)
+                for row in rows:
+                    res.append(row)
+            except:
+                log = [
+                    "",
+                    "",
+                    "",
+                    "",
+                    node_["name"],
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                ]
+                res.append(log)
+        return res
 
     def update(self, event=None):
         """Update the Sheet widget whenever the state changes."""
@@ -173,9 +423,18 @@ class ReportSheetWidget(ttk.Frame):
         # Reload data
         self.load_data()
 
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
+
         # Set headers and data
         self.sheet.set_sheet_data(
-            self.data, reset_col_positions=True, reset_row_positions=True
+            # self.data, reset_col_positions=True, reset_row_positions=True
+            self.total_data,
+            reset_col_positions=True,
+            reset_row_positions=True,
         )
         self.sheet.headers(self.column_headers)
 
@@ -290,7 +549,7 @@ class ReportSheetWidget(ttk.Frame):
         else:  # Apply filters
             rows = [
                 rn
-                for rn, row in enumerate(self.data)
+                for rn, row in enumerate(self.total_data)
                 if all(row[c] == e or e == "all" for c, e in enumerate(hdrs))
             ]
             self.sheet.display_rows(rows=rows, all_displayed=False)
@@ -316,24 +575,9 @@ class ReportSheetWidget(ttk.Frame):
         )
 
         # Recompute dropdown options based on the full dataset
+        # self.update()
         self.add_dropdowns()
 
         # Ensure everything is redrawn
         self.set_colums_widths()
         self.sheet.redraw()
-
-
-# # Example usage
-# if __name__ == "__main__":
-#     root = tk.Tk()
-#     root.title("Excel Data Viewer with Filters")
-#     root.geometry("1200x600")
-
-#     # Replace with your Excel file path
-#     excel_file_path = "SACE2__excel_qty_result_0121-022123.xlsx"
-
-#     # Create and pack the ExcelSheetWidget
-#     excel_widget = ExcelSheetWidget(root, excel_file_path)
-#     excel_widget.pack(fill=tk.BOTH, expand=True)
-
-#     root.mainloop()

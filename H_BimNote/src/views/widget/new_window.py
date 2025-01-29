@@ -7,12 +7,14 @@ from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
 
 # def open_tab_in_new_window(parent_notebook, tab_index):
 def open_tab_in_new_window_rvtSummary(state):
+    icon_path = "resource/app_logo_maintab.ico"
     """Open the contents of a specific tab in a new window."""
     # Create a new window
     new_window = tk.Toplevel()
     new_window.title("Rvt Summary Window")
     new_window.geometry("700x900")
 
+    new_window.iconbitmap(icon_path)
     # Set the new window to always be on top
     new_window.attributes("-topmost", True)
 
@@ -29,17 +31,35 @@ def open_tab_in_new_window_rvtSummary(state):
 
 
 def open_tab_in_new_window(state, subnotebook, tab_funcs, event=None):
+    icon_path = "resource/app_logo_maintab.ico"
     # Get the index of the tab that was clicked
     tab_index = subnotebook.index("@{},{}".format(event.x, event.y))
     tab_name = subnotebook.tab(tab_index, "text")
 
     new_window = tk.Toplevel()
-    new_window.title("New Window")
+    new_window.title(f"B-note :: @ {tab_name} - New Window")
+    new_window.iconbitmap(icon_path)
     new_window.geometry("700x900")
+    new_window.attributes("-topmost", True)
     frame = ttk.Frame(new_window)
     frame.pack(expand=True, fill="both")
 
     tab_funcs[tab_index](state, new_window, exe_mode="new window")
+
+
+def open_new_window_byFunc(state, tab_func, event=None):
+    icon_path = "resource/app_logo_maintab.ico"
+    window_name = "WM sheet"
+
+    new_window = tk.Toplevel()
+    new_window.title(f"B-note :: @ {window_name} - New Window")
+    new_window.iconbitmap(icon_path)
+    new_window.geometry("700x900")
+    new_window.attributes("-topmost", True)
+    # frame = ttk.Frame(new_window)
+    # frame.pack(expand=True, fill="both")
+
+    tab_func(state, new_window, exe_mode="new window")
 
 
 def clone_widget(widget, parent):

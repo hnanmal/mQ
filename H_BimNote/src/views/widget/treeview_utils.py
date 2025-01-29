@@ -297,9 +297,17 @@ class TreeViewContextMenu:
 class BaseTreeView:
     def __init__(self, state, parent, headers):
         self.state = state
-        self.tree = ttk.Treeview(parent, columns=headers, show="headings")
+        self.tree = ttk.Treeview(
+            parent,
+            columns=headers,
+            show=(
+                "headings",
+                # "tree",
+            ),
+        )
         # self.tree = Tableview(parent, columns=headers, show="headings")
         self.setup_columns(headers)
+        # self.tree.column("#0", width=20, stretch=False)
         self.parent = parent
 
         # Configure tag styles
@@ -317,14 +325,6 @@ class BaseTreeView:
 
         # Track the last selected item
         self.last_selected_item = None
-
-        # # 이벤트 바인딩
-        # self.tree.bind(
-        #     "<Motion>", self.on_mouse_motion
-        # )  # 마우스 움직임을 감지해 hover 효과 적용
-        # self.tree.bind(
-        #     "<Leave>", self.on_mouse_leave
-        # )  # 트리뷰에서 마우스가 나갔을 때 hover 효과 제거
 
     # 모든 항목에서 hover 효과 제거 함수 (재귀적으로 모든 하위 항목 포함)
     def clear_all_hover(self, tree):
@@ -448,13 +448,22 @@ class BaseTreeView:
         # Make sure the item is visible
         treeview.see(item_id)
 
-        # Get the list of all visible items
         def get_visible_items(tree, parent=""):
-            visible = []
+            """Recursively collect only visible items (expanded items)."""
+            visible_items = []
+
+            # Get direct children of the current node
             for child in tree.get_children(parent):
-                visible.append(child)
-                visible.extend(get_visible_items(tree, child))
-            return visible
+                # Check if the item is visible (parent must be expanded)
+                if tree.item(child, "open"):
+                    visible_items.append(child)  # Store the visible item's text
+                    # Recursively check for children if the parent is expanded
+                    visible_items.extend(get_visible_items(tree, child))
+                else:
+                    # If the parent is collapsed, do not check its children
+                    visible_items.append(child)  # Include the collapsed parent itself
+
+            return visible_items
 
         visible_items = get_visible_items(treeview)
 
@@ -465,7 +474,8 @@ class BaseTreeView:
             # Calculate the scroll fraction and move the view
             total_items = len(visible_items)
             if total_items > 0:
-                fraction = item_index / total_items
+                fraction = (item_index - 9) / total_items
+                # treeview.see("")
                 treeview.yview_moveto(fraction)
 
     def collapse_all_items(self):
@@ -2058,11 +2068,6 @@ class TeamStd_FamlistTreeView:
 
             self.on_level_selected(event=None)
 
-            # try:
-            #     self.treeview.expand_tree_to_level(level=view_level)
-            # except:
-            #     pass
-
         # Reselect the item if possible
         if origin_indices:
             try:
@@ -2075,7 +2080,10 @@ class TeamStd_FamlistTreeView:
             self.treeview.tree
         )
 
-        # self.on_level_selected(event=None)
+        try:
+            self.place_selected_item_at_top()
+        except:
+            pass
 
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
@@ -2092,10 +2100,6 @@ class TeamStd_FamlistTreeView:
 
         selected_item_id = self.treeview.tree.focus()
         try:
-            # # Reset the tag for the previously selected item to 'normal'
-            # if self.last_selected_item:
-            #     self.treeview.tree.item(self.last_selected_item, tags=("normal",))
-            # 이전 선택 항목이 있었다면 원래 색상으로 복원
             if (
                 self.last_selected_item
                 and self.last_selected_item not in selected_item_id
@@ -2177,18 +2181,18 @@ class TeamStd_FamlistTreeView:
         except Exception as e:
             self.state.log_widget.write(f"Error processing selected item details: {e}")
 
-    def place_selected_item_at_top(self, tree):
-        """Place the selected item at the top of the Treeview."""
-        selected_item = tree.selection()
-        if selected_item:
-            # Get the index of the selected item
-            index = tree.index(selected_item[0])
-
-            # Calculate the fraction to scroll
-            total_items = len(tree.get_children())
-            if total_items > 0:
-                fraction = index / total_items
-                tree.yview_moveto(fraction)
+    def place_selected_item_at_top(self):
+        tree = self.treeview.tree
+        # Handle focused item visibility
+        focused_item = self.treeview.tree.focus()
+        if focused_item:
+            self.treeview.bring_item_to_top(focused_item)
+            self.treeview.tree.focus(focused_item)
+        else:
+            # Optionally, focus on the first visible item if no item is focused
+            first_root = self.treeview.tree.get_children("")[0]
+            self.treeview.bring_item_to_top(first_root)
+            self.treeview.tree.focus(first_root)
 
     def on_level_selected(self, event):
         """Handle combo box selection and expand the tree to the selected level."""
@@ -2204,20 +2208,16 @@ class TeamStd_FamlistTreeView:
             )
 
             # Handle focused item visibility
-            focused_item = self.treeview.tree.focus()
-            if focused_item:
-                # Ensure the item is visible at the selected level
-                visible_item = self.treeview.ensure_item_visible_at_level(
-                    focused_item, selected_level
-                )
-                if visible_item:
-                    self.treeview.bring_item_to_top(visible_item)
-                    self.treeview.tree.focus(visible_item)
-            else:
-                # Optionally, focus on the first visible item if no item is focused
-                first_root = self.treeview.tree.get_children("")[0]
-                self.treeview.bring_item_to_top(first_root)
-                self.treeview.tree.focus(first_root)
+            self.place_selected_item_at_top()
+            # focused_item = self.treeview.tree.focus()
+            # if focused_item:
+            #     self.treeview.bring_item_to_top(focused_item)
+            #     self.treeview.tree.focus(focused_item)
+            # else:
+            #     # Optionally, focus on the first visible item if no item is focused
+            #     first_root = self.treeview.tree.get_children("")[0]
+            #     self.treeview.bring_item_to_top(first_root)
+            #     self.treeview.tree.focus(first_root)
 
         except ValueError as e:
             self.state.log_widget.write(f"Invalid level selected: {e}")

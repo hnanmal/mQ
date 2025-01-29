@@ -228,7 +228,7 @@ def create_stdGWM_tab(state, subtab_notebook):
     return working_tab
 
 
-def create_stdSWM_tab(state, subtab_notebook):
+def create_stdSWM_tab(state, subtab_notebook, exe_mode=None):
     edit_mode_manager = EditModeManager()
 
     working_tab = ttk.Frame(subtab_notebook)
@@ -425,5 +425,65 @@ def create_stdSWM_tab(state, subtab_notebook):
 
     # Set the initial state to "Locked Mode"
     edit_mode_manager.set_edit_mode("locked")
+
+    return working_tab
+
+
+def create_wmSheet_window(state, subtab_notebook, exe_mode=None):
+    print("check for new window WM")
+
+    working_tab = ttk.Frame(subtab_notebook)
+    working_tab.pack()
+    # subtab_notebook.add(working_tab, text="Standard Single Work Master")
+
+    working_tab_common_area = ttk.Frame(
+        working_tab,
+        height=10,
+    )
+    working_tab_common_area.pack(expand=True, fill="x")
+
+    working_tab_paned_area = ttk.Frame(
+        working_tab,
+        height=3000,
+    )
+    working_tab_paned_area.pack(expand=True, fill="both")
+
+    working_tab_paned_window = tk.PanedWindow(
+        working_tab_paned_area,
+        orient=tk.HORIZONTAL,
+        sashwidth=7,
+        bg="#e3e3e3",
+    )
+    working_tab_paned_window.pack(expand=True, fill="both")
+
+    section1 = ttk.Frame(
+        working_tab_paned_area,
+        width=1000,
+        height=3000,
+    )
+    section1.pack()
+
+    working_tab_paned_window.add(section1, minsize=400)
+
+    working_tab_paned_window.paneconfigure(section1, height=3000)
+
+    # common 영역 라벨링
+    working_tab_font = tk.font.Font(
+        family="맑은 고딕",
+        size=12,
+        # weight="bold",
+    )
+
+    ##############################################################
+    ## section 3###########
+    WMs_area = ttk.Frame(
+        section1,
+        width=2000,
+        height=2000,
+    )
+    WMs_area.pack(fill="both", expand=True, side="top", anchor="nw")
+
+    WMs_inSWM_sheet = TeamStd_WMsSheetView(state, WMs_area)
+    WMs_inSWM_sheet.update(state)
 
     return working_tab

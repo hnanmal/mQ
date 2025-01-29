@@ -294,6 +294,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.state.log_widget.write(
             self.state.team_std_info["project-GWM"][selected_item_str]
         )
+        self.update()
         self.highlight_checked_row()
 
     def highlight_checked_row(self):
@@ -615,8 +616,8 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                         ]
                     }
                 )
-                print(f"셀데이터 ---:::{self.sheet.get_cell_data(row, 3)}")
-                print(f"unit ---:::{unit}")
+                # print(f"셀데이터 ---:::{self.sheet.get_cell_data(row, 3)}")
+                # print(f"unit ---:::{unit}")
         elif column == 1:
             spec = event["value"]
             unit = go(
@@ -641,6 +642,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.state.log_widget.write(
             self.state.team_std_info["project-SWM"][selected_item_str]
         )
+        self.update()
         self.highlight_checked_row()
 
     def highlight_checked_row(self):
@@ -712,6 +714,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.state.log_widget.write(
             f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
         )
+        self.setup_column_style()
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -851,6 +854,7 @@ class TeamStd_WMsSheetView:
         self.set_title(self.title_frame)
         self.sheetview.sheet.pack(expand=True, fill="both", anchor="nw")
         self.sheetview.sheet.header_font(("Arial", 8, "normal"))
+        self.setup_column_style()
         self.sheetview.sheet.set_options(
             font=("Arial Narrow", 9, "normal"),
             default_row_height=30,
@@ -877,13 +881,67 @@ class TeamStd_WMsSheetView:
             ]
         )
 
+    def setup_column_style(self):
+        wide = 120
+        narrow = 30
+        self.sheetview.sheet.set_column_widths(
+            [
+                wide,  # A
+                narrow,  # B
+                narrow,  # C
+                wide,  # D
+                narrow,  # E
+                wide,  # F
+                narrow,  # G
+                wide,  # H
+                narrow,  # I
+                wide,  # J
+                narrow,  # K
+                wide,  # L
+                narrow,  # M
+                wide,  # N
+                narrow,  # O
+                wide,  # P
+                narrow,  # Q
+                wide,  # R
+                narrow,  # S
+                wide,  # T
+                narrow,  # U
+                wide,  # V
+                narrow,  # W
+                wide,  # X
+                wide,  # Y
+                wide,  # Z
+                wide,  # AA
+                wide,  # AB
+                wide,  # AC
+                wide,  # AD
+                wide,  # AE
+                wide,  # AF
+                wide,  # AG
+                narrow,  # AH
+                narrow,  # AI
+                wide,  # AJ
+                wide,  # AK
+            ]
+        )
+
+        # self.sheet["A"].align("center")
+        # self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
+        # self.sheet.set_options(header_height="")
+        # self.sheet.set_options(font=("Arial", 8, "normal"))
+        # self.sheet.set_options(default_row_height=18)
+
     def update(self, state):
         # Updating tksheet in the UI
+
         data_forSheet = state.team_std_info.get("WMs")
         sheetview_data = self.sheetview.sheet.get_sheet_data()
         # print(sheetview_data)
         if not sheetview_data:
             self.sheetview.sheet.set_sheet_data(data_forSheet)
+
+        self.setup_column_style()
 
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""
@@ -929,10 +987,6 @@ class TeamStd_WMsSheetView:
     def on_cell_select(self, event, state, sheet, color="#fffec0"):
         # 선택된 셀의 위치 가져오기
         selected_cells = list(sheet.get_selected_cells())
-        # state.selected_stdGWM_item.get().split(" | ")
-        # grand_parent_item_name, parent_item_name, selected_item_name = (
-        #     state.selected_stdGWM_item.get().split(" | ")
-        # )
         if selected_cells:
             # 기존 스타일 초기화
             sheet.dehighlight_rows()
@@ -958,10 +1012,6 @@ class TeamStd_WMsSheetView:
             sheet.highlight_rows(
                 rows=selected_rows, bg=color, fg="black", highlight_index=True
             )
-
-        # state.log_widget.write(
-        #     f"선택 발생! 외애애애애애엥 [{self.widget_name}]시트, [{selected_cells}] 에서 선택 발생!!!!"
-        # )
 
 
 class ProjectApply_GWMSWM_Selcet_SheetView:
@@ -997,7 +1047,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # config enable_bindings
         self.sheet.enable_bindings(
             "edit_cell",
-            "delete",
+            # "delete",
             "single_select",  # Allow single cell selection
             "drag_select",
             "row_select",  # Allow row selection
@@ -1010,8 +1060,8 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             "paste",
             "ctrl_click_select",
             "right_click_popup_menu",
-            "rc_insert_row",
-            "rc_delete_row",
+            # "rc_insert_row",
+            # "rc_delete_row",
             "arrowkeys",
         )
 
@@ -1313,6 +1363,7 @@ class Project_WM_perRVT_SheetView:
         self.sheet.enable_bindings(
             "edit_cell",
             "delete",
+            "select_all",
             "single_select",  # Allow single cell selection
             "drag_select",
             "row_select",  # Allow row selection
@@ -1328,21 +1379,48 @@ class Project_WM_perRVT_SheetView:
             "rc_insert_row",
             "rc_delete_row",
             "arrowkeys",
+            "row_drag_and_drop",
         )
+        # self.sheet.enable_bindings()
 
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
                 ("end_edit_cell", lambda e: self.on_change_sheet(e)),
                 ("end_delete_rows", lambda e: self.on_change_sheet(e)),
+                ("end_move_rows", lambda e: self.on_change_sheet(e)),
+                ("end_ctrl_v", lambda e: self.on_change_sheet(e)),
+                ("rc_insert_row", lambda e: self.handle_row_insert(e)),
                 ## 신규행 추가시 (std)SWM > MISC > All Items > All WM 항목 추가할수 있는 함수 바인딩 필요
             ]
         )
 
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
-        # self.renew_sheet_height()
+        self.rollback_sheet_height()
         # self.setup_column_style()
+
+    def handle_row_insert(self, event):
+        """Handle the End_Insert_row event to add 'etc' in the first column of the new row."""
+        newly_added_row = list(event["added"]["rows"]["index"].keys())[
+            0
+        ]  # Get the index of the newly added row
+        # print(event)
+        # print(newly_added_row)
+
+        pjt_assign_famlist_tree = self.state.pjt_assign_famlist.tree
+        selected_std_id = pjt_assign_famlist_tree.selection()
+        selected_std_name = pjt_assign_famlist_tree.item(selected_std_id, "values")[3]
+        # print(pjt_assign_famlist_tree.item(selected_std_id, "values"))
+
+        if newly_added_row is not None:
+            self.sheet.set_cell_data(
+                newly_added_row, 0, "etc"
+            )  # Set "etc" in the first column of the new row
+            self.sheet.set_cell_data(
+                newly_added_row, 1, selected_std_name
+            )  # Set "etc" in the first column of the new row
+            self.sheet.refresh()  # Refresh the sheet to reflect changes
 
     def setup_sheet(self):
         # 헤더 설정
@@ -1353,7 +1431,7 @@ class Project_WM_perRVT_SheetView:
             "Std",
             "Item",
             "Work Master",
-            "Gauge Code",
+            "Gauge",
             "Spec",
             "수식",
             "단위",
@@ -1372,7 +1450,8 @@ class Project_WM_perRVT_SheetView:
 
     def rollback_sheet_height(self):
         self.sheet.config(
-            height=350,
+            # height=350,
+            height=380,
         )
         self.sheet.update_idletasks()
         self.sheet.update()
@@ -1380,7 +1459,8 @@ class Project_WM_perRVT_SheetView:
 
     def renew_sheet_height(self):
         self.sheet.config(
-            height=750,
+            # height=750,
+            height=785,
         )
         self.sheet.update_idletasks()
         self.sheet.update()
@@ -1390,9 +1470,9 @@ class Project_WM_perRVT_SheetView:
         self.sheet.set_column_widths(
             [
                 35,
-                0,
+                1,
                 125,
-                400,
+                300,
                 30,
                 250,
                 170,
@@ -1406,7 +1486,21 @@ class Project_WM_perRVT_SheetView:
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
         self.sheet.set_options(header_height="")
         self.sheet.set_options(font=("Arial", 8, "normal"))
-        self.sheet.set_options(default_row_height=18)
+        # self.sheet.set_options(default_row_height=18)
+        self.sheet.set_options(default_row_height=80)
+        self.sheet["E"].align("center")
+
+        self.sheet.set_options(table_grid_fg="#b5b5b5")
+        self.sheet["A"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["B"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["C"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["D"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["E"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["F"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["H"].highlight(bg="#e6e6e6", fg="black")
+        self.sheet["G"].highlight(bg="white", fg="blue")
+        self.sheet["I"].highlight(bg="white", fg="blue")
+        self.sheet["J"].highlight(bg="white", fg="blue")
 
     def update(self, event=None):
         state = self.state
@@ -1458,9 +1552,10 @@ class Project_WM_perRVT_SheetView:
             if wmcode == "":
                 return ""
             else:
+                wmcode_ = wmcode.split("|")[0].strip()
                 res = go(
                     WMsStr,
-                    filter(lambda x: wmcode in x),
+                    filter(lambda x: wmcode_ in x),
                     list,
                 )
             try:
@@ -1517,8 +1612,9 @@ class Project_WM_perRVT_SheetView:
                     elif wm[0] == "etc":
                         matched_item = ""
                         wm[3] = find_wmStr(wm[3])
-                    else:
-                        matched_item = ""
+                        # wm[7] = deepcopy(wm[3]).replace("\n", "").split("|")[-3].strip()
+                    # else:
+                    #     matched_item = ""
                     print(f"\n matched_item::: {matched_item} \n")
 
                 self.sheet.set_sheet_data(target_data)
@@ -1529,7 +1625,7 @@ class Project_WM_perRVT_SheetView:
                 )
                 # self.sheet.set_all_cell_sizes_to_text()
                 self.sheet.set_all_row_heights(
-                    height=50,
+                    height=70,
                     only_set_if_too_small=True,
                 )
             except:
@@ -1606,7 +1702,6 @@ class Project_WM_perRVT_SheetView:
             lambda x: x[0],
         )
 
-        ## Note 칼럼 추가시 변경 사항 없는 지 체크
         sheet_data = go(
             self.sheet.get_sheet_data(),
             map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),
@@ -1623,4 +1718,5 @@ class Project_WM_perRVT_SheetView:
             matched_assigntype["children"].extend(new_WM_data)
 
         ## project_WM_perRVT_SheetView 업데이트
-        state.project_WM_perRVT_SheetView.update()
+        # state.project_WM_perRVT_SheetView.update()
+        self.update()
