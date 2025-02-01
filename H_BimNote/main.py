@@ -1,3 +1,4 @@
+import json
 import tkinter as tk
 
 # from tkinter import ttk
@@ -43,6 +44,7 @@ def main():
 
     # root.withdraw()  # Hide the main window while splash is shown
     state.root = root
+    state.notebook = notebook
 
     splash = show_splash_screen()
 
@@ -58,6 +60,8 @@ def main():
     create_project_apply_tab(state, notebook)
 
     create_project_report_tab(state, notebook)
+
+    # notebook.tab(0, font=("Arial", 12, "bold"))  # 첫 번째 탭만 굵게
 
     ## 팀스탠다드 자동 임포트
     # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")

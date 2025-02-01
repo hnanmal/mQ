@@ -1,3 +1,4 @@
+from ctypes import windll
 import tkinter as tk
 from tkinter import (
     # ttk,
@@ -7,6 +8,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import json
 
+from src.core.app_update import APP_VERSION, check_for_update
 from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
 from src.models.app_state import AppState
 from src.views.logging_utils import setup_logging_frame
@@ -61,20 +63,28 @@ def initialize_app(root, _state=None):
     state.defaultextension = ".bnote"
     state.filetypes = [("B-note files", "*.bnote")]
 
-    root.title("B-note :: Hyundai Engineering Plant Architecture Bim Note")
+    root.title(
+        f"B-note  {APP_VERSION} :: Hyundai Engineering Plant Architecture Bim Note"
+    )
     root.geometry("1400x900+100+100")
-    # root.state("zoomed")
 
-    # define_styles()
+    with open("resource/recent_files.json", "r", encoding="utf-8") as file:
+        loaded_data = json.load(file)
+    state.recent_files = loaded_data
 
     state.tab_bootStyle = "secondary"
 
     menubar = Menu(root)
-    root.config(menu=menubar)
+    root.config(
+        menu=menubar,
+    )
+    # menubar.config(
+    #     activebackground="blue",
+    # )
 
     # 파일 메뉴 추가
     file_menu = Menu(menubar, tearoff=0)
-    menubar.add_cascade(label="File", menu=file_menu)
+    menubar.add_cascade(label="   File   ", menu=file_menu)
     file_menu.add_command(
         label="현재 B-note 저장            (Ctrl+S)",
         command=lambda: save_to_json_teamStdInfo(
@@ -91,6 +101,13 @@ def initialize_app(root, _state=None):
     )
     file_menu.add_separator()
     file_menu.add_command(label="Exit", command=root.quit)
+
+    help_menu = Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="   Help   ", menu=help_menu)
+    help_menu.add_command(
+        label="업데이트 체크",
+        command=check_for_update,
+    )  # save_to_json)
 
     paned_window = tk.PanedWindow(
         root,

@@ -5,12 +5,14 @@ from tkinter import filedialog, ttk
 
 import openpyxl
 
+from src.core.fp_utils import *
+from src.core.app_update import APP_VERSION
 from src.views.widget.widget import open_dialog
 
 
 def save_to_json_teamStdInfo(state, _file_path=None):
     # 파일 저장 위치 선택
-    if _file_path:
+    if _file_path and _file_path != "resource/PlantArch_BIM Standard.bnote":
         file_path = _file_path
     else:
         file_path = filedialog.asksaveasfilename(
@@ -28,7 +30,7 @@ def save_to_json_teamStdInfo(state, _file_path=None):
             # json.dump(state.project_info, file, indent=4, ensure_ascii=False)
         print(f"Data successfully saved to {file_path}")
         state.root.title(
-            "B-note :: Hyundai Engineering Plant Architecture Bim Note"
+            f"B-note  {APP_VERSION} :: Hyundai Engineering Plant Architecture Bim Note"
             + "    " * 25
             + f"[   {state.current_filepath}   ]"
         )
@@ -86,7 +88,7 @@ def load_from_json(state, _file_path=None):
 
         state.log_widget.write(f"Data successfully loaded from {file_path}\n")
         state.root.title(
-            "B-note :: Hyundai Engineering Plant Architecture Bim Note"
+            f"B-note  {APP_VERSION} :: Hyundai Engineering Plant Architecture Bim Note"
             + "    " * 25
             + f"[   {state.current_filepath}   ]"
         )
@@ -94,6 +96,23 @@ def load_from_json(state, _file_path=None):
             state.root,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n으로부터 로드 되었습니다.",
         )
+
+        exist_recent_files = go(
+            state.recent_files["recent_items"],
+            map(lambda x: x["name"]),
+            list,
+        )
+        if (
+            file_path not in exist_recent_files
+            and file_path != "resource/PlantArch_BIM Standard.bnote"
+        ):
+            state.recent_files["recent_items"].append({"name": file_path})
+
+            with open("resource/recent_files.json", "w", encoding="utf-8") as file:
+                json.dump(state.recent_files, file, indent=4, ensure_ascii=False)
+
+        state.recent_page.load_items()
+
         return True
     except Exception as e:
         state.log_widget.write(f"Error loading data from JSON: {e}\n")

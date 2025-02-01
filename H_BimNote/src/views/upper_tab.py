@@ -6,6 +6,7 @@ from ttkbootstrap.constants import *
 from PIL import ImageTk, Image
 from PIL.Image import Resampling
 
+from src.core.recent_file_widget import RecentPinnedWidget
 from src.core.fp_utils import *
 from src.core.file_utils import load_from_json
 from src.views.lower_tabs.group_WM_tabs import create_stdGWM_tab, create_stdSWM_tab
@@ -168,6 +169,10 @@ def create_recentBnotes_tab(state, notebook):
         side=tk.TOP,
         anchor="nw",
     )
+
+    recent_page = RecentPinnedWidget(recent_notes_area, state)
+    recent_page.pack(fill="both", expand=True, padx=10, pady=10)
+    state.recent_page = recent_page
 
     return notebook
 

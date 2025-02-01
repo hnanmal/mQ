@@ -173,7 +173,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         # self.sheet.set_column_widths([25, 200, 25, 2000])
         self.sheet.set_column_widths([25, 200, 25, 1000, 50])
 
-        self.sheet["A"].align("center")
+        self.sheet["E"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
         self.sheet.set_options(font=("Arial", 10, "normal"))
 
@@ -555,7 +555,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         # self.sheet.set_column_widths([25, 200, 25, 2000])
         self.sheet.set_column_widths([25, 200, 25, 1000, 50])
 
-        self.sheet["A"].align("center")
+        self.sheet["E"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
         self.sheet.set_options(font=("Arial", 10, "normal"))
 
