@@ -12,13 +12,13 @@ class MultiLineInputFrame(tk.Frame):
         self.label = ttk.Label(self, text=label_text)
         self.label.pack(side=tk.TOP, anchor="w", pady=(0, 5))
 
-        # Add a button to open Tab 1 in a new window
-        open_button = ttk.Button(
-            self,
-            text="Rvt Summary",
-            command=lambda: open_tab_in_new_window_rvtSummary(state),
-        )
-        open_button.pack(pady=10, padx=2, side=tk.TOP, anchor="w")
+        # # Add a button to open Tab 1 in a new window
+        # open_button = ttk.Button(
+        #     self,
+        #     text="Rvt Summary",
+        #     command=lambda: open_tab_in_new_window_rvtSummary(state),
+        # )
+        # open_button.pack(pady=10, padx=2, side=tk.TOP, anchor="w")
 
         # Frame for Text widget and Scrollbars
         self.text_frame = tk.Frame(self)

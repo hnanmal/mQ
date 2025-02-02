@@ -266,27 +266,6 @@ class ReportSheetWidget(ttk.Frame):
             std_type_no = node["values"][2].split("|")[2].strip()
             name = node["name"]
 
-            # calcType_no = list(list(node["children"])[0])[8]
-            # print(f"calcType_no:: {calcType_no}")
-
-            # calcdict = go(
-            #     state.team_std_info["std-calcdict"]["children"],
-            #     filter(lambda x: x["name"] == calcType_no),
-            #     list,
-            # )[0]
-            # print(f"calcdict:: {calcdict}")
-
-            # param_list = go(
-            #     calcdict["children"],
-            #     list,
-            #     map(lambda x: x["values"]),
-            #     list,
-            #     map(lambda x: list(x)[1:]),
-            #     lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),
-            #     list,
-            # )
-            # print(f"param_list:: {param_list}")
-
             wm_list = go(
                 node["children"],
                 list,
@@ -301,7 +280,7 @@ class ReportSheetWidget(ttk.Frame):
             for wm_dict in wm_dicts:
                 if "Note" not in wm_dict.keys():
                     wm_dict.update({"Note": ""})
-            print(f"wm_dicts:: {wm_dicts}")
+            # print(f"wm_dicts:: {wm_dicts}")
 
             res = []
             for wm_dict in wm_dicts:

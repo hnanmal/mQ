@@ -107,7 +107,11 @@ def initialize_app(root, _state=None):
     help_menu.add_command(
         label="업데이트 체크",
         command=check_for_update,
-    )  # save_to_json)
+    )
+    help_menu.add_command(
+        label=f"version : {APP_VERSION}",
+        command=lambda: 0,
+    )
 
     paned_window = tk.PanedWindow(
         root,

@@ -171,7 +171,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         relate_widget=pjt_assign_famlist,
         view_level=3,
     )
-    pjtAssign_calcDict_TreeView.treeview.tree.config(height=4)
+    pjtAssign_calcDict_TreeView.treeview.tree.config(height=6)
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(pjtAssign_calcDict_TreeView)
     #############################################################################

@@ -38,6 +38,24 @@ def save_to_json_teamStdInfo(state, _file_path=None):
             state.root,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n에 저장 되었습니다.",
         )
+
+        exist_recent_files = go(
+            state.recent_files["recent_items"],
+            map(lambda x: x["name"]),
+            list,
+        )
+        if file_path != "resource/PlantArch_BIM Standard.bnote":
+            if file_path not in exist_recent_files:
+                state.recent_files["recent_items"].insert(0, {"name": file_path})
+            elif file_path in exist_recent_files:
+                tgt_idx = exist_recent_files.index(file_path)
+                tgt = state.recent_files["recent_items"].pop(tgt_idx)
+                state.recent_files["recent_items"].insert(0, tgt)
+            with open("resource/recent_files.json", "w", encoding="utf-8") as file:
+                json.dump(state.recent_files, file, indent=4, ensure_ascii=False)
+
+        state.recent_page.load_items()
+
     except Exception as e:
         print(f"Error saving data to JSON: {e}")
 
@@ -102,12 +120,13 @@ def load_from_json(state, _file_path=None):
             map(lambda x: x["name"]),
             list,
         )
-        if (
-            file_path not in exist_recent_files
-            and file_path != "resource/PlantArch_BIM Standard.bnote"
-        ):
-            state.recent_files["recent_items"].append({"name": file_path})
-
+        if file_path != "resource/PlantArch_BIM Standard.bnote":
+            if file_path not in exist_recent_files:
+                state.recent_files["recent_items"].insert(0, {"name": file_path})
+            elif file_path in exist_recent_files:
+                tgt_idx = exist_recent_files.index(file_path)
+                tgt = state.recent_files["recent_items"].pop(tgt_idx)
+                state.recent_files["recent_items"].insert(0, tgt)
             with open("resource/recent_files.json", "w", encoding="utf-8") as file:
                 json.dump(state.recent_files, file, indent=4, ensure_ascii=False)
 

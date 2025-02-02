@@ -27,6 +27,7 @@ class FileItem(ttk.Frame):
         self.parent_widget = parent_widget  # Reference to RecentPinnedWidget
 
         # Store default styles
+        self.config(borderwidth=1, relief="flat")
         self.default_borderwidth = self.cget("borderwidth")
         self.default_relief = self.cget("relief")
         self.pack(ipadx=10)
@@ -43,25 +44,35 @@ class FileItem(ttk.Frame):
         self.icon_label.pack(side="left", padx=5, pady=5)
 
         # File Details Frame
-        details_frame = ttk.Frame(self)
+        details_frame = ttk.Frame(
+            self,
+        )
         details_frame.pack(side="left", fill="x", pady=5, expand=True, anchor="w")
         self.details_frame = details_frame
 
         # File Name Label
         self.name_label = ttk.Label(
-            details_frame, text=file_name, font=("Arial", 10, "bold")
+            details_frame,
+            text=file_name,
+            font=("Arial", 10, "bold"),
         )
         self.name_label.pack(anchor="w")
 
         # File Path Label
         self.path_label = ttk.Label(
-            details_frame, text=file_path, font=("Arial", 8), foreground="gray"
+            details_frame,
+            text=file_path,
+            font=("Arial", 8),
+            foreground="gray",
         )
         self.path_label.pack(anchor="w")
 
         # Modified Date Label
         self.date_label = ttk.Label(
-            self, text=modified_date, font=("Arial", 9), foreground="gray"
+            self,
+            text=modified_date,
+            font=("Arial", 9),
+            foreground="gray",
         )
         self.date_label.pack(side="right", padx=5)
 
@@ -129,13 +140,13 @@ class RecentPinnedWidget(ttk.Frame):
 
         # Header
         ttk.Label(
-            self, text="📄 Recent Items", font=("Arial", 12, "bold"), anchor="w"
+            self, text="📄 Recent Items", font=("Arial", 18, "bold"), anchor="w"
         ).pack(fill="x", padx=10, pady=(20, 0))
         self.recent_frame = ttk.Frame(self)
         self.recent_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         ttk.Label(
-            self, text="📌 Pinned Items", font=("Arial", 12, "bold"), anchor="w"
+            self, text="📌 Pinned Items", font=("Arial", 18, "bold"), anchor="w"
         ).pack(fill="x", padx=10, pady=(50, 0))
         self.pinned_frame = ttk.Frame(self)
         self.pinned_frame.pack(fill="both", expand=True, padx=10, pady=5)
@@ -148,15 +159,15 @@ class RecentPinnedWidget(ttk.Frame):
             for widget in frame.winfo_children():
                 widget.destroy()
 
-        for item in self.app_state.recent_files.get("recent_items", []):
+        for item in self.app_state.recent_files.get("recent_items", [])[:6]:
             file_item = FileItem(
                 self.app_state, self.recent_frame, self, "🗂️", item, is_pinned=False
             )
             file_item.pack(fill="x", pady=5, padx=5)
 
-        for item in self.app_state.recent_files.get("pinned_items", []):
+        for item in self.app_state.recent_files.get("pinned_items", [])[:6]:
             file_item = FileItem(
-                self.app_state, self.pinned_frame, self, "📌", item, is_pinned=True
+                self.app_state, self.pinned_frame, self, "📌     ", item, is_pinned=True
             )
             file_item.pack(fill="x", pady=5, padx=5)
 
@@ -201,7 +212,14 @@ class RecentPinnedWidget(ttk.Frame):
             ),
             None,
         )
-        if item:
+
+        exist_pinned_files = go(
+            self.app_state.recent_files["pinned_items"],
+            map(lambda x: x["name"]),
+            list,
+        )
+
+        if item and (item["name"] not in exist_pinned_files):
             self.app_state.recent_files["recent_items"].remove(item)
             self.app_state.recent_files["pinned_items"].append(item)
 
@@ -222,9 +240,17 @@ class RecentPinnedWidget(ttk.Frame):
             ),
             None,
         )
+
+        exist_recent_files = go(
+            self.app_state.recent_files["recent_items"],
+            map(lambda x: x["name"]),
+            list,
+        )
+
         if item:
             self.app_state.recent_files["pinned_items"].remove(item)
-            self.app_state.recent_files["recent_items"].append(item)
+            if item["name"] not in exist_recent_files:
+                self.app_state.recent_files["recent_items"].append(item)
 
             with open("resource/recent_files.json", "w", encoding="utf-8") as file:
                 json.dump(
