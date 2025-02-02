@@ -7,10 +7,10 @@ import sys
 import subprocess
 from datetime import datetime
 
-APP_VERSION = "1.0.2"  # Your app's current version
-# UPDATE_URL = "https://github.com/hnanmal/mQ/blob/master/H_BimNote/resource/version.json"  # Replace with your real URL
+APP_VERSION = "1.0.1"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
-# UPDATE_URL = "https://yourwebsite.com/version.json"  # Replace with your real URL
+# Replace with your real URL
+# UPDATE_URL = "https://henginmc6eaoutlook.sharepoint.com/:u:/s/jhjh/ET13s4W5vEFLjT_om5QuD8gBm-CL-VpOCz7HRXJXBiwKMg?e=rm612k"
 
 
 def check_for_update():
@@ -59,6 +59,7 @@ def restart_application():
     current_exe = sys.executable
     os.execv(current_exe, [current_exe])
 
+
 def apply_update(update_filename):
     """Replace the old exe with the new one and restart."""
     current_exe = sys.executable  # Get current executable path
@@ -66,9 +67,8 @@ def apply_update(update_filename):
     # Rename the old exe (backup)
     # backup_exe = current_exe + ".old"
 
-
-    now = datetime.now().strftime('%Y%m%d%H%M%S')
-    backup_exe = current_exe + now +".old"
+    now = datetime.now().strftime("%Y%m%d%H%M%S")
+    backup_exe = current_exe + now + ".old"
     # os.rename(current_exe, backup_exe)
     shutil.move(current_exe, backup_exe)
 
