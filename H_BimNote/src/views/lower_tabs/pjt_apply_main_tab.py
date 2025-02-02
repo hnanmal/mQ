@@ -10,7 +10,7 @@ from ttkbootstrap.constants import *
 
 from src.controllers.widget.widgets import EditModeManager
 from src.views.widget.treeview_utils import BuildingList_TreeView
-from src.views.widget.dnd_utils import FilePathRegister
+# from src.views.widget.dnd_utils import FilePathRegister
 from src.views.widget.html_viewer import BrowserWidget
 from src.views.widget.widget import TabNavigationButton
 
