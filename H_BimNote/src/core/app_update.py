@@ -5,7 +5,7 @@ import os
 import sys
 import subprocess
 
-APP_VERSION = "1.0.1"  # Your app's current version
+APP_VERSION = "1.0.2"  # Your app's current version
 # UPDATE_URL = "https://github.com/hnanmal/mQ/blob/master/H_BimNote/resource/version.json"  # Replace with your real URL
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 # UPDATE_URL = "https://yourwebsite.com/version.json"  # Replace with your real URL
@@ -53,6 +53,10 @@ def download_update(download_url):
         messagebox.showerror("Update Failed", f"Failed to download update: {e}")
 
 
+def restart_application():
+    current_exe = sys.executable
+    os.execv(current_exe, [current_exe])
+
 def apply_update(update_filename):
     """Replace the old exe with the new one and restart."""
     current_exe = sys.executable  # Get current executable path
@@ -65,7 +69,8 @@ def apply_update(update_filename):
     os.rename(update_filename, current_exe)
 
     # Restart the application
-    subprocess.Popen([current_exe])
+    # subprocess.Popen([current_exe])
+    restart_application()
     sys.exit()
 
 
