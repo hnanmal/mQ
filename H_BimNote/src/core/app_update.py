@@ -5,6 +5,7 @@ import os
 import shutil
 import sys
 import subprocess
+from datetime import datetime
 
 APP_VERSION = "1.0.2"  # Your app's current version
 # UPDATE_URL = "https://github.com/hnanmal/mQ/blob/master/H_BimNote/resource/version.json"  # Replace with your real URL
@@ -63,7 +64,11 @@ def apply_update(update_filename):
     current_exe = sys.executable  # Get current executable path
 
     # Rename the old exe (backup)
-    backup_exe = current_exe + ".old"
+    # backup_exe = current_exe + ".old"
+
+
+    now = datetime.now().strftime('%Y%m%d%H%M%S')
+    backup_exe = current_exe + now +".old"
     # os.rename(current_exe, backup_exe)
     shutil.move(current_exe, backup_exe)
 
