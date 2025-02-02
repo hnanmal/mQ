@@ -21,12 +21,12 @@ def check_for_update():
         if latest_version > APP_VERSION:
             answer = messagebox.askyesno(
                 "Update Available",
-                f"A new version ({latest_version}) is available. Do you want to update now?",
+                f"새 버전({latest_version}) 을 이용할 수 있습니다. 업데이트 하시겠습니까?",
             )
             if answer:
                 download_update(download_url)
         else:
-            messagebox.showinfo("No Update", "You are using the latest version.")
+            messagebox.showinfo("No Update", "현재 최신버전입니다.")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to check for updates: {e}")
@@ -43,7 +43,7 @@ def download_update(download_url):
 
         messagebox.showinfo(
             "Update Downloaded",
-            "The update has been downloaded. The application will restart.",
+            "새 버전이 다운로드 되었습니다. 프로그램이 종료되니 재시작 해주세요요.",
         )
 
         # Restart the app with the new update
@@ -70,7 +70,7 @@ def apply_update(update_filename):
 
     # Restart the application
     # subprocess.Popen([current_exe])
-    restart_application()
+    # restart_application()
     sys.exit()
 
 
