@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import requests
 import os
+import shutil
 import sys
 import subprocess
 
@@ -63,10 +64,12 @@ def apply_update(update_filename):
 
     # Rename the old exe (backup)
     backup_exe = current_exe + ".old"
-    os.rename(current_exe, backup_exe)
+    # os.rename(current_exe, backup_exe)
+    shutil.move(current_exe, backup_exe)
 
     # Move the new update to replace the old executable
-    os.rename(update_filename, current_exe)
+    # os.rename(update_filename, current_exe)
+    shutil.move(update_filename, current_exe)
 
     # Restart the application
     # subprocess.Popen([current_exe])
