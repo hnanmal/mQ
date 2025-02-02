@@ -5,7 +5,7 @@ import os
 import sys
 import subprocess
 
-APP_VERSION = "1.0.0"  # Your app's current version
+APP_VERSION = "1.0.1"  # Your app's current version
 # UPDATE_URL = "https://github.com/hnanmal/mQ/blob/master/H_BimNote/resource/version.json"  # Replace with your real URL
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 # UPDATE_URL = "https://yourwebsite.com/version.json"  # Replace with your real URL
