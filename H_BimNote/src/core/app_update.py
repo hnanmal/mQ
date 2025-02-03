@@ -4,13 +4,12 @@ import requests
 import os
 import shutil
 import sys
-import subprocess
+
+# import subprocess
 from datetime import datetime
 
 APP_VERSION = "1.0.1"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
-# Replace with your real URL
-# UPDATE_URL = "https://henginmc6eaoutlook.sharepoint.com/:u:/s/jhjh/ET13s4W5vEFLjT_om5QuD8gBm-CL-VpOCz7HRXJXBiwKMg?e=rm612k"
 
 
 def check_for_update():
