@@ -1095,6 +1095,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
 
     def setup_column_style(self):
         self.sheet.set_column_widths([25, 80, 0, 150, 40, 210])
+        # self.sheet.set_column_widths([25, 80, 10, 150, 40, 210])
 
         self.sheet["A"].align("center")
         self.sheet.set_options(header_font=("Arial Narrow", 7, "normal"))
@@ -1116,8 +1117,6 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         )
         selected_item_str = self.selected_item_relate_widget_std.get()
         project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
-
-        # self.ddd.append()
 
         self.state.log_widget.write(
             self.state.team_std_info["project-GWM"][selected_item_str]
@@ -1528,7 +1527,8 @@ class Project_WM_perRVT_SheetView:
             res = go(
                 pjt_gwm_data.keys(),
                 list,
-                filter(lambda x: name in x),
+                # filter(lambda x: name in x),
+                filter(lambda x: x.endswith(name)),
                 list,
             )
             try:
@@ -1540,7 +1540,8 @@ class Project_WM_perRVT_SheetView:
             res = go(
                 pjt_swm_data.keys(),
                 list,
-                filter(lambda x: name in x),
+                # filter(lambda x: name in x),
+                filter(lambda x: x.endswith(name)),
                 list,
             )
             try:

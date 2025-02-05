@@ -134,7 +134,8 @@ class WMapply_button:
             res = go(
                 pjt_gwm_data.keys(),
                 list,
-                filter(lambda x: name in x),
+                # filter(lambda x: name in x),
+                filter(lambda x: x.endswith(name)),
                 list,
             )
             try:
@@ -146,10 +147,12 @@ class WMapply_button:
             res = go(
                 pjt_swm_data.keys(),
                 list,
-                filter(lambda x: name in x),
+                # filter(lambda x: name in x),
+                filter(lambda x: x.endswith(name)),
                 list,
             )
             try:
+                print(f"^^^{res[0]}")
                 return res[0]
             except:
                 return ""
@@ -290,6 +293,7 @@ class WMapply_button:
                 ),
                 list,
             )
+            print(f"chked_SWM::{chked_SWM}")
 
             chked_SWM_data = []
             for i in chked_SWM:
@@ -315,8 +319,18 @@ class WMapply_button:
         state = self.state
 
         data = state.team_std_info.get("project-assigntype")
-        gwm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)["chked_GWM"]
-        swm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)["chked_SWM"]
+        try:
+            gwm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)[
+                "chked_GWM"
+            ]
+        except:
+            gwm_data = []
+        try:
+            swm_data = self.get_checked_GWMSWM(self.GWMwidget, self.SWMwidget)[
+                "chked_SWM"
+            ]
+        except:
+            swm_data = []
 
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
         selected_rvtTypes_values = go(
