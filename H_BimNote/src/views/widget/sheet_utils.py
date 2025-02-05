@@ -27,9 +27,12 @@ class SheetViewStateObserver:
 
 
 class SheetSearchManager:
-    def __init__(self, sheet, state):
-        self.sheet = sheet
+    def __init__(self, state, sheet_widget):
         self.state = state
+        self.sheet_widget = sheet_widget
+        self.data_kind = self.sheet_widget.data_kind
+        self.sheet = sheet_widget.sheet
+        # self.sheetview = sheetview
         # self.original_data = sheet.get_sheet_data(return_copy=True)
 
     def search_sheet_data(self, search_term):
@@ -39,9 +42,10 @@ class SheetSearchManager:
             # If the search term is empty, reset to the original data
             self.reset_sheet_data()
             return
-
         # Get all data from the sheet and filter it
-        all_data = self.state.team_std_info.get("WMs", [])
+        all_data = self.sheet_widget.sheet.get_sheet_data()
+        # all_data = self.state.team_std_info.get(self.data_kind, [])
+        # all_data = self.state.team_std_info.get("WMs", [])
         filtered_data = [
             row
             for row in all_data
@@ -50,11 +54,25 @@ class SheetSearchManager:
 
         # Update the sheet with filtered data
         self.sheet.set_sheet_data(filtered_data)
+        self.sheet_widget.setup_column_style()
+
+        if self.data_kind == "std-GWM" or "std-SWM":
+            self.sheet_widget.apply_wrap(tgt_idx=3, tgt_width=1000)
+            self.sheet.set_all_cell_sizes_to_text()
+            self.sheet.set_all_row_heights(
+                height=50,
+                only_set_if_too_small=True,
+            )
+
+        self.sheet.redraw()
 
     def reset_sheet_data(self):
         """Reset the sheet to its original state."""
-        original_data = self.state.team_std_info.get("WMs", [])
-        self.sheet.set_sheet_data(original_data)
+        # original_data = self.state.team_std_info.get("WMs", [])
+        # original_data = self.state.team_std_info.get(self.data_kind, [])
+        # self.sheet.set_sheet_data(original_data)
+        self.sheet_widget.update()
+        self.sheet.redraw()
 
     def reset_search(self, search_entry):
         """Clear the search entry and reset the sheet data to the original state."""
@@ -108,6 +126,10 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.treeDataManager = TreeDataManager_treesheet(state, self)
         self.relate_widget = relate_widget
         self.selected_item_relate_widget = relate_widget.selected_item
+
+        self.title_frame = ttk.Frame(parent)
+        self.title_frame.pack(anchor="nw")
+
         self.sheet = Sheet(
             parent,
             show_x_scrollbar=True,
@@ -138,11 +160,11 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             "arrowkeys",
         )
 
-        # # Initialize the search manager
-        # self.search_manager = SheetSearchManager(self.sheetview.sheet, self.state)
+        # Initialize the search manager
+        self.search_manager = SheetSearchManager(self.state, self)
 
-        # # Add Search Box
-        # self.add_search_box(self.title_frame)
+        # Add Search Box
+        self.add_search_box(self.title_frame)
 
         # Bind checkbox clicks
         self.sheet.extra_bindings(
@@ -496,6 +518,10 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.treeDataManager = TreeDataManager_treesheet(state, self)
         self.relate_widget = relate_widget
         self.selected_item_relate_widget = relate_widget.selected_item
+
+        self.title_frame = ttk.Frame(parent)
+        self.title_frame.pack(anchor="nw")
+
         self.sheet = Sheet(
             parent,
             show_x_scrollbar=True,
@@ -525,6 +551,12 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             "rc_delete_row",
             "arrowkeys",
         )
+
+        # Initialize the search manager
+        self.search_manager = SheetSearchManager(self.state, self)
+
+        # Add Search Box
+        self.add_search_box(self.title_frame)
 
         # Bind checkbox clicks
         self.sheet.extra_bindings(
@@ -560,6 +592,41 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.sheet.set_options(font=("Arial", 10, "normal"))
 
         # self.sheet.set_options(default_row_height=30)
+
+    def add_search_box(self, parent):
+        """Add search box to filter the sheet data."""
+        search_frame = ttk.Frame(parent)
+        search_frame.pack(padx=5, pady=5, anchor="w")
+
+        # Search Label
+        search_label = ttk.Label(search_frame, text="Search:")
+        search_label.pack(side="left", padx=5)
+
+        # Search Entry
+        self.search_entry = ttk.Entry(search_frame, width=20)
+        self.search_entry.pack(side="left", padx=5)
+        self.search_entry.bind(
+            "<Return>",
+            lambda e: self.search_manager.search_sheet_data(self.search_entry.get()),
+        )
+
+        # Search Button
+        search_button = ttk.Button(
+            search_frame,
+            text="Search",
+            command=lambda: self.search_manager.search_sheet_data(
+                self.search_entry.get()
+            ),
+        )
+        search_button.pack(side="left", padx=5)
+
+        # Reset Button
+        reset_button = ttk.Button(
+            search_frame,
+            text="Reset",
+            command=lambda: self.search_manager.reset_search(self.search_entry),
+        )
+        reset_button.pack(side="left", padx=5)
 
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
@@ -844,8 +911,9 @@ class TeamStd_WMsSheetView:
 
         # Compose TreeView, Style Manager, and State Observer
         self.sheetview = BaseSheetView(parent, headers=None)
+        self.sheet = self.sheetview.sheet
         self.state_observer = SheetViewStateObserver(
-            state, self.sheetview, lambda e: self.update(state)
+            state, self.sheetview, lambda e: self.update()
         )
 
         # Set up UI
@@ -862,7 +930,7 @@ class TeamStd_WMsSheetView:
         )  # Font name and size
         self.sheetview.sheet.config(height=2000)
         # Initialize the search manager
-        self.search_manager = SheetSearchManager(self.sheetview.sheet, self.state)
+        self.search_manager = SheetSearchManager(self.state, self)
 
         # Add Search Box
         self.add_search_box(self.title_frame)
@@ -932,14 +1000,13 @@ class TeamStd_WMsSheetView:
         # self.sheet.set_options(font=("Arial", 8, "normal"))
         # self.sheet.set_options(default_row_height=18)
 
-    def update(self, state):
+    def update(self, event=None):
         # Updating tksheet in the UI
+        state = self.state
+        self.sheet.set_sheet_data([])
+        data_forSheet = state.team_std_info.get(self.data_kind)
 
-        data_forSheet = state.team_std_info.get("WMs")
-        sheetview_data = self.sheetview.sheet.get_sheet_data()
-        # print(sheetview_data)
-        if not sheetview_data:
-            self.sheetview.sheet.set_sheet_data(data_forSheet)
+        self.sheetview.sheet.set_sheet_data(data_forSheet)
 
         self.setup_column_style()
 

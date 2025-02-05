@@ -2599,17 +2599,50 @@ class TeamStd_calcDict_TreeView:
     def delete_item(self):
         state = self.state
 
+        pattern = r"^\d+\.\d+$"
+        _selected_NoItem = go(
+            self.selected_item_relate_widget.get().split(" | "),
+            reversed,
+            list,
+        )
+        selected_NoItem = go(
+            _selected_NoItem,
+            filter(lambda x: re.match(pattern, x)),
+            next,
+        )
+        selected_idx = _selected_NoItem.index(selected_NoItem)
+        print(f"selected_idx::~   {selected_idx}")
+
+        std_famtree = self.relate_widget.treeview.tree
+        std_famtree_select = std_famtree.selection()
+
+        if selected_idx == 0:
+            selected_qItem_name = std_famtree.item(std_famtree_select, "values")[-1]
+        elif selected_idx == 1:
+            tgt = std_famtree.parent(std_famtree_select)
+            selected_qItem_name = std_famtree.item(tgt, "values")[-1]
+        elif selected_idx == 2:
+            _parent = std_famtree.parent(std_famtree_select)
+            tgt = std_famtree.parent(_parent)
+            selected_qItem_name = std_famtree.item(tgt, "values")[-1]
+            pass
+
         selected_item_id = self.treeview.tree.selection()
-        selected_item_name = go(
+        selected_item_names = go(
             selected_item_id,
             lambda x: self.treeview.tree.item(x, "values"),
             filter(lambda x: x != ""),
             list,
-        )[0]
+        )
+
+        if selected_item_names:
+            selected_item_name = selected_item_names[0]
+        else:
+            selected_item_name = ""
 
         self.treeDataManager.delete_node(
             self.data_kind,
-            selected_item_name,
+            [selected_qItem_name, selected_item_name],
         )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
         state.observer_manager.notify_observers(state)
