@@ -18,6 +18,8 @@ class AppState:
         self.observer_manager = ObserverManager()
         self.notify_targets = []
         self.DefaultTreeViewStyleManager = DefaultTreeViewStyleManager
+        self._rowheight = tk.IntVar()
+        self._rowheight.set(30)
         # self.treeDataManager = TreeDataManager(self, related_widget)
 
         self.current_tab = None

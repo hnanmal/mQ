@@ -174,3 +174,51 @@ class TreeviewEditor_forAssignTreeview(TreeviewEditor):
             self.impl_treeview.place_selected_item_at_top()
         except:
             pass
+
+
+class TreeviewEditor_forBuildingList(TreeviewEditor):
+
+    def on_edit_complete(self, event):
+        if self.current_item is None or self.current_column is None:
+            return
+
+        # Get the updated value from the Entry widget
+        new_value = self.entry_widget.get()
+
+        # Update the state with the new value using TreeDataManager
+        selected_name = self.tree.item(self.current_item, "text")
+        parent_path = self.get_item_path(self.current_item)
+        self.data_manager.update_node_value(
+            data_kind=self.impl_treeview.data_kind,
+            path=parent_path,
+            column_index=self.current_column,
+            new_value=new_value,
+        )
+
+        # If the modified column matches the level depth, update the name as well
+        depth = self.get_item_depth(self.current_item)
+        if self.current_column == depth:
+            self.data_manager.update_node_name(
+                data_kind=self.impl_treeview.data_kind,
+                path=parent_path,
+                new_name=new_value,
+            )
+
+        # state의 project-assigntype의 데이터 변경 반영
+        data = self.state.team_std_info["project-assigntype"]["children"]
+        for dic in data:
+            if dic["values"][1] == selected_name:
+                dic["values"][1] = new_value
+
+        # Notify observers that the state has been updated
+        self.state.observer_manager.notify_observers(self.state)
+
+        # Destroy the Entry widget
+        self.entry_widget.destroy()
+        self.entry_widget = None
+
+        # self.state.on_level_selected(None)
+        try:
+            self.impl_treeview.place_selected_item_at_top()
+        except:
+            pass

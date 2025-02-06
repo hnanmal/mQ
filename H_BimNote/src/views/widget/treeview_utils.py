@@ -12,7 +12,10 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.tableview import Tableview
 
-from src.views.widget.treeview_editor import TreeviewEditor
+from src.views.widget.treeview_editor import (
+    TreeviewEditor,
+    TreeviewEditor_forBuildingList,
+)
 from src.views.widget.widget import StateObserver
 
 
@@ -20,7 +23,7 @@ from src.views.widget.widget import StateObserver
 class DefaultTreeViewStyleManager:
 
     @staticmethod
-    def apply_style(treeview):
+    def apply_style(treeview, rowheight=30):
         style = ttk.Style()
         style.configure(
             # "Treeview",
@@ -29,9 +32,9 @@ class DefaultTreeViewStyleManager:
             highlightthickness=1,
             background="white",
             foreground="black",
-            rowheight=30,
-            # height=50,
-            height=20,
+            # rowheight=30,
+            rowheight=rowheight,
+            # height=20,
         )
         style.map(
             "Treeview",
@@ -190,14 +193,6 @@ class TreeViewContextMenu:
         self.funcs = funcs
         # Create the context menu
         self.menu = ttk.Menu(self.treeview.tree, tearoff=0)
-        # self.menu.add_command(label="Add Top Item", command=self.add_top_item)
-        # self.menu.add_command(label="Add Item", command=self.add_item)
-        # self.menu.add_command(label="Delete Item", command=self.delete_item)
-        # if "copy_GWM" in funcs:
-        #     self.menu.add_command(label="GWM항목 복사", command=self.copy_GWM)
-        # elif "copy_SWM" in funcs:
-        #     self.menu.add_command(label="SWM항목 복사", command=self.copy_SWM)
-        # self.menu.add_command(label="하위항목 복사", command=self.copy_item)
 
         # Bind the right-click to show the menu
         self.treeview.tree.bind("<Button-3>", self.show_context_menu)
@@ -325,6 +320,27 @@ class BaseTreeView:
 
         # Track the last selected item
         self.last_selected_item = None
+
+        self.tree.bind("<Control-MouseWheel>", lambda e: zoom_tree(e))
+
+        def zoom_tree(event):
+            step = 1 if event.delta > 0 else -1  # 확대(+) or 축소(-)
+            if state._rowheight.get() < 21:
+                if step > 0:
+                    state._rowheight.set(state._rowheight.get() + step)
+            elif state._rowheight.get() > 34:
+                if step < 0:
+                    state._rowheight.set(state._rowheight.get() + step)
+            else:
+                state._rowheight.set(state._rowheight.get() + step)
+            # print(f"_rowheight: {state._rowheight.get()}")
+            DefaultTreeViewStyleManager.apply_style(
+                self.tree,
+                state._rowheight.get(),
+            )
+            self.tree.update_idletasks()
+
+            return "break"  # 🛑 기본 스크롤 방지
 
     # 모든 항목에서 hover 효과 제거 함수 (재귀적으로 모든 하위 항목 포함)
     def clear_all_hover(self, tree):
@@ -668,6 +684,32 @@ class TeamStd_GWMTreeView:
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "G-WM", "Item"]
         hdr_widths = [107, 80, 100]
+
+        def set_tree_row(event=None):
+            # rowheight = round(rowheight_scalebar.get())
+            # state._rowheight = tk.IntVar()
+            state._rowheight.set(
+                round(rowheight_scalebar.get()),
+            )
+
+            DefaultTreeViewStyleManager.apply_style(
+                self.treeview.tree,
+                state._rowheight.get(),
+            )
+            self.treeview.tree.update_idletasks()
+
+        rowheight_scalebar = ttk.Scale(
+            parent,
+            bootstyle="info",
+            variable=state._rowheight,
+            command=set_tree_row,
+            from_=20,
+            to=35,
+        )
+        if showmode == "tmp_team_fl" or showmode == "project_fl":
+            pass
+        else:
+            rowheight_scalebar.pack(padx=10, pady=5, side="top")
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1221,9 +1263,35 @@ class TeamStd_SWMTreeView:
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
-        # headers = ["분류", "S-WM", "Item"]
-        headers = ["분류-1", "S-WM", "Item"]
+        headers = ["분류", "S-WM", "Item"]
+        # headers = ["분류-1", "S-WM", "Item"]
         hdr_widths = [107, 80, 100]
+
+        def set_tree_row(event=None):
+            # rowheight = round(rowheight_scalebar.get())
+            # state._rowheight = tk.IntVar()
+            state._rowheight.set(
+                round(rowheight_scalebar.get()),
+            )
+
+            DefaultTreeViewStyleManager.apply_style(
+                self.treeview.tree,
+                state._rowheight.get(),
+            )
+            self.treeview.tree.update_idletasks()
+
+        rowheight_scalebar = ttk.Scale(
+            parent,
+            bootstyle="info",
+            variable=state._rowheight,
+            command=set_tree_row,
+            from_=20,
+            to=35,
+        )
+        if showmode == "tmp_team_fl" or showmode == "project_fl":
+            pass
+        else:
+            rowheight_scalebar.pack(padx=10, pady=5, side="top")
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -1891,6 +1959,29 @@ class TeamStd_FamlistTreeView:
 
         button_frame = ttk.Frame(tree_frame, width=600)
         button_frame.pack(pady=10)
+
+        def set_tree_row(event=None):
+            # rowheight = round(rowheight_scalebar.get())
+            # state._rowheight = tk.IntVar()
+            state._rowheight.set(
+                round(rowheight_scalebar.get()),
+            )
+
+            DefaultTreeViewStyleManager.apply_style(
+                self.treeview.tree,
+                state._rowheight.get(),
+            )
+            self.treeview.tree.update_idletasks()
+
+        rowheight_scalebar = ttk.Scale(
+            button_frame,
+            bootstyle="info",
+            variable=state._rowheight,
+            command=set_tree_row,
+            from_=20,
+            to=35,
+        )
+        rowheight_scalebar.pack(padx=10, pady=5, side="left")
 
         # Add filter button
         if showmode != "team":
@@ -2714,7 +2805,8 @@ class BuildingList_TreeView:
         self.treeview.setup_columns(headers, hdr_widths)
 
         # set treeview_editor class
-        self.treeviewEditor = TreeviewEditor(state, self)
+        # self.treeviewEditor = TreeviewEditor(state, self)
+        self.treeviewEditor = TreeviewEditor_forBuildingList(state, self)
 
     def add_building(self):
         """Add a building name to the TreeView."""

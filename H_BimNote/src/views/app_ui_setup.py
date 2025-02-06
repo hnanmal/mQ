@@ -8,6 +8,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import json
 
+from src.core.web import download_file_with_progress, open_url_in_browser
 from src.core.app_update import APP_VERSION, check_for_update
 from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
 from src.models.app_state import AppState
@@ -105,12 +106,21 @@ def initialize_app(root, _state=None):
     help_menu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="   Help   ", menu=help_menu)
     help_menu.add_command(
-        label="업데이트 체크",
+        label=f"💬 현재 B-note 버전은 {APP_VERSION} 입니다.",
+        # command=lambda: 0,
+    )
+    help_menu.add_command(
+        label="▶ 업데이트 체크",
         command=check_for_update,
     )
     help_menu.add_command(
-        label=f"version : {APP_VERSION}",
-        command=lambda: 0,
+        label=f"💬 본 버전은, '[H_PAB.RT.Q2]_Revit 물량 산출 Dynamo' - [3.2.3] 버전 이상과 호환됩니다.",
+    )
+    help_menu.add_command(
+        label=f"▶ 클릭 시 최신 다이나모 다운로드 페이지로 이동",
+        command=lambda: open_url_in_browser(
+            "https://henginmc6eaoutlook.sharepoint.com/:f:/s/jhjh/EhMNiYh8PkBDsCKr7gg8UeoBvhpHni-Bm2umKis-lf_-qg?e=Ab6njo"
+        ),
     )
 
     paned_window = tk.PanedWindow(

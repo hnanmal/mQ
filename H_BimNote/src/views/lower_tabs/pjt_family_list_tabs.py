@@ -104,14 +104,14 @@ def create_pjtFamList_tab(state, subtab_notebook):
     )
 
     std_GWMTreeView = TeamStd_GWMTreeView(
-        state, std_matching_widget_area, showmode="project", view_level=1
+        state, std_matching_widget_area, showmode="project_fl", view_level=1
     )
     state.std_GWMTreeView = std_GWMTreeView
     # std_GWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_GWMTreeView.tree_frame.pack_forget()
 
     std_SWMTreeView = TeamStd_SWMTreeView(
-        state, std_matching_widget_area, showmode="project", view_level=1
+        state, std_matching_widget_area, showmode="project_fl", view_level=1
     )
     state.std_SWMTreeView = std_SWMTreeView
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)

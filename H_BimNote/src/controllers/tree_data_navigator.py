@@ -627,11 +627,6 @@ class TreeDataManager_treeview(TreeDataManager):
                 except:
                     new_child_value[-1] = ""
 
-            # Add placeholders for columns
-            # new_child_value.insert(0, "")
-            # new_child_value.insert(0, "")
-            # new_child_value.insert(0, "")
-
             # # Update the children of the derived item
             selected_GWMitem.update({"values": new_child_value})
             # selected_GWMitem.update({"children": children})

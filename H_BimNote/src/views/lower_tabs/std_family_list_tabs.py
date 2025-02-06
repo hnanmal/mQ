@@ -104,13 +104,13 @@ def create_stdFamList_tab(state, subtab_notebook):
     )
 
     std_GWMTreeView = TeamStd_GWMTreeView(
-        state, std_matching_widget_area, showmode="tmp_team", view_level=1
+        state, std_matching_widget_area, showmode="tmp_team_fl", view_level=1
     )
     # std_GWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_GWMTreeView.tree_frame.pack_forget()
 
     std_SWMTreeView = TeamStd_SWMTreeView(
-        state, std_matching_widget_area, showmode="tmp_team", view_level=1
+        state, std_matching_widget_area, showmode="tmp_team_fl", view_level=1
     )
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_SWMTreeView.tree_frame.pack_forget()

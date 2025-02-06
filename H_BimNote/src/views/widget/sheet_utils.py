@@ -264,7 +264,11 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         if column == 0:
             if project_GWM:
-                spec = project_GWM[-1]
+                # spec = project_GWM[-1]
+                if project_GWM[-1] == self.sheet.get_cell_data(row, 1):
+                    spec = project_GWM[-1]
+                else:
+                    spec = self.sheet.get_cell_data(row, 1)
                 unit = project_GWM[-2]
                 gauge = project_GWM[1]
             else:
@@ -318,6 +322,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         )
         self.update()
         self.highlight_checked_row()
+        self.sheet.redraw()
 
     def highlight_checked_row(self):
         """Update row highlights based on checkbox values."""
@@ -1132,6 +1137,12 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
             "arrowkeys",
         )
 
+        # Right Click pop up - 선택 초기화 버튼 추가
+        self.sheet.popup_menu_add_command(
+            label="선택상태 초기화",
+            func=self.clear_selection,
+        )
+
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
@@ -1141,6 +1152,10 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
 
         # 초기 데이터 로드 및 시트 설정
         self.setup_sheet()
+
+    def clear_selection(self):
+        self.update()
+        self.sheet.redraw()
 
     def setup_sheet(self):
         # 헤더 설정
