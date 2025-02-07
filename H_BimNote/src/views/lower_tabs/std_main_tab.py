@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.font
-from PIL import Image, ImageTk
-from html.parser import HTMLParser
+
 
 # from tkinter import ttk
 import ttkbootstrap as ttk

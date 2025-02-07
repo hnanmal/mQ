@@ -8,15 +8,12 @@ from ttkbootstrap.constants import *
 from src.controllers.widget.widgets import (
     EditModeManager,
     handle_add_button_press,
-    handle_del_button_press,
 )
 
 from src.views.widget.treeview_utils import (
     TeamStd_FamlistTreeView,
     TeamStd_GWMTreeView,
-    DefaultTreeViewStyleManager,
     TeamStd_calcDict_TreeView,
-    # TeamStd_WMmatching_TreeView,
     TeamStd_SWMTreeView,
 )
 from src.views.widget.widget import WidgetSwitcher

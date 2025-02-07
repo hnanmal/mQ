@@ -170,6 +170,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.sheet.extra_bindings(
             [
                 ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+                ("delete", lambda e: self.on_checkbox_delete(e)),
             ]
         )
 
@@ -236,6 +237,21 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         )
         reset_button.pack(side="left", padx=5)
 
+    def on_checkbox_delete(self, event):
+        selected_item_str = self.selected_item_relate_widget.get()
+        project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
+        print(event)
+
+        row, column = list(event["cells"]["table"].keys())[0]  # .keys())
+        if column == 0:
+            if project_GWM:
+                self.state.team_std_info["project-GWM"].pop(selected_item_str)
+
+        self.update()
+        self.sheet.redraw()
+
+        # return
+
     def on_checkbox_click(self, event):
         """Callback for checkbox clicks."""
         self.state.log_widget.write(
@@ -245,7 +261,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
 
         # print(self.sheet.get_data())
-
+        # print(event)
         row = event["row"]
         column = event["column"]
         for r in range(self.sheet.get_total_rows()):

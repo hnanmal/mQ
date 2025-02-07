@@ -1,4 +1,3 @@
-from ctypes import windll
 import tkinter as tk
 from tkinter import (
     # ttk,
@@ -8,7 +7,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import json
 
-from src.core.web import download_file_with_progress, open_url_in_browser
+from src.core.web import open_url_in_browser
 from src.core.app_update import APP_VERSION, check_for_update
 from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
 from src.models.app_state import AppState

@@ -1,6 +1,5 @@
 # src/models/app_state.py
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
-from src.controllers.widget.widgets import EditModeManager
 from src.core.fp_utils import *
 from src.models.observer_manager import ObserverManager
 

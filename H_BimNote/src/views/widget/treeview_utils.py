@@ -3,9 +3,7 @@ from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import (
-    # ttk,
     simpledialog,
-    messagebox,
 )
 import re
 import ttkbootstrap as ttk
@@ -1950,7 +1948,7 @@ class TeamStd_FamlistTreeView:
             "Description",
             "표준산출유형 번호",
         ]
-        hdr_widths = [0, 60, 20, 150, 100, 100, 100, 200, 50]
+        hdr_widths = [0, 60, 20, 150, 100, 100, 100, 230, 20]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)

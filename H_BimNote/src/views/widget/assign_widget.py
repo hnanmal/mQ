@@ -11,16 +11,6 @@ from src.views.widget.treeview_utils import BaseTreeView, ScrollbarWidget
 from src.views.widget.treeview_editor import TreeviewEditor
 
 
-## Revit Type 입력시 편의를 위해 rvt summary 시트 더블클릭 새창 열기 기능 구현 필수
-## 여러 레빗타입을 동시에 같은 내용으로 편집하게 하려면 구성을 어떻게 하는게 좋을지?
-## >> 그룹 지정 / 해제 기능을 만들면 편할듯?
-## >> 아니면, 레빗 타입 다중 선택 상태에서 우측 내용 입력후 확정 버튼을 누르면 동시에 데이터 주입되도록?
-## >> 확정후에 레벳 타입 하나씩 누르면 각각에 대한 상태 우측에 표시하고,
-## >> 여러개 눌러서 보면 동일하면 그 상태 보여주고, 다른 종류가 섞여있으면 var 로 표시하게 하던지?
-## >> 아니면 스타일 복사 버튼?
-## >> 다중선택 이랑 스타일 복사 두개 다 있어야 할거 같다
-
-
 class WMapply_button:
     def __init__(self, state, parent, ref_widgets, tgt_widget, *args, **kwargs):
         self.state = state
