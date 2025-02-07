@@ -1,4 +1,5 @@
 # src/views/widget/sheet_utils.py
+from src.models.sheet_utils import find_matched_pjtGWM, find_wmStr
 from src.controllers.tree_data_navigator import (
     TreeDataManager_treesheet,
     TreeDataManager_treeview,
@@ -253,6 +254,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         # return
 
     def on_checkbox_click(self, event):
+        state = self.state
         """Callback for checkbox clicks."""
         self.state.log_widget.write(
             f"{self.__class__.__name__} > on_checkbox_click 메소드 시작"
@@ -339,6 +341,39 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.update()
         self.highlight_checked_row()
         self.sheet.redraw()
+
+        # 변동사항 어사인 db 에 반영
+        WMs = state.team_std_info.get("WMs")
+        WMsStr = go(
+            WMs,
+            map(lambda x: list(map(str, x))),
+            map(lambda x: filter(lambda x: x != "0", x)),
+            map(lambda x: filter(lambda x: x != "", x)),
+            map(lambda x: filter(lambda x: x != " ", x)),
+            map(lambda x: filter(lambda x: x != "ㅤ", x)),  #  공백 특수 문자
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        pjt_gwm_data = state.team_std_info.get("project-GWM")
+        pjt_swm_data = state.team_std_info.get("project-SWM")
+        pjt_wm_data = deepcopy(pjt_gwm_data)
+        pjt_wm_data.update(pjt_swm_data)
+        pjt_assigntypes = self.state.team_std_info["project-assigntype"]["children"]
+
+        for assigntype in pjt_assigntypes:
+            wms = assigntype["children"]
+            for wm in wms:
+                try:
+                    matched_item = find_matched_pjtGWM(pjt_wm_data, wm[2])
+                    wm[3] = find_wmStr(
+                        pjt_wm_data.get(matched_item, ["", "", "", ""])[0],
+                        WMsStr,
+                    )
+                    wm[4] = pjt_wm_data.get(matched_item, ["", "", "", ""])[1]
+                    wm[5] = pjt_wm_data.get(matched_item, ["", "", "", ""])[3]
+                    wm[7] = pjt_wm_data.get(matched_item, ["", "", "", ""])[2]
+                except:
+                    pass
 
     def highlight_checked_row(self):
         """Update row highlights based on checkbox values."""
@@ -650,6 +685,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         reset_button.pack(side="left", padx=5)
 
     def on_checkbox_click(self, event):
+        state = self.state
         """Callback for checkbox clicks."""
         self.state.log_widget.write(
             f"{self.__class__.__name__} > on_checkbox_click 메소드 시작"
@@ -732,6 +768,39 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         )
         self.update()
         self.highlight_checked_row()
+
+        # 변동사항 어사인 db 에 반영
+        WMs = state.team_std_info.get("WMs")
+        WMsStr = go(
+            WMs,
+            map(lambda x: list(map(str, x))),
+            map(lambda x: filter(lambda x: x != "0", x)),
+            map(lambda x: filter(lambda x: x != "", x)),
+            map(lambda x: filter(lambda x: x != " ", x)),
+            map(lambda x: filter(lambda x: x != "ㅤ", x)),  #  공백 특수 문자
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        pjt_gwm_data = state.team_std_info.get("project-GWM")
+        pjt_swm_data = state.team_std_info.get("project-SWM")
+        pjt_wm_data = deepcopy(pjt_gwm_data)
+        pjt_wm_data.update(pjt_swm_data)
+        pjt_assigntypes = self.state.team_std_info["project-assigntype"]["children"]
+
+        for assigntype in pjt_assigntypes:
+            wms = assigntype["children"]
+            for wm in wms:
+                try:
+                    matched_item = find_matched_pjtGWM(pjt_wm_data, wm[2])
+                    wm[3] = find_wmStr(
+                        pjt_wm_data.get(matched_item, ["", "", "", ""])[0],
+                        WMsStr,
+                    )
+                    wm[4] = pjt_wm_data.get(matched_item, ["", "", "", ""])[1]
+                    wm[5] = pjt_wm_data.get(matched_item, ["", "", "", ""])[3]
+                    wm[7] = pjt_wm_data.get(matched_item, ["", "", "", ""])[2]
+                except:
+                    pass
 
     def highlight_checked_row(self):
         """Update row highlights based on checkbox values."""

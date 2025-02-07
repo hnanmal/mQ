@@ -1,6 +1,50 @@
 # src/models/sheet_utils.py
 
-import src.core.fp_utils
+from src.core.fp_utils import *
+
+
+def find_matched_pjtGWM(pjt_gwm_data, name):
+    res = go(
+        pjt_gwm_data.keys(),
+        list,
+        # filter(lambda x: name in x),
+        filter(lambda x: x.endswith(name)),
+        list,
+    )
+    try:
+        return res[0]
+    except:
+        return ""
+
+
+def find_matched_pjtSWM(pjt_swm_data, name):
+    res = go(
+        pjt_swm_data.keys(),
+        list,
+        # filter(lambda x: name in x),
+        filter(lambda x: x.endswith(name)),
+        list,
+    )
+    try:
+        return res[0]
+    except:
+        return ""
+
+
+def find_wmStr(wmcode, WMsStr):
+    if wmcode == "":
+        return ""
+    else:
+        wmcode_ = wmcode.split("|")[0].strip()
+        res = go(
+            WMsStr,
+            filter(lambda x: wmcode_ in x),
+            list,
+        )
+    try:
+        return res[0]
+    except:
+        return ""
 
 
 def convert_SGWMsheet_data_to_dict(state, sheet_data):

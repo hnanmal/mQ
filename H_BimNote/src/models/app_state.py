@@ -143,6 +143,8 @@ class AppState:
         )
         print(f'related_widget:: {related_widget.selected_item.get().split(" | ")}')
 
+        # wmSelect
+
         # Use TreeDataNavigator to remove matched WMs
         treeDataManager = TreeDataManager_treeview(self, related_widget)
         treeDataManager.match_GWMitems_to_stdFam(
