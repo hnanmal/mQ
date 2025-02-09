@@ -581,7 +581,10 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
             return_str.append(self.treeview.tree.item(selected_item_id, "text"))
 
-        self.relate_widget.entry.set_text("\n".join(return_str))
+        # self.relate_widget.entry.set_text("\n".join(return_str))
+        exist_str = self.relate_widget.entry.get_text()
+        res_str = [exist_str] + return_str
+        self.relate_widget.entry.set_text("\n".join(res_str))
 
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)

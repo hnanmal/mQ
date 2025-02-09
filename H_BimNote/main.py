@@ -40,6 +40,7 @@ def main():
     notebook, state = initialize_app(root)
     root.iconbitmap(icon_path)
     root.iconify()
+    state.icon_path = icon_path
 
     # root.withdraw()  # Hide the main window while splash is shown
     state.root = root

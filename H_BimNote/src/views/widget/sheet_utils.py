@@ -262,8 +262,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         selected_item_str = self.selected_item_relate_widget.get()
         project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
 
-        # print(self.sheet.get_data())
-        # print(event)
         row = event["row"]
         column = event["column"]
         for r in range(self.sheet.get_total_rows()):
@@ -299,8 +297,15 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
-                    lambda x: x.split(" | "),
-                    filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
+                    lambda x: x.split("|"),
+                    map(lambda x: x.strip()),
+                    filter(
+                        lambda x: ("(   )" in x)
+                        or ("(   )" in x)
+                        or ("(  )" in x)
+                        or ("( )" in x)
+                        or ("()" in x)
+                    ),
                     lambda x: "\n".join(x),
                 )
                 self.state.team_std_info["project-GWM"].update(
@@ -313,7 +318,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                         ]
                     }
                 )
-
         elif column == 1:
             spec = event["value"]
             unit = go(
@@ -618,6 +622,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         self.sheet.extra_bindings(
             [
                 ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+                ("delete", lambda e: self.on_checkbox_delete(e)),
             ]
         )
 
@@ -684,6 +689,21 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         )
         reset_button.pack(side="left", padx=5)
 
+    def on_checkbox_delete(self, event):
+        selected_item_str = self.selected_item_relate_widget.get()
+        project_SWM = self.state.team_std_info["project-SWM"].get(selected_item_str)
+        print(event)
+
+        row, column = list(event["cells"]["table"].keys())[0]  # .keys())
+        if column == 0:
+            if project_SWM:
+                self.state.team_std_info["project-SWM"].pop(selected_item_str)
+
+        self.update()
+        self.sheet.redraw()
+
+        # return
+
     def on_checkbox_click(self, event):
         state = self.state
         """Callback for checkbox clicks."""
@@ -693,10 +713,11 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         selected_item_str = self.selected_item_relate_widget.get()
         project_SWM = self.state.team_std_info["project-SWM"].get(selected_item_str)
 
-        # print(self.sheet.get_data())
-
         row = event["row"]
         column = event["column"]
+
+        origin_chkStat = self.sheet.get_cell_data(row, 0)
+
         for r in range(self.sheet.get_total_rows()):
             if r != row:
                 self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
@@ -713,7 +734,10 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         if column == 0:
             if project_SWM:
-                spec = project_SWM[-1]
+                if project_SWM[-1] == self.sheet.get_cell_data(row, 1):
+                    spec = project_SWM[-1]
+                else:
+                    spec = self.sheet.get_cell_data(row, 1)
                 unit = project_SWM[-2]
                 gauge = project_SWM[1]
             else:
@@ -726,8 +750,15 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                 spec = go(
                     self.sheet.get_cell_data(row, 3),
                     lambda x: x.replace("\n", ""),
-                    lambda x: x.split(" | "),
-                    filter(lambda x: ("(   )" in x) or ("(   )" in x) or ("(  )" in x)),
+                    lambda x: x.split("|"),
+                    map(lambda x: x.strip()),
+                    filter(
+                        lambda x: ("(   )" in x)
+                        or ("(   )" in x)
+                        or ("(  )" in x)
+                        or ("( )" in x)
+                        or ("()" in x)
+                    ),
                     lambda x: "\n".join(x),
                 )
                 self.state.team_std_info["project-SWM"].update(
@@ -740,8 +771,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                         ]
                     }
                 )
-                # print(f"셀데이터 ---:::{self.sheet.get_cell_data(row, 3)}")
-                # print(f"unit ---:::{unit}")
         elif column == 1:
             spec = event["value"]
             unit = go(

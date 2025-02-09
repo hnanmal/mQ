@@ -1,4 +1,9 @@
 # src/models/app_state.py
+import re
+import threading
+from tkinter import messagebox, simpledialog
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.core.fp_utils import *
 from src.models.observer_manager import ObserverManager
@@ -7,6 +12,7 @@ from src.models.observer_manager import ObserverManager
 import tkinter as tk
 
 from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
+from src.views.widget.widget import open_dialog
 
 
 class AppState:
@@ -84,7 +90,7 @@ class AppState:
             sorted,
             list,
         )
-        print(selected_wms)
+        print(f"selected_wms:::!!!{selected_wms}")
         related_widget.selected_item.get().split(" | ")
         grand_parent_item_name, parent_item_name, selected_item_name = (
             related_widget.selected_item.get().split(" | ")
@@ -126,6 +132,48 @@ class AppState:
         print("dematch_matchedWMs_to_stdType_종료")
 
     def match_GWM_to_stdFam(self, related_widget):
+        def show_auto_warning(content):
+            """Display a warning window that disappears after 2 seconds."""
+            window_width = 300
+            window_height = 200
+
+            warning_window = tk.Toplevel(takefocus=1)
+            warning_window.iconbitmap(self.icon_path)
+            warning_window.title("Warning")
+
+            screen_width = warning_window.winfo_screenwidth()
+            screen_height = warning_window.winfo_screenheight()
+
+            x = (screen_width // 2) - (window_width // 2)
+            y = (screen_height // 2) - (window_height // 2)
+            warning_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+            warning_window.overrideredirect(
+                True
+            )  # Remove window decorations (close, minimize, etc.)
+            # Set the new window to always be on top
+            warning_window.attributes("-topmost", True)
+            warning_window.configure(
+                bg="white",
+                highlightthickness=2,
+            )
+
+            label = ttk.Label(
+                warning_window,
+                text=content,
+                font=("Arial", 9),
+                background="white",
+            )
+            label.pack(expand=True, padx=20, pady=20)
+
+            close_button = ttk.Button(
+                warning_window, text="Close", command=warning_window.destroy
+            )
+            close_button.pack(pady=5)
+
+            # Close window after 2 seconds
+            # warning_window.after(3500, warning_window.destroy)
+
         print("match_wms_to_stdType_시작")
         data_kind = related_widget.data_kind
         print(f"data_kind:::::{data_kind}")
@@ -136,23 +184,59 @@ class AppState:
         )
         print(f"{self.selected_GWMSWM}")
 
-        print(f"!!!match_GWM_to_stdFam: {selectedGWMitems}")
-        related_widget.selected_item.get().split(" | ")
+        def find_idxNotSpace(strlist):
+            idx = 0
+            for idx_, str_ in enumerate(strlist):
+                if str_ != "":
+                    idx = idx_
+
+            return idx
+
+        GWMSWM_lvIdx = find_idxNotSpace(self.selected_GWMSWM)
+
+        # print(f"!!!match_GWM_to_stdFam: {selectedGWMitems}")
+        print(f"!!!GWMSWM_lvIdx: {GWMSWM_lvIdx}")
+
         grandparent_item_name, parent_item_name, selected_item_name = (
             related_widget.selected_item.get().split(" | ")
         )
         print(f'related_widget:: {related_widget.selected_item.get().split(" | ")}')
 
-        # wmSelect
-
         # Use TreeDataNavigator to remove matched WMs
         treeDataManager = TreeDataManager_treeview(self, related_widget)
-        treeDataManager.match_GWMitems_to_stdFam(
-            data_kind,
-            grandparent_item_name,
-            parent_item_name,
-            selected_item_name,
-            selectedGWMitems,
-        )
+        pattern = r"^\d+\.\d+$"
+        if GWMSWM_lvIdx == 0:
+            open_dialog(
+                self,
+                "< 유효하지 않은 레벨 선택 >\n\n좌측 영역에서 G-WM/S-WM 이나\nItem 항목을 선택해 주세요.",
+            )
+        elif GWMSWM_lvIdx == 1:
+            if grandparent_item_name == "Top":
+                treeDataManager.match_GWMitems_to_stdFam(
+                    data_kind,
+                    grandparent_item_name,
+                    parent_item_name,
+                    selected_item_name,
+                    selectedGWMitems,
+                )
+            else:
+                open_dialog(
+                    self,
+                    "< 유효하지 않은 레벨 선택 >\n\n중앙 영역에서 Family Name 항목을 선택해 주세요.",
+                )
+        elif GWMSWM_lvIdx == 2:
+            if re.match(pattern, parent_item_name):
+                treeDataManager.match_GWMitems_to_stdFam(
+                    data_kind,
+                    grandparent_item_name,
+                    parent_item_name,
+                    selected_item_name,
+                    selectedGWMitems,
+                )
+            else:
+                open_dialog(
+                    self,
+                    "< 유효하지 않은 레벨 선택 >\n\n중앙 영역에서 GWM/SWM 항목을 선택해 주세요.",
+                )
 
         print("match_wms_to_stdType_종료")

@@ -146,6 +146,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
     typeAssign_treeview = TypeAssign_treeview(
         state, section2, relate_widget=modelType_entry
     )
+    typeAssign_treeview.treeview.tree.config(height=12)
     state.typeAssign_treeview = typeAssign_treeview
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(typeAssign_treeview)
@@ -154,14 +155,14 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     # calc_dict Area
     calc_dict_area = ttk.Frame(section2)
-    calc_dict_area.pack(fill="x", side="bottom", anchor="s", padx=20)
+    calc_dict_area.pack(fill="both", side="top", anchor="s", padx=20)
     pjtAssign_calcDict_TreeView = TeamStd_calcDict_TreeView(
         state,
         calc_dict_area,
         relate_widget=pjt_assign_famlist,
         view_level=3,
     )
-    pjtAssign_calcDict_TreeView.treeview.tree.config(height=6)
+    pjtAssign_calcDict_TreeView.treeview.tree.config(height=12)
     ######### notify_targets 등록 ###############################################
     state.notify_targets.append(pjtAssign_calcDict_TreeView)
     #############################################################################

@@ -1978,6 +1978,7 @@ class TeamStd_FamlistTreeView:
             command=set_tree_row,
             from_=20,
             to=35,
+            length=5,
         )
         rowheight_scalebar.pack(padx=10, pady=5, side="left")
 
@@ -2424,8 +2425,6 @@ class TeamStd_calcDict_TreeView:
             "표준산출유형 번호",
             "심벌키",
             "심벌값",
-            # "GWM/SWM",
-            # "표준산출 수식",
         ]
         hdr_widths = [100, 50, 100]
 

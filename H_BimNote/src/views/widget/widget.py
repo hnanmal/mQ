@@ -6,12 +6,14 @@ from ttkbootstrap.constants import *
 from src.core.fp_utils import *
 
 
-def open_dialog(root, textStr):
+def open_dialog(state, textStr, width=600, height=200):
     # Create a new Toplevel window
+    root = state.root
     dialog = tk.Toplevel(root)
+    dialog.iconbitmap(state.icon_path)
     dialog.title("Dialog Window")
-    width = 600
-    height = 200
+    # width = 600
+    # height = 200
     dialog.geometry(f"{width}x{height}")  # Set the size of the dialog
 
     # Disable interaction with the main window until the dialog is closed
@@ -31,10 +33,19 @@ def open_dialog(root, textStr):
     )
     close_button.pack(pady=10)
 
+    # 스페이스 키를 'dialog.destroy' 기능에 연결
+    dialog.bind(
+        "<space>",
+        lambda e: dialog.destroy(),
+    )
+
     # Center the dialog relative to the root window
     x = root.winfo_x() + (root.winfo_width() // 2) - (width // 2)
     y = root.winfo_y() + (root.winfo_height() // 2) - (height // 2)
     dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+    dialog.grab_set()  # Grab all input focus
+    dialog.focus_force()
 
 
 def select_tab(notebook, parent_index, subtab_index=None):

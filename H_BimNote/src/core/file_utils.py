@@ -35,7 +35,7 @@ def save_to_json_teamStdInfo(state, _file_path=None):
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(
-            state.root,
+            state,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n에 저장 되었습니다.",
         )
 
@@ -111,7 +111,7 @@ def load_from_json(state, _file_path=None):
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(
-            state.root,
+            state,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n으로부터 로드 되었습니다.",
         )
 
