@@ -76,7 +76,7 @@ class SearchManager:
         self.sheet.redraw()  # Refresh the sheet immediately
 
 
-class ReportSheetWidget(ttk.Frame):
+class ReportMember_SheetWidget(ttk.Frame):
     def __init__(self, state, parent, data_kind=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.state = state
@@ -154,14 +154,16 @@ class ReportSheetWidget(ttk.Frame):
                     60,  # 카테고리
                     70,  # 표준타입번호
                     140,  # 표준타입
-                    50,  # 분류
+                    40,  # 분류
                     200,  # name
-                    150,  # GUID
+                    40,  # GUID
+                    # 150,  # GUID
                     180,  # 상세분류
                     100,  # wm_code
                     50,  # gauge
                     150,  # description
-                    540,  # Spec.
+                    360,  # Spec.
+                    # 540,  # Spec.
                     180,  # Add_spec.
                     150,  # 수식
                     200,  # 대입수식
@@ -172,7 +174,9 @@ class ReportSheetWidget(ttk.Frame):
                     200,  # 산출로그
                 ]
             )
-        self.sheet.set_options(default_row_height=33)
+        self.sheet.set_options(
+            default_row_height=33,
+        )
 
     def get_manula_item_data(self):
         ## dynamo 로직 준용
@@ -560,3 +564,472 @@ class ReportSheetWidget(ttk.Frame):
         # Ensure everything is redrawn
         self.set_colums_widths()
         self.sheet.redraw()
+
+
+class ReportGroup_SheetWidget(ttk.Frame):
+    def __init__(self, state, parent, data_kind=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.state = state
+        self.data_kind = data_kind
+        self.data = []
+        self.column_headers = []
+
+        # Load data
+        self.load_data()
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
+        print(f"self.total_data::{self.total_data[0]}")
+
+        # Formatting to Grouped form
+        self.grped_total_data = self.format_data(self.total_data)
+
+        # Create a frame for the top controls (button)
+        self.control_frame = ttk.Frame(parent)
+        self.control_frame.pack(fill=tk.X, pady=5)
+
+        # Initialize tksheet widget
+        self.sheet = Sheet(
+            self,
+            # data=[],
+            # data=self.total_data,
+            data=self.grped_total_data,
+            column_width=180,
+            # theme="dark",
+            # theme="light green",
+            height=500,
+            width=1000,
+        )
+        self.sheet.enable_bindings(
+            "select_all",
+            "single_select",
+            "drag_select",
+            "row_select",
+            "copy",
+            "rc_select",
+            "arrowkeys",
+            "double_click_column_resize",
+            "column_width_resize",
+            "column_select",
+            "row_height_resize",
+        )
+
+        self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
+        self.sheet.set_options(font=("Arial Narrow", 9, "normal"))
+
+        self.sheet.pack(fill=tk.BOTH, expand=True)
+
+        # Add search functionality
+        self.search_manager = SearchManager(self.control_frame, self.sheet)
+
+        # 상태 변경 감지를 위한 옵저버 설정
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+        self.column_headers = [
+            "카테고리",
+            "표준타입번호",
+            "표준타입",
+            "name",
+            "GUID",
+            "분류",
+            "상세분류",
+            "wm_code",
+            "gauge",
+            "description",
+            "Spec.",
+            "Add_spec.",
+            "수식",
+            "대입수식",
+            "산출결과",
+            "단위",
+            "산출유형",
+            "Note",
+            "산출로그",
+        ]
+
+        self.sheet.headers(self.column_headers)
+
+    def set_colums_widths(self, hdr_widths=None):
+        # self.sheet.headers(self.column_headers)
+        if hdr_widths:
+            self.sheet.set_column_widths(hdr_widths)
+        else:
+            self.sheet.set_column_widths(
+                [
+                    60,  # 카테고리
+                    70,  # 표준타입번호
+                    140,  # 표준타입
+                    200,  # name
+                    40,  # GUID
+                    # 150,  # GUID
+                    40,  # 분류
+                    180,  # 상세분류
+                    100,  # wm_code
+                    50,  # gauge
+                    160,  # description
+                    380,  # Spec.
+                    # 540,  # Spec.
+                    180,  # Add_spec.
+                    150,  # 수식
+                    200,  # 대입수식
+                    50,  # 산출결과
+                    50,  # 단위
+                    50,  # 산출유형
+                    200,  # Note
+                    200,  # 산출로그
+                ]
+            )
+        self.sheet.set_options(
+            default_row_height=33,
+        )
+
+    def update(self, event=None):
+        """Update the Sheet widget whenever the state changes."""
+        state = self.state
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        print(f"{self.__class__.__name__} > update 메소드 시작")
+
+        # Reload data
+        self.load_data()
+
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
+
+        # Formatting to Grouped form
+        self.grped_total_data = self.format_data(self.total_data)
+        print(f"self.grped_total_data::{self.grped_total_data[0]}")
+
+        # Set headers and data
+        self.sheet.set_sheet_data(
+            # self.data, reset_col_positions=True, reset_row_positions=True
+            self.grped_total_data,
+            reset_col_positions=True,
+            reset_row_positions=True,
+        )
+        # self.sheet.headers(self.column_headers)
+
+        # # Reinitialize dropdowns
+        # self.add_dropdowns()
+
+        # self.clear_filters()
+
+        # # Ensure cell sizes and redraw
+        self.set_colums_widths()
+        self.sheet.redraw()
+
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
+        print(f"{self.__class__.__name__} > update 메소드 종료")
+
+    def format_data(self, data):
+        """
+        Processes hierarchical tabular data and groups it by the first two columns.
+        """
+        try:
+            structured_data = []
+            for row in data:
+                structured_data.append(row)
+
+            grouped_data = {}
+
+            for row in structured_data:
+                category, sub1, sub2, sub3, sub4, sub5 = (
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[4],
+                    row[5],
+                    row[3],
+                )
+                if category not in grouped_data:
+                    grouped_data[category] = {}
+                if sub1 not in grouped_data[category]:
+                    grouped_data[category][sub1] = {}
+                if sub2 not in grouped_data[category][sub1]:
+                    grouped_data[category][sub1][sub2] = {}
+                if sub3 not in grouped_data[category][sub1][sub2]:
+                    grouped_data[category][sub1][sub2][sub3] = {}
+                if sub4 not in grouped_data[category][sub1][sub2][sub3]:
+                    grouped_data[category][sub1][sub2][sub3][sub4] = {}
+                if sub5 not in grouped_data[category][sub1][sub2][sub3][sub4]:
+                    grouped_data[category][sub1][sub2][sub3][sub4][sub5] = []
+                grouped_data[category][sub1][sub2][sub3][sub4][sub5].append(row[6:])
+
+        except:
+            grouped_data = {}
+
+        # Populate Excel with hierarchical data
+        sheet = []
+        for category, sub1s in grouped_data.items():
+            sheet.append([category])  # First level header
+
+            for sub1, sub2s in sub1s.items():
+                sub2 = list(sub2s.keys())[0]
+                sheet.append(["", sub1, sub2])  # Second level header
+
+                # for sub2, sub3s in sub2s.items():
+                for sub2, sub3s in sub2s.items():
+                    # sheet.append(["", "", "", sub2])  # Third level header
+
+                    for sub3, sub4s in sub3s.items():
+                        sheet.append(["", "", "", sub3])  # Third level header
+
+                        for sub4, sub5s in sub4s.items():
+                            sheet.append(["", "", "", "", sub4])  # Third level header
+
+                            for sub5, rows in sub5s.items():
+                                sheet.append(
+                                    ["", "", "", "", "", sub5]
+                                )  # Third level header
+
+                                for row in rows:
+                                    sheet.append(
+                                        ["", "", "", "", "", "", *row]
+                                    )  # Data rows indented
+
+        return sheet
+
+    def get_manula_item_data(self):
+        ## dynamo 로직 준용
+        def calc_formula(formula, calc_param_list):
+
+            try:
+                tmp_formula = go(
+                    formula.split("\n"),
+                    filter(lambda x: "#" not in x),
+                    list,
+                )[0]
+            except:
+                tmp_formula = ""
+
+            if (
+                tmp_formula != "=Exca"
+                and tmp_formula != "=Back"
+                and tmp_formula != "=Disp"
+            ):
+                for n, v in calc_param_list:
+                    tmp_formula = tmp_formula.replace(n, str(v))
+                try:
+                    calc_result = eval(tmp_formula.strip("=")), "계산 성공"
+                except:
+                    calc_result = 0, "계산 실패 - 수식 혹은 파라미터가 유효하지 않음"
+            else:
+                tmp_formula = formula
+                calc_result = (
+                    0,
+                    "토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망",
+                )
+
+            return {
+                "수식": "'" + formula,
+                "대입수식": "'" + tmp_formula,
+                "산출결과": calc_result[0],
+                "산출로그": calc_result[1],
+            }
+
+        state = self.state
+
+        maunal_node = go(
+            state.team_std_info["project-assigntype"],
+            lambda x: x.get("children"),
+            filter(lambda x: x["values"][1] == state.current_building.get()),
+            filter(lambda x: "14." in x["values"][2].split("|")[1].strip()),
+            # map(lambda x: x["children"]),
+            list,
+        )
+        print(f"maunal_node:: {maunal_node}")
+
+        wm_dict_hdrs = [
+            "분류",
+            "표준타입",
+            "상세분류",
+            "wm",
+            "gauge",
+            # "add_spec",
+            "Add_spec.",
+            "수식",
+            "단위",
+            "산출유형",
+            "Note",
+        ]
+        flatten_hdrs = [
+            "카테고리",
+            "표준타입번호",
+            "표준타입",
+            "분류",
+            "name",
+            "GUID",
+            "상세분류",
+            "wm_code",
+            "gauge",
+            "Description",
+            "Spec.",
+            "Add_spec.",
+            "수식",
+            "대입수식",
+            "산출결과",
+            "단위",
+            "산출유형",
+            "Note",
+            "산출로그",
+        ]
+
+        def calc_and_set_data(node_):
+            node = deepcopy(node_)
+
+            cat = node["values"][2].split("|")[1].strip()
+            std_type_no = node["values"][2].split("|")[2].strip()
+            name = node["name"]
+
+            wm_list = go(
+                node["children"],
+                list,
+            )
+
+            wm_dicts = go(
+                wm_list,
+                deepcopy,
+                map(lambda x: dict(zip(wm_dict_hdrs, x))),
+                list,
+            )
+            for wm_dict in wm_dicts:
+                if "Note" not in wm_dict.keys():
+                    wm_dict.update({"Note": ""})
+            # print(f"wm_dicts:: {wm_dicts}")
+
+            res = []
+            for wm_dict in wm_dicts:
+                calcType_no = wm_dict["산출유형"]
+                calcdict = go(
+                    state.team_std_info["std-calcdict"]["children"],
+                    filter(lambda x: x["name"] == calcType_no),
+                    list,
+                )[0]
+                # print(f"calcdict:: {calcdict}")
+                param_list = go(
+                    calcdict["children"],
+                    list,
+                    map(lambda x: x["values"]),
+                    list,
+                    map(lambda x: list(x)[1:]),
+                    lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),
+                    list,
+                )
+
+                wm_dict.update(calc_formula(wm_dict["수식"], param_list))
+                wm_code = wm_dict["wm"].split("|")[0].strip()
+
+                try:
+                    wm_desc = wm_dict["wm"].split(" | ")[7]
+                except:
+                    wm_desc = ""
+
+                wm_spec = go(
+                    wm_dict["wm"].split(" | ")[9:-4],
+                    filter(lambda x: not x.isnumeric()),
+                    filter(
+                        lambda x: not (
+                            ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+                        )
+                    ),
+                    lambda x: "\n".join(x),
+                )
+
+                wm_dict.update(
+                    {
+                        "name": name,
+                        "GUID": "수동산출항목",
+                        "카테고리": cat,
+                        "표준타입번호": std_type_no,
+                        "wm_code": wm_code,
+                        "Description": wm_desc,
+                        "Spec.": wm_spec,
+                        "산출로그": "계산 성공",
+                    }
+                )
+                row = []
+                try:
+                    for i in flatten_hdrs:
+                        row.append(wm_dict[i])
+                except:
+                    row = [
+                        "",
+                        "",
+                        wm_dict["표준타입"],
+                        "",
+                        wm_dict["name"],
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                    ]
+                res.append(row)
+            return res
+            # res_.append(wm_dict)
+
+        res = []
+        for node_ in maunal_node:
+            try:
+                rows = calc_and_set_data(node_)
+                for row in rows:
+                    res.append(row)
+            except:
+                log = [
+                    "",
+                    "",
+                    "",
+                    "",
+                    node_["name"],
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                ]
+                res.append(log)
+        return res
+
+    def load_data(self):
+        state = self.state
+        """Load data from Excel file and set headers and data."""
+        try:
+            # Extract headers
+            src_data = state.team_std_info[self.data_kind].get(
+                state.current_building.get()
+            )
+            # self.column_headers = src_data[0]
+            # self.sheet.headers(self.column_headers)
+
+            # Extract data
+            self.data = src_data[1:]
+            # self.data = src_data
+
+            # self.sheet.set_sheet_data(self.data)
+            print("ok~")
+        except Exception as e:
+            # self.sheet.set_sheet_data([])
+            self.data = []
+            print(f"Error loading data: {e}")

@@ -5,7 +5,7 @@ from ttkbootstrap.constants import *
 
 from src.core.file_utils import load_from_json
 from src.views.widget.widget import Builing_select_combobox
-from src.views.widget.calc_sheet_widget import ReportSheetWidget
+from src.views.widget.calc_sheet_widget import ReportMember_SheetWidget
 
 
 def create_report_member_tab(state, subtab_notebook, exe_mode=None):
@@ -65,7 +65,7 @@ def create_report_member_tab(state, subtab_notebook, exe_mode=None):
     ##############################################################
     ## section 1###########
 
-    report_member_calc_sheet = ReportSheetWidget(
+    report_member_calc_sheet = ReportMember_SheetWidget(
         state, section1, data_kind="dynamo-calculation"
     )
     report_member_calc_sheet.pack(fill=tk.BOTH, expand=True)
