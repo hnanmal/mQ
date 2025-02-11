@@ -651,6 +651,9 @@ class ReportGroup_SheetWidget(ttk.Frame):
 
         self.sheet.headers(self.column_headers)
 
+        # # Ensure cell sizes and redraw
+        self.set_colums_widths()
+
     def set_colums_widths(self, hdr_widths=None):
         # self.sheet.headers(self.column_headers)
         if hdr_widths:
@@ -730,13 +733,19 @@ class ReportGroup_SheetWidget(ttk.Frame):
         Processes hierarchical tabular data and groups it by the first two columns.
         """
         try:
-            structured_data = []
-            for row in data:
-                structured_data.append(row)
+            # structured_data = []
+            # for row in data:
+            #     structured_data.append(row)
+
+            sorted_data = go(
+                data,
+                lambda x: sorted(x, key=lambda c: float(c[1])),
+            )
 
             grouped_data = {}
 
-            for row in structured_data:
+            # for row in structured_data:
+            for row in sorted_data:
                 category, sub1, sub2, sub3, sub4, sub5 = (
                     row[0],
                     row[1],

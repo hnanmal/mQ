@@ -68,7 +68,7 @@ def create_stdFamList_tab(state, subtab_notebook):
 
     working_tab_paned_window.add(section1, minsize=300)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=250)
+    working_tab_paned_window.add(section3, minsize=300)
 
     working_tab_paned_window.paneconfigure(section1, width=300, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=1500, height=3000)

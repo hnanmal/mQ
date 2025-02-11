@@ -2426,7 +2426,8 @@ class TeamStd_calcDict_TreeView:
             "심벌키",
             "심벌값",
         ]
-        hdr_widths = [100, 50, 100]
+        # hdr_widths = [100, 50, 100]
+        hdr_widths = [50, 50, 200]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)

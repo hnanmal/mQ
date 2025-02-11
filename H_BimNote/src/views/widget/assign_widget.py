@@ -207,7 +207,6 @@ class WMapply_button:
             chked_GWM_data = []
             for i in chked_GWM:
                 x = deepcopy(i)
-                # print(i[3])
                 x[3] = find_wmStr(i[3])
                 chked_GWM_data.append(x)
 
@@ -288,7 +287,6 @@ class WMapply_button:
             chked_SWM_data = []
             for i in chked_SWM:
                 x = deepcopy(i)
-                # print(i[3])
                 x[3] = find_wmStr(i[3])
                 chked_SWM_data.append(x)
         else:
@@ -355,7 +353,6 @@ class WMapply_button:
 class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 선택항목 반영하도록 수정필요
     def __init__(self, state, parent, relate_widget, view_level=2, *args, **kwargs):
         self.state = state
-        # self.data_kind = "project-buildinglist"
         self.data_kind = "project-assigntype"
         self.relate_widget = relate_widget
         self.treeDataManager = TreeDataManager_treeview(state, self)
@@ -372,7 +369,6 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         self.attach_button = ttk.Button(
             button_frame,
-            # text="Attach\nto the Std Type",
             text="⬇",
             command=self.add_item,
             bootstyle="outline",
@@ -381,7 +377,6 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         self.detach_button = ttk.Button(
             button_frame,
-            # text="Detach\nfrom the Std Type",
             text="⬆",
             command=self.delete_item,
             bootstyle="warning-outline",
@@ -389,8 +384,6 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         self.detach_button.pack(padx=10, anchor="center", side="left")
 
         # Compose TreeView, Style Manager, and State Observer
-        # headers = ["Top", "Revit Type"]
-        # hdr_widths = [0, 350]
         headers = ["Revit Type", "Building", "Std Type"]
         hdr_widths = [200, 100, 100]
         tree_frame = ttk.Frame(self.frame, width=350, height=3000)
@@ -513,7 +506,6 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
                 data["children"].append(
                     {
                         "name": item_name,
-                        # "values": ["", item_name],
                         "values": [
                             item_name,
                             current_building,
@@ -527,8 +519,22 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             else:
                 state.log_widget.write("Please enter a revit type name.")
 
+        dupli_status = None
         for item_name in item_names:
-            _add(item_name.strip())
+            if not item_name in go(
+                state.team_std_info[self.data_kind]["children"],
+                map(lambda x: x["name"]),
+                list,
+            ):
+                _add(item_name.strip())
+            else:
+                dupli_status = True
+
+        if dupli_status:
+            open_dialog(
+                state,
+                "중복 명칭 삽입 발생",
+            )
 
         # print(f"\n item_names  ::  {item_names}\n")
         if item_names != [""]:

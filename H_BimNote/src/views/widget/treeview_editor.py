@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
 
@@ -61,12 +62,23 @@ class TreeviewEditor:
         self.entry_widget = tk.Entry(self.tree, width=width)
         self.entry_widget.place(x=x, y=y, width=width, height=height)
         self.entry_widget.insert(0, current_value)
+        # self.entry_widget.grab_set()
         self.entry_widget.focus()
 
         # Bind events for Entry widget
         self.entry_widget.bind("<Return>", self.on_edit_complete)
         self.entry_widget.bind("<Escape>", self.on_edit_cancel)
+        self.tree.bind("<MouseWheel>", self.on_edit_cancel)
         self.entry_widget.bind("<FocusOut>", self.on_edit_complete)
+
+    def on_scroll(self, event):
+        """Ask the user whether to cancel editing when they scroll."""
+        if self.entry_widget:
+            response = messagebox.askyesno(
+                "Cancel Edit", "Do you want to cancel editing?"
+            )
+            if response:
+                self.on_edit_cancel(None)
 
     def on_edit_complete(self, event):
         if self.current_item is None or self.current_column is None:
@@ -113,6 +125,7 @@ class TreeviewEditor:
             self.entry_widget.destroy()
             self.entry_widget = None
 
+        self.tree.unbind("<MouseWheel>")
         # self.state.on_level_selected(None)
 
     def get_item_depth(self, item_id):
