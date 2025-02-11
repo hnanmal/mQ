@@ -1,4 +1,8 @@
 # src/views/widget/treeview_utils.py
+from tkinter import filedialog
+
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.core.fp_utils import *
 import tkinter as tk
@@ -2015,9 +2019,19 @@ class TeamStd_FamlistTreeView:
         )
         self.level_combobox.current(view_level - 1)  # Set default level
         self.level_combobox.bind("<<ComboboxSelected>>", self.on_level_selected)
-        self.level_combobox.pack(padx=10, pady=5)
+        self.level_combobox.pack(padx=10, pady=5, side="left")
+
+        # export 버튼
+        self.export_btn = ttk.Button(
+            button_frame,
+            text="Export to Excel",
+            command=self.export_visible_treeview_to_excel,
+            bootstyle="info-outline",
+        )
+        self.export_btn.pack(padx=10, pady=5, side="left")
 
         self.treeview = BaseTreeView(state, tree_frame, headers)
+        self.tree = self.treeview.tree
         self.treeview.tree.config(height=3000)
 
         # self.state.on_level_selected = self.on_level_selected
@@ -2066,6 +2080,109 @@ class TeamStd_FamlistTreeView:
             delete=self.delete_item,
         )
         # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
+
+    def export_visible_treeview_to_excel(self):
+        """Exports only expanded (visible) items from the treeview to an Excel file with formatting."""
+        treeview = self.tree
+
+        # Ask user for save location
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx"), ("All Files", "*.*")],
+        )
+
+        if not file_path:
+            return  # User canceled save dialog
+
+        # Create a new Excel workbook and sheet
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Family List"
+
+        # Extract column headers
+        columns = [treeview.heading(col, "text") for col in treeview["columns"]]
+        ws.append(columns)  # Write headers to first row
+
+        # Apply header styles (bold, center alignment, fill color)
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(
+            start_color="4F81BD", end_color="4F81BD", fill_type="solid"
+        )
+        header_alignment = Alignment(horizontal="center", vertical="center")
+
+        for col_num, column_title in enumerate(columns, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+
+        # Define cell formatting (alignment & border)
+        center_align = Alignment(horizontal="center", vertical="center")
+        border_style = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
+
+        # Recursive function to write only visible treeview data
+        def write_visible_data(parent="", level=0, row_index=2):
+            for item in treeview.get_children(parent):
+                if not treeview.item(
+                    item, "open"
+                ):  # Folded items should not be included
+                    values = treeview.item(item, "values")
+
+                    # Process values (avoid Excel formula issues with '=')
+                    values_ = [v.replace("=", "'=") if "=" in v else v for v in values]
+
+                    # Write row to Excel
+                    ws.append(values_)
+
+                    # Apply formatting to each row
+                    for col_num, value in enumerate(values_, 1):
+                        cell = ws.cell(row=row_index, column=col_num)
+                        # cell.alignment = center_align
+                        # cell.border = border_style
+
+                    row_index += 1  # Move to next row
+                    continue  # Skip folded items
+
+                values = treeview.item(item, "values")
+                values_ = [v.replace("=", "'=") if "=" in v else v for v in values]
+
+                # Write row to Excel
+                ws.append(values_)
+
+                # Apply formatting to each row
+                for col_num, value in enumerate(values_, 1):
+                    cell = ws.cell(row=row_index, column=col_num)
+                    # cell.alignment = center_align
+                    # cell.border = border_style
+
+                row_index += 1
+
+                # Recursively process only expanded child nodes
+                row_index = write_visible_data(item, level + 1, row_index)
+
+            return row_index  # Return the current row index for recursion tracking
+
+        # Start writing from root nodes
+        write_visible_data()
+
+        # Auto-adjust column widths based on content length
+        for col_num, column_title in enumerate(columns, 1):
+            max_length = max(
+                len(str(ws.cell(row=row, column=col_num).value) or "")
+                for row in range(1, ws.max_row + 1)
+            )
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = (
+                max_length + 2
+            )
+
+        # Save the Excel file
+        wb.save(file_path)
+        print(f"Formatted Treeview data exported successfully to {file_path}")
 
     def set_title(self, parent, text=None):
         if not text:
