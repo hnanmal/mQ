@@ -113,7 +113,7 @@ def initialize_app(root, _state=None):
         command=check_for_update,
     )
     help_menu.add_command(
-        label=f"💬 본 버전은, '[H_PAB.RT.Q2]_Revit 물량 산출 Dynamo' - [3.2.3] 버전 이상과 호환됩니다.",
+        label=f"💬 본 버전은, '[H_PAB.RT.Q2]_Revit 물량 산출 Dynamo' - [3.2.5] 버전 이상과 호환됩니다.",
     )
     help_menu.add_command(
         label=f"▶ 클릭 시 최신 다이나모 다운로드 페이지로 이동",

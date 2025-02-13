@@ -31,12 +31,13 @@ def save_to_json_teamStdInfo(state, _file_path=None):
         print(f"Data successfully saved to {file_path}")
         state.root.title(
             f"B-note  {APP_VERSION} :: Hyundai Engineering Plant Architecture Bim Note"
-            + "    " * 25
+            + "    " * 22
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(
             state,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n에 저장 되었습니다.",
+            width=800,
         )
 
         exist_recent_files = go(
@@ -55,6 +56,8 @@ def save_to_json_teamStdInfo(state, _file_path=None):
                 json.dump(state.recent_files, file, indent=4, ensure_ascii=False)
 
         state.recent_page.load_items()
+
+        state.init_db_hash = state.get_db_hash()
 
     except Exception as e:
         print(f"Error saving data to JSON: {e}")
@@ -107,12 +110,13 @@ def load_from_json(state, _file_path=None):
         state.log_widget.write(f"Data successfully loaded from {file_path}\n")
         state.root.title(
             f"B-note  {APP_VERSION} :: Hyundai Engineering Plant Architecture Bim Note"
-            + "    " * 25
+            + "    " * 22
             + f"[   {state.current_filepath}   ]"
         )
         open_dialog(
             state,
             f"데이터가 \n\n ◾ {state.current_filepath} \n\n으로부터 로드 되었습니다.",
+            width=800,
         )
 
         exist_recent_files = go(
@@ -131,6 +135,8 @@ def load_from_json(state, _file_path=None):
                 json.dump(state.recent_files, file, indent=4, ensure_ascii=False)
 
         state.recent_page.load_items()
+
+        state.init_db_hash = state.get_db_hash()
 
         return True
     except Exception as e:

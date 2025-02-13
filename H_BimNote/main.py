@@ -1,4 +1,6 @@
 import tkinter as tk
+from tkinter import messagebox
+from tkinter import filedialog
 
 # from tkinter import ttk
 import ttkbootstrap as ttk
@@ -13,7 +15,7 @@ from PIL import ImageTk, Image
 # import time
 
 # from src.controllers.db_update_manager import DBUpdateManager
-from src.core.file_utils import load_from_json
+from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
 from src.views.upper_tab import (
     create_project_apply_tab,
     create_project_report_tab,
@@ -22,6 +24,7 @@ from src.views.upper_tab import (
     create_team_standard_tab,
 )
 from src.views.app_ui_setup import initialize_app
+from src.views.widget.widget import open_filesave_dialog
 
 
 def main():
@@ -74,18 +77,27 @@ def main():
 
     notebook.select(0)
 
-    # # Handle window close event
-    # root.protocol("WM_DELETE_WINDOW", lambda: close_app(root, state))
+    # Handle window close event
+    root.protocol("WM_DELETE_WINDOW", lambda: on_closing(root, state))
 
     root.attributes("-topmost", False)
     root.mainloop()
 
 
-def close_app(root, state):
-    """Ensure CEF and other resources are properly shut down."""
-    if hasattr(state, "browser_widget"):
-        state.browser_widget.on_close()  # Shutdown CEF properly
-    root.destroy()
+def on_closing(root, state):
+    """앱 종료 시 저장 확인창을 띄우고, 선택에 따라 동작을 수행."""
+    if state.init_db_hash != "not loaded yet":
+        is_change = state.init_db_hash != state.get_db_hash()
+
+        if is_change:
+            open_filesave_dialog(
+                state,
+                "변경 내용을 이 파일에 저장하시겠습니까?",
+            )
+        else:
+            root.destroy()
+    else:
+        root.destroy()
 
 
 def show_splash_screen():

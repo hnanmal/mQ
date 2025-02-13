@@ -1,7 +1,10 @@
 # src/models/app_state.py
+import hashlib
+import json
 import re
-import threading
-from tkinter import messagebox, simpledialog
+
+# import threading
+# from tkinter import messagebox, simpledialog
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
@@ -54,12 +57,20 @@ class AppState:
         # self.project_apply_info = {}
         self.undo_stack = []
 
+        self.init_db_hash = "not loaded yet"
+        self.quit_response = None
+
     def _notify_selected_change(self, *args):
         for noti_tgt in self.notify_targets:
             try:
                 noti_tgt.update(self)
             except:
                 pass
+
+    def get_db_hash(self):
+        db_data = self.team_std_info  # DB 데이터를 딕셔너리로 가져옴
+        json_str = json.dumps(db_data, sort_keys=True)  # JSON 변환 (정렬)
+        return hashlib.md5(json_str.encode()).hexdigest()  # 해시값 반환
 
     ################### 옵저버 관련 #################################
 

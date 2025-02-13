@@ -8,7 +8,7 @@ import sys
 # import subprocess
 from datetime import datetime
 
-APP_VERSION = "1.0.4"  # Your app's current version
+APP_VERSION = "1.0.5"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 
 
@@ -79,13 +79,3 @@ def apply_update(update_filename):
     # subprocess.Popen([current_exe])
     # restart_application()
     sys.exit()
-
-
-# # Create the UI
-# root = tk.Tk()
-# root.title("App with Auto-Update")
-
-# update_button = tk.Button(root, text="Check for Updates", command=check_for_update)
-# update_button.pack(pady=20)
-
-# root.mainloop()

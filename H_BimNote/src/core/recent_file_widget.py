@@ -98,7 +98,8 @@ class FileItem(ttk.Frame):
         ]:
             widget.bind("<Enter>", self.on_hover)
             widget.bind("<Leave>", self.on_leave)
-            widget.bind("<Double-1>", self.open_file)
+            # widget.bind("<Double-1>", self.open_file)
+            widget.bind("<Button-1>", self.open_file)
 
     def get_modified_date(self, file_path):
         try:

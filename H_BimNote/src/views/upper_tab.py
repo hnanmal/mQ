@@ -158,19 +158,6 @@ def create_recentBnotes_tab(state, notebook):
     )
     recent_notes_area.pack(padx=150, side=tk.TOP, anchor="nw")
 
-    # title_label = ttk.Label(
-    #     recent_notes_area,
-    #     text="Recent Bnotes",
-    #     font=("Arial", 16),
-    #     bootstyle=INFO,
-    # )
-    # title_label.pack(
-    #     padx=20,
-    #     pady=20,
-    #     side=tk.TOP,
-    #     anchor="nw",
-    # )
-
     recent_page = RecentPinnedWidget(recent_notes_area, state)
     recent_page.pack(fill="both", expand=True, padx=10, pady=10)
     state.recent_page = recent_page
