@@ -97,15 +97,7 @@
       "SelectedIndex": 0
     }
   ],
-  "Outputs": [
-    {
-      "Id": "9bcf898e0bda443d8e1a87ae89619706",
-      "Name": "::: 토공 항목 별 산출 결과 :::",
-      "Type": "unknown",
-      "InitialValue": "",
-      "Description": "Visualize the node's output"
-    }
-  ],
+  "Outputs": [],
   "Nodes": [
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
@@ -1629,7 +1621,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n# Add Revit API references\r\nclr.AddReference(\"RevitAPI\")\r\nclr.AddReference(\"RevitServices\")\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Document and UI setup\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\ndef get_geom_elem(mode, elems):\r\n    res = []\r\n    tmp = []\r\n    if refLine_mode==\"그룹모드\":\r\n        for elem in elems:\r\n            try:\r\n                tmp.append(elem.Geometry()[0])\r\n            except: pass\r\n        res.append(tmp)\r\n    if refLine_mode==\"개별모드\":\r\n        for elem in elems:\r\n            try:\r\n                res.append(elem.Geometry())\r\n            except: pass\r\n    res_ = go(\r\n        res,\r\n        filter(lambda x: x ),\r\n        list,\r\n    )\r\n    \r\n    return res_\r\n    \r\ndef get_btm_srf(geom):\r\n    filter_rule = lambda srf: go(\r\n        srf,\r\n        lambda x: x.NormalAtParameter(0,0),\r\n        lambda x: x.Z,\r\n        lambda z: z==-1,\r\n    )\r\n\r\n    res = go(\r\n        geom,\r\n        lambda x: x.Explode(),\r\n        filter( filter_rule ),\r\n        list,\r\n    )\r\n    \r\n    return res\r\n\r\n#to convert point\r\ndef feet_to_m(a,b,c):\r\n    k=0.3048\r\n    return XYZ(a/k,b/k,c/k)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\nrefLine_mode = IN[1]\r\ntgt_elems_ = IN[2]\r\ntgt_elems = go(\r\n    tgt_elems_,\r\n    filter( lambda x: \"Lean\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),#.AsValueString() ),\r\n    list,\r\n)\r\ndescent_height = IN[3]\r\noffset_gap = IN[4]\r\n\r\n# Place your code below this line\r\n\r\n\r\n\r\ndef make_refLine_forExca(refLine_mode, tgt_elems, descent_height, offset_gap):\r\n    all_geoms = get_geom_elem(refLine_mode, tgt_elems)\r\n    bdCuboids = go(\r\n        all_geoms,\r\n        map( lambda x: BoundingBox.ByGeometry(list(x)) ),\r\n        map( lambda x: x.ToCuboid() ),\r\n    )\r\n    btmSrfs = go(\r\n        bdCuboids,\r\n        map( get_btm_srf ),\r\n        lambda x: chain(*x),list,\r\n        map( lambda x: x.Translate(0,0,descent_height) ),\r\n    )\r\n    \r\n    refLines = go(\r\n        btmSrfs,\r\n        map( lambda x: x.PerimeterCurves() ),\r\n        map( lambda x: PolyCurve.ByJoinedCurves(x) ),\r\n        map( lambda x: x.OffsetMany(\r\n            signedDistance=offset_gap,\r\n            extendCircular=False,\r\n            planeNormal=None)\r\n            ),\r\n        lambda x: chain(*x),list,\r\n        map( lambda x: x.Explode() ),\r\n        list,\r\n        #map( lambda x: ModelCurve. .GeometryCurve(x) ),\r\n    )\r\n    \r\n    # Step 4: Start a transaction to create the ModelCurve\r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    \r\n    # Create the ModelCurve in Revit\r\n    res = []\r\n    for refLine in refLines:\r\n        tmp = []\r\n        for line in refLine:\r\n            \r\n            model_curve = Revit.Elements.ModelCurve.ByCurve(line)\r\n            tmp.append(model_curve)\r\n        res.append(tmp)\r\n    # Complete the transaction    \r\n    TransactionManager.Instance.TransactionTaskDone()\r\n    \r\n\r\n    \r\n    return refLines, res\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"토공참조선작성모드\":\r\n    OUT = make_refLine_forExca(refLine_mode, tgt_elems, descent_height, offset_gap)\r\nelse:\r\n    OUT = 0",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n# Add Revit API references\r\nclr.AddReference(\"RevitAPI\")\r\nclr.AddReference(\"RevitServices\")\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Document and UI setup\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\ndef get_geom_elem(mode, elems):\r\n    res = []\r\n    tmp = []\r\n    if refLine_mode==\"그룹모드\":\r\n        for elem in elems:\r\n            try:\r\n                tmp.append(elem.Geometry()[0])\r\n            except: pass\r\n        res.append(tmp)\r\n    if refLine_mode==\"개별모드\":\r\n        for elem in elems:\r\n            try:\r\n                res.append(elem.Geometry())\r\n            except: pass\r\n    res_ = go(\r\n        res,\r\n        filter(lambda x: x ),\r\n        list,\r\n    )\r\n    \r\n    return res_\r\n    \r\ndef get_btm_srf(geom):\r\n    filter_rule = lambda srf: go(\r\n        srf,\r\n        lambda x: x.NormalAtParameter(0,0),\r\n        lambda x: x.Z,\r\n        lambda z: z==-1,\r\n    )\r\n\r\n    res = go(\r\n        geom,\r\n        lambda x: x.Explode(),\r\n        filter( filter_rule ),\r\n        list,\r\n    )\r\n    \r\n    return res\r\n\r\n#to convert point\r\ndef feet_to_m(a,b,c):\r\n    k=0.3048\r\n    return XYZ(a/k,b/k,c/k)\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\nrefLine_mode = IN[1]\r\ntgt_elems_ = IN[2]\r\ntgt_elems = go(\r\n    tgt_elems_,\r\n    filter( lambda x: \"Lean\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),#.AsValueString() ),\r\n    list,\r\n)\r\ndescent_height = IN[3]\r\noffset_gap = IN[4]\r\n\r\n# Place your code below this line\r\n\r\n\r\n\r\ndef make_refLine_forExca(refLine_mode, tgt_elems, descent_height, offset_gap):\r\n    all_geoms = get_geom_elem(refLine_mode, tgt_elems)\r\n    bdCuboids = go(\r\n        all_geoms,\r\n        map( lambda x: BoundingBox.ByGeometry(list(x)) ),\r\n        map( lambda x: x.ToCuboid() ),\r\n    )\r\n    btmSrfs = go(\r\n        bdCuboids,\r\n        map( get_btm_srf ),\r\n        lambda x: chain(*x),list,\r\n        map( lambda x: x.Translate(0,0,descent_height) ),\r\n    )\r\n    \r\n    refLines = go(\r\n        btmSrfs,\r\n        map( lambda x: x.PerimeterCurves() ),\r\n        map( lambda x: PolyCurve.ByJoinedCurves(x) ),\r\n        map( lambda x: x.OffsetMany(\r\n            signedDistance=offset_gap,\r\n            extendCircular=False,\r\n            planeNormal=None)\r\n            ),\r\n        lambda x: chain(*x),list,\r\n        map( lambda x: x.Explode() ),\r\n        list,\r\n        #map( lambda x: ModelCurve. .GeometryCurve(x) ),\r\n    )\r\n    \r\n    # Step 4: Start a transaction to create the ModelCurve\r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    \r\n    # Create the ModelCurve in Revit\r\n    res = []\r\n    for refLine in refLines:\r\n        tmp = []\r\n        for line in refLine:\r\n            try:\r\n                model_curve = Revit.Elements.ModelCurve.ByCurve(line)\r\n                tmp.append(model_curve)\r\n            except:\r\n                pass\r\n        res.append(tmp)\r\n    # Complete the transaction    \r\n    TransactionManager.Instance.TransactionTaskDone()\r\n    \r\n\r\n    \r\n    return refLines, res\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"토공참조선작성모드\":\r\n    OUT = make_refLine_forExca(refLine_mode, tgt_elems, descent_height, offset_gap)\r\nelse:\r\n    OUT = 0",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2680,7 +2672,7 @@
           "Item": "물량산출모드"
         },
         {
-          "Name": "C. 토공객체삭제모드",
+          "Name": "* 토공객체삭제모드",
           "Item": "토공객체삭제모드"
         }
       ],
@@ -2774,7 +2766,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n# Add Revit API references\r\nclr.AddReference(\"RevitAPI\")\r\nclr.AddReference(\"RevitServices\")\r\nclr.AddReference('ProtoGeometry')\r\nimport Autodesk\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Document and UI setup\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\ngroup_closed_curves = IN[1]\r\nbelow_refLines = IN[2]\r\nVCF, GWL, G, GL = IN[3]\r\nall_elem_solid = IN[4]\r\nc1_d2 = IN[5]\r\n# Place your code below this line\r\n\r\n\r\ndef make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2):\r\n    c1,c2,c3,c4,d1,d2 = c1_d2\r\n    below_refPolyline = go(\r\n        line_grp,\r\n        PolyCurve.ByJoinedCurves,\r\n        \r\n    )\r\n    \r\n    btm_ref_Z = go(\r\n        line_grp,\r\n        map(lambda x: x.StartPoint.Z),\r\n        min,\r\n    )\r\n    \r\n    height_to_GL = GL - btm_ref_Z\r\n    \r\n    if height_to_GL > 0:\r\n        upper_pre_refPolyline = go(\r\n            below_refPolyline,\r\n            lambda x: x.Translate(0,0,height_to_GL),\r\n        )\r\n        \r\n        upper_offset_refPolyline = go(\r\n            upper_pre_refPolyline,\r\n            lambda x: x.OffsetMany(\r\n                signedDistance=(height_to_GL * G),\r\n                extendCircular=False,\r\n                planeNormal=None\r\n                ),\r\n            lambda x: x[0],\r\n        )\r\n        \r\n        if upper_pre_refPolyline.Length > upper_offset_refPolyline.Length:\r\n            upper_offset_refPolyline = go(\r\n                upper_pre_refPolyline,\r\n                lambda x: x.OffsetMany(\r\n                    signedDistance=-(height_to_GL * G),\r\n                    extendCircular=False,\r\n                    planeNormal=None\r\n                    ),\r\n                lambda x: x[0],\r\n            )\r\n        \r\n        res = Autodesk.DesignScript.Geometry.Solid.ByLoft(\r\n            [below_refPolyline, upper_offset_refPolyline]\r\n        )\r\n    else:\r\n        res = None\r\n    \r\n    btmRefArea = below_refPolyline.Patch().Area / 10**6\r\n    leanAndOthers_vol = btmRefArea * sum([c1,c2,c3,c4]) \r\n    \r\n    return res, leanAndOthers_vol\r\n    \r\ndef make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2):\r\n    below_refLine_grps = group_closed_curves(below_refLines)\r\n    excaSolids = []\r\n    leanAndOthers_vol = []\r\n    for line_grp in below_refLine_grps:\r\n        if make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[0] != None:\r\n            excaSolids.append(\r\n                make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[0]\r\n            )\r\n        leanAndOthers_vol.append(\r\n            make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[1]\r\n        )\r\n    res = Autodesk.DesignScript.Geometry.Solid.ByUnion(excaSolids)\r\n    total_leanAndOthers = sum( leanAndOthers_vol )\r\n    \r\n    return res, total_leanAndOthers\r\n\r\ndef find_earthCalc_solids(below_refLines, VCF, GWL, G, GL, c1_d2):\r\n\r\n    whole_exca_solid = make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2)[0]\r\n    total_leanAndOthers = round( \r\n        make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2)[1], 3\r\n    )\r\n    \r\n    gwl_above_solid = go(\r\n        whole_exca_solid,\r\n        BoundingBox.ByGeometry,\r\n        BoundingBox.ToCuboid,\r\n        Geometry.Explode,\r\n        filter( lambda x: x.NormalAtParameter(0.5,0.5).Z==1 ),\r\n        next,\r\n        lambda x: x.Thicken(GWL-GL, False),\r\n        #lambda x: x.Thicken(5000),\r\n    )\r\n    split_for_gwl_solid = Geometry.Split( whole_exca_solid, gwl_above_solid )\r\n    \r\n    if len(split_for_gwl_solid)<2:\r\n        above_exca_solid = split_for_gwl_solid[0]\r\n        above_exca_solid_volume = round(above_exca_solid.Volume/10**9, 3)\r\n        below_exca_solid_volume = 0.0\r\n    else:\r\n        above_exca_solid = split_for_gwl_solid[1]\r\n        above_exca_solid_volume = round(above_exca_solid.Volume/10**9, 3)\r\n        \r\n        below_exca_solid = split_for_gwl_solid[0]\r\n        below_exca_solid_volume = round(below_exca_solid.Volume/10**9, 3)\r\n    \r\n    split_for_disp_solid = Geometry.Split( whole_exca_solid, all_elem_solid )\r\n    backfill_solid = split_for_disp_solid[0]\r\n    backfill_solid_volume = round(backfill_solid.Volume/10**9, 3)\r\n    \r\n    disposal_solid = split_for_disp_solid[1]\r\n    disposal_solid_volume = round(disposal_solid.Volume/10**9, 3)\r\n    \r\n    res = [\r\n        [\r\n            backfill_solid,\r\n            #gwl_above_solid,\r\n        ],\r\n        [\r\n           [\"Above_GWL_Excavation Volume (m3)\", above_exca_solid_volume],\r\n           [\"Below_GWL_Excavation Volume (m3)\", below_exca_solid_volume],\r\n           [\"Total_Excavation Volume (m3)\", round(whole_exca_solid.Volume/10**9, 3)],\r\n           [\"Backfill Volume (m3)\", backfill_solid_volume - total_leanAndOthers],\r\n           [\"Disposal Volume (m3)\", (disposal_solid_volume + total_leanAndOthers) * VCF],\r\n        ]\r\n    ]\r\n\r\n    \r\n    return res\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"물량산출모드\":\r\n    OUT = find_earthCalc_solids(below_refLines, VCF, GWL, G, GL, c1_d2)\r\n    #OUT = calc_allLeans_base_volume(c3c2_ratio)\r\nelse:\r\n    OUT = [[[]]]",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\n# Add Revit API references\r\nclr.AddReference(\"RevitAPI\")\r\nclr.AddReference(\"RevitServices\")\r\nclr.AddReference('ProtoGeometry')\r\nimport Autodesk\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Document and UI setup\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\ngroup_closed_curves = IN[1]\r\nbelow_refLines = IN[2]\r\nVCF, GWL, G, GL = IN[3]\r\nall_elem_solid = IN[4]\r\nc1_d2 = IN[5]\r\n# Place your code below this line\r\n\r\n\r\ndef make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2):\r\n    c1,c2,c3,c4,d1,d2 = c1_d2\r\n    below_refPolyline = go(\r\n        line_grp,\r\n        PolyCurve.ByJoinedCurves,\r\n        \r\n    )\r\n    \r\n    btm_ref_Z = go(\r\n        line_grp,\r\n        map(lambda x: x.StartPoint.Z),\r\n        min,\r\n    )\r\n    \r\n    height_to_GL = GL - btm_ref_Z\r\n    \r\n    if height_to_GL > 0:\r\n        upper_pre_refPolyline = go(\r\n            below_refPolyline,\r\n            lambda x: x.Translate(0,0,height_to_GL),\r\n        )\r\n        \r\n        upper_offset_refPolyline = go(\r\n            upper_pre_refPolyline,\r\n            lambda x: x.OffsetMany(\r\n                signedDistance=(height_to_GL * G),\r\n                extendCircular=False,\r\n                planeNormal=None\r\n                ),\r\n            lambda x: x[0],\r\n        )\r\n        \r\n        if upper_pre_refPolyline.Length > upper_offset_refPolyline.Length:\r\n            upper_offset_refPolyline = go(\r\n                upper_pre_refPolyline,\r\n                lambda x: x.OffsetMany(\r\n                    signedDistance=-(height_to_GL * G),\r\n                    extendCircular=False,\r\n                    planeNormal=None\r\n                    ),\r\n                lambda x: x[0],\r\n            )\r\n        \r\n        res = Autodesk.DesignScript.Geometry.Solid.ByLoft(\r\n            [below_refPolyline, upper_offset_refPolyline]\r\n        )\r\n    else:\r\n        res = None\r\n    \r\n    btmRefArea = below_refPolyline.Patch().Area / 10**6\r\n    leanAndOthers_vol = btmRefArea * sum([c1,c2,c3,c4]) \r\n    \r\n    return res, leanAndOthers_vol\r\n    \r\ndef make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2):\r\n    below_refLine_grps = group_closed_curves(below_refLines)\r\n    excaSolids = []\r\n    leanAndOthers_vol = []\r\n    for line_grp in below_refLine_grps:\r\n        if make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[0] != None:\r\n            excaSolids.append(\r\n                make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[0]\r\n            )\r\n        leanAndOthers_vol.append(\r\n            make_excaSolid_perGrp(line_grp, VCF, GWL, G, GL, c1_d2)[1]\r\n        )\r\n    res = Autodesk.DesignScript.Geometry.Solid.ByUnion(excaSolids)\r\n    total_leanAndOthers = sum( leanAndOthers_vol )\r\n    \r\n    return res, total_leanAndOthers\r\n\r\ndef find_earthCalc_solids(below_refLines, VCF, GWL, G, GL, c1_d2):\r\n    c1,c2,c3,c4,d1,d2 = c1_d2\r\n    whole_exca_solid = make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2)[0]\r\n#    total_leanAndOthers = round( \r\n#        make_excaSolids(below_refLines, VCF, GWL, G, GL, c1_d2)[1], 3\r\n#    )\r\n\r\n    \r\n    gwl_above_solid = go(\r\n        whole_exca_solid,\r\n        BoundingBox.ByGeometry,\r\n        BoundingBox.ToCuboid,\r\n        Geometry.Explode,\r\n        filter( lambda x: x.NormalAtParameter(0.5,0.5).Z==1 ),\r\n        next,\r\n        lambda x: x.Thicken(GWL-GL, False),\r\n        #lambda x: x.Thicken(5000),\r\n    )\r\n    split_for_gwl_solid = Geometry.Split( whole_exca_solid, gwl_above_solid )\r\n    \r\n    if len(split_for_gwl_solid)<2:\r\n        above_exca_solid = split_for_gwl_solid[0]\r\n        above_exca_solid_volume = round(above_exca_solid.Volume/10**9, 3)\r\n        below_exca_solid_volume = 0.0\r\n    else:\r\n        above_exca_solid = split_for_gwl_solid[1]\r\n        above_exca_solid_volume = round(above_exca_solid.Volume/10**9, 3)\r\n        \r\n        below_exca_solid = split_for_gwl_solid[0]\r\n        below_exca_solid_volume = round(below_exca_solid.Volume/10**9, 3)\r\n    \r\n    split_for_disp_solid = Geometry.Split( whole_exca_solid, all_elem_solid )\r\n    backfill_solid = split_for_disp_solid[0]\r\n    backfill_solid_volume = round(backfill_solid.Volume/10**9, 3)\r\n    \r\n    disposal_solid = split_for_disp_solid[1]\r\n    disposal_solid_volume = round(disposal_solid.Volume/10**9, 3)\r\n\r\n    total_leanAndOthers = go(\r\n        disposal_solid,\r\n        Geometry.Explode,\r\n        filter( lambda x: x.NormalAtParameter(0.5,0.5).Z==-1 ),\r\n        map( lambda x: x.Thicken(sum([c1,c2,c3,c4])*1000, False) ),\r\n        list,\r\n        map(lambda x: x.Volume ),\r\n        sum,\r\n        lambda x: round(x / 10**9, 3),\r\n    )\r\n\r\n    res = [\r\n        [\r\n            backfill_solid,\r\n            disposal_solid,\r\n        ],\r\n        [\r\n           [\"Above_GWL_Excavation Volume (m3)\", above_exca_solid_volume],\r\n           [\"Below_GWL_Excavation Volume (m3)\", below_exca_solid_volume],\r\n           [\"Total_Excavation Volume (m3)\", round(whole_exca_solid.Volume/10**9, 3)],\r\n           [\"Backfill Volume (m3)\", backfill_solid_volume - total_leanAndOthers],\r\n           [\"Disposal Volume (m3)\", (disposal_solid_volume + total_leanAndOthers)],\r\n           [\"Disposal Volume_VCF (m3)\", (disposal_solid_volume + total_leanAndOthers) * VCF],\r\n           #[\"Backfill Volume (m3)\", backfill_solid_volume],\r\n           #[\"Disposal Volume (m3)\", disposal_solid_volume],\r\n           #[\"Disposal Volume_VCF (m3)\", disposal_solid_volume * VCF],\r\n           \r\n        ]\r\n    ]\r\n\r\n    \r\n    return res\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"물량산출모드\":\r\n    OUT = find_earthCalc_solids(below_refLines, VCF, GWL, G, GL, c1_d2)\r\n    #OUT = calc_allLeans_base_volume(c3c2_ratio)\r\nelse:\r\n    OUT = [[[]]]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2852,7 +2844,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n#clr.AddReference(\"Revit.GeometryConversion\")\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n#import Revit.GeometryConversion #import ProtoToRevit, RevitToProto\r\n#from Revit import GeometryConversion\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\n\r\n\r\n#########################################################################\r\ndef get_QGeometry(elem):\r\n    # Revit Document 객체 가져오기\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    revitElement = UnwrapElement(elem)\r\n    \r\n    # Geometry 가져오기 옵션 설정\r\n    geometryOptions = Options()\r\n    geometryOptions.DetailLevel = ViewDetailLevel.Fine  # 세부 레벨 설정 (Fine, Medium, Coarse 등)\r\n    geometryOptions.IncludeNonVisibleObjects = True    # 비가시 기하학 포함 여부\r\n    \r\n    # GeometryElement 가져오기\r\n    #geometryElement = revitElement.get_Geometry(geometryOptions).ToProtoType()\r\n    geometryElement = revitElement.get_Geometry(geometryOptions).ToProtoType()\r\n\r\n    # Geometry 변환 리스트 초기화\r\n    dynamoGeometries = []\r\n\r\n    # GeometryElement 내의 GeometryObject 순회\r\n    for geomObj in geometryElement:\r\n        # Revit GeometryObject를 Dynamo Geometry로 변환\r\n        dynGeom = geomObj#.ToProtoType()\r\n        #dynGeom = Revit.GeometryConversion.RevitToProtoSolid.ToProtoType(geomObj)\r\n        if dynGeom:\r\n            dynamoGeometries.append(dynGeom)\r\n    \r\n    return dynamoGeometries\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Rooms,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_EdgeSlab,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    \r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def get_elems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def get_ug_elems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    def get_ug_cols():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n        \r\n    def get_ug_frames():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    def get_railElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n        \r\n    def get_genericModels():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            #filter( lambda x: DSCore.Object.Type(x)!=\"Revit.Elements.DirectShape\" ),\r\n            filter( lambda x: type(x)!=\"Revit.Elements.DirectShape\" ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    pre_res = go(\r\n        list(chain(*map(get_elems, bics))),\r\n        filter( lambda x: \"Lean\" not in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n        list,\r\n    )\r\n\r\n    res = [\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),\r\n        get_ug_elems(Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),\r\n        get_ug_elems(Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),\r\n        get_ug_elems(Autodesk.Revit.DB.BuiltInCategory.OST_Walls),\r\n        #list(map(get_elems, bics))# + get_genericModels()\r\n        pre_res,\r\n    ]\r\n\r\n    return res\r\n\r\ndef get_solid(element):\r\n    geos = []\r\n    for geo in element.get_Geometry(Options()):\r\n        geos.append(geo)\r\n    \r\n    #res = Revit.GeometryConversion.RevitToProtoSolid.ToProtoType(geos[0])\r\n    \r\n    return geos[0]\r\n\r\n\r\ndef union_solids(solids):\r\n    \"\"\"\r\n    주어진 Solid 객체 리스트를 유니온하여 하나의 Solid로 반환\r\n    :param solids: List[Solid]\r\n    :return: Solid\r\n    \"\"\"\r\n    if not solids or len(solids) < 2:\r\n        raise ValueError(\"유니온을 수행할 최소 2개의 Solid가 필요합니다.\")\r\n    \r\n    # 첫 번째 Solid를 기준으로 시작\r\n    result = solids[0]\r\n    \r\n    # 남은 Solid와 반복적으로 유니온 수행\r\n    for solid in solids[1:]:\r\n        if solid.Volume > 0:  # Solid가 비어 있지 않은지 확인\r\n            result = BooleanOperationsUtils.ExecuteBooleanOperation(result, solid, BooleanOperationsType.Union)\r\n    \r\n    return result\r\n\r\ndef get_allElems_unionSolid(allElems):\r\n    allRooms = get_allElems(doc)[0]\r\n    allElems = list(chain(*get_allElems(doc)[1]))\r\n    res = go(\r\n        allElems,\r\n        #map(lambda x: dir(x)),\r\n        map( lambda x: get_solid(x) ),\r\n        list,\r\n        #map(lambda x: get_QGeometry(x)),\r\n#        lambda x: chain(*x),\r\n        lambda x: Solid_ByUnion(x),\r\n    )\r\n    return res\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"물량산출모드\":\r\n    OUT = get_allElems(doc)\r\nelse:\r\n    OUT = []",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nclr.AddReference(\"RevitNodes\")\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n#clr.AddReference(\"Revit.GeometryConversion\")\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n#import Revit.GeometryConversion #import ProtoToRevit, RevitToProto\r\n#from Revit import GeometryConversion\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\nimport Autodesk\r\n\r\nclr.AddReference('RevitServices')\r\nimport RevitServices\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexec_mode = IN[0]\r\n\r\n\r\n#########################################################################\r\ndef get_QGeometry(elem):\r\n    # Revit Document 객체 가져오기\r\n    doc = DocumentManager.Instance.CurrentDBDocument\r\n    revitElement = UnwrapElement(elem)\r\n    \r\n    # Geometry 가져오기 옵션 설정\r\n    geometryOptions = Options()\r\n    geometryOptions.DetailLevel = ViewDetailLevel.Fine  # 세부 레벨 설정 (Fine, Medium, Coarse 등)\r\n    geometryOptions.IncludeNonVisibleObjects = True    # 비가시 기하학 포함 여부\r\n    \r\n    # GeometryElement 가져오기\r\n    #geometryElement = revitElement.get_Geometry(geometryOptions).ToProtoType()\r\n    geometryElement = revitElement.get_Geometry(geometryOptions).ToProtoType()\r\n\r\n    # Geometry 변환 리스트 초기화\r\n    dynamoGeometries = []\r\n\r\n    # GeometryElement 내의 GeometryObject 순회\r\n    for geomObj in geometryElement:\r\n        # Revit GeometryObject를 Dynamo Geometry로 변환\r\n        dynGeom = geomObj#.ToProtoType()\r\n        #dynGeom = Revit.GeometryConversion.RevitToProtoSolid.ToProtoType(geomObj)\r\n        if dynGeom:\r\n            dynamoGeometries.append(dynGeom)\r\n    \r\n    return dynamoGeometries\r\n\r\ndef get_all_BIC():\r\n\r\n    db = [\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Rooms,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_Floors,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_EdgeSlab,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Roofs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Walls,\r\n    Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming,\r\n    \r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Ceilings,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Doors,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Windows,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_Stairs,\r\n    #Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel,\r\n    ]\r\n    return db\r\n    \r\ndef get_allElems(doc):\r\n    bics = get_all_BIC()\r\n    \r\n    def get_elems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n\r\n    def get_ug_elems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    def get_ug_cols():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n        \r\n    def get_ug_frames():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            filter( lambda x: \"UG\" in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    def get_railElems(x):\r\n        collector = FilteredElementCollector(doc)\r\n        res = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        return res\r\n        \r\n    def get_genericModels():\r\n        x = Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel\r\n        collector = FilteredElementCollector(doc)\r\n        allElems = collector.OfCategory(x).WhereElementIsNotElementType().ToElements()\r\n        res = go(\r\n            allElems,\r\n            #filter( lambda x: DSCore.Object.Type(x)!=\"Revit.Elements.DirectShape\" ),\r\n            filter( lambda x: type(x)!=\"Revit.Elements.DirectShape\" ),\r\n            list,\r\n        )\r\n        return res\r\n\r\n    pre_res = go(\r\n        list(chain(*map(get_elems, bics))),\r\n        filter( lambda x: \"Lean\" not in x.LookupParameter(\"Family and Type\").AsValueString() ),\r\n        list,\r\n    )\r\n\r\n    res = [\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),\r\n        get_ug_elems(Autodesk.Revit.DB.BuiltInCategory.OST_Walls),\r\n        #get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_EdgeSlab),\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_Floors),\r\n        get_elems(Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFoundation),\r\n        #list(map(get_elems, bics))# + get_genericModels()\r\n        pre_res,\r\n    ]\r\n\r\n    return res\r\n\r\ndef get_solid(element):\r\n    geos = []\r\n    for geo in element.get_Geometry(Options()):\r\n        geos.append(geo)\r\n    \r\n    #res = Revit.GeometryConversion.RevitToProtoSolid.ToProtoType(geos[0])\r\n    \r\n    return geos[0]\r\n\r\n\r\ndef union_solids(solids):\r\n    \"\"\"\r\n    주어진 Solid 객체 리스트를 유니온하여 하나의 Solid로 반환\r\n    :param solids: List[Solid]\r\n    :return: Solid\r\n    \"\"\"\r\n    if not solids or len(solids) < 2:\r\n        raise ValueError(\"유니온을 수행할 최소 2개의 Solid가 필요합니다.\")\r\n    \r\n    # 첫 번째 Solid를 기준으로 시작\r\n    result = solids[0]\r\n    \r\n    # 남은 Solid와 반복적으로 유니온 수행\r\n    for solid in solids[1:]:\r\n        if solid.Volume > 0:  # Solid가 비어 있지 않은지 확인\r\n            result = BooleanOperationsUtils.ExecuteBooleanOperation(result, solid, BooleanOperationsType.Union)\r\n    \r\n    return result\r\n\r\ndef get_allElems_unionSolid(allElems):\r\n    allRooms = get_allElems(doc)[0]\r\n    allElems = list(chain(*get_allElems(doc)[1]))\r\n    res = go(\r\n        allElems,\r\n        #map(lambda x: dir(x)),\r\n        map( lambda x: get_solid(x) ),\r\n        list,\r\n        #map(lambda x: get_QGeometry(x)),\r\n#        lambda x: chain(*x),\r\n        lambda x: Solid_ByUnion(x),\r\n    )\r\n    return res\r\n    \r\n\r\n# Place your code below this line\r\n\r\n\r\n\r\n# Assign your output to the OUT variable.\r\nif exec_mode == \"물량산출모드\":\r\n    OUT = get_allElems(doc)\r\nelse:\r\n    OUT = [[]]",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -2920,27 +2912,6 @@
       ],
       "Replication": "Auto",
       "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
-    },
-    {
-      "ConcreteType": "CoreNodeModels.Input.Filename, CoreNodeModels",
-      "HintPath": "D:\\mk\\mQ\\Dynamo Tool-Kit\\No file selected",
-      "InputValue": "No file selected.",
-      "NodeType": "ExtensionNode",
-      "Id": "6087827ce9304f778f55c5b8712d7625",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "82d796f6cda7432cb3504f6a3f56c4ba",
-          "Name": "",
-          "Description": "File Path",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled",
-      "Description": "Allows you to select a file on the system to get its file path."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
@@ -3758,7 +3729,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nfrom itertools import chain\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallElems = IN[0]\r\n# Place your code below this line\r\n\r\ndef getGeoms(elems):\r\n    res = []\r\n    for elem in elems:\r\n        try:\r\n            res.append( elem.Geometry() )\r\n        except:\r\n            pass\r\n    return res\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = list(chain(*getGeoms(allElems)))",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nallElems = IN[0]\r\ngl_elev = IN[1]\r\n# Place your code below this line\r\n\r\ndef getGeoms(elems):\r\n    res = []\r\n    for elem in elems:\r\n        try:\r\n            res.append( elem.Geometry() )\r\n        except:\r\n            pass\r\n    return res\r\n\r\nallGeoms = list(chain(*getGeoms(allElems)))\r\n\r\nget_bottom_elev = lambda geom: go(\r\n    geom,\r\n    lambda x: BoundingBox.ByGeometry(x).ToCuboid(),\r\n    Geometry.Explode,\r\n    filter( lambda x: x.NormalAtParameter(0.5,0.5).Z==-1 ),\r\n    next,\r\n    lambda x: x.PointAtParameter(0,0).Z ,\r\n)\r\n\r\nres = go(\r\n    allGeoms,\r\n    filter(lambda x: get_bottom_elev(x) < gl_elev ),\r\n)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -3768,6 +3739,15 @@
           "Id": "7a0066063335431db352b862df0cf977",
           "Name": "IN[0]",
           "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "f674a593c1a64b8d80b64ca54584bd25",
+          "Name": "IN[1]",
+          "Description": "Input #1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4381,7 +4361,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsolids = IN[0]\r\nis_boundMode = IN[1]\r\n# Place your code below this line\r\n\r\n\r\n\r\n\r\ndef union_solids(solids, is_boundMode):\r\n    union_obj=None\r\n    if is_boundMode:\r\n        for idx, sol in enumerate(solids):\r\n            if idx==0:\r\n                union_obj = BoundingBox.ByGeometry(sol).ToCuboid()\r\n            else:\r\n                try:\r\n                    bounding_sol = BoundingBox.ByGeometry(sol).ToCuboid()\r\n                    union_obj = union_obj.Union(bounding_sol)\r\n                except:\r\n                    try:\r\n                        bounding_sol = BoundingBox.ByGeometry(sol).ToCuboid()\r\n                        union_obj = union_obj.Union(bounding_sol)\r\n                    except:\r\n                        pass\r\n    else:\r\n        for idx, sol in enumerate(solids):\r\n            if idx==0:\r\n                union_obj = sol\r\n            else:\r\n                try:\r\n                    union_obj = union_obj.Union(sol)\r\n                except:\r\n                    try:\r\n                        bounding_sol = BoundingBox.ByGeometry(sol).ToCuboid()\r\n                        union_obj = union_obj.Union(bounding_sol)\r\n                    except:\r\n                        pass\r\n    return union_obj\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = union_solids(solids, is_boundMode)",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nsolids = IN[0]\r\nis_boundMode = IN[1]\r\n# Place your code below this line\r\n\r\n\r\n\r\n\r\ndef union_solids(solids, is_boundMode):\r\n    union_obj=None\r\n    if is_boundMode:\r\n        for idx, sol in enumerate(solids):\r\n            if idx==0:\r\n                union_obj = BoundingBox.ByGeometry(sol).ToCuboid()\r\n            else:\r\n                try:\r\n                    bounding_sol = BoundingBox.ByGeometry(sol).ToCuboid()\r\n                    union_obj = union_obj.Union(bounding_sol)\r\n                except:\r\n                    pass\r\n    else:\r\n        for idx, sol in enumerate(solids):\r\n            if idx==0:\r\n                union_obj = sol\r\n            else:\r\n                try:\r\n                    union_obj = union_obj.Union(sol)\r\n                except:\r\n                    try:\r\n                        bounding_sol = BoundingBox.ByGeometry(sol).ToCuboid()\r\n                        union_obj = union_obj.Union(bounding_sol)\r\n                    except:\r\n                        pass\r\n    return union_obj\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = union_solids(solids, is_boundMode)",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -4423,7 +4403,7 @@
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelems = IN[0]\r\n# Place your code below this line\r\n\r\n\r\nres = go(\r\n    elems,\r\n    lambda x: list(chain(*x)),\r\n    filter( lambda x: \"Pile\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"pile\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelems = IN[0]\r\n# Place your code below this line\r\n\r\n\r\nres = go(\r\n    elems,\r\n    #lambda x: list(chain(*x)),\r\n    filter( lambda x: \"_Pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n)\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -4594,15 +4574,18 @@
       "Description": "Makes a new list out of the given inputs"
     },
     {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.Parameters",
-      "Id": "ea4a2770cdf34a31a5e86c11d23c5fba",
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelems = IN[0]\r\n# Place your code below this line\r\nres = go(\r\n    elems,\r\n    filter( lambda x: \"Point\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Lines\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Railings\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Doors\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Windows\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Curtain Wall\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Line\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"line\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"Point\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"point\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_lean_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Lean_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Splash Block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Splash block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_splash block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"Stairs\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"Void\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"void\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n)\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a65998c4edef44e1872a508de22c1335",
       "Inputs": [
         {
-          "Id": "54fc2d6dfe7d414187e2a3721653216f",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
+          "Id": "34a3d111e33245a0ac0c75f54ce19fd4",
+          "Name": "IN[0]",
+          "Description": "Input #0",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4611,114 +4594,37 @@
       ],
       "Outputs": [
         {
-          "Id": "7a46041cbabe4340bd1e1a07112c7d1a",
-          "Name": "Parameter[]",
-          "Description": "Parameter[]",
+          "Id": "22293d3398c74f62bb3b1c3bc3260b8c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         }
       ],
-      "Replication": "Auto",
-      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.FilterByBoolMask@var[]..[],var[]..[]",
-      "Id": "590ba8b5bfe44f379681e6c7f2b6617b",
-      "Inputs": [
-        {
-          "Id": "b3df866f09a24105be9078c3934163f7",
-          "Name": "list",
-          "Description": "List to filter.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "eb5efdeea2574540816e8193c4f8a6fa",
-          "Name": "mask",
-          "Description": "List of booleans representing a mask.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "c0ca7fac42414aa89238b3e0d4e62c22",
-          "Name": "in",
-          "Description": "Items whose mask index is true.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "d6d90bb2529c40c7a8389b46dffb9f1f",
-          "Name": "out",
-          "Description": "Items whose mask index is false.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Filters a sequence by looking up corresponding indices in a separate list of booleans.\n\nList.FilterByBoolMask (list: var[]..[], mask: var[]..[]): var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "Revit.Elements.Element.GetParameterValueByName@string",
-      "Id": "f3c3408b7a20497584f3fe8a1ad295e0",
-      "Inputs": [
-        {
-          "Id": "f8fc030b4e744f68a72b483e854c680e",
-          "Name": "element",
-          "Description": "Revit.Elements.Element",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        },
-        {
-          "Id": "2ae131f29c3442d0b4eb3d4d6ad0e570",
-          "Name": "parameterName",
-          "Description": "The name of the parameter whose value you want to obtain.\n\nstring",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "290059fc77f64c52a43a07cae41c687d",
-          "Name": "var[]..[]",
-          "Description": "var[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Get the value of one of the element's parameters.\n\nElement.GetParameterValueByName (parameterName: string): var[]..[]"
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "\"Category\";",
-      "Id": "6768efbd3cd74cf7bb759199f68a1c58",
-      "Inputs": [],
+      "Code": "filtered_target;",
+      "Id": "6acbca1799b5454198b699a5b793cb8c",
+      "Inputs": [
+        {
+          "Id": "a5bc258e9a77495d8c13ccb7bd909868",
+          "Name": "filtered_target",
+          "Description": "filtered_target",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
       "Outputs": [
         {
-          "Id": "3e27c5a7cca44cfbb93b733fcab24ca1",
+          "Id": "5bef6a2640ca4967b8f083d2c681e64e",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -4731,14 +4637,24 @@
       "Description": "Allows for DesignScript code to be authored directly"
     },
     {
-      "ConcreteType": "CoreNodeModels.FromObject, CoreNodeModels",
+      "ConcreteType": "CoreNodeModels.CreateList, CoreNodeModels",
+      "VariableInputPorts": true,
       "NodeType": "ExtensionNode",
-      "Id": "757437a340984e5bb4e112ec4b80881f",
+      "Id": "2ec38bb9c798484c9d4f9ca4c3270562",
       "Inputs": [
         {
-          "Id": "a37a1cf6f6ef4e0897d6cab8948dd6d3",
-          "Name": "object",
-          "Description": "Object to be serialized",
+          "Id": "69a4264a96a54d3088c1e457abb414ac",
+          "Name": "item0",
+          "Description": "Item Index #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "be5fa1a81bf1482e9c5580f02eea8798",
+          "Name": "item1",
+          "Description": "Item Index #1",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4747,9 +4663,9 @@
       ],
       "Outputs": [
         {
-          "Id": "90f4eaf2c45242629f70e24e7df4dc27",
-          "Name": "string",
-          "Description": "String representation of the object",
+          "Id": "062bfacd7f0545d08ed525b3bb6efbab",
+          "Name": "list",
+          "Description": "A list (type: var[]..[])",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4757,36 +4673,165 @@
         }
       ],
       "Replication": "Disabled",
-      "Description": "Convert an object to a string representation."
+      "Description": "Makes a new list out of the given inputs"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
       "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.String.Contains@string,string,bool",
-      "Id": "60cdfbb157d042ec80629f1bee5f7c10",
+      "FunctionSignature": "DSCore.List.FirstItem@var[]..[]",
+      "Id": "23f4615566c643d082ed970950ead1bf",
       "Inputs": [
         {
-          "Id": "a35e9ac9ad0947af8122dfc4213e809b",
-          "Name": "string",
-          "Description": "String to search in\n\nstring",
+          "Id": "4fceb310f3804d65969983e7bdc88d0c",
+          "Name": "list",
+          "Description": "List to get the first item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d662a723d9404d378898b78e63d55751",
+          "Name": "item",
+          "Description": "First item in the list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Returns the first item in a list.\n\nList.FirstItem (list: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelems = IN[0]\r\n# Place your code below this line\r\nres = go(\r\n    elems,\r\n    filter( lambda x: \"_Ground Insulation\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"Slab Edge\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Wall\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Edge\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Lean_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n)\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "17f1749771634e99bed2571c399c4f59",
+      "Inputs": [
+        {
+          "Id": "5753e65f32e54e05b4052814ed51ac7a",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "baeed2ed969c4d8a8c1c2a54201318fa",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n# Document and UI setup\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nexca_res = IN[0]\r\nc1_d2 = IN[1]\r\n# Place your code below this line\r\nif exca_res != [[[]]]:\r\n    c1,c2,c3,c4,d1,d2 = c1_d2\r\n    \r\n    backfill_solid, disposal_solid = exca_res[0]\r\n    members_btmThicken = go(\r\n        disposal_solid,\r\n        Geometry.Explode,\r\n        filter( lambda x: x.NormalAtParameter(0.5,0.5).Z==-1 ),\r\n        map( lambda x: x.Thicken(sum([c1,c2,c3,c4])*1000, False) ),\r\n    )\r\n    res = members_btmThicken\r\nelse:\r\n    res = 0\r\n\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "bcf643a5a21647fdbcb47dc32bc43e23",
+      "Inputs": [
+        {
+          "Id": "8b833fa5273d49ea8e70d020a3d3e703",
+          "Name": "IN[0]",
+          "Description": "Input #0",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "16631ee80a3a4e72952c96d85bbe783b",
-          "Name": "searchFor",
-          "Description": "Substring to search for\n\nstring",
+          "Id": "5cfe53ae222f473cbf1f3e5f32014768",
+          "Name": "IN[1]",
+          "Description": "Input #1",
           "UsingDefaultValue": false,
-          "Level": 1,
-          "UseLevels": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "867feb9d36df45b5aa59c3be8e84a2a4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "# Load the Python Standard and DesignScript Libraries\r\nimport sys\r\nimport clr\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\nclr.ImportExtensions(Revit.GeometryConversion)\r\n\r\n################Module For Functional Programing#########################\r\nfrom functools import reduce\r\nfrom itertools import chain\r\nfrom itertools import groupby\r\nfrom copy import deepcopy\r\n\r\ncurry = lambda f: lambda a, *args: (\r\n    f(a, *args) if (len(args)) else lambda *args: f(a, *args)\r\n)\r\n\r\nfilter, map, reduce = curry(filter), curry(map), curry(reduce)\r\n\r\ngo = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##\r\n\r\n\r\ndef dictUpdate(dic1, dic2):\r\n    dic1.update(dic2)\r\n    return dic1\r\n\r\n\r\ndef dictsMerge(dics):\r\n    res = reduce(dictUpdate, dics)\r\n    return res\r\n\r\n\r\ndef dictDeleteKeys(dic, keys):\r\n    for k in keys:\r\n        del dic[k]\r\n    return dic\r\n\r\n\r\ndef update_nested_dict(dictionary, keys, value):\r\n    current_dict = dictionary\r\n    for key in keys[:-1]:\r\n        current_dict = current_dict.setdefault(key, {})\r\n    current_dict[keys[-1]] = value\r\n\r\n\r\ndef flat(a):\r\n    if isinstance(a, list):\r\n        for i in a:\r\n            yield from flat(i)\r\n    else:\r\n        yield a\r\n\r\n\r\ndef grpBy(iter, key):\r\n    f, grpKeys, grps = key, [], []\r\n    sorted_ = sorted(iter, key=f)\r\n    for key, grp_data in groupby(sorted_, key=f):\r\n        grpKeys.append(key)\r\n        grps.append(list(grp_data))\r\n    return grps, grpKeys\r\n\r\n\r\n#########################################################################\r\n\r\n# The inputs to this node will be stored as a list in the IN variables.\r\ndataEnteringNode = IN\r\nelems = IN[0]\r\n# Place your code below this line\r\nres = go(\r\n    elems,\r\n    filter( lambda x: \"Point\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Lines\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Railings\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Doors\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Windows\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Curtain Wall\" not in str(x.GetParameterValueByName(\"Category\")) ),\r\n    filter( lambda x: \"Line\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"line\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"Point\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"point\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_pile_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_lean_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Lean_\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Splash Block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_Splash block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n    filter( lambda x: \"_splash block\" not in str(x.GetParameterValueByName(\"Family and Type\")) ),\r\n)\r\n# Assign your output to the OUT variable.\r\nOUT = res",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "1b68956335aa492db8caae0904e092bf",
+      "Inputs": [
+        {
+          "Id": "dcd5f0cfb548436abe2f69055505134d",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2e5e9bc471944d418a5e17e471b66d31",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "DSCore.List.Flatten@var[]..[],int",
+      "Id": "2144217f779c4d969388ed3434943498",
+      "Inputs": [
+        {
+          "Id": "1c9265fe21df4eb983e67575f4bcfda7",
+          "Name": "list",
+          "Description": "List to flatten.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
           "KeepListStructure": false
         },
         {
-          "Id": "68cf013949884efc9143fb9e68183c9a",
-          "Name": "ignoreCase",
-          "Description": "Whether or not comparison takes case into account\n\nbool\nDefault value : false",
+          "Id": "4d128e0bd3244878b2c6fb1d5dd573f0",
+          "Name": "amount",
+          "Description": "Layers of list nesting to remove (-1 will remove all list nestings)\n\nint\nDefault value : -1",
           "UsingDefaultValue": true,
           "Level": 2,
           "UseLevels": false,
@@ -4795,9 +4840,9 @@
       ],
       "Outputs": [
         {
-          "Id": "214b7d2b78b34d0ea15ca8de16a94cec",
-          "Name": "bool",
-          "Description": "Whether the string contains the substring",
+          "Id": "ede6451a14994e0d8cf111a5753e6bc6",
+          "Name": "list",
+          "Description": "Flattened list by amount",
           "UsingDefaultValue": false,
           "Level": 2,
           "UseLevels": false,
@@ -4805,17 +4850,27 @@
         }
       ],
       "Replication": "Auto",
-      "Description": "Determines if the given string contains the given substring.\n\nString.Contains (string: string, searchFor: string, ignoreCase: bool = false): bool"
+      "Description": "Flattens a nested list of lists by a certain amount.\n\nList.Flatten (list: var[]..[], amount: int = -1): var[]..[]"
     },
     {
       "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
       "NodeType": "CodeBlockNode",
-      "Code": "[\n\"Point\",\n\"Lines\",\n\"Railings\",\n\"Doors\",\n\"Windows\"\n];",
-      "Id": "173775e9300b489e95097fc7a235c3ee",
-      "Inputs": [],
+      "Code": "gl_elev;",
+      "Id": "1de69a865de84efea106629730693a19",
+      "Inputs": [
+        {
+          "Id": "245351042b9e46d889524838e77b0518",
+          "Name": "gl_elev",
+          "Description": "gl_elev",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
       "Outputs": [
         {
-          "Id": "d890c920c83a49b585be97f24d537e02",
+          "Id": "491f9e18872a491d902457f24474a9a8",
           "Name": "",
           "Description": "Value of expression at line 1",
           "UsingDefaultValue": false,
@@ -4826,66 +4881,6 @@
       ],
       "Replication": "Disabled",
       "Description": "Allows for DesignScript code to be authored directly"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.Transpose@var[]..[]",
-      "Id": "586a85156ad2417688601018ef997079",
-      "Inputs": [
-        {
-          "Id": "da4414aae3584daaaf45e7bfea15728a",
-          "Name": "lists",
-          "Description": "List of lists to be transposed\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "0dc78fcd3e934e76a4c8347b979aadd2",
-          "Name": "lists",
-          "Description": "List of transposed lists",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Swaps rows and columns in a list of lists. If there are some rows that are shorter than others, null values are inserted as place holders in the resultant array such that it is always rectangular.\n\nList.Transpose (lists: var[]..[]): var[]..[]"
-    },
-    {
-      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
-      "NodeType": "FunctionNode",
-      "FunctionSignature": "DSCore.List.AnyTrue@var[]..[]",
-      "Id": "f32c23b1d77f4733992a8e8eab465f1d",
-      "Inputs": [
-        {
-          "Id": "4955ffe7eae44459b670126449fc500b",
-          "Name": "list",
-          "Description": "List to be checked on whether any item is true.\n\nvar[]..[]",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": true,
-          "KeepListStructure": false
-        }
-      ],
-      "Outputs": [
-        {
-          "Id": "c4413205930e41d0ba2f6d0cf376eb33",
-          "Name": "bool",
-          "Description": "Whether any item is true.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Auto",
-      "Description": "Determines if any item in the given list is a boolean and has a true value.\n\nList.AnyTrue (list: var[]..[]): bool"
     }
   ],
   "Connectors": [
@@ -5053,20 +5048,8 @@
     },
     {
       "Start": "6037781503fb4cc0a655bcdda044e481",
-      "End": "54fc2d6dfe7d414187e2a3721653216f",
-      "Id": "3252b103db474ba8b1da78698d7d7030",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "6037781503fb4cc0a655bcdda044e481",
-      "End": "b3df866f09a24105be9078c3934163f7",
-      "Id": "834fb74d28924768bf23e03b744e8986",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "6037781503fb4cc0a655bcdda044e481",
-      "End": "f8fc030b4e744f68a72b483e854c680e",
-      "Id": "8297dba50d5d4d71aab7dcb209968576",
+      "End": "34a3d111e33245a0ac0c75f54ce19fd4",
+      "Id": "a58a83bf14c84b14b8f6b663b3f5e8c0",
       "IsHidden": "False"
     },
     {
@@ -5211,6 +5194,12 @@
       "Start": "76e75a56f1b143c79f690643b0e10f7a",
       "End": "d9c314bc1f7b482f880d578bdaa835d0",
       "Id": "7924cb839a5444e0956a82383d4e146d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "76e75a56f1b143c79f690643b0e10f7a",
+      "End": "245351042b9e46d889524838e77b0518",
+      "Id": "f6da56eed524425b825a9f7d1f6fcbbc",
       "IsHidden": "False"
     },
     {
@@ -5376,15 +5365,27 @@
       "IsHidden": "False"
     },
     {
-      "Start": "dffa7dc0929842e886f617e2f43d7abc",
-      "End": "c8da18f4af7d486ca8fc51460f66e699",
-      "Id": "129586e7bb0c4b339709a9fdfb14b78a",
+      "Start": "375f14f0d77440469e9107fd84b3f631",
+      "End": "8b833fa5273d49ea8e70d020a3d3e703",
+      "Id": "026f8c3caa624aa1b18cfabffc759dde",
       "IsHidden": "False"
     },
     {
       "Start": "dffa7dc0929842e886f617e2f43d7abc",
       "End": "15c7c607f5d64473881edacd594f3e40",
       "Id": "363377c428b54ba49b56aa087691a732",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "dffa7dc0929842e886f617e2f43d7abc",
+      "End": "4fceb310f3804d65969983e7bdc88d0c",
+      "Id": "b1fa184150f9476aada5390decf8b944",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "dffa7dc0929842e886f617e2f43d7abc",
+      "End": "1c9265fe21df4eb983e67575f4bcfda7",
+      "Id": "82c6cc3808f34a029bf159e5537568e6",
       "IsHidden": "False"
     },
     {
@@ -5574,6 +5575,12 @@
       "IsHidden": "False"
     },
     {
+      "Start": "c3eb70582b93441595b9056f15b8d232",
+      "End": "5cfe53ae222f473cbf1f3e5f32014768",
+      "Id": "8fc9a517811b40c3b52c199a2f9a7cd3",
+      "IsHidden": "False"
+    },
+    {
       "Start": "9a28ca3a7fcf4091b9db0d4f22965ed4",
       "End": "ac1c31c4b307486d9c803b5afad8fc2c",
       "Id": "11c7e4de4dcf41078d71c445949e1509",
@@ -5664,51 +5671,51 @@
       "IsHidden": "False"
     },
     {
-      "Start": "d6d90bb2529c40c7a8389b46dffb9f1f",
+      "Start": "22293d3398c74f62bb3b1c3bc3260b8c",
+      "End": "a5bc258e9a77495d8c13ccb7bd909868",
+      "Id": "54861951e9cc400894992d9a1403473c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "22293d3398c74f62bb3b1c3bc3260b8c",
+      "End": "5753e65f32e54e05b4052814ed51ac7a",
+      "Id": "9ea9005ca1fd4ff58309243f82729dc9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5bef6a2640ca4967b8f083d2c681e64e",
+      "End": "be5fa1a81bf1482e9c5580f02eea8798",
+      "Id": "caff32c8171e4529897eb31ba65e3467",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d662a723d9404d378898b78e63d55751",
+      "End": "69a4264a96a54d3088c1e457abb414ac",
+      "Id": "ded0d3a34d824361b6f3e5af05d0eb64",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "baeed2ed969c4d8a8c1c2a54201318fa",
       "End": "46b8228789ea43be98de7c280497a878",
-      "Id": "5b7f4e7cb5de478ca3150e5d65f506ea",
+      "Id": "602f94cbcefa4fdfab69ab1b0633298b",
       "IsHidden": "False"
     },
     {
-      "Start": "290059fc77f64c52a43a07cae41c687d",
-      "End": "a37a1cf6f6ef4e0897d6cab8948dd6d3",
-      "Id": "2d5994a786014371846d38745a4e0fd0",
+      "Start": "2e5e9bc471944d418a5e17e471b66d31",
+      "End": "c8da18f4af7d486ca8fc51460f66e699",
+      "Id": "531593f8671f4dbba3716a49e160c299",
       "IsHidden": "False"
     },
     {
-      "Start": "3e27c5a7cca44cfbb93b733fcab24ca1",
-      "End": "2ae131f29c3442d0b4eb3d4d6ad0e570",
-      "Id": "aec644763a6643cf876b60388654df22",
+      "Start": "ede6451a14994e0d8cf111a5753e6bc6",
+      "End": "dcd5f0cfb548436abe2f69055505134d",
+      "Id": "a6271e15adf34593866b1900f62040e1",
       "IsHidden": "False"
     },
     {
-      "Start": "90f4eaf2c45242629f70e24e7df4dc27",
-      "End": "a35e9ac9ad0947af8122dfc4213e809b",
-      "Id": "e12679925e4e4bae98af1ae9b6e055b9",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "214b7d2b78b34d0ea15ca8de16a94cec",
-      "End": "da4414aae3584daaaf45e7bfea15728a",
-      "Id": "e8b6e218106e4fb4bedc529d55156cf5",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "d890c920c83a49b585be97f24d537e02",
-      "End": "16631ee80a3a4e72952c96d85bbe783b",
-      "Id": "169c831de1fc4a95ba5302f774682a76",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "0dc78fcd3e934e76a4c8347b979aadd2",
-      "End": "4955ffe7eae44459b670126449fc500b",
-      "Id": "cd9742f2e99d427eb64416e597c8414c",
-      "IsHidden": "False"
-    },
-    {
-      "Start": "c4413205930e41d0ba2f6d0cf376eb33",
-      "End": "eb5efdeea2574540816e8193c4f8a6fa",
-      "Id": "a499c2e30dd84886b59b959286523d4f",
+      "Start": "491f9e18872a491d902457f24474a9a8",
+      "End": "f674a593c1a64b8d80b64ca54584bd25",
+      "Id": "9c7862edb5c54823bcaa599f57a1f078",
       "IsHidden": "False"
     }
   ],
@@ -5741,7 +5748,7 @@
     {
       "NodeId": "ac350ab2-3fca-4665-b347-d22badc79a9f",
       "Binding": {
-        "ByGeometry_InClassDecl-1_InFunctionScope-1_Instance1_ac350ab2-3fca-4665-b347-d22badc79a9f": "PFNPQVAtRU5WOkVudmVsb3BlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOlNPQVAtRU5DPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyIgeG1sbnM6U09BUC1FTlY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczpjbHI9Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vc29hcC9lbmNvZGluZy9jbHIvMS4wIiBTT0FQLUVOVjplbmNvZGluZ1N0eWxlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyI+DQo8U09BUC1FTlY6Qm9keT4NCjxhMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXIgaWQ9InJlZi0xIiB4bWxuczphMT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9jbHIvbnNhc3NlbS9Qcm90b0NvcmUvUHJvdG9Db3JlJTJDJTIwVmVyc2lvbiUzRDIuMTYuMS4yNzI3JTJDJTIwQ3VsdHVyZSUzRG5ldXRyYWwlMkMlMjBQdWJsaWNLZXlUb2tlbiUzRG51bGwiPg0KPE51bWJlck9mRWxlbWVudHM+MTwvTnVtYmVyT2ZFbGVtZW50cz4NCjxCYXNlLTBfSGFzRGF0YT50cnVlPC9CYXNlLTBfSGFzRGF0YT4NCjxCYXNlLTBfRGF0YSBpZD0icmVmLTMiPlBGTlBRVkF0UlU1V09rVnVkbVZzYjNCbElIaHRiRzV6T25oemFUMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFdGFXNXpkR0Z1WTJVaUlIaHRiRzV6T25oelpEMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFaUlIaHRiRzV6T2xOUFFWQXRSVTVEUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUlnZUcxc2JuTTZVMDlCVUMxRlRsWTlJbWgwZEhBNkx5OXpZMmhsYldGekxuaHRiSE52WVhBdWIzSm5MM052WVhBdlpXNTJaV3h2Y0dVdklpQjRiV3h1Y3pwamJISTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2YzI5aGNDOWxibU52WkdsdVp5OWpiSEl2TVM0d0lpQlRUMEZRTFVWT1ZqcGxibU52WkdsdVoxTjBlV3hsUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUkrRFFvOFUwOUJVQzFGVGxZNlFtOWtlVDROQ2p4aE1UcEVhWEpsWTNSVGFHRndaVk4wWVhSbElHbGtQU0p5WldZdE1TSWdlRzFzYm5NNllURTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2WTJ4eUwyNXpZWE56WlcwdlVtVjJhWFF1Uld4bGJXVnVkSE12VW1WMmFYUk9iMlJsY3lVeVF5VXlNRlpsY25OcGIyNGxNMFF5TGpFMkxqRXVOalV4TUNVeVF5VXlNRU4xYkhSMWNtVWxNMFJ1WlhWMGNtRnNKVEpESlRJd1VIVmliR2xqUzJWNVZHOXJaVzRsTTBSdWRXeHNJajROQ2p4emRISnBibWRKUkNCcFpEMGljbVZtTFRNaVBqSXpaVEl3TW1aakxUSmtPR1F0TkRjNFppMWhNRGRpTFRaaU9EUXdaakEyTURSaVlpMHdNRE13WVdVNE5Ud3ZjM1J5YVc1blNVUStEUW84YVc1MFNVUStNekU1TURRd05Ud3ZhVzUwU1VRK0RRbzhjM2x1WTBsa0lHbGtQU0p5WldZdE5DSStZV0kyTkdSbVpEVXRNV0U1WXkwMFpqVTFMV0ZoTURrdFkyUTJNMlkyWkRSa05qWXlQQzl6ZVc1alNXUStEUW84YldGMFpYSnBZV3hKWkQ0eE1qZzBOVEF6UEM5dFlYUmxjbWxoYkVsa1BnMEtQQzloTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsUGcwS1BDOVRUMEZRTFVWT1ZqcENiMlI1UGcwS1BDOVRUMEZRTFVWT1ZqcEZiblpsYkc5d1pUNE5DZz09PC9CYXNlLTBfRGF0YT4NCjxCYXNlLTBfSGFzTmVzdGVkRGF0YT5mYWxzZTwvQmFzZS0wX0hhc05lc3RlZERhdGE+DQo8L2ExOkNhbGxTaXRlX3gwMDJCX1RyYWNlU2VyaWFsaXNlckhlbHBlcj4NCjwvU09BUC1FTlY6Qm9keT4NCjwvU09BUC1FTlY6RW52ZWxvcGU+DQo="
+        "ByGeometry_InClassDecl-1_InFunctionScope-1_Instance1_ac350ab2-3fca-4665-b347-d22badc79a9f": "PFNPQVAtRU5WOkVudmVsb3BlIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOlNPQVAtRU5DPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyIgeG1sbnM6U09BUC1FTlY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIiB4bWxuczpjbHI9Imh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vc29hcC9lbmNvZGluZy9jbHIvMS4wIiBTT0FQLUVOVjplbmNvZGluZ1N0eWxlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy9zb2FwL2VuY29kaW5nLyI+DQo8U09BUC1FTlY6Qm9keT4NCjxhMTpDYWxsU2l0ZV94MDAyQl9UcmFjZVNlcmlhbGlzZXJIZWxwZXIgaWQ9InJlZi0xIiB4bWxuczphMT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS9jbHIvbnNhc3NlbS9Qcm90b0NvcmUvUHJvdG9Db3JlJTJDJTIwVmVyc2lvbiUzRDIuMTYuMS4yNzI3JTJDJTIwQ3VsdHVyZSUzRG5ldXRyYWwlMkMlMjBQdWJsaWNLZXlUb2tlbiUzRG51bGwiPg0KPE51bWJlck9mRWxlbWVudHM+MTwvTnVtYmVyT2ZFbGVtZW50cz4NCjxCYXNlLTBfSGFzRGF0YT50cnVlPC9CYXNlLTBfSGFzRGF0YT4NCjxCYXNlLTBfRGF0YSBpZD0icmVmLTMiPlBGTlBRVkF0UlU1V09rVnVkbVZzYjNCbElIaHRiRzV6T25oemFUMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFdGFXNXpkR0Z1WTJVaUlIaHRiRzV6T25oelpEMGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TVM5WVRVeFRZMmhsYldFaUlIaHRiRzV6T2xOUFFWQXRSVTVEUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUlnZUcxc2JuTTZVMDlCVUMxRlRsWTlJbWgwZEhBNkx5OXpZMmhsYldGekxuaHRiSE52WVhBdWIzSm5MM052WVhBdlpXNTJaV3h2Y0dVdklpQjRiV3h1Y3pwamJISTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2YzI5aGNDOWxibU52WkdsdVp5OWpiSEl2TVM0d0lpQlRUMEZRTFVWT1ZqcGxibU52WkdsdVoxTjBlV3hsUFNKb2RIUndPaTh2YzJOb1pXMWhjeTU0Yld4emIyRndMbTl5Wnk5emIyRndMMlZ1WTI5a2FXNW5MeUkrRFFvOFUwOUJVQzFGVGxZNlFtOWtlVDROQ2p4aE1UcEVhWEpsWTNSVGFHRndaVk4wWVhSbElHbGtQU0p5WldZdE1TSWdlRzFzYm5NNllURTlJbWgwZEhBNkx5OXpZMmhsYldGekxtMXBZM0p2YzI5bWRDNWpiMjB2WTJ4eUwyNXpZWE56WlcwdlVtVjJhWFF1Uld4bGJXVnVkSE12VW1WMmFYUk9iMlJsY3lVeVF5VXlNRlpsY25OcGIyNGxNMFF5TGpFMkxqRXVOalV4TUNVeVF5VXlNRU4xYkhSMWNtVWxNMFJ1WlhWMGNtRnNKVEpESlRJd1VIVmliR2xqUzJWNVZHOXJaVzRsTTBSdWRXeHNJajROQ2p4emRISnBibWRKUkNCcFpEMGljbVZtTFRNaVBqWXdZV0k0TkdWaUxUVmpNR0l0TkdKbU5DMWlPR0UzTFRGbU1qUTVabUppTldReU1pMHdNRE14TVRCaE5Ud3ZjM1J5YVc1blNVUStEUW84YVc1MFNVUStNekl4TlRVeU5Ud3ZhVzUwU1VRK0RRbzhjM2x1WTBsa0lHbGtQU0p5WldZdE5DSStNV1ppTm1Rd056Z3RabVl4TkMwME5tSXdMVGt5WXpFdFpUTm1Nakl5TjJWaE1UWTVQQzl6ZVc1alNXUStEUW84YldGMFpYSnBZV3hKWkQ0eE1qZzBOVEF6UEM5dFlYUmxjbWxoYkVsa1BnMEtQQzloTVRwRWFYSmxZM1JUYUdGd1pWTjBZWFJsUGcwS1BDOVRUMEZRTFVWT1ZqcENiMlI1UGcwS1BDOVRUMEZRTFVWT1ZqcEZiblpsYkc5d1pUNE5DZz09PC9CYXNlLTBfRGF0YT4NCjxCYXNlLTBfSGFzTmVzdGVkRGF0YT5mYWxzZTwvQmFzZS0wX0hhc05lc3RlZERhdGE+DQo8L2ExOkNhbGxTaXRlX3gwMDJCX1RyYWNlU2VyaWFsaXNlckhlbHBlcj4NCjwvU09BUC1FTlY6Qm9keT4NCjwvU09BUC1FTlY6RW52ZWxvcGU+DQo="
       }
     }
   ],
@@ -5756,15 +5763,15 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": -10916.44921875,
-      "EyeY": 36431.03125,
-      "EyeZ": -56528.921875,
-      "LookX": 54416.73046875,
-      "LookY": -62538.015625,
-      "LookZ": 113262.5703125,
-      "UpX": 0.53559017181396484,
-      "UpY": 0.67889523506164551,
-      "UpZ": 0.502239465713501
+      "EyeX": 45219.44140625,
+      "EyeY": 42125.4609375,
+      "EyeZ": -26183.84765625,
+      "LookX": -3275.57421875,
+      "LookY": -56783.890625,
+      "LookZ": 42906.1953125,
+      "UpX": 0.32527497410774231,
+      "UpY": 0.27529364824295044,
+      "UpZ": 0.90465998649597168
     },
     "ConnectorPins": [],
     "NodeViews": [
@@ -6015,8 +6022,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13888.416698495794,
-        "Y": 3277.601167120582
+        "X": -13513.793621880088,
+        "Y": 3151.999585155972
       },
       {
         "Name": "▶ [A.2] 토공참조선 선택 대상들을 그룹으로 적용하시겠습니까? 개별로 적용하시겠습니까?",
@@ -6025,8 +6032,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13905.19308233244,
-        "Y": 3074.9538909812536
+        "X": -13532.635206415653,
+        "Y": 2875.005083855584
       },
       {
         "Name": "make_refLine_forExca_byMode",
@@ -6035,8 +6042,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -8578.9248082961349,
-        "Y": 3454.87105511369
+        "X": -8449.76393872991,
+        "Y": 2829.71483576816
       },
       {
         "Name": "List.Join",
@@ -6295,8 +6302,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13096.896580414403,
-        "Y": 2279.67077234199
+        "X": -13024.871475416612,
+        "Y": 2299.837801741372
       },
       {
         "Name": "Code Block",
@@ -6305,8 +6312,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": -13592.59699428603,
-        "Y": 2143.1497290963775
+        "X": -13520.57188928824,
+        "Y": 2163.3167584957596
       },
       {
         "Name": "▶ [A.3] 터파기 관련 공통정보 입력 (항목순서 변경,삭제 금지)",
@@ -6315,8 +6322,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12389.101295182631,
-        "Y": 4178.5752491800231
+        "X": -12153.270610653079,
+        "Y": 4080.9901383402084
       },
       {
         "Name": "공통정보 입력 파싱",
@@ -6325,8 +6332,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11869.454309574114,
-        "Y": 4180.50466013123
+        "X": -11633.623625044562,
+        "Y": 4082.919549291415
       },
       {
         "Name": "Code Block",
@@ -6335,8 +6342,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11561.454309574114,
-        "Y": 4180.50466013123
+        "X": -11325.623625044562,
+        "Y": 4082.919549291415
       },
       {
         "Name": "▶ [0.1] 실행모드 선택 - 확인 필수!",
@@ -6345,8 +6352,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13567.302326883837,
-        "Y": 2560.3666756717266
+        "X": -13495.277221886046,
+        "Y": 2580.5337050711087
       },
       {
         "Name": "▶ [B.1] 토공 물량 관련 공통정보 입력 (항목순서 변경,삭제 금지)",
@@ -6355,8 +6362,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12383.901770565844,
-        "Y": 4782.5780596600071
+        "X": -12148.071086036292,
+        "Y": 4684.9929488201924
       },
       {
         "Name": "Code Block",
@@ -6365,18 +6372,18 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11567.340969854338,
-        "Y": 4785.0976485156107
+        "X": -11331.510285324786,
+        "Y": 4687.512537675796
       },
       {
         "Name": "makeExca",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "8f7bcda97ed74a4ea3b572a0190b69ab",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
         "X": -6239.0820943164736,
-        "Y": 6618.0114891222111
+        "Y": 6616.93392682926
       },
       {
         "Name": "All ElementsExceptRails",
@@ -6385,8 +6392,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -9937.10363005766,
-        "Y": 8692.5810549826547
+        "X": -10575.097061226568,
+        "Y": 8687.6674086177773
       },
       {
         "Name": "List.Flatten",
@@ -6395,18 +6402,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -8812.58174638943,
-        "Y": 8710.3913320559277
-      },
-      {
-        "Name": "[2.B.1] Total BOQ 시트 등록",
-        "ShowGeometry": true,
-        "Id": "6087827ce9304f778f55c5b8712d7625",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": true,
-        "X": -12096.679509556767,
-        "Y": 7354.8161476914975
+        "X": -9066.97705667309,
+        "Y": 8701.89948278437
       },
       {
         "Name": "Element.Parameters",
@@ -6415,8 +6412,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -8312.0218304233131,
-        "Y": 9132.0088829798078
+        "X": -8502.9630964576354,
+        "Y": 9579.852943314856
       },
       {
         "Name": "[1.A.3] 터파기 관련 공통정보 입력",
@@ -6445,8 +6442,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12161.395550935113,
-        "Y": 6168.0382582811162
+        "X": -12747.358369850152,
+        "Y": 6412.1894328290491
       },
       {
         "Name": "Code Block",
@@ -6475,8 +6472,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11824.874975836166,
-        "Y": 4786.81138638433
+        "X": -11589.044291306614,
+        "Y": 4689.2262755445154
       },
       {
         "Name": "Code Block",
@@ -6520,13 +6517,13 @@
       },
       {
         "Name": "Solid.ByUnion",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "9314854b56ca4ba29fe4cad964819dee",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": true,
-        "X": -7065.3135898065075,
-        "Y": 8492.5899733900569
+        "X": -6670.3675000246221,
+        "Y": 8819.7468089556478
       },
       {
         "Name": "Element.Id",
@@ -6565,12 +6562,12 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11489.57690805789,
-        "Y": 8679.5841716323484
+        "X": -11125.001116612892,
+        "Y": 8701.2638339017431
       },
       {
         "Name": "If",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "3721a1e7f7b94282aa6f7e63632a2e20",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6580,7 +6577,7 @@
       },
       {
         "Name": "Cuboid.ByLengths",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "b6d74907ef0143e09d18db672ff42d03",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6590,7 +6587,7 @@
       },
       {
         "Name": "List.IsEmpty",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "3fb9ac7931864c8192108b5adda5d624",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6610,7 +6607,7 @@
       },
       {
         "Name": "Categories",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "78a29380e41a416ba2369f6b6a68595b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6620,7 +6617,7 @@
       },
       {
         "Name": "If",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "ebbab7fe769f4acbb4da07b9509c5cfe",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6630,23 +6627,23 @@
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "2c5ed5e961944687b4173c852167f980",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5717.89006398129,
-        "Y": 7171.761546841055
+        "X": -5744.027912979469,
+        "Y": 7179.3850861321907
       },
       {
         "Name": "::: 토공 항목 별 산출 결과 :::",
         "ShowGeometry": true,
         "Id": "9bcf898e0bda443d8e1a87ae89619706",
         "IsSetAsInput": false,
-        "IsSetAsOutput": true,
+        "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -5906.2546535068368,
-        "Y": 6635.3960197326487
+        "X": -5779.58101931205,
+        "Y": 6619.85617569144
       },
       {
         "Name": "⏸ [0.0]안내문 영역 // 입력 불필요 //",
@@ -6655,8 +6652,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13572.646889759033,
-        "Y": 2272.5917819132615
+        "X": -13500.621784761242,
+        "Y": 2292.7588113126435
       },
       {
         "Name": "getGeoms",
@@ -6665,12 +6662,12 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -8317.25967907254,
-        "Y": 8706.0804407450869
+        "X": -8565.0148349429237,
+        "Y": 8711.6622473603966
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "a710f251caff4a27b25963549f28ec27",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6680,7 +6677,7 @@
       },
       {
         "Name": "time stamp",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "c7a8b14ae1764eaeafe8daba1072fde5",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6695,8 +6692,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -10614.197383233446,
-        "Y": 4485.4621862480108
+        "X": -10606.838436487173,
+        "Y": 4448.6674525166418
       },
       {
         "Name": "Code Block",
@@ -6705,8 +6702,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -8700.39579647754,
-        "Y": 4483.5080772785477
+        "X": -8685.5825682032573,
+        "Y": 4436.105746800843
       },
       {
         "Name": "Code Block",
@@ -6725,8 +6722,8 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -10888.372377547519,
-        "Y": 4663.506480998858
+        "X": -10885.919395298763,
+        "Y": 4648.78858750631
       },
       {
         "Name": "Code Block",
@@ -6869,14 +6866,14 @@
         "Y": 8226.2256865523359
       },
       {
-        "Name": "filter Pile",
+        "Name": "filter lean Pile etc",
         "ShowGeometry": true,
         "Id": "bc690724c0094c43862f307071ab1a07",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -9251.8894502343264,
-        "Y": 8699.3282257889387
+        "X": -9375.1246327907375,
+        "Y": 8707.63827007629
       },
       {
         "Name": "Element.Parameters",
@@ -6895,8 +6892,8 @@
         "IsSetAsInput": true,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11330.752395001684,
-        "Y": 5721.2714323827595
+        "X": -13521.75551671008,
+        "Y": 3700.4143100236165
       },
       {
         "Name": "Code Block",
@@ -6905,12 +6902,12 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -9901.089843688962,
-        "Y": 6094.4699289628961
+        "X": -11352.738848917117,
+        "Y": 5879.9405193232678
       },
       {
         "Name": "Code Block",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "046b4178564e46c598392155dad04ba1",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6920,7 +6917,7 @@
       },
       {
         "Name": "List Create",
-        "ShowGeometry": true,
+        "ShowGeometry": false,
         "Id": "1cc32b9bb53840949ee0966179e4c6ec",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
@@ -6929,94 +6926,94 @@
         "Y": 8473.7494154071264
       },
       {
-        "Name": "Element.Parameters",
+        "Name": "filter line etc",
         "ShowGeometry": true,
-        "Id": "ea4a2770cdf34a31a5e86c11d23c5fba",
+        "Id": "a65998c4edef44e1872a508de22c1335",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -13289.285285818261,
-        "Y": 3605.6972299476365
-      },
-      {
-        "Name": "List.FilterByBoolMask",
-        "ShowGeometry": true,
-        "Id": "590ba8b5bfe44f379681e6c7f2b6617b",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -11029.092920748148,
-        "Y": 3310.9473997322093
-      },
-      {
-        "Name": "Element.GetParameterValueByName",
-        "ShowGeometry": true,
-        "Id": "f3c3408b7a20497584f3fe8a1ad295e0",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -12781.334429486596,
-        "Y": 3477.4446590292114
+        "X": -12555.656507126379,
+        "Y": 3149.9413527973957
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "6768efbd3cd74cf7bb759199f68a1c58",
+        "Id": "6acbca1799b5454198b699a5b793cb8c",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12978.271282642419,
-        "Y": 3605.5697468476319
+        "X": -10523.920775345316,
+        "Y": 7839.3213310489436
       },
       {
-        "Name": "String from Object",
+        "Name": "List Create",
         "ShowGeometry": true,
-        "Id": "757437a340984e5bb4e112ec4b80881f",
+        "Id": "2ec38bb9c798484c9d4f9ca4c3270562",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12372.041073788345,
-        "Y": 3540.4783582775794
+        "X": -9566.4268539410587,
+        "Y": 8305.0690096522776
       },
       {
-        "Name": "String.Contains",
+        "Name": "List.FirstItem",
         "ShowGeometry": true,
-        "Id": "60cdfbb157d042ec80629f1bee5f7c10",
+        "Id": "23f4615566c643d082ed970950ead1bf",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -11898.53260492345,
-        "Y": 3547.8277184524104
+        "X": -9826.445316654761,
+        "Y": 8510.8302773467312
+      },
+      {
+        "Name": "filter etc",
+        "ShowGeometry": true,
+        "Id": "17f1749771634e99bed2571c399c4f59",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -12171.111151864488,
+        "Y": 2969.0120293118662
+      },
+      {
+        "Name": "total_leanAndOthers",
+        "ShowGeometry": true,
+        "Id": "bcf643a5a21647fdbcb47dc32bc43e23",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "X": -5885.0121984783718,
+        "Y": 5908.6105522462431
+      },
+      {
+        "Name": "filter line etc",
+        "ShowGeometry": true,
+        "Id": "1b68956335aa492db8caae0904e092bf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -9698.5969256022618,
+        "Y": 8778.6049228173633
+      },
+      {
+        "Name": "List.Flatten",
+        "ShowGeometry": true,
+        "Id": "2144217f779c4d969388ed3434943498",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -10011.504562924049,
+        "Y": 8776.98108561711
       },
       {
         "Name": "Code Block",
         "ShowGeometry": true,
-        "Id": "173775e9300b489e95097fc7a235c3ee",
+        "Id": "1de69a865de84efea106629730693a19",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": -12093.222175008916,
-        "Y": 3645.0544525039913
-      },
-      {
-        "Name": "List.Transpose",
-        "ShowGeometry": true,
-        "Id": "586a85156ad2417688601018ef997079",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -11648.792717648537,
-        "Y": 3548.7350524839007
-      },
-      {
-        "Name": "List.AnyTrue",
-        "ShowGeometry": true,
-        "Id": "f32c23b1d77f4733992a8e8eab465f1d",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": -11426.9868101289,
-        "Y": 3547.69488507778
+        "X": -9408.2682112104249,
+        "Y": 8174.4999520017382
       }
     ],
     "Annotations": [
@@ -7146,12 +7143,12 @@
           "822b6bdf5810416bb58840cf8cd4bb66"
         ],
         "HasNestedGroups": false,
-        "Left": -12399.101295182631,
-        "Top": 4105.5752491800231,
+        "Left": -12163.270610653079,
+        "Top": 4007.9901383402084,
         "Width": 1001.6469856085168,
         "Height": 1029.002810479984,
         "FontSize": 36.0,
-        "InitialTop": 4178.5752491800231,
+        "InitialTop": 4080.9901383402084,
         "InitialHeight": 753.23613720430694,
         "TextblockHeight": 63.0,
         "Background": "#FFC1D676"
@@ -7170,12 +7167,12 @@
           "04c9ae06ebe44a77b72aaf82de8bd48c"
         ],
         "HasNestedGroups": false,
-        "Left": -13602.59699428603,
-        "Top": 2070.1497290963775,
+        "Left": -13530.57188928824,
+        "Top": 2090.3167584957596,
         "Width": 704.70041387162746,
         "Height": 622.21694657534908,
         "FontSize": 36.0,
-        "InitialTop": 2143.1497290963775,
+        "InitialTop": 2163.3167584957596,
         "InitialHeight": 562.21694657534908,
         "TextblockHeight": 63.0,
         "Background": "#FFFFB8D8"
@@ -7191,35 +7188,14 @@
           "40c0649d2aef40e4b6dfefab8827545c"
         ],
         "HasNestedGroups": false,
-        "Left": -9947.10363005766,
-        "Top": 8316.5810549826547,
+        "Left": -10585.097061226568,
+        "Top": 8311.6674086177773,
         "Width": 402.49666666666667,
         "Height": 520.0,
         "FontSize": 96.0,
-        "InitialTop": 8692.5810549826547,
+        "InitialTop": 8687.6674086177773,
         "InitialHeight": 145.0,
         "TextblockHeight": 366.0,
-        "Background": "#FFC1D676"
-      },
-      {
-        "Id": "8b4d84254b9a4e8b82b8d6496f07ebca",
-        "Title": "<Double click here to edit group title>",
-        "DescriptionText": "<Double click here to edit group description>",
-        "IsExpanded": true,
-        "WidthAdjustment": 0.0,
-        "HeightAdjustment": 0.0,
-        "Nodes": [
-          "6087827ce9304f778f55c5b8712d7625"
-        ],
-        "HasNestedGroups": false,
-        "Left": -12106.679509556767,
-        "Top": 7185.8161476914975,
-        "Width": 290.0,
-        "Height": 307.0,
-        "FontSize": 36.0,
-        "InitialTop": 7354.8161476914975,
-        "InitialHeight": 145.0,
-        "TextblockHeight": 159.0,
         "Background": "#FFC1D676"
       },
       {
@@ -7234,13 +7210,13 @@
           "ec0957085d604537b91f29637a0fd228"
         ],
         "HasNestedGroups": false,
-        "Left": -13915.19308233244,
-        "Top": 3001.9538909812536,
+        "Left": -13542.635206415653,
+        "Top": 2802.005083855584,
         "Width": 734.0,
-        "Height": 510.64727613932837,
+        "Height": 584.994501300388,
         "FontSize": 36.0,
-        "InitialTop": 3074.9538909812536,
-        "InitialHeight": 316.9213134499123,
+        "InitialTop": 2875.005083855584,
+        "InitialHeight": 347.64727613932837,
         "TextblockHeight": 63.0,
         "Background": "#FFFFB8D8"
       },
@@ -7292,8 +7268,8 @@
         "Background": "#FFC1D676"
       }
     ],
-    "X": 11197.406810095601,
-    "Y": -1925.4114492362355,
-    "Zoom": 0.78628038112646759
+    "X": 11636.195411137267,
+    "Y": -2090.7965660009631,
+    "Zoom": 0.85326333792812559
   }
 }
