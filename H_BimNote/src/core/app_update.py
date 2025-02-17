@@ -8,7 +8,7 @@ import sys
 # import subprocess
 from datetime import datetime
 
-APP_VERSION = "1.0.5"  # Your app's current version
+APP_VERSION = "1.1.0"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 
 
@@ -44,7 +44,7 @@ def download_update(download_url):
 
         messagebox.showinfo(
             "Update Downloaded",
-            "새 버전이 다운로드 되었습니다. 프로그램이 종료되니 재시작 해주세요요.",
+            "새 버전이 다운로드 되었습니다. 프로그램이 종료되니 재시작 해주세요.",
         )
 
         # Restart the app with the new update

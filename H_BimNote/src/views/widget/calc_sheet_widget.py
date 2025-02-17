@@ -1,6 +1,9 @@
+import os
+import subprocess
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+from tkinter import messagebox
 from tksheet import Sheet, num2alpha as n2a
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -1421,7 +1424,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
 
         # Formatting to Total BOQ form
         self.building_total_data = self.format_data(self.total_data)
-        print(f"self.building_total_data::{self.building_total_data[0]}")
+        # print(f"self.building_total_data::{self.building_total_data[0]}")
 
         # Set headers and data
         self.sheet.set_sheet_data(
@@ -1473,9 +1476,59 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         else:
             unique_wm_inBuilding = []
 
+        if state.team_std_info.get("project-assigntype"):
+            unique_wm_inPjt_preModi = go(
+                state.team_std_info.get("project-assigntype"),
+                lambda x: x.get("children"),
+                map(lambda x: x.get("children")),
+                lambda x: list(chain(*x)),
+            )
+            print(f"unique_wm_inPjt_preModi::{unique_wm_inPjt_preModi[0]}")
+            unique_wm_inPjt_ = []
+            for r_ in unique_wm_inPjt_preModi:
+                r = deepcopy(r_)
+                wm_spec = go(
+                    r[3].split(" | ")[9:-4],
+                    filter(lambda x: not x.isnumeric()),
+                    filter(
+                        lambda x: not (
+                            ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+                        )
+                    ),
+                    lambda x: "\n".join(x),
+                )
+                try:
+                    wm_desc = r[3].split("|")[7].strip()
+                except:
+                    wm_desc = ""
+                new_r = [
+                    r[3].split("|")[0].strip(),  #
+                    r[4],  #
+                    wm_desc,  # Description
+                    wm_spec,  # Spec.
+                    r[5],  # Additional Spec.
+                    "",  # Reference to
+                    r[7],  # UoM
+                ]
+                unique_wm_inPjt_.append(new_r)
+            print(f"unique_wm_inPjt::{unique_wm_inPjt_[0]}")
+            unique_wm_inPjt = go(
+                unique_wm_inPjt_,
+                map(lambda x: "|".join(x)),
+                set,
+                list,
+                sorted,
+                map(lambda x: x.split("|")),
+                list,
+            )
+
+        else:
+            unique_wm_inPjt = []
+
         if unique_wm_inBuilding != []:
             unique_wm_inBuilding_withCalc = []
-            for i in unique_wm_inBuilding:
+            # for i in unique_wm_inBuilding:
+            for i in unique_wm_inPjt:
                 calc_sum = 0
                 for row in self.total_data:
                     if row[7] == i[0] and row[8] == i[1]:
@@ -1483,8 +1536,14 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                             value = row[14] if row[14] != "M2" else row[15]
                             calc_sum = calc_sum + value
                         except:
-                            pass
-                unique_wm_inBuilding_withCalc.append(i + [round(calc_sum, 3)])
+                            calc_sum = ""
+                    # else:
+                    #     calc_sum = ""
+                # unique_wm_inBuilding_withCalc.append(i + [round(calc_sum, 3)])
+                if calc_sum != 0:
+                    unique_wm_inBuilding_withCalc.append(i + [round(calc_sum, 3)])
+                else:
+                    unique_wm_inBuilding_withCalc.append(i + [""])
         else:
             unique_wm_inBuilding_withCalc = []
 
@@ -1502,7 +1561,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
             list,
         )
         state.unique_Cat_large = unique_Cat_large
-        print(f"unique_Cat_large:: {unique_Cat_large}")
+        # print(f"unique_Cat_large:: {unique_Cat_large}")
 
         unique_Cat_middle = go(
             WMs_data,
@@ -1516,7 +1575,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
             list,
         )
         state.unique_Cat_middle = unique_Cat_middle
-        print(f"unique_Cat_middle:: {unique_Cat_middle}")
+        # print(f"unique_Cat_middle:: {unique_Cat_middle}")
 
         category_slot = []
         for large in unique_Cat_large:
@@ -1594,12 +1653,23 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
 
     def export_tksheet_to_excel(self):
         """tksheet 위젯 데이터를 엑셀 파일로 저장하며 서식도 적용"""
+        state = self.state
         sheet = self.sheet
+
+        brief_pjtName = state.team_std_info.get("project-info").get("abbr")
+        brief_buildingName = go(
+            state.current_building.get(),
+            lambda x: x.split(" "),
+            map(lambda x: x[0]),
+            lambda x: "".join(x),
+        )
+
         # 파일 저장 경로 선택
         file_path = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx")],
             title="Save as Excel",
+            initialfile=f"{brief_pjtName}_{brief_buildingName}-BOQ",
         )
 
         if not file_path:  # 사용자가 취소한 경우
@@ -1608,7 +1678,8 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         # 새로운 워크북 생성
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Sheet Data"
+
+        ws.title = f"{brief_buildingName}-BOQ"
 
         # 헤더 가져오기
         headers = sheet.headers()
@@ -1664,3 +1735,16 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         # 엑셀 파일 저장
         wb.save(file_path)
         print(f"엑셀 파일 저장 완료: {file_path}")
+
+        # 6. 메시지 박스 띄우기
+        open_file = messagebox.askyesno(
+            "엑셀 저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+        )
+
+        # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
+        if open_file:
+            try:
+                os.startfile(file_path)  # Windows에서 엑셀 파일 열기
+                # subprocess.Popen(["start", file_path])
+            except Exception as e:
+                messagebox.showerror("오류", f"파일을 열 수 없습니다.\n{e}")
