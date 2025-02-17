@@ -23,11 +23,10 @@ from src.views.lower_tabs.pjt_family_list_tabs import create_pjtFamList_tab
 from src.views.lower_tabs.std_main_tab import create_std_Main_tab
 from src.views.widget.widget import select_tab
 from src.views.lower_tabs.pjt_report_member_tab import create_report_member_tab
-from src.views.lower_tabs.pjt_report_type_tab import create_report_type_tab
-from src.views.lower_tabs.pjt_report_WM_tab import create_report_wm_tab
 
 from src.views.widget.new_window import open_tab_in_new_window
 from src.views.lower_tabs.pjt_report_group_tab import create_report_group_tab
+from src.views.lower_tabs.pjt_report_TotalBD_tab import create_report_TotalBD_tab
 
 
 def create_tab_with_subtabs(state, notebook, tab_name):
@@ -228,11 +227,13 @@ def create_project_report_tab(state, notebook):
     # Add each subtab
     member_report_tab = create_report_member_tab(state, subtab_notebook)
     type_report_tab = create_report_group_tab(state, subtab_notebook)
+    totalBD_report_tab = create_report_TotalBD_tab(state, subtab_notebook)
     # wm_report_tab = create_report_wm_tab(state, subtab_notebook)
 
     tab_funcs = [
         create_report_member_tab,
         create_report_group_tab,
+        create_report_TotalBD_tab,
     ]
 
     # Bind double-click event to the tabs

@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 from tksheet import Sheet, num2alpha as n2a
 import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
 
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
@@ -1042,3 +1044,623 @@ class ReportGroup_SheetWidget(ttk.Frame):
             # self.sheet.set_sheet_data([])
             self.data = []
             print(f"Error loading data: {e}")
+
+
+class ReportBuildingTotal_SheetWidget(ttk.Frame):
+    def __init__(self, state, parent, data_kind=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.state = state
+        self.data_kind = data_kind
+        self.data = []
+        self.column_headers = []
+
+        # Load data
+        self.load_data()
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
+
+        # Formatting to Total BOQ form
+        self.building_total_data = self.format_data(self.total_data)
+
+        # Create a frame for the top controls (button)
+        self.control_frame = ttk.Frame(parent)
+        self.control_frame.pack(fill=tk.X, pady=5)
+
+        # Initialize tksheet widget
+        self.sheet = Sheet(
+            self,
+            # data=[],
+            # data=self.total_data,
+            data=self.building_total_data,
+            column_width=180,
+            height=500,
+            width=1000,
+        )
+        self.sheet.enable_bindings(
+            "select_all",
+            "single_select",
+            "drag_select",
+            "row_select",
+            "copy",
+            "rc_select",
+            "arrowkeys",
+            "double_click_column_resize",
+            "column_width_resize",
+            "column_select",
+            "row_height_resize",
+        )
+
+        self.sheet.set_options(header_font=("Arial Narrow", 8, "normal"))
+        self.sheet.set_options(font=("Arial Narrow", 9, "normal"))
+
+        self.sheet.pack(fill=tk.BOTH, expand=True)
+
+        # Add search functionality
+        self.search_manager = SearchManager(self.control_frame, self.sheet)
+
+        # Create Extract Excel Button
+        export_btn = ttk.Button(
+            self.control_frame,
+            text="Export to Excel",
+            command=self.export_tksheet_to_excel,
+            bootstyle="success-outline",
+        )
+        export_btn.pack(side="left", padx=100)
+
+        # 상태 변경 감지를 위한 옵저버 설정
+        self.state_observer = StateObserver(state, lambda e: self.update(e))
+
+        self.column_headers = [
+            "Work Master Code",
+            "Gauge Code",
+            "Description",
+            "Spec.",
+            "Additional Spec.",
+            "Reference to",
+            "UoM",
+            f"{state.current_building.get()}",
+        ]
+
+        self.sheet.headers(self.column_headers)
+
+        # # Ensure cell sizes and redraw
+        self.set_colums_widths()
+
+    def set_colums_widths(self, hdr_widths=None):
+        # self.sheet.headers(self.column_headers)
+        if hdr_widths:
+            self.sheet.set_column_widths(hdr_widths)
+        else:
+            self.sheet.set_column_widths(
+                [
+                    150,  # Work Master Code
+                    150,  # Gauge Code
+                    300,  # Description
+                    380,  # Spec.
+                    250,  # Additional Spec.
+                    150,  # Reference to
+                    50,  # UoM
+                    200,  # Current Building
+                ]
+            )
+        self.sheet.set_options(
+            default_row_height=33,
+        )
+
+    def load_data(self):
+        state = self.state
+        """Load data from Excel file and set headers and data."""
+        try:
+            # Extract headers
+            src_data = state.team_std_info[self.data_kind].get(
+                state.current_building.get()
+            )
+            # self.column_headers = src_data[0]
+            # self.sheet.headers(self.column_headers)
+
+            # Extract data
+            self.data = src_data[1:]
+            # self.data = src_data
+
+            # self.sheet.set_sheet_data(self.data)
+            print("ok~")
+        except Exception as e:
+            # self.sheet.set_sheet_data([])
+            self.data = []
+            print(f"Error loading data: {e}")
+
+    def get_manula_item_data(self):
+        ## dynamo 로직 준용
+        def calc_formula(formula, calc_param_list):
+
+            try:
+                tmp_formula = go(
+                    formula.split("\n"),
+                    filter(lambda x: "#" not in x),
+                    list,
+                )[0]
+            except:
+                tmp_formula = ""
+
+            if (
+                tmp_formula != "=Exca"
+                and tmp_formula != "=Back"
+                and tmp_formula != "=Disp"
+            ):
+                for n, v in calc_param_list:
+                    tmp_formula = tmp_formula.replace(n, str(v))
+                try:
+                    calc_result = eval(tmp_formula.strip("=")), "계산 성공"
+                except:
+                    calc_result = 0, "계산 실패 - 수식 혹은 파라미터가 유효하지 않음"
+            else:
+                tmp_formula = formula
+                calc_result = (
+                    0,
+                    "토공 항목 - [H_PAB.RT.Q2A]_Revit 토공 물량 자동산출.dyn에서 산출 요망",
+                )
+
+            return {
+                "수식": "'" + formula,
+                "대입수식": "'" + tmp_formula,
+                "산출결과": calc_result[0],
+                "산출로그": calc_result[1],
+            }
+
+        state = self.state
+
+        maunal_node = go(
+            state.team_std_info["project-assigntype"],
+            lambda x: x.get("children"),
+            filter(lambda x: x["values"][1] == state.current_building.get()),
+            filter(lambda x: "14." in x["values"][2].split("|")[1].strip()),
+            # map(lambda x: x["children"]),
+            list,
+        )
+        print(f"maunal_node:: {maunal_node}")
+
+        wm_dict_hdrs = [
+            "분류",
+            "표준타입",
+            "상세분류",
+            "wm",
+            "gauge",
+            # "add_spec",
+            "Add_spec.",
+            "수식",
+            "단위",
+            "산출유형",
+            "Note",
+        ]
+        flatten_hdrs = [
+            "카테고리",
+            "표준타입번호",
+            "표준타입",
+            "분류",
+            "name",
+            "GUID",
+            "상세분류",
+            "wm_code",
+            "gauge",
+            "Description",
+            "Spec.",
+            "Add_spec.",
+            "수식",
+            "대입수식",
+            "산출결과",
+            "단위",
+            "산출유형",
+            "Note",
+            "산출로그",
+        ]
+
+        def calc_and_set_data(node_):
+            node = deepcopy(node_)
+
+            cat = node["values"][2].split("|")[1].strip()
+            std_type_no = node["values"][2].split("|")[2].strip()
+            name = node["name"]
+
+            wm_list = go(
+                node["children"],
+                list,
+            )
+
+            wm_dicts = go(
+                wm_list,
+                deepcopy,
+                map(lambda x: dict(zip(wm_dict_hdrs, x))),
+                list,
+            )
+            for wm_dict in wm_dicts:
+                if "Note" not in wm_dict.keys():
+                    wm_dict.update({"Note": ""})
+            # print(f"wm_dicts:: {wm_dicts}")
+
+            res = []
+            for wm_dict in wm_dicts:
+                calcType_no = wm_dict["산출유형"]
+                calcdict = go(
+                    state.team_std_info["std-calcdict"]["children"],
+                    filter(lambda x: x["name"] == calcType_no),
+                    list,
+                )[0]
+                # print(f"calcdict:: {calcdict}")
+                param_list = go(
+                    calcdict["children"],
+                    list,
+                    map(lambda x: x["values"]),
+                    list,
+                    map(lambda x: list(x)[1:]),
+                    lambda x: sorted(x, key=lambda x: len(str(x[0])), reverse=True),
+                    list,
+                )
+
+                wm_dict.update(calc_formula(wm_dict["수식"], param_list))
+                wm_code = wm_dict["wm"].split("|")[0].strip()
+
+                try:
+                    wm_desc = wm_dict["wm"].split(" | ")[7]
+                except:
+                    wm_desc = ""
+
+                wm_spec = go(
+                    wm_dict["wm"].split(" | ")[9:-4],
+                    filter(lambda x: not x.isnumeric()),
+                    filter(
+                        lambda x: not (
+                            ("(   )" in x) or ("(   )" in x) or ("(  )" in x)
+                        )
+                    ),
+                    lambda x: "\n".join(x),
+                )
+
+                wm_dict.update(
+                    {
+                        "name": name,
+                        "GUID": "수동산출항목",
+                        "카테고리": cat,
+                        "표준타입번호": std_type_no,
+                        "wm_code": wm_code,
+                        "Description": wm_desc,
+                        "Spec.": wm_spec,
+                        "산출로그": "계산 성공",
+                    }
+                )
+                row = []
+                try:
+                    for i in flatten_hdrs:
+                        row.append(wm_dict[i])
+                except:
+                    row = [
+                        "",
+                        "",
+                        wm_dict["표준타입"],
+                        "",
+                        wm_dict["name"],
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                    ]
+                res.append(row)
+            return res
+            # res_.append(wm_dict)
+
+        res = []
+        for node_ in maunal_node:
+            try:
+                rows = calc_and_set_data(node_)
+                for row in rows:
+                    res.append(row)
+            except:
+                log = [
+                    "",
+                    "",
+                    "",
+                    "",
+                    node_["name"],
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "계산 실패 - 수식 혹은 파라미터가 유효하지 않음",
+                ]
+                res.append(log)
+        return res
+
+    def update(self, event=None):
+        """Update the Sheet widget whenever the state changes."""
+        state = self.state
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        print(f"{self.__class__.__name__} > update 메소드 시작")
+
+        self.column_headers = [
+            "Work Master Code",
+            "Gauge Code",
+            "Description",
+            "Spec.",
+            "Additional Spec.",
+            "Reference to",
+            "UoM",
+            f"{state.current_building.get()}",
+        ]
+
+        self.sheet.headers(self.column_headers)
+
+        # Reload data
+        self.load_data()
+
+        try:
+            self.manual_data = self.get_manula_item_data()
+        except:
+            self.manual_data = [[]]
+        self.total_data = self.data + self.manual_data
+
+        # Formatting to Total BOQ form
+        self.building_total_data = self.format_data(self.total_data)
+        print(f"self.building_total_data::{self.building_total_data[0]}")
+
+        # Set headers and data
+        self.sheet.set_sheet_data(
+            # self.data, reset_col_positions=True, reset_row_positions=True
+            self.building_total_data,
+            reset_col_positions=True,
+            reset_row_positions=True,
+        )
+
+        # # Ensure cell sizes and redraw
+        self.set_colums_widths()
+
+        self.highlight_category_row()
+
+        self.sheet.redraw()
+
+        state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
+        print(f"{self.__class__.__name__} > update 메소드 종료")
+
+    def format_data(self, data):
+        """
+        Processes Total BOQ format
+        """
+        state = self.state
+
+        if state.team_std_info.get(self.data_kind):
+            unique_wm_inBuilding = go(
+                self.total_data,
+                filter(lambda x: x[7] != ""),
+                map(
+                    lambda x: "|".join(
+                        [
+                            str(x[7]),
+                            str(x[8]),
+                            str(x[9]),
+                            str(x[10]),
+                            str(x[11]),
+                            "",
+                            str(x[15]),
+                        ]
+                    )
+                ),
+                set,
+                list,
+                sorted,
+                map(lambda x: x.split("|")),
+                list,
+            )
+        else:
+            unique_wm_inBuilding = []
+
+        if unique_wm_inBuilding != []:
+            unique_wm_inBuilding_withCalc = []
+            for i in unique_wm_inBuilding:
+                calc_sum = 0
+                for row in self.total_data:
+                    if row[7] == i[0] and row[8] == i[1]:
+                        try:
+                            value = row[14] if row[14] != "M2" else row[15]
+                            calc_sum = calc_sum + value
+                        except:
+                            pass
+                unique_wm_inBuilding_withCalc.append(i + [round(calc_sum, 3)])
+        else:
+            unique_wm_inBuilding_withCalc = []
+
+        WMs_data = state.team_std_info.get("WMs", [])
+
+        unique_Cat_large = go(
+            WMs_data,
+            list,
+            map(lambda x: "|".join([str(x[2]), str(x[3])])),
+            filter(lambda x: "None" not in x),
+            set,
+            list,
+            sorted,
+            map(lambda x: x.split("|")),
+            list,
+        )
+        state.unique_Cat_large = unique_Cat_large
+        print(f"unique_Cat_large:: {unique_Cat_large}")
+
+        unique_Cat_middle = go(
+            WMs_data,
+            list,
+            map(lambda x: "|".join([str(x[2]), str(x[3]), str(x[4]), str(x[5])])),
+            filter(lambda x: "None" not in x),
+            set,
+            list,
+            sorted,
+            map(lambda x: x.split("|")),
+            list,
+        )
+        state.unique_Cat_middle = unique_Cat_middle
+        print(f"unique_Cat_middle:: {unique_Cat_middle}")
+
+        category_slot = []
+        for large in unique_Cat_large:
+            middle_grp = []
+            for middle in unique_Cat_middle:
+                if large[0] == middle[0]:
+                    grp_row = []
+                    for wm_row in unique_wm_inBuilding_withCalc:
+                        if "".join([middle[0], middle[2]]) in wm_row[0]:
+                            if (
+                                len(wm_row) > 8
+                            ):  ## 구버전 데이터로 M2|M2 가 남아있는 경우 해결
+                                wm_row[7] = wm_row[8]
+                            grp_row.append(wm_row[:8])
+                    if grp_row:
+                        middle_grp.append(["", "", middle[3], "", "", "", "", ""])
+                        middle_grp.extend(grp_row)
+            if middle_grp:
+                category_slot.append(["", "", large[1], "", "", "", "", ""])
+                category_slot.extend(middle_grp)
+
+        return category_slot
+
+    def highlight_category_row(self):
+        """Update row highlights based on checkbox values."""
+        state = self.state
+
+        uniq_cat_large = go(
+            state.unique_Cat_middle,
+            map(lambda x: x[1]),
+            set,
+            list,
+        )
+
+        uniq_cat_middle = go(
+            state.unique_Cat_middle,
+            map(lambda x: x[3]),
+            set,
+            list,
+        )
+
+        cat_large_rows = []
+        for row in range(self.sheet.get_total_rows()):
+            if (
+                self.sheet.get_cell_data(row, 2) in uniq_cat_large
+            ):  # If checkbox is checked
+                cat_large_rows.append(row)
+
+        cat_middle_rows = []
+        for row in range(self.sheet.get_total_rows()):
+            if (
+                self.sheet.get_cell_data(row, 2) in uniq_cat_middle
+            ):  # If checkbox is checked
+                cat_middle_rows.append(row)
+
+        # Clear existing highlights
+        self.highlighted_rows = {}
+
+        self.sheet.dehighlight_all()
+        self.sheet.highlight_rows(
+            cat_large_rows, highlight_index=False, bg="#D3F9D8"
+        )  # Light green
+        for row in cat_large_rows:
+            self.highlighted_rows[row] = "#D3F9D8"
+        for row in cat_large_rows:
+            self.sheet.row_height(row, height=15)
+
+        self.sheet.highlight_rows(
+            cat_middle_rows, highlight_index=False, bg="#fffbd9"
+        )  # Light yellow
+        for row in cat_middle_rows:
+            self.highlighted_rows[row] = "#fffbd9"
+        for row in cat_middle_rows:
+            self.sheet.row_height(row, height=15)
+
+    def export_tksheet_to_excel(self):
+        """tksheet 위젯 데이터를 엑셀 파일로 저장하며 서식도 적용"""
+        sheet = self.sheet
+        # 파일 저장 경로 선택
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx")],
+            title="Save as Excel",
+        )
+
+        if not file_path:  # 사용자가 취소한 경우
+            return
+
+        # 새로운 워크북 생성
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sheet Data"
+
+        # 헤더 가져오기
+        headers = sheet.headers()
+
+        # 1. 엑셀 첫 번째 행에 헤더 입력
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+
+            # 헤더 스타일 (Bold, 가운데 정렬)
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(
+                horizontal="center", vertical="center", wrap_text=True
+            )
+
+            # 헤더 배경색 (회색)
+            cell.fill = PatternFill(
+                start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+            )
+
+        # 2. tksheet 데이터 가져오기 (헤더 제외)
+        data = sheet.get_sheet_data()
+        column_widths = sheet.get_column_widths()
+
+        # tksheet 셀 스타일 가져오기 (배경색, 글꼴, 정렬)
+        for row_idx, row_data in enumerate(data, start=2):
+            for col_idx, cell_value in enumerate(row_data, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+
+                # 정렬 설정
+                cell.alignment = Alignment(
+                    horizontal="left", vertical="center", wrap_text=True
+                )
+
+                # 기본 폰트 설정 (Calibri, Bold)
+                cell.font = Font(name="Calibri", size=9, bold=False)
+
+                # 배경색 설정 (tksheet 스타일 유지)
+                bg_color = self.highlighted_rows.get(row_idx - 2)
+
+                if bg_color and bg_color != "":  # 배경색이 존재하면 적용
+                    cell.fill = PatternFill(
+                        start_color=bg_color.replace("#", ""),
+                        end_color=bg_color.replace("#", ""),
+                        fill_type="solid",
+                    )
+
+        # 컬럼 너비 조정
+        for col_idx, width in enumerate(column_widths, start=1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = (
+                width / 7
+            )  # Excel 너비 조정
+
+        # 엑셀 파일 저장
+        wb.save(file_path)
+        print(f"엑셀 파일 저장 완료: {file_path}")
