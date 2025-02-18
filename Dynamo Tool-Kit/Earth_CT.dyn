@@ -10,30 +10,9 @@
   "Outputs": [],
   "Nodes": [
     {
-      "ConcreteType": "Dynamo.Nodes.DSEdgeSelection, DSRevitNodesUI",
-      "NodeType": "ExtensionNode",
-      "InstanceId": [
-        "686d9677-c4a5-486d-a4c4-7d77838084cc-002ce3d7:15:LINEAR"
-      ],
-      "Id": "de0ebd8b3fe64297b6e44e62732a1104",
-      "Inputs": [],
-      "Outputs": [
-        {
-          "Id": "851967055ea0428995e0cdac70a7f53f",
-          "Name": "Curve",
-          "Description": "The selected elements.",
-          "UsingDefaultValue": false,
-          "Level": 2,
-          "UseLevels": false,
-          "KeepListStructure": false
-        }
-      ],
-      "Replication": "Disabled"
-    },
-    {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
       "NodeType": "PythonScriptNode",
-      "Code": "import clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 현재 Revit 문서 가져오기\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 입력값: 기준 축 (선 형태의 Reference Curve)과 간격\r\nreference_curve = IN[0]  # 다이나모에서 선을 입력받음\r\nspacing = 500  # 500mm 간격\r\nsection_depth = 2000  # 단면 깊이 (예제 값)\r\n\r\n# 기준 축의 시작 및 끝점 좌표 가져오기\r\n#start_point = reference_curve.GetEndPoint(0)\r\n#end_point = reference_curve.GetEndPoint(1)\r\n\r\nstart_point = reference_curve.StartPoint\r\nend_point = reference_curve.EndPoint\r\n\r\n# 기준 축의 길이 계산\r\ncurve_length = reference_curve.Length\r\nnum_sections = int(curve_length / spacing)  # 생성할 단면 개수\r\n\r\n# 단면 뷰 생성\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nsections = []\r\nfor i in range(num_sections):\r\n    # 단면의 기준이 될 중심점 계산\r\n    param = float(i) / num_sections\r\n    section_origin = reference_curve.Evaluate(param, True)\r\n    \r\n    # 단면 뷰 방향 설정 (Y축 기준)\r\n    view_direction = XYZ(0, 1, 0)  # Y축을 따라 단면이 생성됨\r\n    \r\n    # 단면의 Bounding Box 설정\r\n    min_point = XYZ(section_origin.X - section_depth / 2, \r\n                    section_origin.Y - section_depth / 2, \r\n                    start_point.Z)\r\n    max_point = XYZ(section_origin.X + section_depth / 2, \r\n                    section_origin.Y + section_depth / 2, \r\n                    end_point.Z)\r\n    \r\n    section_box = BoundingBoxXYZ()\r\n    section_box.Min = min_point\r\n    section_box.Max = max_point\r\n\r\n    # 단면 생성\r\n    section = ViewSection.CreateSection(doc, doc.GetDefaultElementTypeId(ElementTypeGroup.ViewTypeSection), section_box)\r\n    \r\n    # 단면 이름 설정\r\n    section.Name = f\"Section_{i+1}\"\r\n    \r\n    sections.append(section)\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# 다이나모 출력\r\nOUT = sections\r\n",
+      "Code": "import clr\r\nimport math\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Autodesk DesignScript Geometry (Dynamo Geometry) import\r\nclr.AddReference(\"ProtoGeometry\")\r\nfrom Autodesk.DesignScript.Geometry import *\r\n\r\n# --------------------------------------------------------------------\r\n# Helper 함수: box_min, box_max, transform을 이용해 DS cuboid(솔리드)를 생성\r\n# --------------------------------------------------------------------\r\ndef createCuboid(box_min, box_max, transform):\r\n    # 1. 로컬 코너들 계산 (Bounding Box의 8개 코너)\r\n    corners = []\r\n    corners.append(XYZ(box_min.X, box_min.Y, box_min.Z))\r\n    corners.append(XYZ(box_max.X, box_min.Y, box_min.Z))\r\n    corners.append(XYZ(box_max.X, box_max.Y, box_min.Z))\r\n    corners.append(XYZ(box_min.X, box_max.Y, box_min.Z))\r\n    corners.append(XYZ(box_min.X, box_min.Y, box_max.Z))\r\n    corners.append(XYZ(box_max.X, box_min.Y, box_max.Z))\r\n    corners.append(XYZ(box_max.X, box_max.Y, box_max.Z))\r\n    corners.append(XYZ(box_min.X, box_max.Y, box_max.Z))\r\n    \r\n    # 2. 로컬 코너들에 transform 적용하여 글로벌 좌표의 코너 계산\r\n    globalCorners = [transform.OfPoint(pt) for pt in corners]\r\n    \r\n    # 3. Revit API의 XYZ를 DS 포인트로 변환\r\n    dsPoints = [Point.ByCoordinates(pt.X, pt.Y, pt.Z) for pt in globalCorners]\r\n    \r\n    # 4. 각 면을 PolyCurve와 Surface.ByPatch로 생성\r\n    # (면의 순서는 시계/반시계 순서로 정의)\r\n    bottomCurve = PolyCurve.ByPoints([dsPoints[0], dsPoints[1], dsPoints[2], dsPoints[3]], True)\r\n    bottomSurface = Surface.ByPatch(bottomCurve)\r\n    \r\n    topCurve = PolyCurve.ByPoints([dsPoints[4], dsPoints[5], dsPoints[6], dsPoints[7]], True)\r\n    topSurface = Surface.ByPatch(topCurve)\r\n    \r\n    frontCurve = PolyCurve.ByPoints([dsPoints[0], dsPoints[1], dsPoints[5], dsPoints[4]], True)\r\n    frontSurface = Surface.ByPatch(frontCurve)\r\n    \r\n    backCurve = PolyCurve.ByPoints([dsPoints[3], dsPoints[2], dsPoints[6], dsPoints[7]], True)\r\n    backSurface = Surface.ByPatch(backCurve)\r\n    \r\n    leftCurve = PolyCurve.ByPoints([dsPoints[0], dsPoints[3], dsPoints[7], dsPoints[4]], True)\r\n    leftSurface = Surface.ByPatch(leftCurve)\r\n    \r\n    rightCurve = PolyCurve.ByPoints([dsPoints[1], dsPoints[2], dsPoints[6], dsPoints[5]], True)\r\n    rightSurface = Surface.ByPatch(rightCurve)\r\n    \r\n    # 5. 면들을 합쳐 솔리드( cuboid ) 생성\r\n    solid = Solid.ByJoinedSurfaces([bottomSurface, topSurface, frontSurface, backSurface, leftSurface, rightSurface])\r\n    return solid\r\n\r\n# --------------------------------------------------------------------\r\n# 1. VertexPositions 입력받기 (IN[0]는 Autodesk.Revit.DB.XYZ 객체 리스트)\r\n# --------------------------------------------------------------------\r\nvertexPositions = IN[0]\r\nif not vertexPositions or len(vertexPositions) == 0:\r\n    raise Exception(\"VertexPositions 입력이 비어 있습니다.\")\r\n\r\n# 전체 형상의 Bounding Box 계산\r\nmin_x = min(pt.X for pt in vertexPositions)\r\nmax_x = max(pt.X for pt in vertexPositions)\r\nmin_y = min(pt.Y for pt in vertexPositions)\r\nmax_y = max(pt.Y for pt in vertexPositions)\r\nmin_z = min(pt.Z for pt in vertexPositions)\r\nmax_z = max(pt.Z for pt in vertexPositions)\r\n\r\nmin_pt = XYZ(min_x, min_y, min_z)\r\nmax_pt = XYZ(max_x, max_y, max_z)\r\n\r\n# --------------------------------------------------------------------\r\n# 2. 섹션 배치 파라미터 설정\r\n# --------------------------------------------------------------------\r\nspacing = 5000.0       # 단면 간격 (mm)\r\nsection_depth = 3000.0  # 섹션박스의 폭 (mm)\r\nsection_height = 5000.0 # 섹션박스의 높이 (mm)\r\n\r\n# 장축(긴 방향) 판별: X축과 Y축 길이 비교\r\nlength_x = abs(max_pt.X - min_pt.X)\r\nlength_y = abs(max_pt.Y - min_pt.Y)\r\n\r\nif length_x >= length_y:\r\n    axis = \"X\"\r\n    start = min_pt.X\r\n    end = max_pt.X\r\n    fixed_value = (min_pt.Y + max_pt.Y) / 2.0\r\nelse:\r\n    axis = \"Y\"\r\n    start = min_pt.Y\r\n    end = max_pt.Y\r\n    fixed_value = (min_pt.X + max_pt.X) / 2.0\r\n\r\ntotal_length = end - start\r\nnum_sections = int(total_length / spacing)\r\n\r\n# --------------------------------------------------------------------\r\n# 3. 섹션뷰 생성 및 해당 섹션박스와 동일한 cuboid 생성\r\n# --------------------------------------------------------------------\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nsections = []          # 생성된 섹션뷰 리스트\r\nsection_locations = [] # 섹션뷰 중심 좌표 기록\r\ncuboids = []           # DS Solid( cuboid ) 리스트\r\n\r\nfor i in range(num_sections + 1):\r\n    if axis == \"X\":\r\n        x_coord = start + i * spacing\r\n        section_origin = XYZ(x_coord, fixed_value, (min_pt.Z + max_pt.Z)/2.0)\r\n    else:\r\n        y_coord = start + i * spacing\r\n        section_origin = XYZ(fixed_value, y_coord, (min_pt.Z + max_pt.Z)/2.0)\r\n    \r\n    # 섹션박스의 로컬 좌표계에서의 최소/최대 점 계산\r\n    box_min = XYZ(section_origin.X - section_depth/2.0,\r\n                  section_origin.Y - section_depth/2.0,\r\n                  section_origin.Z - section_height/2.0)\r\n    box_max = XYZ(section_origin.X + section_depth/2.0,\r\n                  section_origin.Y + section_depth/2.0,\r\n                  section_origin.Z + section_height/2.0)\r\n    \r\n    # 섹션박스에 적용할 회전 변환: 여기서는 Y축 기준으로 90° 회전하여 단면(측면) 뷰로 전환\r\n    sideTransform = Transform.CreateRotationAtPoint(XYZ.BasisY, math.radians(90), section_origin)\r\n    \r\n    # BoundingBoxXYZ 생성 및 변환 적용\r\n    section_box = BoundingBoxXYZ()\r\n    section_box.Min = box_min\r\n    section_box.Max = box_max\r\n    section_box.Transform = sideTransform\r\n\r\n    # 섹션뷰 생성\r\n    section = ViewSection.CreateSection(doc, doc.GetDefaultElementTypeId(ElementTypeGroup.ViewTypeSection), section_box)\r\n    section.Name = \"Earth Section_{0}\".format(i+1)\r\n    section.CropBoxActive = True\r\n    \r\n    sections.append(section)\r\n    section_locations.append((section_origin.X, section_origin.Y, section_origin.Z))\r\n    \r\n    # 위의 box_min, box_max, sideTransform을 이용해 DS cuboid 생성\r\n    dsCuboid = createCuboid(box_min, box_max, sideTransform)\r\n    cuboids.append(dsCuboid)\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# --------------------------------------------------------------------\r\n# 4. 결과 출력: 섹션뷰, 섹션 중심 좌표, 그리고 생성된 cuboid(솔리드) 리스트\r\n# --------------------------------------------------------------------\r\nOUT = (sections, section_locations, cuboids)\r\n",
       "Engine": "CPython3",
       "EngineName": "CPython3",
       "VariableInputPorts": true,
@@ -92,13 +71,220 @@
       ],
       "Replication": "Auto",
       "Description": "Get the start Point along the Curve\n\nCurve.StartPoint: Point"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.SplitByParameter@double[]",
+      "Id": "ad5befeec3b04a10b9ce13b36c9d9bb8",
+      "Inputs": [
+        {
+          "Id": "d04e17c3429a496f87e6db4d8808cf8e",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "3f98188a48e24422b6de16de5f1577ce",
+          "Name": "parameters",
+          "Description": "A list of parameters at which to split the curve\n\ndouble[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "1946fd2c89e344dd85940d7fe85f420e",
+          "Name": "Curve[]",
+          "Description": "Curves created from splitting",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Split a Curve into multiple pieces at the given parameters\n\nCurve.SplitByParameter (parameters: double[]): Curve[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.PointAtParameter@double",
+      "Id": "abd20210f7244f5d848161ae7407b893",
+      "Inputs": [
+        {
+          "Id": "63416596da13450a9749d18903d9e6d2",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "027b65499cf344e8ab614c05a726a04a",
+          "Name": "param",
+          "Description": "The parameter at which to evaluate\n\ndouble\nDefault value : 0",
+          "UsingDefaultValue": true,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "7d1e1856623b4a6098743612c94a0fb1",
+          "Name": "Point",
+          "Description": "Point",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get a Point on the Curve at a specified parameter between StartParameter() and EndParameter()\n\nCurve.PointAtParameter (param: double = 0): Point"
+    },
+    {
+      "ConcreteType": "Dynamo.Nodes.DSModelElementSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "0cdbc520-6445-400f-aee4-d059e8212870-0031119a"
+      ],
+      "Id": "4a354b24ca0f45fb8e4c0b745da062ee",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "df5d787f96964e25aea8045c1af02b75",
+          "Name": "Element",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Revit.Elements.Element.Geometry",
+      "Id": "0a926925ced543fa84d9a9df3a4f023c",
+      "Inputs": [
+        {
+          "Id": "1ddf53db272b4c1d841b56e2c55c3eda",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "f2e23288eb1c4a818d3bc81f2209380b",
+          "Name": "var[]",
+          "Description": "var[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get all of the Geometry associated with this object\n\nElement.Geometry ( ): var[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Mesh.VertexPositions",
+      "Id": "fbdaca002d47410bba31dc356e83425e",
+      "Inputs": [
+        {
+          "Id": "6d3a181460e14f9095dd43ee6cea1775",
+          "Name": "mesh",
+          "Description": "Autodesk.DesignScript.Geometry.Mesh",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "83acab10ba78459b9e605ddef512a2b6",
+          "Name": "Point[]",
+          "Description": "Point[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "The positions of the vertices\n\nMesh.VertexPositions: Point[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "NodeType": "CodeBlockNode",
+      "Code": "i[0];",
+      "Id": "67792edb472e46fda44387427153b8d1",
+      "Inputs": [
+        {
+          "Id": "e133c306bae648a39ff5cff727a52ca8",
+          "Name": "i",
+          "Description": "i",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "34dc5a17198443d8a8c2a7c35b60c3b3",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly"
     }
   ],
   "Connectors": [
     {
-      "Start": "851967055ea0428995e0cdac70a7f53f",
+      "Start": "df5d787f96964e25aea8045c1af02b75",
+      "End": "1ddf53db272b4c1d841b56e2c55c3eda",
+      "Id": "9b50f2b30c4c4274ae37062b1f4d6da3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f2e23288eb1c4a818d3bc81f2209380b",
+      "End": "6d3a181460e14f9095dd43ee6cea1775",
+      "Id": "7f4c5543691c4c808805aeef04fd1831",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "83acab10ba78459b9e605ddef512a2b6",
+      "End": "e133c306bae648a39ff5cff727a52ca8",
+      "Id": "f4ce96953a3348b9ae9df9e04a529931",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "34dc5a17198443d8a8c2a7c35b60c3b3",
       "End": "90e20d1a43734f2185de18715022d696",
-      "Id": "daa8709128aa44608e664791f7b3de83",
+      "Id": "26e92935390c49d3abe0801cc78da3cb",
       "IsHidden": "False"
     }
   ],
@@ -139,37 +325,27 @@
     },
     "Camera": {
       "Name": "Background Preview",
-      "EyeX": 10683.689453125,
-      "EyeY": 25371.85546875,
-      "EyeZ": 50878.3203125,
-      "LookX": 18588.509765625,
-      "LookY": -28219.6328125,
-      "LookZ": -40434.06640625,
-      "UpX": 0.14286133646965027,
-      "UpY": 0.93969267606735229,
-      "UpZ": -0.310754656791687
+      "EyeX": -31464.0234375,
+      "EyeY": 42505.36328125,
+      "EyeZ": 29287.552734375,
+      "LookX": 58584.953125,
+      "LookY": -43812.28515625,
+      "LookZ": -25851.978515625,
+      "UpX": 0.34272164106369019,
+      "UpY": 0.92718392610549927,
+      "UpZ": -0.15123417973518372
     },
     "ConnectorPins": [],
     "NodeViews": [
-      {
-        "Name": "Select Edge",
-        "ShowGeometry": true,
-        "Id": "de0ebd8b3fe64297b6e44e62732a1104",
-        "IsSetAsInput": false,
-        "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 96.110727178778575,
-        "Y": 328.85331141073192
-      },
       {
         "Name": "Python Script",
         "ShowGeometry": true,
         "Id": "d657c1ca46c0494bafc88094a520ba3b",
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
-        "Excluded": false,
-        "X": 708.24675529521562,
-        "Y": 348.78652480864667
+        "Excluded": true,
+        "X": 323.28696017115521,
+        "Y": 271.11035883158013
       },
       {
         "Name": "Curve.StartPoint",
@@ -178,13 +354,73 @@
         "IsSetAsInput": false,
         "IsSetAsOutput": false,
         "Excluded": false,
-        "X": 1289.5941287622672,
-        "Y": 450.09746259937987
+        "X": 1464.73154368387,
+        "Y": 333.61071686082545
+      },
+      {
+        "Name": "Curve.SplitByParameter",
+        "ShowGeometry": true,
+        "Id": "ad5befeec3b04a10b9ce13b36c9d9bb8",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1444.7238597561607,
+        "Y": 144.01075460253639
+      },
+      {
+        "Name": "Curve.PointAtParameter",
+        "ShowGeometry": true,
+        "Id": "abd20210f7244f5d848161ae7407b893",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1442.2800818735334,
+        "Y": 486.954250797861
+      },
+      {
+        "Name": "Select Model Element",
+        "ShowGeometry": true,
+        "Id": "4a354b24ca0f45fb8e4c0b745da062ee",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -917.092128400355,
+        "Y": 329.83913422570572
+      },
+      {
+        "Name": "Element.Geometry",
+        "ShowGeometry": true,
+        "Id": "0a926925ced543fa84d9a9df3a4f023c",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -495.25610081216723,
+        "Y": 336.88933951666417
+      },
+      {
+        "Name": "Mesh.VertexPositions",
+        "ShowGeometry": false,
+        "Id": "fbdaca002d47410bba31dc356e83425e",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": -244.52351520796719,
+        "Y": 542.58907162708772
+      },
+      {
+        "Name": "Code Block",
+        "ShowGeometry": false,
+        "Id": "67792edb472e46fda44387427153b8d1",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 44.689704608327247,
+        "Y": 581.10491152690372
       }
     ],
     "Annotations": [],
-    "X": -769.43418577308671,
-    "Y": -78.169052901786358,
-    "Zoom": 1.2276074766562073
+    "X": 155.59929358749855,
+    "Y": -49.957818620186856,
+    "Zoom": 1.0214064678276973
   }
 }
