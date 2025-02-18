@@ -1132,6 +1132,8 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         # # Ensure cell sizes and redraw
         self.set_colums_widths()
 
+        self.highlight_category_row()
+
     def set_colums_widths(self, hdr_widths=None):
         # self.sheet.headers(self.column_headers)
         if hdr_widths:

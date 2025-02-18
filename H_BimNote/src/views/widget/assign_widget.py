@@ -521,19 +521,25 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         dupli_status = None
         for item_name in item_names:
-            if not item_name in go(
+            if item_name in go(
                 state.team_std_info[self.data_kind]["children"],
+                filter(lambda x: x["values"][1] == state.current_building.get()),
                 map(lambda x: x["name"]),
                 list,
             ):
-                _add(item_name.strip())
-            else:
                 dupli_status = True
+                dupli_obj = go(
+                    state.team_std_info[self.data_kind]["children"],
+                    filter(lambda x: x["name"] == item_name),
+                    list,
+                )[0]
+            else:
+                _add(item_name.strip())
 
         if dupli_status:
             open_dialog(
                 state,
-                "중복 명칭 삽입 발생",
+                f"중복 명칭 삽입 발생 : \n{dupli_obj['values'][1:]}",
             )
 
         # print(f"\n item_names  ::  {item_names}\n")
@@ -542,6 +548,46 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             state.observer_manager.notify_observers(state)
 
     def delete_item(self):
+        state = self.state
+
+        # Get the selected item ID
+        selected_item_ids = self.treeview.tree.selection()
+        if not selected_item_ids:
+            print("No item selected.")
+            return
+
+        def del_by_id(selected_item_id):
+            seleted_item_values = self.treeview.tree.item(selected_item_id, "values")
+            seleted_item_name = seleted_item_values[0]
+            seleted_item_building = seleted_item_values[1]
+
+            for idx, item in enumerate(
+                state.team_std_info["project-assigntype"]["children"]
+            ):
+                if (item["values"][0] == seleted_item_name) and (
+                    item["values"][1] == seleted_item_building
+                ):
+                    state.team_std_info["project-assigntype"]["children"].pop(idx)
+
+        return_str = []
+        for selected_item_id in selected_item_ids:
+            # Pass the full path to the delete_node method
+            try:
+                del_by_id(selected_item_id)
+            except Exception as e:
+                print(f"Error deleting item with path {selected_item_id}: {e}")
+
+            return_str.append(self.treeview.tree.item(selected_item_id, "text"))
+
+        # self.relate_widget.entry.set_text("\n".join(return_str))
+        exist_str = self.relate_widget.entry.get_text()
+        res_str = [exist_str] + return_str
+        self.relate_widget.entry.set_text("\n".join(res_str))
+
+        # Notify observers about the state update
+        state.observer_manager.notify_observers(state)
+
+    def delete_item_(self):
         state = self.state
 
         # Get the selected item ID
@@ -561,6 +607,7 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
                 item_name = next(
                     (v for v in item_values if v), None
                 )  # Get the first non-empty value
+
                 if item_name:
                     path.insert(0, item_name)  # Add to the beginning of the path
                 # Move to the parent item

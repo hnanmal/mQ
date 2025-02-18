@@ -1,0 +1,190 @@
+{
+  "Uuid": "d42213a3-475b-4956-90b1-2ee8705e27fa",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "Earth_CT",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "Dynamo.Nodes.DSEdgeSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "686d9677-c4a5-486d-a4c4-7d77838084cc-002ce3d7:15:LINEAR"
+      ],
+      "Id": "de0ebd8b3fe64297b6e44e62732a1104",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "851967055ea0428995e0cdac70a7f53f",
+          "Name": "Curve",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "NodeType": "PythonScriptNode",
+      "Code": "import clr\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# 현재 Revit 문서 가져오기\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 입력값: 기준 축 (선 형태의 Reference Curve)과 간격\r\nreference_curve = IN[0]  # 다이나모에서 선을 입력받음\r\nspacing = 500  # 500mm 간격\r\nsection_depth = 2000  # 단면 깊이 (예제 값)\r\n\r\n# 기준 축의 시작 및 끝점 좌표 가져오기\r\n#start_point = reference_curve.GetEndPoint(0)\r\n#end_point = reference_curve.GetEndPoint(1)\r\n\r\nstart_point = reference_curve.StartPoint\r\nend_point = reference_curve.EndPoint\r\n\r\n# 기준 축의 길이 계산\r\ncurve_length = reference_curve.Length\r\nnum_sections = int(curve_length / spacing)  # 생성할 단면 개수\r\n\r\n# 단면 뷰 생성\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nsections = []\r\nfor i in range(num_sections):\r\n    # 단면의 기준이 될 중심점 계산\r\n    param = float(i) / num_sections\r\n    section_origin = reference_curve.Evaluate(param, True)\r\n    \r\n    # 단면 뷰 방향 설정 (Y축 기준)\r\n    view_direction = XYZ(0, 1, 0)  # Y축을 따라 단면이 생성됨\r\n    \r\n    # 단면의 Bounding Box 설정\r\n    min_point = XYZ(section_origin.X - section_depth / 2, \r\n                    section_origin.Y - section_depth / 2, \r\n                    start_point.Z)\r\n    max_point = XYZ(section_origin.X + section_depth / 2, \r\n                    section_origin.Y + section_depth / 2, \r\n                    end_point.Z)\r\n    \r\n    section_box = BoundingBoxXYZ()\r\n    section_box.Min = min_point\r\n    section_box.Max = max_point\r\n\r\n    # 단면 생성\r\n    section = ViewSection.CreateSection(doc, doc.GetDefaultElementTypeId(ElementTypeGroup.ViewTypeSection), section_box)\r\n    \r\n    # 단면 이름 설정\r\n    section.Name = f\"Section_{i+1}\"\r\n    \r\n    sections.append(section)\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# 다이나모 출력\r\nOUT = sections\r\n",
+      "Engine": "CPython3",
+      "EngineName": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d657c1ca46c0494bafc88094a520ba3b",
+      "Inputs": [
+        {
+          "Id": "90e20d1a43734f2185de18715022d696",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d6d7d74656b249629da8545650c781b2",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "NodeType": "FunctionNode",
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Curve.StartPoint",
+      "Id": "122330575fa34ddb978d00b1ed254edf",
+      "Inputs": [
+        {
+          "Id": "8749180a8e91470e92f6d0d56dfa2e8f",
+          "Name": "curve",
+          "Description": "Autodesk.DesignScript.Geometry.Curve",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3df4662957234dc6b6c1d73f2adc85b3",
+          "Name": "Point",
+          "Description": "Point",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Auto",
+      "Description": "Get the start Point along the Curve\n\nCurve.StartPoint: Point"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "851967055ea0428995e0cdac70a7f53f",
+      "End": "90e20d1a43734f2185de18715022d696",
+      "Id": "daa8709128aa44608e664791f7b3de83",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.16",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "3.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "2.16.1.2727",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "Background Preview",
+      "EyeX": 10683.689453125,
+      "EyeY": 25371.85546875,
+      "EyeZ": 50878.3203125,
+      "LookX": 18588.509765625,
+      "LookY": -28219.6328125,
+      "LookZ": -40434.06640625,
+      "UpX": 0.14286133646965027,
+      "UpY": 0.93969267606735229,
+      "UpZ": -0.310754656791687
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Name": "Select Edge",
+        "ShowGeometry": true,
+        "Id": "de0ebd8b3fe64297b6e44e62732a1104",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 96.110727178778575,
+        "Y": 328.85331141073192
+      },
+      {
+        "Name": "Python Script",
+        "ShowGeometry": true,
+        "Id": "d657c1ca46c0494bafc88094a520ba3b",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 708.24675529521562,
+        "Y": 348.78652480864667
+      },
+      {
+        "Name": "Curve.StartPoint",
+        "ShowGeometry": true,
+        "Id": "122330575fa34ddb978d00b1ed254edf",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "X": 1289.5941287622672,
+        "Y": 450.09746259937987
+      }
+    ],
+    "Annotations": [],
+    "X": -769.43418577308671,
+    "Y": -78.169052901786358,
+    "Zoom": 1.2276074766562073
+  }
+}
