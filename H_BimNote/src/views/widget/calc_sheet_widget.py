@@ -1507,6 +1507,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                     wm_desc,  # Description
                     wm_spec,  # Spec.
                     r[5],  # Additional Spec.
+                    # "",  # Additional Spec.
                     "",  # Reference to
                     r[7],  # UoM
                 ]
@@ -1531,7 +1532,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
             for i in unique_wm_inPjt:
                 calc_sum = 0
                 for row in self.total_data:
-                    if row[7] == i[0] and row[8] == i[1]:
+                    if row[7] == i[0] and row[8] == i[1] and row[11] == i[4]:
                         try:
                             value = row[14] if row[14] != "M2" else row[15]
                             calc_sum = calc_sum + value
@@ -1738,7 +1739,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
 
         # 6. 메시지 박스 띄우기
         open_file = messagebox.askyesno(
-            "엑셀 저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+            "저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
         )
 
         # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
