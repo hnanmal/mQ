@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
+from src.core.fp_utils import *
 from src.controllers.tree_data_navigator import TreeDataManager_treeview
 
 
@@ -87,6 +88,23 @@ class TreeviewEditor:
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
 
+        # Calc-Dict 자동 업데이트
+        if self.current_column == 8 and new_value.startswith("Q"):
+            std_calcdict = self.state.team_std_info["std-calcdict"]["children"]
+            calcdict_nums = go(
+                std_calcdict,
+                map(lambda x: x["name"]),
+                list,
+            )
+            if new_value not in calcdict_nums:
+                std_calcdict.append(
+                    {
+                        "name": new_value,
+                        "values": [new_value],
+                        "children": [],
+                    }
+                )
+
         # Update the state with the new value using TreeDataManager
         selected_name = self.tree.item(self.current_item, "text")
         parent_path = self.get_item_path(self.current_item)
@@ -112,12 +130,6 @@ class TreeviewEditor:
         # Destroy the Entry widget
         self.entry_widget.destroy()
         self.entry_widget = None
-
-        # self.state.on_level_selected(None)
-        try:
-            self.impl_treeview.place_selected_item_at_top()
-        except:
-            pass
 
     def on_edit_cancel(self, event):
         # Cancel editing and destroy the Entry widget

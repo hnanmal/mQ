@@ -242,6 +242,14 @@ class TreeViewContextMenu:
         elif self.data_kind != "std-familylist" and tgt_col == 2:
             self.menu.add_command(label="하위항목 복사", command=self.copy_item)
 
+        if self.data_kind == "std-calcdict" and tgt_col == 0:
+            self.menu.delete(0, "end")
+            self.menu.add_command(label="Add Item", command=self.add_item)
+            # self.menu.add_command(label="Delete Item", command=self.delete_item)
+        elif self.data_kind == "std-calcdict" and tgt_col != 0:
+            self.menu.delete(0, "end")
+            self.menu.add_command(label="Delete Item", command=self.delete_item)
+
         self.state.log_widget.write(f"Context Menu Locked Status: {self.locked_status}")
         # Only show the context menu if locked_status is False (unlocked)
         if not self.locked_status:
@@ -1928,13 +1936,20 @@ class TeamStd_CommonInputTreeView:
 
 class TeamStd_FamlistTreeView:
     def __init__(
-        self, state, parent, title="Standard Family List", showmode="team", view_level=2
+        self,
+        state,
+        parent,
+        title="Standard Family List",
+        showmode="team",
+        view_level=2,
+        relate_widget=None,
     ):
         self.state = state
         self.data_kind = "std-familylist"
         self.showmode = showmode
         self.view_level = view_level
         self.title = title
+        self.relate_widget = relate_widget
 
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
