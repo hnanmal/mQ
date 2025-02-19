@@ -7,6 +7,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 import json
 
+from src.views.widget.update_log import open_update_log_newWindow
 from src.core.web import open_url_in_browser
 from src.core.app_update import APP_VERSION, check_for_update
 from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
@@ -105,8 +106,8 @@ def initialize_app(root, _state=None):
     help_menu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="   Help   ", menu=help_menu)
     help_menu.add_command(
-        label=f"💬 현재 B-note 버전은 {APP_VERSION} 입니다.",
-        # command=lambda: 0,
+        label=f"💬 현재 B-note 버전은 {APP_VERSION} 입니다. (클릭시 업데이트 로그 새창)",
+        command=open_update_log_newWindow,
     )
     help_menu.add_command(
         label="▶ 업데이트 체크",
