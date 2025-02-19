@@ -27,6 +27,7 @@ from src.views.lower_tabs.pjt_report_member_tab import create_report_member_tab
 from src.views.widget.new_window import open_tab_in_new_window
 from src.views.lower_tabs.pjt_report_group_tab import create_report_group_tab
 from src.views.lower_tabs.pjt_report_TotalBD_tab import create_report_TotalBD_tab
+from src.views.widget.easter_egg import EasterEggApp
 
 
 def create_tab_with_subtabs(state, notebook, tab_name):
@@ -111,6 +112,8 @@ def create_recentBnotes_tab(state, notebook):
     logo_label = tk.Label(logo_area, image=logo_img)
     logo_label.configure(bg=frame_bgcolor)
     logo_label.pack(side=tk.TOP, padx=50, pady=20, anchor="center")
+
+    easter = EasterEggApp(logo_label)
 
     menu_area = ttk.Frame(
         section1,

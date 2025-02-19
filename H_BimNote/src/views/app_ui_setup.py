@@ -87,17 +87,17 @@ def initialize_app(root, _state=None):
     file_menu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="   File   ", menu=file_menu)
     file_menu.add_command(
-        label="현재 B-note 저장            (Ctrl+S)",
+        label="현재 B-note 저장              (Ctrl+S)",
         command=lambda: save_to_json_teamStdInfo(
             state, _file_path=state.current_filepath
         ),
     )  # save_to_json)
     file_menu.add_command(
-        label="다른이름으로 저장          (Ctrl+Shift+S)",
+        label="다른이름으로 저장     (Ctrl+Shift+S)",
         command=lambda: save_to_json_teamStdInfo(state),
     )
     file_menu.add_command(
-        label="B-note 열기                   (Ctrl+O)",
+        label="B-note 열기                     (Ctrl+O)",
         command=lambda: load_from_json(state),
     )
     file_menu.add_separator()
@@ -105,22 +105,20 @@ def initialize_app(root, _state=None):
 
     help_menu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="   Help   ", menu=help_menu)
+
     help_menu.add_command(
-        label=f"💬 현재 B-note 버전은 {APP_VERSION} 입니다. (클릭시 업데이트 로그 새창)",
-        command=open_update_log_newWindow,
-    )
-    help_menu.add_command(
-        label="▶ 업데이트 체크",
+        label="B-note 업데이트 체크",
         command=check_for_update,
     )
     help_menu.add_command(
-        label=f"💬 본 버전은, '[H_PAB.RT.Q2]_Revit 물량 산출 Dynamo' - [3.2.5] 버전 이상과 호환됩니다.",
-    )
-    help_menu.add_command(
-        label=f"▶ 클릭 시 최신 다이나모 다운로드 페이지로 이동",
+        label=f"[H_PAB.RT.Q2]_Revit 물량 산출.dyn 다운로드 페이지로 이동",
         command=lambda: open_url_in_browser(
             "https://henginmc6eaoutlook.sharepoint.com/:f:/s/jhjh/EhMNiYh8PkBDsCKr7gg8UeoBvhpHni-Bm2umKis-lf_-qg?e=Ab6njo"
         ),
+    )
+    help_menu.add_command(
+        label=f"B-note 업데이트 로그 ( 현재 B-note 버전 : {APP_VERSION} )",
+        command=open_update_log_newWindow,
     )
 
     paned_window = tk.PanedWindow(

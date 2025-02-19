@@ -35,15 +35,16 @@ def open_update_log_newWindow():
     new_window = tk.Toplevel()
     new_window.title(f"B-note :: @ {window_name} - New Window")
     new_window.iconbitmap(icon_path)
-    new_window.geometry("700x900")
+    new_window.geometry("700x800")
     new_window.attributes("-topmost", True)
 
     create_update_log_page(new_window, update_log)
 
 
 update_log = """
-🔳 v1.1.3 (2025-02-19)
-    - 메뉴 > Help > 버전표시 메뉴 클릭 시 업데이트 로그 창 뜨도록 수정
+🔳 v1.1.3 (2025-02-20)
+    - 메뉴 > Help > 업데이트 로그 메뉴 추가 및 클릭 시 업데이트 로그 창 뜨도록 수정
+    - 메뉴 > Help 의 항목명 일부 변경 및 항목 통합
     
 🔳 v1.1.2 (2025-02-19)
     - 패밀리 리스트 - 표준산출유형번호 열에 Q넘버 붙이는 순간 자동으로 파라미터 사전에도 해당항목 생기도록 수정
@@ -53,7 +54,7 @@ update_log = """
     
 🔳 v1.1.1 (2025-02-18)
     - 다른 빌딩 간 동일 레빗타입명 추가 불가 문제 수정
-    - 같은 빌딩 간 동일 레빗타입 추가 시도 시 알림창에 중복 기존 명칭 존재 위치 표시 업데이트
+    - 같은 빌딩 간 동일 레빗타입 추가 시도 시 알림창에 중복 기존 명칭이 존재하는 위치 표시 업데이트
     - Total BOQ 탭 더블클릭 새창시 색상 미적용 문제 수정
     
 🔳 v1.1.0 (2025-02-18)
