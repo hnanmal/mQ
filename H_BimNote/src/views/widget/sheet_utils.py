@@ -264,6 +264,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         row = event["row"]
         column = event["column"]
+
         for r in range(self.sheet.get_total_rows()):
             if r != row:
                 self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
@@ -715,8 +716,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         row = event["row"]
         column = event["column"]
-
-        origin_chkStat = self.sheet.get_cell_data(row, 0)
 
         for r in range(self.sheet.get_total_rows()):
             if r != row:
