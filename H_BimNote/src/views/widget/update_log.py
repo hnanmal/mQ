@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.1.4 (2025-02-21)
+    - GWM / SWM 에서 상위 분류명이 변경되고 G-WM/S-WM이나 Item 명이 그대로인 경우, 상위 분류명 변경 전의 data가 잔존하여 Family Type의 WM assign 시 오류가 발생하던 내용 수정
+    
 🔳 v1.1.3 (2025-02-20)
     - 메뉴 > Help > 업데이트 로그 메뉴 추가 및 클릭 시 업데이트 로그 창 뜨도록 수정
     - 메뉴 > Help 의 항목명 일부 변경 및 항목 통합

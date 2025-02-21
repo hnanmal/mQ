@@ -442,6 +442,33 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         self.sheet.set_sheet_data(wrapped_data)
 
+    def remove_invalid_pjtWM(self, mode):
+        state = self.state
+        std_WM = state.team_std_info[f"std-{mode}"]["children"]
+        pjt_WM = state.team_std_info[f"project-{mode}"]
+
+        check_list = []
+        for grand_node in std_WM:
+            grand_name = grand_node["name"]
+            for parent_node in grand_node["children"]:
+                parnet_name = parent_node["name"]
+                for child_node in parent_node["children"]:
+                    child_name = child_node["name"]
+
+                    check_list.append(" | ".join([grand_name, parnet_name, child_name]))
+        remove_target = go(
+            pjt_WM,
+            deepcopy,
+            lambda x: x.keys(),
+            filter(lambda x: x not in check_list),
+            list,
+        )
+        for rm in remove_target:
+            try:
+                pjt_WM.pop(rm)
+            except:
+                pass
+
     def update(self, event=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
@@ -450,6 +477,11 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
         )
         self.setup_column_style()
+
+        try:
+            self.remove_invalid_pjtWM("GWM")
+        except:
+            pass
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
@@ -892,6 +924,33 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         self.sheet.set_sheet_data(wrapped_data)
 
+    def remove_invalid_pjtWM(self, mode):
+        state = self.state
+        std_WM = state.team_std_info[f"std-{mode}"]["children"]
+        pjt_WM = state.team_std_info[f"project-{mode}"]
+
+        check_list = []
+        for grand_node in std_WM:
+            grand_name = grand_node["name"]
+            for parent_node in grand_node["children"]:
+                parnet_name = parent_node["name"]
+                for child_node in parent_node["children"]:
+                    child_name = child_node["name"]
+
+                    check_list.append(" | ".join([grand_name, parnet_name, child_name]))
+        remove_target = go(
+            pjt_WM,
+            deepcopy,
+            lambda x: x.keys(),
+            filter(lambda x: x not in check_list),
+            list,
+        )
+        for rm in remove_target:
+            try:
+                pjt_WM.pop(rm)
+            except:
+                pass
+
     def update(self, event=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
@@ -900,6 +959,11 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             f"선택아이템 출력 : {self.selected_item_relate_widget.get()}"
         )
         self.setup_column_style()
+
+        try:
+            self.remove_invalid_pjtWM("SWM")
+        except:
+            pass
 
         try:
             # Split the selected item path to find the grandparent, parent, and selected item names
