@@ -1715,6 +1715,9 @@ class Project_WM_perRVT_SheetView:
         self.sheet.update()
         print(f"\n 시트크기 복원 \n")
 
+        self.sheet.pack(expand=True, fill="both")
+        self.sheet.update()
+
     def renew_sheet_height(self):
         self.sheet.config(
             # height=750,
@@ -1723,6 +1726,9 @@ class Project_WM_perRVT_SheetView:
         self.sheet.update_idletasks()
         self.sheet.update()
         print(f"\n 시트크기 확장 \n")
+
+        # self.sheet.pack(expand=True, fill="both")
+        # self.sheet.update()
 
     def setup_column_style(self):
         self.sheet.set_column_widths(

@@ -241,8 +241,9 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     cf.add(
         child=main_area,
-        title="Suggested Standard WM items",
+        title="Suggested Standard Work Master items\n좌측 : 세트 메뉴   |   우측 : 사이드 단품",
         # bootstyle="info",
+        fontsize=11,
         bootstyle="primary",
         suggest_area=True,
     )
@@ -282,6 +283,7 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
         # collapsed=True,
         collapsed=False,
         textvariable=state.selected_rvtTypes_forLabel,
+        # fontsize=10,
         bootstyle="info",
     )
 

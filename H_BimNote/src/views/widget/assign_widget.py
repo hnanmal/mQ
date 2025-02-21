@@ -419,20 +419,11 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         selected_item_names_str = ",,".join(selected_item_names)
         state.selected_rvtTypes.set(selected_item_names_str)
 
-        # if len(selected_item_names) == 1:
-        #     selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ]"
-        # else:
-        #     selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
-
-        # state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
-
         try:
             if len(selected_item_names) == 1:
-                selected_item_names_str_forLabel = (
-                    f"선택 : [ {selected_item_names[0]} ]"
-                )
+                selected_item_names_str_forLabel = f"선택된  [ {selected_item_names[0]} ]  항목을 위한 - Work Master 장바구니🛒"
             else:
-                selected_item_names_str_forLabel = f"선택 : [ {selected_item_names[0]} ] 외 {len(selected_item_names)-1} 개 항목"
+                selected_item_names_str_forLabel = f"선택된  [ {selected_item_names[0]} ]  외 {len(selected_item_names)-1} 개 항목 들을 위한 - Work Master 장바구니🛒"
 
             state.selected_rvtTypes_forLabel.set(selected_item_names_str_forLabel)
         except:
@@ -442,7 +433,7 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         state.project_WM_perRVT_SheetView.update()
 
         state.log_widget.write(
-            f"\n 선택된 레빗 타입 : {'  ,  '.join(selected_item_names)}\n"
+            f"\n선택된 레빗 타입 : {'  ,  '.join(selected_item_names)}\n"
         )
 
     def update(self, event=None, view_level=None):

@@ -28,7 +28,7 @@ from src.views.widget.widget import open_filesave_dialog
 
 
 def main():
-    icon_path = "resource/app_logo_maintab.ico"
+    icon_path = "resource/app_logo.ico"
     # root = tk.Tk()
     # root = ttk.Window(themename="journal")
     root = ttk.Window()
@@ -115,13 +115,14 @@ def show_splash_screen():
     splash.wm_attributes("-alpha", 0.9)  # Set transparency
 
     # Add branding or loading information
-    logo_img_ = Image.open("resource/app_logo.png")
-    logo_img_ = logo_img_.resize((300, 310), Image.LANCZOS)
+    logo_img_ = Image.open("resource/app_logo_maintab.png")
+    logo_img_ = logo_img_.resize((400, 300), Image.LANCZOS)
     logo_img = ImageTk.PhotoImage(logo_img_)
 
     tk.Label.image = logo_img
 
     logo_area = tk.Frame(splash)
+    logo_area.configure(bg="#ebebeb")
     logo_area.pack(side="left")
 
     text_area = tk.Frame(splash)
@@ -130,11 +131,12 @@ def show_splash_screen():
 
     logo_label = tk.Label(logo_area, image=logo_img)
     logo_label.configure(bg="#ebebeb")
+    logo_label.pack(padx=20)
     logo_label.pack()
 
-    text_labe1 = tk.Label(text_area, text="B-Note", font=("Tw Cen MT", 60, "bold"))
-    text_labe1.configure(bg="#ebebeb")
-    text_labe1.pack(padx=20, pady=20, anchor="nw")
+    # text_labe1 = tk.Label(text_area, text="B-Note", font=("Tw Cen MT", 60, "bold"))
+    # text_labe1.configure(bg="#ebebeb")
+    # text_labe1.pack(padx=20, pady=20, anchor="nw")
 
     text_label2 = tk.Label(
         text_area,
@@ -155,7 +157,7 @@ def show_splash_screen():
     splash.geometry(f"{splash_width}x{splash_height}+{x}+{y}")
 
     # Close splash screen after 3 seconds
-    splash.after(3000, splash.destroy)
+    splash.after(5000, splash.destroy)
 
     return splash
 

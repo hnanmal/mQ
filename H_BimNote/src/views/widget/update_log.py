@@ -42,6 +42,10 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.1.5 (2025-02-24)
+    - 로고 이미지 변경
+    - 라벨 명칭 일부 변경
+    
 🔳 v1.1.4 (2025-02-21)
     - GWM / SWM 에서 상위 분류명이 변경되고 G-WM/S-WM이나 Item 명이 그대로인 경우, 상위 분류명 변경 전의 data가 잔존하여 Family Type의 WM assign 시 오류가 발생하던 내용 수정
     

@@ -104,7 +104,8 @@ def create_recentBnotes_tab(state, notebook):
     logo_area.pack(side=tk.TOP, anchor="center")
 
     logo_img_ = Image.open("resource/app_logo_maintab.png")
-    logo_img_ = logo_img_.resize((180, 187), resample=Resampling.LANCZOS)
+    # logo_img_ = logo_img_.resize((180, 187), resample=Resampling.LANCZOS)
+    logo_img_ = logo_img_.resize((270, 200), resample=Resampling.LANCZOS)
     logo_img = ImageTk.PhotoImage(logo_img_)
 
     tk.Label.image1 = logo_img
@@ -135,7 +136,7 @@ def create_recentBnotes_tab(state, notebook):
     open_bnote_btn = ttk.Button(
         menu_area,
         text="작성된 Bnote 열기",
-        width=20,
+        width=30,
         command=open_move_tab_func,
         bootstyle="primary-outline",
     )
@@ -144,7 +145,7 @@ def create_recentBnotes_tab(state, notebook):
     start_withStd_btn = ttk.Button(
         menu_area,
         text="신규 프로젝트 시작\n(by Team Standard)",
-        width=20,
+        width=30,
         command=lambda: open_move_tab_func(
             path="resource/PlantArch_BIM Standard.bnote"
         ),
