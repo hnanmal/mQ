@@ -29,7 +29,7 @@ def create_update_log_page(root, update_log):
 
 
 def open_update_log_newWindow():
-    icon_path = "resource/app_logo_maintab.ico"
+    icon_path = "resource/app_logo.ico"
     window_name = "Update Log"
 
     new_window = tk.Toplevel()

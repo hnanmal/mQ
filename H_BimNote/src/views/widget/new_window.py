@@ -7,7 +7,7 @@ from src.views.lower_tabs.pjt_apply_main_tab import create_pjtApply_Main_tab
 
 # def open_tab_in_new_window(parent_notebook, tab_index):
 def open_tab_in_new_window_rvtSummary(state):
-    icon_path = "resource/app_logo_maintab.ico"
+    icon_path = "resource/app_logo.ico"
     """Open the contents of a specific tab in a new window."""
     # Create a new window
     new_window = tk.Toplevel()
@@ -31,7 +31,7 @@ def open_tab_in_new_window_rvtSummary(state):
 
 
 def open_tab_in_new_window(state, subnotebook, tab_funcs, event=None):
-    icon_path = "resource/app_logo_maintab.ico"
+    icon_path = "resource/app_logo.ico"
     # Get the index of the tab that was clicked
     tab_index = subnotebook.index("@{},{}".format(event.x, event.y))
     tab_name = subnotebook.tab(tab_index, "text")
@@ -48,7 +48,7 @@ def open_tab_in_new_window(state, subnotebook, tab_funcs, event=None):
 
 
 def open_new_window_byFunc(state, tab_func, event=None):
-    icon_path = "resource/app_logo_maintab.ico"
+    icon_path = "resource/app_logo.ico"
     window_name = "WM sheet"
 
     new_window = tk.Toplevel()
