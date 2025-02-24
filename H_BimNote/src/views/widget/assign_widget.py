@@ -410,7 +410,10 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         self.treeview.tree.bind(
             "<<TreeviewSelect>>", lambda e: self.on_item_selected(e)
         )
-        self.treeview.tree.bind("<Control-a>", lambda e: self.select_sameType())
+        # self.treeview.tree.bind("<Control-a>", lambda e: self.select_sameType())
+        # self.treeview.tree.bind("<Tab>", lambda e: self.select_sameType())
+        # self.treeview.tree.bind("<s>a", lambda e: self.select_sameType())
+        self.treeview.tree.bind("<s>", lambda e: self.select_sameType())
 
         # Create and integrate context menu
         self.context_menu = TreeViewContextMenu(

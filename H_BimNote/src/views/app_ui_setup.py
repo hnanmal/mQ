@@ -10,7 +10,12 @@ import json
 from src.views.widget.update_log import open_update_log_newWindow
 from src.core.web import open_url_in_browser
 from src.core.app_update import APP_VERSION, check_for_update
-from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
+from src.core.file_utils import (
+    load_from_json,
+    on_closing,
+    on_opening,
+    save_to_json_teamStdInfo,
+)
 from src.models.app_state import AppState
 from src.views.logging_utils import setup_logging_frame
 
@@ -98,10 +103,15 @@ def initialize_app(root, _state=None):
     )
     file_menu.add_command(
         label="B-note 열기                     (Ctrl+O)",
-        command=lambda: load_from_json(state),
+        # command=lambda: load_from_json(state),
+        command=lambda: on_opening(state),
     )
     file_menu.add_separator()
-    file_menu.add_command(label="Exit", command=root.quit)
+    file_menu.add_command(
+        label="Exit",
+        # command=root.quit,
+        command=lambda: on_closing(root, state),
+    )
 
     help_menu = Menu(menubar, tearoff=0)
     menubar.add_cascade(label="   Help   ", menu=help_menu)
@@ -140,7 +150,7 @@ def initialize_app(root, _state=None):
         lambda e: save_to_json_teamStdInfo(state, _file_path=state.current_filepath),
     )
     root.bind("<Control-Shift-KeyPress-S>", lambda e: save_to_json_teamStdInfo(state))
-    root.bind("<Control-o>", lambda e: load_from_json(state))
+    root.bind("<Control-o>", lambda e: on_opening(state))
 
     # print("starting log widget\n")
     try:

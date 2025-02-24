@@ -7,7 +7,11 @@ import openpyxl
 
 from src.core.fp_utils import *
 from src.core.app_update import APP_VERSION
-from src.views.widget.widget import open_dialog
+from src.views.widget.widget import (
+    open_dialog,
+    open_filesave_dialog,
+    open_filesave_dialog_opening,
+)
 
 
 def save_to_json_teamStdInfo(state, _file_path=None):
@@ -142,6 +146,38 @@ def load_from_json(state, _file_path=None):
     except Exception as e:
         state.log_widget.write(f"Error loading data from JSON: {e}\n")
         return False
+
+
+def on_closing(root, state):
+    """앱 종료 시 저장 확인창을 띄우고, 선택에 따라 동작을 수행."""
+    if state.init_db_hash != "not loaded yet":
+        is_change = state.init_db_hash != state.get_db_hash()
+
+        if is_change:
+            open_filesave_dialog(
+                state,
+                "변경 내용을 이 파일에 저장하시겠습니까?",
+            )
+        else:
+            root.destroy()
+    else:
+        root.destroy()
+
+
+def on_opening(state):
+    """앱 종료 시 저장 확인창을 띄우고, 선택에 따라 동작을 수행."""
+    if state.init_db_hash != "not loaded yet":
+        is_change = state.init_db_hash != state.get_db_hash()
+
+        if is_change:
+            open_filesave_dialog_opening(
+                state,
+                "변경 내용을 이 파일에 저장하시겠습니까?",
+            )
+        else:
+            load_from_json(state)
+    else:
+        load_from_json(state)
 
 
 def load_from_excel(state, _file_path=None):

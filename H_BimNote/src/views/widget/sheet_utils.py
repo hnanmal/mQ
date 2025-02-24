@@ -1501,8 +1501,10 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 # deepcopy,
                                 selected_node["children"],
                                 filter(lambda x: x["values"][5] == self.wm_mode),
+                                lambda x: sorted(x, key=lambda x: x["name"]),
                                 list,
                             )
+                            print(f"풀::{pool}")
                             wrapped_data_ = go(
                                 pool,
                                 map(lambda x: ["", x["name"], calc_no]),
@@ -1521,14 +1523,19 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                             )
 
                             wrapped_data = []
+                            # bunch = []
                             for idx, row in enumerate(wrapped_data_):
                                 wrapped_data.append(row)
                                 sub_rows = dropdowns[idx]
+                                # sub_rows = sorted(dropdowns[idx])
                                 for sub_row in sub_rows:
                                     sub_row.insert(1, row[-1])
                                     wrapped_data.append(["", "", row[1], *sub_row])
 
                             self.sheet.set_sheet_data(wrapped_data)
+
+                            # wrapped_data_sorted = sorted(wrapped_data)
+                            # self.sheet.set_sheet_data(wrapped_data_sorted)
 
                             for idx, row_span in enumerate(self.sheet):
                                 if row_span[1] != "" or None:
@@ -1619,6 +1626,7 @@ class Project_WM_perRVT_SheetView:
 
         # config enable_bindings
         self.sheet.enable_bindings(
+            "undo",
             "edit_cell",
             "delete",
             "select_all",
@@ -1644,6 +1652,7 @@ class Project_WM_perRVT_SheetView:
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
+                ("delete", lambda e: self.on_change_sheet(e)),
                 ("end_edit_cell", lambda e: self.on_change_sheet(e)),
                 ("end_delete_rows", lambda e: self.on_change_sheet(e)),
                 ("end_move_rows", lambda e: self.on_change_sheet(e)),
@@ -1950,7 +1959,7 @@ class Project_WM_perRVT_SheetView:
 
     def on_change_sheet(self, e=None):
         state = self.state
-
+        print(f"점검!1")
         data = state.team_std_info.get("project-assigntype")
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
         selected_rvtTypes_values = go(
@@ -1958,7 +1967,7 @@ class Project_WM_perRVT_SheetView:
             map(lambda x: self.typeAssign_treeview.treeview.tree.item(x, "values")),
             list,
         )
-
+        print(f"점검!2")
         match_assigntype = lambda selected_rvtTypes_value: go(
             data["children"],
             filter(lambda x: x["values"][0] == selected_rvtTypes_value[0]),
@@ -1967,24 +1976,27 @@ class Project_WM_perRVT_SheetView:
             list,
             lambda x: x[0],
         )
-
+        print(f"점검!3{self.sheet.get_sheet_data()}")
         sheet_data = go(
             self.sheet.get_sheet_data(),
             # map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),
             map(
                 lambda x: [
-                    *x[:3],
+                    x[0],
+                    x[1],
+                    x[2],
                     x[3].replace("\n", ""),
                     x[4],
                     x[5],
                     x[6],
                     x[7].strip(),
                     x[8].strip(),
-                    x[9],
+                    x[9] if len(x) == 10 else "",
                 ]
             ),
             list,
         )
+        print(f"점검!{sheet_data}")
 
         # Get the full path of the selected item
         for selected_rvtTypes_value in selected_rvtTypes_values:

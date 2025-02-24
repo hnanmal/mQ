@@ -155,6 +155,118 @@ def open_filesave_dialog(state, textStr, width=600, height=200):
     return result
 
 
+def open_filesave_dialog_opening(state, textStr, width=600, height=200):
+    from src.core.file_utils import save_to_json_teamStdInfo
+    from src.core.file_utils import load_from_json
+
+    # Create a new Toplevel window
+    root = state.root
+    dialog = tk.Toplevel(root)
+    dialog.iconbitmap(state.icon_path)
+    dialog.title("Dialog Window")
+    width = 600
+    height = 350
+    dialog.geometry(f"{width}x{height}")  # Set the size of the dialog
+
+    result = None
+
+    # Disable interaction with the main window until the dialog is closed
+    dialog.transient(root)  # Set dialog to be a child of the main window
+    dialog.grab_set()  # Grab all input focus
+
+    # Add a label to the dialog
+    label = ttk.Label(
+        dialog,
+        text=textStr,
+        font=("Arial", 16, "bold"),
+    )
+    label.pack(pady=10)
+
+    pathStr = go(
+        state.current_filepath,
+        lambda x: x.split("/"),
+        lambda x: x[-2:],
+        lambda x: "/".join(x),
+    )
+    path_label = ttk.Label(
+        dialog,
+        text=f"{pathStr}",
+        font=("Arial", 9, "normal"),
+        bootstyle="info",
+    )
+    path_label.pack(pady=20)
+
+    def save_func():
+        save_to_json_teamStdInfo(
+            state,
+            _file_path=state.current_filepath,
+        )
+        dialog.destroy()
+
+    def saveAs_func():
+        save_to_json_teamStdInfo(
+            state,
+        )
+        dialog.destroy()
+
+    def open_other():
+        load_from_json(state)
+        dialog.destroy()
+
+    # Add a button to close the dialog
+    save_button = ttk.Button(
+        dialog,
+        text="저장",
+        command=save_func,
+        bootstyle="success-outline",
+    )
+    save_button.pack(padx=10, pady=10)
+
+    # # Add a button to close the dialog
+    # saveAs_button = ttk.Button(
+    #     dialog,
+    #     text="다른이름으로 저장",
+    #     command=saveAs_func,
+    #     bootstyle="success-outline",
+    # )
+    # saveAs_button.pack(padx=10, pady=10)
+
+    # Add a button to close the dialog
+    quitWithoutSave_button = ttk.Button(
+        dialog,
+        text="저장하지 않고 다른 B-note 열기",
+        # command=state.root.destroy,
+        command=open_other,
+        bootstyle="primary-outline",
+    )
+    quitWithoutSave_button.pack(padx=10, pady=10)
+
+    # Add a button to close the dialog
+    close_button = ttk.Button(
+        dialog,
+        text="취소",
+        command=dialog.destroy,
+        bootstyle="danger",
+    )
+    close_button.pack(padx=10, pady=10)
+
+    # 스페이스 키를 'dialog.destroy' 기능에 연결
+    dialog.bind(
+        "<space>",
+        lambda e: dialog.destroy(),
+    )
+
+    # Center the dialog relative to the root window
+    x = root.winfo_x() + (root.winfo_width() // 2) - (width // 2)
+    y = root.winfo_y() + (root.winfo_height() // 2) - (height // 2)
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+    dialog.grab_set()  # Grab all input focus
+    dialog.focus_force()
+
+    return result
+
+
 def select_tab(notebook, parent_index, subtab_index=None):
     """Select a parent tab and optionally a subtab."""
     # Disable event handlers if any

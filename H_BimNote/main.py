@@ -15,7 +15,7 @@ from PIL import ImageTk, Image
 # import time
 
 # from src.controllers.db_update_manager import DBUpdateManager
-from src.core.file_utils import load_from_json, save_to_json_teamStdInfo
+from src.core.file_utils import load_from_json, on_closing, save_to_json_teamStdInfo
 from src.views.upper_tab import (
     create_project_apply_tab,
     create_project_report_tab,
@@ -82,22 +82,6 @@ def main():
 
     root.attributes("-topmost", False)
     root.mainloop()
-
-
-def on_closing(root, state):
-    """앱 종료 시 저장 확인창을 띄우고, 선택에 따라 동작을 수행."""
-    if state.init_db_hash != "not loaded yet":
-        is_change = state.init_db_hash != state.get_db_hash()
-
-        if is_change:
-            open_filesave_dialog(
-                state,
-                "변경 내용을 이 파일에 저장하시겠습니까?",
-            )
-        else:
-            root.destroy()
-    else:
-        root.destroy()
 
 
 def show_splash_screen():
