@@ -81,6 +81,109 @@ class SearchManager:
         self.sheet.redraw()  # Refresh the sheet immediately
 
 
+class SearchManager_report_Group(SearchManager):
+    def __init__(self, parent_frame, sheet_widget):
+        # super().__init__(parent_frame, sheet_widget)
+        self.sheet = sheet_widget
+        self.parent_frame = parent_frame
+
+        # Create search UI components
+        self.search_var = tk.StringVar()
+        self.search_entry = ttk.Entry(
+            parent_frame, textvariable=self.search_var, width=30
+        )
+        self.search_entry.pack(side=tk.LEFT, padx=5)
+
+        self.search_button = ttk.Button(
+            # parent_frame, text="Search", command=self.search_and_scroll
+            parent_frame,
+            text="Search",
+            command=self.cycle_through_matches,
+        )
+        self.search_button.pack(side=tk.LEFT, padx=5)
+
+        self.clear_button = ttk.Button(
+            parent_frame, text="Clear Search", command=self.clear_search
+        )
+        self.clear_button.pack(side=tk.LEFT, padx=5)
+
+        # Bind Enter key to search and cycle through matches
+        self.search_entry.bind("<Return>", lambda event: self.cycle_through_matches())
+
+        # Initialize match tracking variables
+        self.matched_rows = []
+        self.current_match_index = 0
+        self.previous_query = ""
+
+    def search_and_scroll(self):
+        query = self.search_entry.get().strip().lower()
+        if not query:
+            return  # No search if the query is empty
+
+        self.previous_query = query
+
+        data = self.sheet.get_sheet_data()
+        # self.matched_rows.clear()
+        # self.current_match_index = 0  # Reset index
+
+        # Clear previous highlights
+        # self.sheet.highlight_rows(rows=[], bg="white")
+        self.sheet.dehighlight_all()
+
+        # Find matching rows
+        for index, row in enumerate(data):
+            if any(query in str(cell).lower() for cell in row):
+                self.matched_rows.append(index)
+
+        if self.matched_rows:
+            # Highlight matched rows
+            self.sheet.highlight_rows(rows=self.matched_rows, bg="lightblue")
+
+            # Scroll to the first match
+            # self.sheet.set_yview(self.matched_rows[0])
+        else:
+            print("No matches found.")
+
+    def cycle_through_matches(self):
+        # self.search_and_scroll()
+        # if not self.matched_rows:
+        #     return
+        # if self.current_match_index == 0:
+        #     self.search_and_scroll()
+        if self.previous_query != self.search_entry.get().strip().lower():
+            self.matched_rows.clear()
+            self.current_match_index = 0  # Reset index
+            self.sheet.dehighlight_all()
+
+            self.search_and_scroll()
+        if not self.matched_rows:
+            self.sheet.set_yview(0)
+            return
+
+        # Scroll to the next matched row
+        self.sheet.set_yview(
+            (self.matched_rows[self.current_match_index] - 1)
+            / len(self.sheet.get_sheet_data())
+        )
+
+        # Update the index for the next scroll, wrapping around if necessary
+        self.current_match_index = (self.current_match_index + 1) % len(
+            self.matched_rows
+        )
+        # self.current_match_index = self.current_match_index + 1
+
+    def clear_search(self):
+        """Clear the search field and reset the displayed rows."""
+        self.search_var.set("")
+        self.matched_rows.clear()
+        self.current_match_index = 0  # Reset index
+        self.previous_query = ""
+        self.sheet.display_rows("all")
+        self.sheet.dehighlight_all()
+        self.sheet.redraw()  # Refresh the sheet immediately
+        self.sheet.set_yview(0)
+
+
 class ReportMember_SheetWidget(ttk.Frame):
     def __init__(self, state, parent, data_kind=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -205,6 +308,7 @@ class ReportMember_SheetWidget(ttk.Frame):
                     tmp_formula = tmp_formula.replace(n, str(v))
                 try:
                     calc_result = eval(tmp_formula.strip("=")), "계산 성공"
+                    # calc_result = float(eval(tmp_formula.strip("="))), "계산 성공"
                 except:
                     calc_result = 0, "계산 실패 - 수식 혹은 파라미터가 유효하지 않음"
             else:
@@ -293,7 +397,7 @@ class ReportMember_SheetWidget(ttk.Frame):
 
             res = []
             for wm_dict in wm_dicts:
-                calcType_no = wm_dict["산출유형"]
+                calcType_no = wm_dict["산출유형"].strip()
                 calcdict = go(
                     state.team_std_info["std-calcdict"]["children"],
                     filter(lambda x: x["name"] == calcType_no),
@@ -627,7 +731,8 @@ class ReportGroup_SheetWidget(ttk.Frame):
         self.sheet.pack(fill=tk.BOTH, expand=True)
 
         # Add search functionality
-        self.search_manager = SearchManager(self.control_frame, self.sheet)
+        # self.search_manager = SearchManager(self.control_frame, self.sheet)
+        self.search_manager = SearchManager_report_Group(self.control_frame, self.sheet)
 
         # 상태 변경 감지를 위한 옵저버 설정
         self.state_observer = StateObserver(state, lambda e: self.update(e))

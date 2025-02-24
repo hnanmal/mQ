@@ -1970,7 +1970,19 @@ class Project_WM_perRVT_SheetView:
 
         sheet_data = go(
             self.sheet.get_sheet_data(),
-            map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),
+            # map(lambda x: [*x[:3], x[3].replace("\n", ""), *x[4:]]),
+            map(
+                lambda x: [
+                    *x[:3],
+                    x[3].replace("\n", ""),
+                    x[4],
+                    x[5],
+                    x[6],
+                    x[7].strip(),
+                    x[8].strip(),
+                    x[9],
+                ]
+            ),
             list,
         )
 
