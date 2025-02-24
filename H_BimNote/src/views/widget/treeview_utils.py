@@ -242,6 +242,14 @@ class TreeViewContextMenu:
         elif self.data_kind != "std-familylist" and tgt_col == 2:
             self.menu.add_command(label="하위항목 복사", command=self.copy_item)
 
+        # 선택이 하나일때만 등장하도록
+        if self.data_kind == "project-assigntype" and "select_same" in self.funcs:
+            self.menu.delete(0, "end")
+            if len(self.treeview.tree.selection()) == 1:
+                self.menu.add_command(
+                    label="동일 WM 타입 선택 (Ctrl + A)", command=self.select_sameType
+                )
+
         if self.data_kind == "std-calcdict" and tgt_col == 0:
             self.menu.delete(0, "end")
             self.menu.add_command(label="Add Item", command=self.add_item)
@@ -296,6 +304,10 @@ class TreeViewContextMenu:
 
     def delete_item(self):
         func = self.funcs.get("delete")
+        func()
+
+    def select_sameType(self):
+        func = self.funcs.get("select_same")
         func()
 
 
@@ -2661,7 +2673,8 @@ class TeamStd_calcDict_TreeView:
                 )
                 if a_value_to_update:
                     # Update the second value of B data
-                    child["values"].insert(2, a_value_to_update)
+                    # child["values"].insert(2, a_value_to_update)
+                    child["values"][2] = a_value_to_update
 
         for idx, node in enumerate(state.team_std_info[self.data_kind]["children"]):
             if node["name"] == selected_qItem_name:
@@ -2670,6 +2683,7 @@ class TeamStd_calcDict_TreeView:
                 state.log_widget.write(str(targetData))
 
         # state.log_widget.write(str(targetData))
+        self.update(view_level=self.view_level)
         return targetData
 
     def get_selected_row_values(self, event):

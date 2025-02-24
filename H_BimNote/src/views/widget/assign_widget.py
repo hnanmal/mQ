@@ -7,7 +7,11 @@ from src.controllers.tree_data_navigator import TreeDataManager_treeview
 from src.core.fp_utils import *
 from src.views.widget.widget import StateObserver, open_dialog
 from src.views.widget.multiline_input import MultiLineInputFrame
-from src.views.widget.treeview_utils import BaseTreeView, ScrollbarWidget
+from src.views.widget.treeview_utils import (
+    BaseTreeView,
+    ScrollbarWidget,
+    TreeViewContextMenu,
+)
 from src.views.widget.treeview_editor import TreeviewEditor
 
 
@@ -406,6 +410,46 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         self.treeview.tree.bind(
             "<<TreeviewSelect>>", lambda e: self.on_item_selected(e)
         )
+        self.treeview.tree.bind("<Control-a>", lambda e: self.select_sameType())
+
+        # Create and integrate context menu
+        self.context_menu = TreeViewContextMenu(
+            state,
+            self.treeview,
+            data_kind=self.data_kind,
+            select_same=self.select_sameType,
+        )
+
+    def select_sameType(self):
+        state = self.state
+        selected_item_id = self.treeview.tree.selection()[0]
+        selected_item_name = self.treeview.tree.item(selected_item_id, "text")
+        select_dbItem_ = go(
+            state.team_std_info[self.data_kind]["children"],
+            filter(lambda x: x["values"][1] == state.current_building.get()),
+            filter(lambda x: x["name"] == selected_item_name),
+            list,
+        )
+
+        select_dbItem = select_dbItem_[0]
+        select_dbItem_WMs = select_dbItem["children"]
+
+        # print(f"Type Assign Tree-select_dbItem::{select_dbItem}")
+        sameType_names = go(
+            state.team_std_info[self.data_kind]["children"],
+            filter(lambda x: str(x["children"]) == str(select_dbItem_WMs)),
+            map(lambda x: x["name"]),
+            list,
+        )
+        # print(f"Type Assign Tree-sameTypes::{sameType_names}")
+
+        sameType_ids = go(
+            self.treeview.tree.get_children(""),
+            filter(lambda x: self.treeview.tree.item(x, "text") in sameType_names),
+            list,
+        )
+        # print(f"Type Assign Tree-sameTypes ids:: {sameType_ids}")
+        self.treeview.tree.selection_set(sameType_ids)
 
     def on_item_selected(self, event):
         state = self.state
