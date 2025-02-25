@@ -392,6 +392,14 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
         hdr_widths = [200, 100, 100]
         tree_frame = ttk.Frame(self.frame, width=350, height=3000)
         tree_frame.pack(padx=10, pady=10, side="top", fill="both")
+
+        noti_label = ttk.Label(
+            tree_frame,
+            text="레빗 타입 선택 후 < S > 키를 누르면\n장바구니가 동일한 항목들 일괄 선택됩니다.",
+            font=("Arial Narrow", 8),
+        )
+        noti_label.pack(anchor="w")
+
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
 

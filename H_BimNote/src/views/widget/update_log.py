@@ -42,6 +42,14 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.1.6 (2025-02-25)
+    - Project Input > WM 메뉴판에서 항목들 알파벳 순서로 정렬되서 보이도록 수정
+    - Project Input > Revit Type 어사인 위젯 : 동일 타입 선택 기능 단축키 변경 "Ctrl+a" -> "s 키" 및 안내문구 추가
+    - Bnote로드 된 상태에서 새로운 Bnote 로드할 때, 기존 Bnote 변경 여부 체크 후 저장 확인 창 띄우기
+    - etc 항목 입력 시, 산출유형 열에 줄바꿈 포함될 경우 오류 발생 현상 수정
+    - Project Report > Q'ty Report by Group 에서 검색시 검색 문자열이 있는 행 하이라이트하고 엔터키로 순차 이동하도록 수정
+    
+    
 🔳 v1.1.5 (2025-02-24)
     - Project Input > Project Family Assign 탭 의 레빗 타입assign 위젯에서 항목 선택 후 "동일 WM 타입 선택" 메뉴 클릭시 동일 WM 조합의 모든 항목 동시 선택하도록 기능 업데이트
     - Project Input > Project Family Assign 탭 의 라벨 명칭 일부 변경
