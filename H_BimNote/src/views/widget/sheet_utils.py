@@ -7,7 +7,10 @@ from src.controllers.tree_data_navigator import (
 from src.core.fp_utils import *
 import tkinter as tk
 from tkinter import ttk, simpledialog
-from tksheet import Sheet
+from tksheet import (
+    Sheet,
+    num2alpha as n2a,
+)
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 
@@ -167,6 +170,12 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         # Add Search Box
         self.add_search_box(self.title_frame)
 
+        # Right Click pop up - 선택 초기화 버튼 추가
+        self.sheet.popup_menu_add_command(
+            label="신규 Gauge 항목 생성",
+            func=lambda: self.copyWM_forGauge("GWM"),
+        )
+
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
@@ -265,6 +274,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         row = event["row"]
         column = event["column"]
 
+        # 선택행이 아닌 다른 행들 일괄 Uncheck
         for r in range(self.sheet.get_total_rows()):
             if r != row:
                 self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
@@ -273,21 +283,39 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.sheet.set_cell_data(row, 0, True)
 
         loc = list(event["cells"]["table"].keys())[0]
-        row_check_status = event["value"]
+        # row_check_status = event["value"]
+        # row_check_status = self.sheet.get_cell_data(*loc)
+        row_check_status = self.sheet.get_cell_data(row, 0)
 
-        self.state.log_widget.write(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
+        print(f"이벤트: {event}")
+        print(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
 
-        wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
+        # wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
+        wm_code = go(
+            self.sheet.get_cell_data(row, 3),
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            next,
+        )
 
         if column == 0:
-            if project_GWM:
+            if project_GWM:  ## 선택행 WM + Gauge 에 해당하는 pjt GWM 이 db에 있을때
+                ## db 항목과 행이 같을때
+                ## db 항목과 행이 달라졌을때
+                print("pjt GWM 있을때")
                 # spec = project_GWM[-1]
                 if project_GWM[-1] == self.sheet.get_cell_data(row, 1):
                     spec = project_GWM[-1]
                 else:
                     spec = self.sheet.get_cell_data(row, 1)
                 unit = project_GWM[-2]
-                gauge = project_GWM[1]
+                print("pjt GWM 있을때")
+                # gauge = project_GWM[1]
+                if project_GWM[1] == "" and self.sheet.get_cell_data(row, 4) != "":
+                    gauge = self.sheet.get_cell_data(row, 4)
+                else:
+                    gauge = project_GWM[1]
+
             else:
                 gauge = self.sheet.get_cell_data(row, 4)
                 unit = go(
@@ -326,7 +354,15 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 lambda x: x.replace("\n", ""),
                 lambda x: x.split("|")[-3].strip(),
             )
-            gauge = self.sheet.get_cell_data(row, 4)
+            # gauge = self.sheet.get_cell_data(row, 4)
+            if (
+                project_GWM
+                and project_GWM[1] == ""
+                and self.sheet.get_cell_data(row, 4) != ""
+            ):
+                gauge = self.sheet.get_cell_data(row, 4)
+            else:
+                gauge = project_GWM[1]
         elif column == 4:
             spec = self.sheet.get_cell_data(row, 1)
             unit = go(
@@ -334,7 +370,15 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 lambda x: x.replace("\n", ""),
                 lambda x: x.split("|")[-3].strip(),
             )
-            gauge = event["value"]
+            # gauge = event["value"]
+            if (
+                project_GWM
+                and project_GWM[1] == ""
+                and self.sheet.get_cell_data(row, 4) != ""
+            ):
+                gauge = self.sheet.get_cell_data(row, 4)
+            else:
+                gauge = project_GWM[1]
 
         # if row_check_status:
         self.state.team_std_info["project-GWM"].update(
@@ -469,6 +513,98 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             except:
                 pass
 
+    def copyWM_forGauge(self, mode=None):
+        gauge = "B"
+        state = self.state
+
+        # Split the selected item path to find the grandparent, parent, and selected item names
+        grand_parent_item_name, parent_item_name, selected_item_name = (
+            self.selected_item_relate_widget.get().split(" | ")
+        )
+
+        selected_loc = list(self.sheet.get_selected_cells())[0]
+        selected_row = list(selected_loc)[0]
+        selected_col = list(selected_loc)[1]
+        selected_data = self.sheet.get_cell_data(selected_row, 3)
+
+        selected_wm_code = go(
+            selected_data,
+            # lambda x: "::".join([x, gauge]),
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            list,
+        )[0]
+
+        data = state.team_std_info[self.data_kind]["children"]
+
+        # Find the grandparent node
+        grand_parent_node = next(
+            (node for node in data if node["name"] == grand_parent_item_name),
+            None,
+        )
+        if grand_parent_node:
+            # Find the parent node
+            parent_node = next(
+                (
+                    node
+                    for node in grand_parent_node["children"]
+                    if node["name"] == parent_item_name
+                ),
+                None,
+            )
+            if parent_node:
+                # Find the selected node
+                selected_node = next(
+                    (
+                        node
+                        for node in parent_node["children"]
+                        if node["name"] == selected_item_name
+                    ),
+                    None,
+                )
+        # print(f"selected_row {selected_node}")
+
+        tgt_db_wm = go(
+            selected_node["children"],
+            filter(lambda x: selected_wm_code in x),
+            # lambda x: sorted(x, reverse=True),
+            lambda x: sorted(x),
+            list,
+            lambda x: x[-1],
+        )
+        tgt_db_wm_idx = selected_node["children"].index(tgt_db_wm)
+        print(f"tgt_db_wm {tgt_db_wm}")
+
+        tgt_db_wm_last = go(
+            tgt_db_wm,
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            list,
+            lambda x: x[-1],
+            # lambda x: x.split("::"),
+            # lambda x: x[-1],
+        )
+        print(f"tgt_db_wm_last {tgt_db_wm_last}")
+        if "::" not in tgt_db_wm_last:
+            new_gauge = "B"
+            copied_wm = f"{tgt_db_wm}::{new_gauge}"
+            selected_node["children"][tgt_db_wm_idx] = f"{tgt_db_wm}::A"
+        else:
+            new_gauge = chr(ord(tgt_db_wm_last.split("::")[-1]) + 1)
+            copied_wm = go(
+                tgt_db_wm,
+                lambda x: x.split("::"),
+                lambda x: x[:-1],
+                lambda x: "::".join([*x, new_gauge]),
+            )
+
+        # selected_node["children"].append(copied_wm)
+        selected_node["children"].insert(tgt_db_wm_idx + 1, copied_wm)
+
+        print(f"copied_wm {copied_wm}")
+
+        self.update()
+
     def update(self, event=None):
         state = self.state
         """Update the TreeView whenever the state changes."""
@@ -529,7 +665,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                     lambda x: [
                                         "",
                                         go(
-                                            x.split(" | "),
+                                            x.split("|"),
+                                            map(lambda x: x.strip()),
                                             filter(
                                                 lambda x: ("(   )" in x)
                                                 or ("(   )" in x)
@@ -537,9 +674,23 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                             ),
                                             lambda x: "\n".join(x),
                                         ),
-                                        x.split(" | ")[-3],
+                                        go(
+                                            x,
+                                            lambda x: x.split("|"),
+                                            map(lambda x: x.strip()),
+                                            list,
+                                            lambda x: x[-3],
+                                        ),
                                         x,
-                                        "",
+                                        go(
+                                            x.split("|"),
+                                            map(lambda x: x.strip()),
+                                            list,
+                                            lambda x: x[-1],
+                                            lambda x: (
+                                                x.split("::")[-1] if "::" in x else ""
+                                            ),
+                                        ),
                                     ]
                                 ),
                                 list,
@@ -553,7 +704,10 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                             tgt_rowIdx = 0
                             if decided_WM:
                                 for idx, row in enumerate(wrapped_data):
-                                    if decided_WM[0] in row[-2]:
+                                    # if decided_WM[0] in row[-2]:
+                                    if decided_WM[0] in row[-2] and (
+                                        decided_WM[1] == row[4] or decided_WM[1] == ""
+                                    ):
                                         row[0] = True
                                         row[1] = decided_WM[-1]
                                         row[2] = decided_WM[-2]
