@@ -564,6 +564,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 )
         # print(f"selected_row {selected_node}")
 
+        ## 이하의 코드를 노드 하나를 입력받아서 처리하는 함수로 전환하고, 전체 노드를 돌도록 변경 필요
         tgt_db_wm = go(
             selected_node["children"],
             filter(lambda x: selected_wm_code in x),
