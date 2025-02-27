@@ -526,10 +526,17 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         selected_wm_gauge = self.sheet.get_cell_data(selected_row, 4)
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
+        # delete 시, 때때로 RuntimeError: dictionary changed size during iteration 발생 해결필요
+        rm_target_keys = []
         for k in pjt_wms:
             v = pjt_wms[k]
             if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
-                pjt_wms.pop(k)
+                # pjt_wms.pop(k)
+                rm_target_keys.append(k)
+
+        for rm_k in rm_target_keys:
+            pjt_wms.pop(rm_k)
+        # std-GWM 에서 항목이 사라져서
 
         def delGauge_forNode(node):
             tgt_db_wms = go(
@@ -539,7 +546,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 list,
             )
             try:
-                # tgt_db_wm = tgt_db_wms[-1]  # 동일 wm들 중 마지막 항목
                 tgt_db_wm = go(
                     tgt_db_wms,
                     filter(lambda x: x.split("::")[-1] == selected_wm_gauge),
@@ -555,8 +561,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                     list,
                     lambda x: x[-1],
                 )
-
-                del node["children"][tgt_db_wm_idx]
+                if "::" in tgt_db_wm:
+                    del node["children"][tgt_db_wm_idx]
 
                 tgt_db_wms_afterDelete = go(
                     node["children"],
@@ -576,6 +582,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                         wm_new = wm
                         print(f"wm_new2!{wm_new}")
                     node["children"][db_index] = wm_new
+                    # std-GWM/SWM 삭제로 std-GWM/SWM 항목의 게이지 변경전,
+                    # pjt-GWM/SWM에서 기존 게이지로 할당되있던 항목들 게이지 조정 필요
             except:
                 pass
 
