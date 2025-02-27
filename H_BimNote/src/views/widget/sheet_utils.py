@@ -175,11 +175,15 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             label="신규 Gauge 항목 생성",
             func=lambda: self.copyWM_forGauge("GWM"),
         )
+        self.sheet.popup_menu_add_command(
+            label="선택 Gauge 항목 삭제",
+            func=lambda: self.deleteWM_forGauge("GWM"),
+        )
 
         # Bind checkbox clicks
         self.sheet.extra_bindings(
             [
-                ("end_edit_cell", lambda e: self.on_checkbox_click(e)),
+                ("end_edit_cell", lambda e: self.on_checkbox_click(e, mode="GWM")),
                 ("delete", lambda e: self.on_checkbox_delete(e)),
             ]
         )
@@ -262,14 +266,14 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         # return
 
-    def on_checkbox_click(self, event):
+    def on_checkbox_click(self, event, mode=None):
         state = self.state
         """Callback for checkbox clicks."""
         self.state.log_widget.write(
             f"{self.__class__.__name__} > on_checkbox_click 메소드 시작"
         )
         selected_item_str = self.selected_item_relate_widget.get()
-        project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
+        project_WM = self.state.team_std_info[f"project-{mode}"].get(selected_item_str)
 
         row = event["row"]
         column = event["column"]
@@ -291,102 +295,42 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         print(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
 
         # wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
-        wm_code = go(
+        selectedRow_wmCode = go(
             self.sheet.get_cell_data(row, 3),
             lambda x: x.split("|"),
             map(lambda x: x.strip()),
             next,
         )
+        if project_WM:
+            project_WM_code = project_WM[0]
+            project_WM_gauge = project_WM[1]
+        else:
+            project_WM_code = "na"
+            project_WM_gauge = "na"
 
         if column == 0:
-            if project_GWM:  ## 선택행 WM + Gauge 에 해당하는 pjt GWM 이 db에 있을때
-                ## db 항목과 행이 같을때
-                ## db 항목과 행이 달라졌을때
-                print("pjt GWM 있을때")
-                # spec = project_GWM[-1]
-                if project_GWM[-1] == self.sheet.get_cell_data(row, 1):
-                    spec = project_GWM[-1]
-                else:
-                    spec = self.sheet.get_cell_data(row, 1)
-                unit = project_GWM[-2]
-                print("pjt GWM 있을때")
-                # gauge = project_GWM[1]
-                if project_GWM[1] == "" and self.sheet.get_cell_data(row, 4) != "":
-                    gauge = self.sheet.get_cell_data(row, 4)
-                else:
-                    gauge = project_GWM[1]
+            if (
+                project_WM_code != selectedRow_wmCode
+                or project_WM_gauge != self.sheet.get_cell_data(row, 4)
+            ):  ## 행 옮겨 클릭시
+                spec = self.sheet.get_cell_data(row, 1)
+                ## 딴데서 수정된 스펙 받아오기 코드 삽입
+                if self.update_spec_fromExist(mode="GWM") != "":
+                    spec = self.update_spec_fromExist(mode="GWM")
+                unit = self.sheet.get_cell_data(row, 2)
+                gauge = self.sheet.get_cell_data(row, 4)
 
-            else:
-                gauge = self.sheet.get_cell_data(row, 4)
-                unit = go(
-                    self.sheet.get_cell_data(row, 3),
-                    lambda x: x.replace("\n", ""),
-                    lambda x: x.split("|")[-3].strip(),
-                )
-                spec = go(
-                    self.sheet.get_cell_data(row, 3),
-                    lambda x: x.replace("\n", ""),
-                    lambda x: x.split("|"),
-                    map(lambda x: x.strip()),
-                    filter(
-                        lambda x: ("(   )" in x)
-                        or ("(   )" in x)
-                        or ("(  )" in x)
-                        or ("( )" in x)
-                        or ("()" in x)
-                    ),
-                    lambda x: "\n".join(x),
-                )
-                self.state.team_std_info["project-GWM"].update(
-                    {
-                        selected_item_str: [
-                            wm_code,
-                            gauge,
-                            unit,
-                            spec,
-                        ]
-                    }
-                )
         elif column == 1:
-            spec = event["value"]
-            unit = go(
-                self.sheet.get_cell_data(row, 3),
-                lambda x: x.replace("\n", ""),
-                lambda x: x.split("|")[-3].strip(),
-            )
-            # gauge = self.sheet.get_cell_data(row, 4)
-            if (
-                project_GWM
-                and project_GWM[1] == ""
-                and self.sheet.get_cell_data(row, 4) != ""
-            ):
-                gauge = self.sheet.get_cell_data(row, 4)
-            else:
-                gauge = project_GWM[1]
-        elif column == 4:
             spec = self.sheet.get_cell_data(row, 1)
-            unit = go(
-                self.sheet.get_cell_data(row, 3),
-                lambda x: x.replace("\n", ""),
-                lambda x: x.split("|")[-3].strip(),
-            )
-            # gauge = event["value"]
-            if (
-                project_GWM
-                and project_GWM[1] == ""
-                and self.sheet.get_cell_data(row, 4) != ""
-            ):
-                gauge = self.sheet.get_cell_data(row, 4)
-            else:
-                gauge = project_GWM[1]
+            self.edit_spec_sameWMgauge_all(mode="GWM")
+            unit = self.sheet.get_cell_data(row, 2)
+            gauge = self.sheet.get_cell_data(row, 4)
 
         # if row_check_status:
         self.state.team_std_info["project-GWM"].update(
-            {selected_item_str: [wm_code, gauge, unit, spec]}
+            {selected_item_str: [selectedRow_wmCode, gauge, unit, spec]}
         )
-        self.state.log_widget.write(
-            self.state.team_std_info["project-GWM"][selected_item_str]
-        )
+        print(self.state.team_std_info["project-GWM"][selected_item_str])
         self.update()
         self.highlight_checked_row()
         self.sheet.redraw()
@@ -513,6 +457,136 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             except:
                 pass
 
+    def update_spec_fromExist(self, mode=None):
+        state = self.state
+        selected_loc = list(self.sheet.get_selected_cells())[0]
+        selected_row = list(selected_loc)[0]
+        selected_col = list(selected_loc)[1]
+        selected_data = self.sheet.get_cell_data(selected_row, 3)
+
+        selected_wm_code = go(
+            selected_data,
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            list,
+        )[0]
+        selected_wm_gauge = self.sheet.get_cell_data(selected_row, 4)
+
+        pjt_wms = state.team_std_info[f"project-{mode}"]
+        tgt_specs = []
+        for k in pjt_wms:
+            v = pjt_wms[k]
+            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                tgt_specs.append(v[3])
+        print(f"tgt_spec::{tgt_specs}")
+
+        if tgt_specs:
+            tgt_spec = tgt_specs[0]
+        else:
+            tgt_spec = ""
+
+        return tgt_spec
+
+    def edit_spec_sameWMgauge_all(self, mode=None):
+        state = self.state
+        selected_loc = list(self.sheet.get_selected_cells())[0]
+        selected_row = list(selected_loc)[0]
+        selected_col = list(selected_loc)[1]
+        selected_data = self.sheet.get_cell_data(selected_row, 3)
+
+        selected_wm_code = go(
+            selected_data,
+            # lambda x: "::".join([x, gauge]),
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            list,
+        )[0]
+        selected_wm_gauge = self.sheet.get_cell_data(selected_row, 4)
+
+        pjt_wms = state.team_std_info[f"project-{mode}"]
+        for k in pjt_wms:
+            v = pjt_wms[k]
+            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                v[-1] = self.sheet.get_cell_data(selected_row, 1)
+            pjt_wms.update({k: v})
+
+    def deleteWM_forGauge(self, mode=None):
+        state = self.state
+        selected_loc = list(self.sheet.get_selected_cells())[0]
+        selected_row = list(selected_loc)[0]
+        selected_col = list(selected_loc)[1]
+        selected_data = self.sheet.get_cell_data(selected_row, 3)
+
+        selected_wm_code = go(
+            selected_data,
+            lambda x: x.split("|"),
+            map(lambda x: x.strip()),
+            list,
+        )[0]
+        selected_wm_gauge = self.sheet.get_cell_data(selected_row, 4)
+
+        pjt_wms = state.team_std_info[f"project-{mode}"]
+        for k in pjt_wms:
+            v = pjt_wms[k]
+            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                pjt_wms.pop(k)
+
+        def delGauge_forNode(node):
+            tgt_db_wms = go(
+                node["children"],
+                filter(lambda x: selected_wm_code in x),
+                lambda x: sorted(x),
+                list,
+            )
+            try:
+                # tgt_db_wm = tgt_db_wms[-1]  # 동일 wm들 중 마지막 항목
+                tgt_db_wm = go(
+                    tgt_db_wms,
+                    filter(lambda x: x.split("::")[-1] == selected_wm_gauge),
+                    next,
+                )
+                tgt_db_wm_idx = node["children"].index(tgt_db_wm)
+                print(f"tgt_db_wm {tgt_db_wm}")
+
+                tgt_db_wm_last = go(
+                    tgt_db_wm,
+                    lambda x: x.split("|"),
+                    map(lambda x: x.strip()),
+                    list,
+                    lambda x: x[-1],
+                )
+
+                del node["children"][tgt_db_wm_idx]
+
+                tgt_db_wms_afterDelete = go(
+                    node["children"],
+                    filter(lambda x: selected_wm_code in x),
+                    lambda x: sorted(x),
+                    list,
+                )
+                # new_tgt_db_wms = []
+                for idx, wm in enumerate(tgt_db_wms_afterDelete):
+                    db_index = node["children"].index(wm)
+                    if chr(idx + 65) != wm.split("::")[-1]:
+                        wm_new = wm.split("::")[0] + f"::{chr(idx + 65)}"
+                        print(f"wm_new1!{wm_new}")
+                    elif len(tgt_db_wms_afterDelete) == 1:
+                        wm_new = wm.split("::")[0]
+                    else:
+                        wm_new = wm
+                        print(f"wm_new2!{wm_new}")
+                    node["children"][db_index] = wm_new
+            except:
+                pass
+
+        data = state.team_std_info[self.data_kind]["children"]
+        for grandNode in data:
+            for parentNode in grandNode["children"]:
+                for childNode in parentNode["children"]:
+                    delGauge_forNode(childNode)
+        self.update()
+        self.sheet.update()
+
     def copyWM_forGauge(self, mode=None):
         gauge = "B"
         state = self.state
@@ -564,47 +638,59 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 )
         # print(f"selected_row {selected_node}")
 
-        ## 이하의 코드를 노드 하나를 입력받아서 처리하는 함수로 전환하고, 전체 노드를 돌도록 변경 필요
-        tgt_db_wm = go(
-            selected_node["children"],
-            filter(lambda x: selected_wm_code in x),
-            # lambda x: sorted(x, reverse=True),
-            lambda x: sorted(x),
-            list,
-            lambda x: x[-1],
-        )
-        tgt_db_wm_idx = selected_node["children"].index(tgt_db_wm)
-        print(f"tgt_db_wm {tgt_db_wm}")
-
-        tgt_db_wm_last = go(
-            tgt_db_wm,
-            lambda x: x.split("|"),
-            map(lambda x: x.strip()),
-            list,
-            lambda x: x[-1],
-            # lambda x: x.split("::"),
-            # lambda x: x[-1],
-        )
-        print(f"tgt_db_wm_last {tgt_db_wm_last}")
-        if "::" not in tgt_db_wm_last:
-            new_gauge = "B"
-            copied_wm = f"{tgt_db_wm}::{new_gauge}"
-            selected_node["children"][tgt_db_wm_idx] = f"{tgt_db_wm}::A"
-        else:
-            new_gauge = chr(ord(tgt_db_wm_last.split("::")[-1]) + 1)
-            copied_wm = go(
-                tgt_db_wm,
-                lambda x: x.split("::"),
-                lambda x: x[:-1],
-                lambda x: "::".join([*x, new_gauge]),
+        ## 위젯에서 선택한 wm과 동일한 항목을 db의 특정 childnode에서 검색하여
+        ## 게이지 코드 부여한 복사본 만들고 원본은 ::A 붙여주는 함수
+        def setGauge_forNode(node):
+            tgt_db_wms = go(
+                node["children"],
+                filter(lambda x: selected_wm_code in x),
+                lambda x: sorted(x),
+                list,
             )
+            try:
+                tgt_db_wm = tgt_db_wms[-1]  # 동일 wm들 중 마지막 항목
+                tgt_db_wm_idx = node["children"].index(tgt_db_wm)
+                print(f"tgt_db_wm {tgt_db_wm}")
 
-        # selected_node["children"].append(copied_wm)
-        selected_node["children"].insert(tgt_db_wm_idx + 1, copied_wm)
+                tgt_db_wm_last = go(
+                    tgt_db_wm,
+                    lambda x: x.split("|"),
+                    map(lambda x: x.strip()),
+                    list,
+                    lambda x: x[-1],
+                )
+                # print(f"tgt_db_wm_last {tgt_db_wm_last}")
+                if "::" not in tgt_db_wm_last:
+                    new_gauge = "B"
+                    copied_wm = f"{tgt_db_wm}::{new_gauge}"
+                    node["children"][tgt_db_wm_idx] = f"{tgt_db_wm}::A"
+                else:
+                    new_gauge = chr(ord(tgt_db_wm_last.split("::")[-1]) + 1)
+                    copied_wm = go(
+                        tgt_db_wm,
+                        lambda x: x.split("::"),
+                        lambda x: x[:-1],
+                        lambda x: "::".join([*x, new_gauge]),
+                    )
 
-        print(f"copied_wm {copied_wm}")
+                node["children"].insert(tgt_db_wm_idx + 1, copied_wm)
+            except:
+                pass
+
+        for grandNode in data:
+            for parentNode in grandNode["children"]:
+                for childNode in parentNode["children"]:
+                    setGauge_forNode(childNode)
+
+        pjt_wms = state.team_std_info[f"project-{mode}"]
+        for k in pjt_wms:
+            v = pjt_wms[k]
+            if v[0] == selected_wm_code and v[1] == "":
+                v[1] = "A"
+            pjt_wms.update({k: v})
 
         self.update()
+        self.sheet.update()
 
     def update(self, event=None):
         state = self.state
@@ -665,6 +751,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                 map(
                                     lambda x: [
                                         "",
+                                        # False,
                                         go(
                                             x.split("|"),
                                             map(lambda x: x.strip()),
