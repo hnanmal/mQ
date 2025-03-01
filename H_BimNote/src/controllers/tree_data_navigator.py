@@ -1,4 +1,5 @@
 from copy import deepcopy
+from tkinter import messagebox, simpledialog
 from src.core.fp_utils import *
 
 
@@ -418,19 +419,35 @@ class TreeDataManager_treeview(TreeDataManager):
         _, parent_node, selected_node = self.get_node_path(
             data_kind, grandparent_name, parent_name, child_name
         )
-
-        if isinstance(selected_node, list):
-            # Handle removal from list of strings (last level)
-            self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
-            parent_node["children"] = [
-                child for child in selected_node if child not in matched_wms
-            ]
-        elif selected_node and "children" in selected_node:
-            # Handle removal from regular children
-            self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
-            selected_node["children"] = [
-                child for child in selected_node["children"] if child not in matched_wms
-            ]
+        gauge_yesno = go(
+            matched_wms,
+            map(lambda x: "::" in x),
+            any,
+        )
+        if gauge_yesno:
+            # print("메세지 소환")
+            messagebox.showwarning(
+                "WM 할당 해제",
+                """
+게이지 부여 항목은 Standard GWM/SWM Tab에서 삭제할 수 없습니다.
+삭제를 원하면 Project GWM/SWM Tab에서 Gauge 항목을 모두 삭제해 주세요.
+                """,
+            )
+        else:
+            if isinstance(selected_node, list):
+                # Handle removal from list of strings (last level)
+                self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
+                parent_node["children"] = [
+                    child for child in selected_node if child not in matched_wms
+                ]
+            elif selected_node and "children" in selected_node:
+                # Handle removal from regular children
+                self.state.log_widget.write(f"\nRemoving matched WMs: {matched_wms}\n")
+                selected_node["children"] = [
+                    child
+                    for child in selected_node["children"]
+                    if child not in matched_wms
+                ]
 
     def match_GWMitems_to_stdFam(
         self, data_kind, grandparent_name, parent_name, child_name, selected_GWMitems

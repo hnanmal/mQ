@@ -88,19 +88,19 @@ class WMapply_button:
         selected_rvtTypes_ids = self.typeAssign_treeview.treeview.tree.selection()
         if current_building == "건물을 선택하세요":
             open_dialog(
-                state.root,
+                state,
                 "건물을 선택하셔야 합니다.",
             )
             return
         if not selected_stdType:
             open_dialog(
-                state.root,
+                state,
                 "좌측 표준타입을 선택하셔야 합니다.",
             )
             return
         if not selected_rvtTypes_ids:
             open_dialog(
-                state.root,
+                state,
                 "중앙의 레빗타입을 선택하셔야 합니다.",
             )
             return
@@ -525,13 +525,13 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         if current_building == "건물을 선택하세요":
             open_dialog(
-                state.root,
+                state,
                 "건물을 선택하셔야 합니다.",
             )
             return
         if not selected_stdType:
             open_dialog(
-                state.root,
+                state,
                 "좌측 표준타입을 선택하셔야 합니다.",
             )
             return

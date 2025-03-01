@@ -834,7 +834,10 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
                             def findSpec(wmStr):
                                 if "::" in wmStr:
-                                    spec = findSpec_fromPjt(wmStr)
+                                    try:
+                                        spec = findSpec_fromPjt(wmStr)
+                                    except:
+                                        spec = findSpec_fromStd(wmStr)
                                 else:
                                     spec = findSpec_fromStd(wmStr)
                                 return spec
@@ -845,8 +848,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                 map(
                                     lambda x: [
                                         "",
-                                        # False,
-                                        findSpec_fromStd(x),
+                                        findSpec(x),
                                         go(
                                             x,
                                             lambda x: x.split("|"),
@@ -1558,6 +1560,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
     def update(self, event=None):
         state = self.state
+        mode = self.data_kind.split("-")[-1]
         """Update the TreeView whenever the state changes."""
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
         self.state.log_widget.write(
@@ -1571,6 +1574,8 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             pass
 
         try:
+            pjt_wms = state.team_std_info[f"project-{mode}"]
+
             # Split the selected item path to find the grandparent, parent, and selected item names
             grand_parent_item_name, parent_item_name, selected_item_name = (
                 self.selected_item_relate_widget.get().split(" | ")
@@ -1609,23 +1614,48 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                             # Clear the TreeView and insert the data for the selected node
                             self.sheet.clear()
 
+                            def findSpec_fromStd(wmStr):
+                                spec = go(
+                                    wmStr.split("|"),
+                                    map(lambda x: x.strip()),
+                                    filter(
+                                        lambda x: ("(   )" in x)
+                                        or ("(   )" in x)
+                                        or ("(  )" in x)
+                                    ),
+                                    lambda x: "\n".join(x),
+                                )
+                                return spec
+
+                            def findSpec_fromPjt(wmStr):
+                                wmCode = wmStr.split("|")[0].strip()
+                                wmGauge = wmStr.split("::")[-1]
+                                spec_ = []
+                                for k in pjt_wms:
+                                    v = pjt_wms[k]
+                                    if v[0] == wmCode and v[1] == wmGauge:
+                                        spec_.append(v[3])
+                                spec = spec_[0]
+
+                                return spec
+
+                            def findSpec(wmStr):
+                                if "::" in wmStr:
+                                    try:
+                                        spec = findSpec_fromPjt(wmStr)
+                                    except:
+                                        spec = findSpec_fromStd(wmStr)
+                                else:
+                                    spec = findSpec_fromStd(wmStr)
+                                return spec
+
                             # Wrap the children of the selected node for insertion
                             wrapped_data = go(
                                 selected_node["children"],
                                 map(
                                     lambda x: [
                                         "",
-                                        # False,
-                                        go(
-                                            x.split("|"),
-                                            map(lambda x: x.strip()),
-                                            filter(
-                                                lambda x: ("(   )" in x)
-                                                or ("(   )" in x)
-                                                or ("(  )" in x)
-                                            ),
-                                            lambda x: "\n".join(x),
-                                        ),
+                                        findSpec(x),
                                         go(
                                             x,
                                             lambda x: x.split("|"),

@@ -33,7 +33,9 @@ def main():
     # root = ttk.Window(themename="journal")
     root = ttk.Window()
     # root = TkinterDnD.Tk()
-
+    # root.wm_iconbitmap(icon_path)
+    root.iconbitmap(icon_path)
+    root.iconify()
     # Apply ttkbootstrap theme
     style = ttk.Style()
     # style.theme_use("sandstone")  # Use your preferred ttkbootstrap theme
@@ -41,13 +43,12 @@ def main():
     ################
 
     notebook, state = initialize_app(root)
-    root.iconbitmap(icon_path)
-    root.iconify()
-    state.icon_path = icon_path
 
     # root.withdraw()  # Hide the main window while splash is shown
     state.root = root
     state.notebook = notebook
+
+    state.icon_path = icon_path
 
     splash = show_splash_screen()
 
