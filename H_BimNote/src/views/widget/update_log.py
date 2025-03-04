@@ -42,6 +42,10 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.1.7 (2025-03-04)
+    - WorkMaster 게이지 코드 일괄 추가, 수정, 삭제 구현 완료
+    - GWM/SWM 시트에서 게이지 붙은 항목들은 Spec열 업데이트 할때 타 게이지 항목 참조토록 Update 함수 수정 완료
+    
 🔳 v1.1.6 (2025-02-25)
     - Project Input > WM 메뉴판에서 항목들 알파벳 순서로 정렬되서 보이도록 수정
     - Project Input > Revit Type 어사인 위젯 : 동일 타입 선택 기능 단축키 변경 "Ctrl+a" -> "s 키" 및 안내문구 추가
