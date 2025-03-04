@@ -32,6 +32,7 @@ def main():
     # root = tk.Tk()
     # root = ttk.Window(themename="journal")
     root = ttk.Window()
+    root.geometry("1400x900+100+100")
     # root = TkinterDnD.Tk()
     # root.wm_iconbitmap(icon_path)
     root.iconbitmap(icon_path)
@@ -71,6 +72,7 @@ def main():
     # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
 
     root.deiconify()
+
     root.state("zoomed")
 
     ## 어플리케이션 시작시 메시지
@@ -82,6 +84,7 @@ def main():
     root.protocol("WM_DELETE_WINDOW", lambda: on_closing(root, state))
 
     root.attributes("-topmost", False)
+
     root.mainloop()
 
 
