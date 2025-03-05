@@ -1,5 +1,5 @@
 # src/views/widget/treeview_utils.py
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -2919,7 +2919,8 @@ class BuildingList_TreeView:
         ttk.Button(
             button_frame,
             text="Delete Building",
-            command=self.delete_item,
+            # command=self.delete_item,
+            command=self.delete_building,
             bootstyle=DANGER,
         ).pack(side="left", padx=5)
 
@@ -2979,7 +2980,13 @@ class BuildingList_TreeView:
         """Delete the selected building from the TreeView."""
         state = self.state
         selected_item_id = self.treeview.tree.selection()
-        if selected_item_id:
+
+        delete_will = messagebox.askokcancel(
+            "건물삭제",
+            "해당 건물에 대한 레빗 할당 데이터도 함께 지워집니다. 정말 삭제하시겠습니까?",
+        )
+
+        if selected_item_id and delete_will:
             selected_item_name = go(
                 selected_item_id,
                 lambda x: self.treeview.tree.item(x, "values"),
@@ -2992,6 +2999,16 @@ class BuildingList_TreeView:
                 [selected_item_name],
             )
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
+            state.observer_manager.notify_observers(state)
+            self.status_label.config(text="Successfully deleted.", bootstyle=DANGER)
+
+            pjt_assign_db = state.team_std_info["project-assigntype"]["children"]
+            new_assign_db = []
+            for idx, dic in enumerate(pjt_assign_db):
+                if dic["values"][1] != selected_item_name:
+                    new_assign_db.append(dic)
+            state.team_std_info["project-assigntype"]["children"] = new_assign_db
+            # Notify observers about the state update
             state.observer_manager.notify_observers(state)
         else:
             self.status_label.config(

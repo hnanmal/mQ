@@ -42,6 +42,11 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.1.8 (2025-03-05)
+    - GWM / SWM 시트에서 게이지 열 직접 편집 불가하도록 수정
+    - 특정 GWM / SWM 에서 WM 스펙 작업일괄로 해도 관계없도록 수정
+    - 빌딩 삭제시 경고메시지 출력 및 삭제 확인시 project-assigntype 에서도 해당빌딩에 할당된 정보들 삭제
+    
 🔳 v1.1.7 (2025-03-04)
     - WorkMaster 게이지 코드 일괄 추가, 수정, 삭제 구현 완료
     - GWM/SWM 시트에서 게이지 붙은 항목들은 Spec열 업데이트 할때 타 게이지 항목 참조토록 Update 함수 수정 완료

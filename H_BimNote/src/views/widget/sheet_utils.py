@@ -257,7 +257,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         project_GWM = self.state.team_std_info["project-GWM"].get(selected_item_str)
         print(event)
 
-        row, column = list(event["cells"]["table"].keys())[0]  # .keys())
+        row, column = list(event["cells"]["table"].keys())[0]
         if column == 0:
             if project_GWM:
                 self.state.team_std_info["project-GWM"].pop(selected_item_str)
@@ -308,6 +308,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             project_WM_code = "na"
             project_WM_gauge = "na"
 
+        print(f"로직통과체크1 {column}")
+
         if column == 0:
             if (
                 project_WM_code != selectedRow_wmCode
@@ -324,6 +326,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                 unit = self.sheet.get_cell_data(row, 2)
                 gauge = self.sheet.get_cell_data(row, 4)
             self.update()
+            print(f"로직통과체크2 {column}")
         elif column == 1:
             if (
                 project_WM_code != selectedRow_wmCode
@@ -369,6 +372,7 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.state.team_std_info[f"project-{mode}"].update(
             {selected_item_str: [selectedRow_wmCode, gauge, unit, spec]}
         )
+        print(f"변경칼럼?{column}")
         print(self.state.team_std_info[f"project-{mode}"][selected_item_str])
         self.update()
         self.highlight_checked_row()
@@ -520,21 +524,29 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             list,
         )
         tgt_specs = []
+        print(f"update_spec_fromExist 로직패스체크1")
+        print(f"{target_keys}")
         if target_keys:
             for k in pjt_wms:
-                v = pjt_wms[k]
-                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                # v = pjt_wms[k]
+                v = pjt_wms.get(k)
+                if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                     tgt_specs.append(v[3])
+            print(f"update_spec_fromExist 로직패스체크2")
             print(f"tgt_spec::{tgt_specs}")
         else:
-            for v in pjt_wms["not_assigned"]:
-                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
-                    tgt_specs.append(v[3])
+            if pjt_wms.get("not_assigned"):
+                for v in pjt_wms["not_assigned"]:
+                    if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                        tgt_specs.append(v[3])
+                        print(f"update_spec_fromExist 로직패스체크3")
 
         if tgt_specs:
             tgt_spec = tgt_specs[0]
         else:
             tgt_spec = ""
+
+        print(f"update_spec_fromExist 로직패스체크4")
 
         return tgt_spec
 
@@ -555,8 +567,9 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
         for k in pjt_wms:
-            v = pjt_wms[k]
-            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+            # v = pjt_wms[k]
+            v = pjt_wms.get(k)
+            if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                 v[-1] = self.sheet.get_cell_data(selected_row, 1)
             pjt_wms.update({k: v})
         for v in pjt_wms["not_assigned"]:
@@ -595,8 +608,9 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             # delete 시, 때때로 RuntimeError: dictionary changed size during iteration 발생 해결필요
             rm_target_keys = []
             for k in pjt_wms:
-                v = pjt_wms[k]
-                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                # v = pjt_wms[k]
+                v = pjt_wms.get(k)
+                if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                     # pjt_wms.pop(k)
                     rm_target_keys.append(k)
 
@@ -674,8 +688,13 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
                         modi_tgt_dictlist = []
                         for k in pjt_wms:
-                            v = pjt_wms[k]
-                            if v[0] == wm.split("|")[0].strip() and v[1] == wmGauge_old:
+                            # v = pjt_wms[k]
+                            v = pjt_wms.get(k)
+                            if (
+                                v
+                                and v[0] == wm.split("|")[0].strip()
+                                and v[1] == wmGauge_old
+                            ):
                                 new_v = [
                                     v[0],
                                     wmGauge_new,
@@ -714,13 +733,18 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         selected_col = list(selected_loc)[1]
         selected_data = self.sheet.get_cell_data(selected_row, 3)
 
+        # selected_wm_code = go(
+        #     selected_data,
+        #     lambda x: x.split("|"),
+        #     map(lambda x: x.strip()),
+        #     list,
+        # )[0]
         selected_wm_code = go(
             selected_data,
-            # lambda x: "::".join([x, gauge]),
             lambda x: x.split("|"),
             map(lambda x: x.strip()),
-            list,
-        )[0]
+            next,
+        )
 
         data = state.team_std_info[self.data_kind]["children"]
 
@@ -797,10 +821,17 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
         for k in pjt_wms:
-            v = pjt_wms[k]
-            if v[0] == selected_wm_code and v[1] == "":
+            # v = pjt_wms[k]
+            v = pjt_wms.get(k)
+            if v and v[0] == selected_wm_code and v[1] == "":
                 v[1] = "A"
             pjt_wms.update({k: v})
+        if not pjt_wms.get("not_assigned"):
+            pjt_wms["not_assigned"] = []
+        if pjt_wms["not_assigned"]:
+            for v_ in pjt_wms["not_assigned"]:
+                if v_[0] == selected_wm_code and v_[1] == "":
+                    v_[1] = "A"
 
         self.update()
         self.sheet.update()
@@ -890,8 +921,9 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                 spec_ = []
                                 if target_keys:
                                     for k in pjt_wms:
-                                        v = pjt_wms[k]
-                                        if v[0] == wmCode and v[1] == wmGauge:
+                                        # v = pjt_wms[k]
+                                        v = pjt_wms.get(k)
+                                        if v and v[0] == wmCode and v[1] == wmGauge:
                                             spec_.append(v[3])
                                 else:
                                     for v in pjt_wms["not_assigned"]:
@@ -902,13 +934,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                 return spec
 
                             def findSpec(wmStr):
-                                # if "::" in wmStr:
-                                #     try:
-                                #         spec = findSpec_fromPjt(wmStr)
-                                #     except:
-                                #         spec = findSpec_fromStd(wmStr)
-                                # else:
-                                #     spec = findSpec_fromStd(wmStr)
                                 try:
                                     spec = findSpec_fromPjt(wmStr)
                                 except:
@@ -1138,7 +1163,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         project_SWM = self.state.team_std_info["project-SWM"].get(selected_item_str)
         print(event)
 
-        row, column = list(event["cells"]["table"].keys())[0]  # .keys())
+        row, column = list(event["cells"]["table"].keys())[0]
         if column == 0:
             if project_SWM:
                 self.state.team_std_info["project-SWM"].pop(selected_item_str)
@@ -1155,11 +1180,13 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             f"{self.__class__.__name__} > on_checkbox_click 메소드 시작"
         )
         selected_item_str = self.selected_item_relate_widget.get()
+        pjt_wms = state.team_std_info[f"project-{mode}"]
         project_WM = self.state.team_std_info[f"project-{mode}"].get(selected_item_str)
 
         row = event["row"]
         column = event["column"]
 
+        # 선택행이 아닌 다른 행들 일괄 Uncheck
         for r in range(self.sheet.get_total_rows()):
             if r != row:
                 self.sheet.set_cell_data(r, 0, False)  # Uncheck other rows
@@ -1193,17 +1220,56 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                 or project_WM_gauge != self.sheet.get_cell_data(row, 4)
             ):  ## 행 옮겨 클릭시
                 spec = self.sheet.get_cell_data(row, 1)
-                ## 딴데서 수정된 스펙 받아오기 코드 삽입
+                ## 기존항목서 수정된 스펙 받아오기 코드 삽입
                 if self.update_spec_fromExist(mode="SWM") != "":
                     spec = self.update_spec_fromExist(mode="SWM")
                 unit = self.sheet.get_cell_data(row, 2)
                 gauge = self.sheet.get_cell_data(row, 4)
-
+            else:
+                spec = self.sheet.get_cell_data(row, 1)
+                unit = self.sheet.get_cell_data(row, 2)
+                gauge = self.sheet.get_cell_data(row, 4)
+            self.update()
         elif column == 1:
-            spec = self.sheet.get_cell_data(row, 1)
-            self.edit_spec_sameWMgauge_all(mode="SWM")
-            unit = self.sheet.get_cell_data(row, 2)
-            gauge = self.sheet.get_cell_data(row, 4)
+            if (
+                project_WM_code != selectedRow_wmCode
+                or project_WM_gauge != self.sheet.get_cell_data(row, 4)
+            ):  ## 다른행 옮겨 수정시
+
+                target_keys = go(
+                    pjt_wms.keys(),
+                    filter(lambda k: pjt_wms[k][0] == selectedRow_wmCode),
+                    filter(lambda k: pjt_wms[k][1] == self.sheet.get_cell_data(row, 4)),
+                    list,
+                )
+                print(f"target_keys::{target_keys}")
+                if target_keys:  # 타겟 있으면 그 타겟 데이터 수정
+                    for k in target_keys:
+                        pjt_wms[k][3] = self.sheet.get_cell_data(row, 1)
+                else:  # 타겟 없으면 임시저장
+                    if "not_assigned" not in pjt_wms:
+                        # pjt_wms["not_assigned_gauge"] = []
+                        pjt_wms.update({"not_assigned": []})
+                    pjt_wms["not_assigned"].append(
+                        [
+                            selectedRow_wmCode,
+                            self.sheet.get_cell_data(row, 4),  # Gauge
+                            self.sheet.get_cell_data(row, 2),  # unit
+                            self.sheet.get_cell_data(row, 1),  # spec
+                        ]
+                    )
+                    print(f'not_assigned::{pjt_wms["not_assigned"]}')
+            else:
+                spec = self.sheet.get_cell_data(row, 1)
+                self.edit_spec_sameWMgauge_all(mode="SWM")
+                unit = self.sheet.get_cell_data(row, 2)
+                gauge = self.sheet.get_cell_data(row, 4)
+            self.update()
+        elif column == 4:
+            messagebox.showinfo(
+                "WM Gauge 항목 편집", "Gauge Code는 타이핑으로 편집 할 수 없습니다."
+            )
+            self.update()
 
         # if row_check_status:
         self.state.team_std_info[f"project-{mode}"].update(
@@ -1328,6 +1394,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             deepcopy,
             lambda x: x.keys(),
             filter(lambda x: x not in check_list),
+            filter(lambda x: x != "not_assigned"),
             list,
         )
         for rm in remove_target:
@@ -1352,12 +1419,24 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         selected_wm_gauge = self.sheet.get_cell_data(selected_row, 4)
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
+        target_keys = go(
+            pjt_wms.keys(),
+            filter(lambda k: pjt_wms[k][0] == selected_wm_code),
+            filter(lambda k: pjt_wms[k][1] == selected_wm_gauge),
+            list,
+        )
         tgt_specs = []
-        for k in pjt_wms:
-            v = pjt_wms[k]
-            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
-                tgt_specs.append(v[3])
-        print(f"tgt_spec::{tgt_specs}")
+        if target_keys:
+            for k in pjt_wms:
+                # v = pjt_wms[k]
+                v = pjt_wms.get(k)
+                if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                    tgt_specs.append(v[3])
+            print(f"tgt_spec::{tgt_specs}")
+        else:
+            for v in pjt_wms["not_assigned"]:
+                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                    tgt_specs.append(v[3])
 
         if tgt_specs:
             tgt_spec = tgt_specs[0]
@@ -1383,10 +1462,14 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
         for k in pjt_wms:
-            v = pjt_wms[k]
-            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+            # v = pjt_wms[k]
+            v = pjt_wms.get(k)
+            if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                 v[-1] = self.sheet.get_cell_data(selected_row, 1)
             pjt_wms.update({k: v})
+        for v in pjt_wms["not_assigned"]:
+            if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                v[-1] = self.sheet.get_cell_data(selected_row, 1)
 
     def deleteWM_forGauge(self, mode=None):
         state = self.state
@@ -1420,8 +1503,9 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             # delete 시, 때때로 RuntimeError: dictionary changed size during iteration 발생 해결필요
             rm_target_keys = []
             for k in pjt_wms:
-                v = pjt_wms[k]
-                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                # v = pjt_wms[k]
+                v = pjt_wms.get(k)
+                if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                     # pjt_wms.pop(k)
                     rm_target_keys.append(k)
 
@@ -1473,11 +1557,11 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
                         db_index = node["children"].index(wm)
                         # if chr(idx + 65) != wm.split("::")[-1]:
-                        if chr(idx + 65) != wmGauge_old:
+                        if len(tgt_db_wms_afterDelete) == 1:
+                            wm_new = wm.split("::")[0]
+                        elif chr(idx + 65) != wmGauge_old:
                             wm_new = wm.split("::")[0] + f"::{chr(idx + 65)}"
                             print(f"wm_new_case1!::{wm_new}")
-                        elif len(tgt_db_wms_afterDelete) == 1:
-                            wm_new = wm.split("::")[0]
                         else:
                             wm_new = wm
                             print(f"wm_new_case2!::{wm_new}")
@@ -1499,8 +1583,13 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
                         modi_tgt_dictlist = []
                         for k in pjt_wms:
-                            v = pjt_wms[k]
-                            if v[0] == wm.split("|")[0].strip() and v[1] == wmGauge_old:
+                            # v = pjt_wms[k]
+                            v = pjt_wms.get(k)
+                            if (
+                                v
+                                and v[0] == wm.split("|")[0].strip()
+                                and v[1] == wmGauge_old
+                            ):
                                 new_v = [
                                     v[0],
                                     wmGauge_new,
@@ -1541,7 +1630,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         selected_wm_code = go(
             selected_data,
-            # lambda x: "::".join([x, gauge]),
             lambda x: x.split("|"),
             map(lambda x: x.strip()),
             list,
@@ -1622,10 +1710,17 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
         pjt_wms = state.team_std_info[f"project-{mode}"]
         for k in pjt_wms:
-            v = pjt_wms[k]
-            if v[0] == selected_wm_code and v[1] == "":
+            # v = pjt_wms[k]
+            v = pjt_wms.get(k)
+            if v and v[0] == selected_wm_code and v[1] == "":
                 v[1] = "A"
             pjt_wms.update({k: v})
+        if not pjt_wms.get("not_assigned"):
+            pjt_wms["not_assigned"] = []
+        if pjt_wms["not_assigned"]:
+            for v_ in pjt_wms["not_assigned"]:
+                if v_[0] == selected_wm_code and v_[1] == "":
+                    v_[1] = "A"
 
         self.update()
         self.sheet.update()
@@ -1701,23 +1796,36 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
                             def findSpec_fromPjt(wmStr):
                                 wmCode = wmStr.split("|")[0].strip()
-                                wmGauge = wmStr.split("::")[-1]
+                                wmGauge_ = wmStr.split("::")
+                                if len(wmGauge_) == 1:
+                                    wmGauge = ""
+                                else:
+                                    wmGauge = wmGauge_[-1]
+                                target_keys = go(
+                                    pjt_wms.keys(),
+                                    filter(lambda k: pjt_wms[k][0] == wmCode),
+                                    filter(lambda k: pjt_wms[k][1] == wmGauge),
+                                    list,
+                                )
                                 spec_ = []
-                                for k in pjt_wms:
-                                    v = pjt_wms[k]
-                                    if v[0] == wmCode and v[1] == wmGauge:
-                                        spec_.append(v[3])
+                                if target_keys:
+                                    for k in pjt_wms:
+                                        # v = pjt_wms[k]
+                                        v = pjt_wms.get(k)
+                                        if v and v[0] == wmCode and v[1] == wmGauge:
+                                            spec_.append(v[3])
+                                else:
+                                    for v in pjt_wms["not_assigned"]:
+                                        if v[0] == wmCode and v[1] == wmGauge:
+                                            spec_.append(v[3])
                                 spec = spec_[0]
 
                                 return spec
 
                             def findSpec(wmStr):
-                                if "::" in wmStr:
-                                    try:
-                                        spec = findSpec_fromPjt(wmStr)
-                                    except:
-                                        spec = findSpec_fromStd(wmStr)
-                                else:
+                                try:
+                                    spec = findSpec_fromPjt(wmStr)
+                                except:
                                     spec = findSpec_fromStd(wmStr)
                                 return spec
 
@@ -1751,7 +1859,7 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                             )
 
                             selected_item_str = self.selected_item_relate_widget.get()
-                            decided_WM = state.team_std_info["project-SWM"].get(
+                            decided_WM = state.team_std_info[f"project-{mode}"].get(
                                 selected_item_str, None
                             )
 
