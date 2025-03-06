@@ -1052,6 +1052,63 @@ class TeamStd_GWMTreeView:
             name_depth=2,
             # name_depth=[1, 2],
         )
+
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+
+        def find_stdType_wmItem_in(parent_item_name, catName, typeNo):
+            std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+                "children"
+            ]
+            print(f"경로1!!")
+            path = [catName, typeNo, parent_item_name]
+            # res = self.treeDataManager.find_node_by_path(std_familylist_db, path)
+            # print(f"경로1.1!! ::{res}")
+
+        def update_stdType_wmItem_in(parent_item_name, selected_item_name):
+            std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+                "children"
+            ]
+            all_catNames = go(
+                std_familylist_db,
+                map(lambda x: x["name"]),
+                list,
+            )
+
+            def find_typeNos_inCat(catName):
+                typeNos = go(
+                    std_familylist_db,
+                    filter(lambda x: x["name"] == catName),
+                    next,
+                    lambda x: x["children"],
+                    map(lambda x: x["name"]),
+                    list,
+                )
+                print(f"catName::{catName}")
+                print(f"typeNos::{typeNos}")
+                return typeNos
+
+            # res = go(
+            #     all_catNames,
+            #     map(find_typeNos_inCat),
+            #     list,
+            # )
+
+            res = self.treeDataManager.find_node_by_name_recur(
+                std_familylist_db,
+                parent_item_name,
+            )
+            print(f"zzzzz::{parent_item_name}")
+            print(f"zzzzz::{res}")
+
+            def find_typeNos_wmItem_in():
+                pass
+
+            return res
+
+        update_stdType_wmItem_in(parent_item_name, selected_item_name)
+
         state.observer_manager.notify_observers(state)
 
     def add_top_item(self):

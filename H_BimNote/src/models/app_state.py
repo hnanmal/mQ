@@ -142,6 +142,9 @@ class AppState:
 
         print("dematch_matchedWMs_to_stdType_종료")
 
+    def add_GWM_to_stdFam(self, item):
+        pass
+
     def match_GWM_to_stdFam(self, related_widget):
         def show_auto_warning(content):
             """Display a warning window that disappears after 2 seconds."""

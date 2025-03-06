@@ -23,23 +23,39 @@ class TreeDataManager:
             None,
         )
 
+    # def find_node_by_name_recur(self, data, target_name):
+    #     """Find a node by its name in the given tree structure recursively."""
+    #     # If data is a list, iterate through each node
+    #     if isinstance(data, list):
+    #         for node in data:
+    #             if isinstance(node, dict):
+    #                 # If the current node matches the target name, return it
+    #                 if node.get("name") == target_name:
+    #                     return node
+
+    #                 # If the current node has children, search within them recursively
+    #                 if "children" in node:
+    #                     found_node = self.find_node_by_name(
+    #                         node["children"], target_name
+    #                     )
+    #                     if found_node:
+    #                         return found_node
+    #     return None
+
     def find_node_by_name_recur(self, data, target_name):
         """Find a node by its name in the given tree structure recursively."""
-        # If data is a list, iterate through each node
-        if isinstance(data, list):
+        if isinstance(data, dict):  # 단일 노드가 들어온 경우 처리
+            if data.get("name") == target_name:
+                return data
+            if "children" in data:
+                return self.find_node_by_name_recur(data["children"], target_name)
+
+        elif isinstance(data, list):  # 리스트일 경우
             for node in data:
                 if isinstance(node, dict):
-                    # If the current node matches the target name, return it
-                    if node.get("name") == target_name:
-                        return node
-
-                    # If the current node has children, search within them recursively
-                    if "children" in node:
-                        found_node = self.find_node_by_name(
-                            node["children"], target_name
-                        )
-                        if found_node:
-                            return found_node
+                    found_node = self.find_node_by_name_recur(node, target_name)
+                    if found_node:
+                        return found_node
         return None
 
     def find_node_by_path(self, data, path):
