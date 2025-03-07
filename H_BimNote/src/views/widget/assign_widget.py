@@ -346,9 +346,9 @@ class WMapply_button:
             total_WM_data = gwm_data + swm_data
             matched_assigntype["children"].extend(total_WM_data)
 
-            print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
-            print(f"matched_assigntype: {matched_assigntype['children']}")
-            print(f"total_WM_data: {total_WM_data}")
+            # print(f"selected_rvtTypes_value: {selected_rvtTypes_value}")
+            # print(f"matched_assigntype: {matched_assigntype['children']}")
+            # print(f"total_WM_data: {total_WM_data}")
 
         ## project_WM_perRVT_SheetView 업데이트
         state.project_WM_perRVT_SheetView.update()

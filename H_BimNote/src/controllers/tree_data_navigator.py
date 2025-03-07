@@ -23,25 +23,6 @@ class TreeDataManager:
             None,
         )
 
-    # def find_node_by_name_recur(self, data, target_name):
-    #     """Find a node by its name in the given tree structure recursively."""
-    #     # If data is a list, iterate through each node
-    #     if isinstance(data, list):
-    #         for node in data:
-    #             if isinstance(node, dict):
-    #                 # If the current node matches the target name, return it
-    #                 if node.get("name") == target_name:
-    #                     return node
-
-    #                 # If the current node has children, search within them recursively
-    #                 if "children" in node:
-    #                     found_node = self.find_node_by_name(
-    #                         node["children"], target_name
-    #                     )
-    #                     if found_node:
-    #                         return found_node
-    #     return None
-
     def find_node_by_name_recur(self, data, target_name):
         """Find a node by its name in the given tree structure recursively."""
         if isinstance(data, dict):  # 단일 노드가 들어온 경우 처리
@@ -57,6 +38,36 @@ class TreeDataManager:
                     if found_node:
                         return found_node
         return None
+
+    def find_parentnodes_by_childname_recur(
+        self, data, child_name, parent=None, parents=None
+    ):
+        """Find all parent nodes of a given child node by its name in a tree structure recursively."""
+
+        if parents is None:
+            parents = []  # 부모 노드들을 저장할 리스트
+
+        if isinstance(data, dict):  # 단일 노드일 경우
+            if "children" in data:
+                # 현재 노드의 자식 중에 child_name을 가진 노드가 있는지 확인
+                for child in data["children"]:
+                    if isinstance(child, dict) and child.get("name") == child_name:
+                        parents.append(data)  # 현재 노드를 부모로 저장
+
+                # 자식 노드들에 대해 재귀 호출
+                for child in data["children"]:
+                    self.find_parentnodes_by_childname_recur(
+                        child, child_name, data, parents
+                    )
+
+        elif isinstance(data, list):  # 리스트 형태의 데이터일 경우
+            for node in data:
+                if isinstance(node, dict):
+                    self.find_parentnodes_by_childname_recur(
+                        node, child_name, None, parents
+                    )
+
+        return parents  # 모든 부모 노드 리스트 반환
 
     def find_node_by_path(self, data, path):
         """Find a node by traversing the given path in the tree structure."""
@@ -401,6 +412,7 @@ class TreeDataManager:
             index = children_list.index(selected_node)
             children_list.insert(index + 1, copied_node)
             print(f"Copied node '{target_name}' to '{new_name}'.")
+            return copied_node
 
         except Exception as e:
             print(f"Error copying node: {e}")
@@ -597,11 +609,19 @@ class TreeDataManager_treeview(TreeDataManager):
                 _data=data,
             )
 
-            selected_GWMitem = {
-                "name": state.selected_GWMSWM[2],
-                "values": ["", "", "", "", "", state.selected_GWMSWM[2], ""],
-                "children": [],
-            }
+            # selected_GWMitem = {
+            #     "name": state.selected_GWMSWM[2],
+            #     "values": ["", "", "", "", "", state.selected_GWMSWM[2], ""],
+            #     "children": [],
+            # }
+            selected_GWMitem = selected_GWMitems_copy[0]
+
+            # Update the values for the item
+            new_values = list(selected_GWMitem["values"])
+            new_values.insert(0, "")
+            new_values.insert(0, "")
+            new_values.insert(0, "")
+            selected_GWMitem.update({"values": new_values})
 
             existing_names = {
                 child["name"] for child in selected_node.get("children", [])

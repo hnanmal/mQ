@@ -17,6 +17,7 @@ from ttkbootstrap.tableview import Tableview
 from src.views.widget.treeview_editor import (
     TreeviewEditor,
     TreeviewEditor_forBuildingList,
+    TreeviewEditor_stdGWMSWM,
 )
 from src.views.widget.widget import StateObserver
 
@@ -751,7 +752,8 @@ class TeamStd_GWMTreeView:
         self.treeview.setup_columns(headers, hdr_widths)
 
         # set treeview_editor class
-        self.treeviewEditor = TreeviewEditor(state, self)
+        # self.treeviewEditor = TreeviewEditor(state, self)
+        self.treeviewEditor = TreeviewEditor_stdGWMSWM(state, self)
 
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
@@ -1004,6 +1006,110 @@ class TeamStd_GWMTreeView:
         )
         state.observer_manager.notify_observers(state)
 
+    def update_editing_stdType_wmItem_in(self, new_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        old_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = self.treeview.tree.item(parent_id, "text")
+
+        print(f"check GWM_parent_name::{GWM_parent_name}")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name, old_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.update_node_value(
+                "std-familylist",
+                path,
+                5,
+                new_name,
+            )
+            self.treeDataManager.update_node_name(
+                "std-familylist",
+                path,
+                new_name,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_copying_stdType_wmItem_in(self, copied_node, parent_item_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            parent_item_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = parent_item_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: x + [target_GWM_name]),
+            list,
+        )
+
+        for path in target_paths:
+            self.treeDataManager.match_GWMitems_to_stdFam(
+                "std-familylist",
+                *path,
+                [copied_node],
+            )
+
+        return target_parent_nodes
+
     def copy_item(self):
         state = self.state
 
@@ -1045,7 +1151,7 @@ class TeamStd_GWMTreeView:
         )
         print(f"path: {path}")
 
-        self.treeDataManager.copy_node(
+        copied_node = self.treeDataManager.copy_node(
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
@@ -1053,61 +1159,7 @@ class TeamStd_GWMTreeView:
             # name_depth=[1, 2],
         )
 
-        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
-            "children"
-        ]
-
-        def find_stdType_wmItem_in(parent_item_name, catName, typeNo):
-            std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
-                "children"
-            ]
-            print(f"경로1!!")
-            path = [catName, typeNo, parent_item_name]
-            # res = self.treeDataManager.find_node_by_path(std_familylist_db, path)
-            # print(f"경로1.1!! ::{res}")
-
-        def update_stdType_wmItem_in(parent_item_name, selected_item_name):
-            std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
-                "children"
-            ]
-            all_catNames = go(
-                std_familylist_db,
-                map(lambda x: x["name"]),
-                list,
-            )
-
-            def find_typeNos_inCat(catName):
-                typeNos = go(
-                    std_familylist_db,
-                    filter(lambda x: x["name"] == catName),
-                    next,
-                    lambda x: x["children"],
-                    map(lambda x: x["name"]),
-                    list,
-                )
-                print(f"catName::{catName}")
-                print(f"typeNos::{typeNos}")
-                return typeNos
-
-            # res = go(
-            #     all_catNames,
-            #     map(find_typeNos_inCat),
-            #     list,
-            # )
-
-            res = self.treeDataManager.find_node_by_name_recur(
-                std_familylist_db,
-                parent_item_name,
-            )
-            print(f"zzzzz::{parent_item_name}")
-            print(f"zzzzz::{res}")
-
-            def find_typeNos_wmItem_in():
-                pass
-
-            return res
-
-        update_stdType_wmItem_in(parent_item_name, selected_item_name)
+        self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
 
         state.observer_manager.notify_observers(state)
 

@@ -159,6 +159,63 @@ class TreeviewEditor:
         return path
 
 
+class TreeviewEditor_stdGWMSWM(TreeviewEditor):
+    def on_edit_complete(self, event):
+        if self.current_item is None or self.current_column is None:
+            return
+
+        print(f"트리뷰수정이벤트::{event}")
+        # Get the updated value from the Entry widget
+        new_value = self.entry_widget.get()
+
+        # Calc-Dict 자동 업데이트
+        if self.current_column == 8 and new_value.startswith("Q"):
+            std_calcdict = self.state.team_std_info["std-calcdict"]["children"]
+            calcdict_nums = go(
+                std_calcdict,
+                map(lambda x: x["name"]),
+                list,
+            )
+            if new_value not in calcdict_nums:
+                std_calcdict.append(
+                    {
+                        "name": new_value,
+                        "values": [new_value],
+                        "children": [],
+                    }
+                )
+
+        # Update the state with the new value using TreeDataManager
+        selected_name = self.tree.item(self.current_item, "text")
+        parent_path = self.get_item_path(self.current_item)
+        self.data_manager.update_node_value(
+            data_kind=self.impl_treeview.data_kind,
+            path=parent_path,
+            column_index=self.current_column,
+            new_value=new_value,
+        )
+
+        # If the modified column matches the level depth, update the name as well
+        depth = self.get_item_depth(self.current_item)
+        if self.current_column == depth:
+            self.data_manager.update_node_name(
+                data_kind=self.impl_treeview.data_kind,
+                path=parent_path,
+                new_name=new_value,
+            )
+
+        # Update the GWM/SWM item name in std-familylist
+        print("손잭스")
+        self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+
+        # Notify observers that the state has been updated
+        self.state.observer_manager.notify_observers(self.state)
+
+        # Destroy the Entry widget
+        self.entry_widget.destroy()
+        self.entry_widget = None
+
+
 class TreeviewEditor_forAssignTreeview(TreeviewEditor):
 
     def on_edit_complete(self, event):
