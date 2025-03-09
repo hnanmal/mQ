@@ -714,6 +714,15 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
                         for md_k in modi_tgt_dictlist:
                             pjt_wms.update(md_k)
+
+                        for idx, v in enumerate(pjt_wms["not_assigned"]):
+                            if wmGauge_old != wmGauge_new:
+                                if v[0] == selected_wm_code and v[1] == wmGauge_new:
+                                    del pjt_wms["not_assigned"][idx]
+                        for idx, v in enumerate(pjt_wms["not_assigned"]):
+                            if wmGauge_old != wmGauge_new:
+                                if v[0] == selected_wm_code and v[1] == wmGauge_old:
+                                    pjt_wms["not_assigned"][idx][1] = wmGauge_new
                 except:
                     pass
 

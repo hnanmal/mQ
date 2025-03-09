@@ -31,14 +31,6 @@ document.getElementById("fetchProperties").addEventListener("click", async () =>
 
 // popup.js가 content.js로부터 메시지를 받아 UI 업데이트
 
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//     console.log("[popup.js] content.js로부터 메시지 수신:", message);
-
-//     if (message.action === "displayProperties") {
-//         document.getElementById("output").textContent = message.data;
-//     }
-// });
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "displayProperties") {
         // 새 창을 열어서 결과를 출력합니다.
