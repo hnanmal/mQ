@@ -810,6 +810,7 @@ class TeamStd_GWMTreeView:
             self.treeview.insert_data_with_levels(data)
 
             self.treeview.expand_tree_to_level(level=view_level)
+
         # Reselect the item if possible
         if origin_indices:
             try:
@@ -1005,6 +1006,162 @@ class TeamStd_GWMTreeView:
             # name_depth=[1, 2],
         )
         state.observer_manager.notify_observers(state)
+
+    def update_deleting_stdType_GWMSWM_in(self):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        target_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = target_name
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.delete_node(
+                "std-familylist",
+                path,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_deleting_stdType_wmItem_in(self):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        target_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = self.treeview.tree.item(parent_id, "text")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name, target_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.delete_node(
+                "std-familylist",
+                path,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_editing_stdType_GWMSWM_in(self, new_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        old_name = self.treeview.tree.item(selected_id, "text")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            old_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = old_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.update_node_value(
+                "std-familylist",
+                path,
+                4,
+                new_name,
+            )
+            self.treeDataManager.update_node_name(
+                "std-familylist",
+                path,
+                new_name,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
 
     def update_editing_stdType_wmItem_in(self, new_name):
         state = self.state
@@ -1229,12 +1386,23 @@ class TeamStd_GWMTreeView:
             print("Could not construct a valid path for the selected item.")
             return
 
+        # self.current_item = selected_item_id
+        self.current_column = go(
+            self.treeview.tree.item(selected_item_id, "values"),
+            lambda x: next((i for i, s in enumerate(x) if s), None),
+        )
+
         # Pass the full path to the delete_node method
         try:
             self.treeDataManager.delete_node(self.data_kind, full_path)
             print(f"Successfully deleted item with path: {full_path}")
         except Exception as e:
             print(f"Error deleting item with path {full_path}: {e}")
+
+        if self.current_column == 2:
+            self.update_deleting_stdType_wmItem_in()
+        elif self.current_column == 1:
+            self.update_deleting_stdType_GWMSWM_in()
 
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)
@@ -1442,7 +1610,7 @@ class TeamStd_SWMTreeView:
         self.treeview.setup_columns(headers, hdr_widths)
 
         # set treeview_editor class
-        self.treeviewEditor = TreeviewEditor(state, self)
+        self.treeviewEditor = TreeviewEditor_stdGWMSWM(state, self)
 
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
@@ -1697,6 +1865,266 @@ class TeamStd_SWMTreeView:
         )
         state.observer_manager.notify_observers(state)
 
+    def update_deleting_stdType_GWMSWM_in(self):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        target_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = target_name
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.delete_node(
+                "std-familylist",
+                path,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_deleting_stdType_wmItem_in(self):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        target_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = self.treeview.tree.item(parent_id, "text")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name, target_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.delete_node(
+                "std-familylist",
+                path,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_editing_stdType_GWMSWM_in(self, new_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        old_name = self.treeview.tree.item(selected_id, "text")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            old_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = old_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.update_node_value(
+                "std-familylist",
+                path,
+                4,
+                new_name,
+            )
+            self.treeDataManager.update_node_name(
+                "std-familylist",
+                path,
+                new_name,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_editing_stdType_wmItem_in(self, new_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+        selected_id = self.treeview.tree.selection()
+        parent_id = self.treeview.tree.parent(selected_id)
+        old_name = self.treeview.tree.item(selected_id, "text")
+        GWM_parent_name = self.treeview.tree.item(parent_id, "text")
+
+        print(f"check SWM_parent_name::{GWM_parent_name}")
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            GWM_parent_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = GWM_parent_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: ["Top"] + x + [target_GWM_name, old_name]),
+            list,
+        )
+        print(f"target_paths::{target_paths}")
+
+        for path in target_paths:
+            self.treeDataManager.update_node_value(
+                "std-familylist",
+                path,
+                5,
+                new_name,
+            )
+            self.treeDataManager.update_node_name(
+                "std-familylist",
+                path,
+                new_name,
+            )
+
+        state.observer_manager.notify_observers(state)
+        return target_parent_nodes
+
+    def update_copying_stdType_wmItem_in(self, copied_node, parent_item_name):
+        state = self.state
+        std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
+            "children"
+        ]
+
+        target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
+            std_familylist_db,
+            parent_item_name,
+        )
+        target_parent_names = go(
+            target_parent_nodes,
+            map(lambda x: x["name"]),
+            list,
+        )
+        target_grand_names = go(
+            target_parent_names,
+            map(
+                lambda x: self.treeDataManager.find_parentnodes_by_childname_recur(
+                    std_familylist_db,
+                    x,
+                )
+            ),
+            map(lambda x: list(x)[0]["name"]),
+            list,
+        )
+        target_GWM_name = parent_item_name
+
+        target_paths = go(
+            zip(target_grand_names, target_parent_names),
+            map(list),
+            list,
+            map(lambda x: x + [target_GWM_name]),
+            list,
+        )
+
+        for path in target_paths:
+            self.treeDataManager.match_GWMitems_to_stdFam(
+                "std-familylist",
+                *path,
+                [copied_node],
+            )
+
+        return target_parent_nodes
+
     def copy_item(self):
         state = self.state
 
@@ -1738,13 +2166,16 @@ class TeamStd_SWMTreeView:
         )
         print(f"path: {path}")
 
-        self.treeDataManager.copy_node(
+        copied_node = self.treeDataManager.copy_node(
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
             name_depth=2,
             # name_depth=[1, 2],
         )
+
+        self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+
         state.observer_manager.notify_observers(state)
 
     def add_top_item(self):
@@ -1819,6 +2250,11 @@ class TeamStd_SWMTreeView:
             print(f"Successfully deleted item with path: {full_path}")
         except Exception as e:
             print(f"Error deleting item with path {full_path}: {e}")
+
+        if self.current_column == 2:
+            self.update_deleting_stdType_wmItem_in()
+        elif self.current_column == 1:
+            self.update_deleting_stdType_GWMSWM_in()
 
         # Notify observers about the state update
         state.observer_manager.notify_observers(state)

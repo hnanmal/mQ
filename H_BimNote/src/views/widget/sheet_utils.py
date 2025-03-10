@@ -294,7 +294,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         print(f"이벤트: {event}")
         print(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
 
-        # wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
         selectedRow_wmCode = go(
             self.sheet.get_cell_data(row, 3),
             lambda x: x.split("|"),
@@ -315,8 +314,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             ):  ## 행 옮겨 클릭시
                 spec = self.sheet.get_cell_data(row, 1)
                 ## 기존항목서 수정된 스펙 받아오기 코드 삽입
-                if self.update_spec_fromExist(mode="GWM") != "":
-                    spec = self.update_spec_fromExist(mode="GWM")
+                if self.update_spec_fromExist(mode=mode) != "":
+                    spec = self.update_spec_fromExist(mode=mode)
                 unit = self.sheet.get_cell_data(row, 2)
                 gauge = self.sheet.get_cell_data(row, 4)
             else:
@@ -385,7 +384,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         self.state.team_std_info[f"project-{mode}"].update(
             {selected_item_str: [selectedRow_wmCode, gauge, unit, spec]}
         )
-        print(f"변경칼럼?{column}")
         print(self.state.team_std_info[f"project-{mode}"][selected_item_str])
         self.update()
         self.highlight_checked_row()
@@ -542,7 +540,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
         print(f"{target_keys}")
         if target_keys:
             for k in pjt_wms:
-                # v = pjt_wms[k]
                 v = pjt_wms.get(k)
                 if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                     tgt_specs.append(v[3])
@@ -695,18 +692,20 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
                         modi_tgt_dictlist = []
                         for k in pjt_wms:
-                            # v = pjt_wms[k]
                             v = pjt_wms.get(k)
                             if (
-                                v
+                                k != "not_assigned"
+                                and v
                                 and v[0] == wm.split("|")[0].strip()
                                 and v[1] == wmGauge_old
                             ):
+                                old_spec = v[3]
                                 new_v = [
                                     v[0],
                                     wmGauge_new,
                                     v[2],
-                                    v[3],
+                                    # v[3],
+                                    old_spec,
                                 ]
                                 print(new_v)
                                 modi_tgt_dictlist.append({k: new_v})
@@ -1211,7 +1210,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         print(f"이벤트: {event}")
         print(f"위치: {loc}, 체크스테이터스 : {row_check_status}")
 
-        # wm_code = self.sheet.get_cell_data(row, 3).split(" | ")[0]
         selectedRow_wmCode = go(
             self.sheet.get_cell_data(row, 3),
             lambda x: x.split("|"),
@@ -1232,8 +1230,8 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
             ):  ## 행 옮겨 클릭시
                 spec = self.sheet.get_cell_data(row, 1)
                 ## 기존항목서 수정된 스펙 받아오기 코드 삽입
-                if self.update_spec_fromExist(mode="SWM") != "":
-                    spec = self.update_spec_fromExist(mode="SWM")
+                if self.update_spec_fromExist(mode=mode) != "":
+                    spec = self.update_spec_fromExist(mode=mode)
                 unit = self.sheet.get_cell_data(row, 2)
                 gauge = self.sheet.get_cell_data(row, 4)
             else:
@@ -1458,7 +1456,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
         print(f"{target_keys}")
         if target_keys:
             for k in pjt_wms:
-                # v = pjt_wms[k]
                 v = pjt_wms.get(k)
                 if v and v[0] == selected_wm_code and v[1] == selected_wm_gauge:
                     tgt_specs.append(v[3])
@@ -2639,6 +2636,7 @@ class Project_WM_perRVT_SheetView:
 
     def update(self, event=None):
         state = self.state
+        # data = state.team_std_info.get("project-assigntype")
         data = state.team_std_info.get("project-assigntype")
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
@@ -2722,9 +2720,10 @@ class Project_WM_perRVT_SheetView:
             try:
                 target_data = go(
                     data["children"],
+                    # deepcopy,
+                    filter(lambda x: x["values"][1] == current_building.get()),
                     filter(lambda x: x["name"] == selected_rvtTypes_name),
-                    list,
-                    lambda x: x[0],
+                    next,
                     lambda x: x["children"],
                 )
 

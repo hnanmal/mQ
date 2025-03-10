@@ -1,18 +1,3 @@
-// document.getElementById("fetchProperties").addEventListener("click", async () => {
-//     console.log("[popup.js] 버튼 클릭됨 - 메시지 전송 시작");
-
-//     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-//     chrome.scripting.executeScript({
-//         target: { tabId: tab.id },
-//         function: () => {
-//             console.log("[popup.js] content.js로 메시지 전송 중...");
-//             window.postMessage({ action: "fetchProperties" }, "*");
-//         }
-//     });
-
-//     console.log("[popup.js] 메시지 전송 완료");
-// });
 document.getElementById("fetchProperties").addEventListener("click", async () => {
     console.log("[popup.js] 버튼 클릭됨 - content.js로 메시지 전송");
 
@@ -27,6 +12,20 @@ document.getElementById("fetchProperties").addEventListener("click", async () =>
     });
     console.log("[popup.js] 메시지 전송 완료");
 });
+
+// document.getElementById("fetchFamilyTypes").addEventListener("click", async () => {
+//     console.log("[popup.js] fetchFamilyTypes 버튼 클릭됨");
+//     let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+//     chrome.scripting.executeScript({
+//         target: { tabId: tab.id },
+//         function: () => {
+//             console.log("[popup.js] MAIN world에서 fetchFamilyTypes 메시지 실행");
+//             window.postMessage({ action: "fetchFamilyTypes" }, "*");
+//         },
+//         world: "MAIN"
+//     });
+//     console.log("[popup.js] fetchFamilyTypes 메시지 전송 완료");
+// });
 
 
 // popup.js가 content.js로부터 메시지를 받아 UI 업데이트

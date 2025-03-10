@@ -70,7 +70,8 @@ class TreeviewEditor:
         self.entry_widget.bind("<Return>", self.on_edit_complete)
         self.entry_widget.bind("<Escape>", self.on_edit_cancel)
         self.tree.bind("<MouseWheel>", self.on_edit_cancel)
-        self.entry_widget.bind("<FocusOut>", self.on_edit_complete)
+        # self.entry_widget.bind("<FocusOut>", self.on_edit_complete)
+        self.entry_widget.bind("<FocusOut>", self.on_edit_cancel)
 
     def on_scroll(self, event):
         """Ask the user whether to cancel editing when they scroll."""
@@ -205,8 +206,16 @@ class TreeviewEditor_stdGWMSWM(TreeviewEditor):
             )
 
         # Update the GWM/SWM item name in std-familylist
-        print("손잭스")
-        self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+        print(f"손잭스 - column : {self.current_column}")
+        # self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+        if (
+            self.impl_treeview.data_kind == "std-GWM"
+            or self.impl_treeview.data_kind == "std-SWM"
+        ):
+            if self.current_column == 2:
+                self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+            elif self.current_column == 1:
+                self.impl_treeview.update_editing_stdType_GWMSWM_in(new_value)
 
         # Notify observers that the state has been updated
         self.state.observer_manager.notify_observers(self.state)
