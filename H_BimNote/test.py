@@ -1,222 +1,78 @@
-import ttkbootstrap as ttkb
-from ttkbootstrap.constants import *
-from tkinter import Menu, messagebox
-from datetime import datetime
-import os  # For file opening
+import tkinter as tk
+from tkinter import ttk
 
 
-class FileItem(ttkb.Frame):
-    def __init__(
-        self, master, parent_widget, icon, file_info, is_pinned=False, **kwargs
-    ):
-        super().__init__(master, **kwargs)
-        self.is_pinned = is_pinned
-        self.parent_widget = parent_widget  # Reference to RecentPinnedWidget
+class TreeviewHighlighter:
+    def __init__(self, root):
+        self.tree = ttk.Treeview(root, columns=("Values",), show="tree headings")
+        self.tree.heading("#0", text="Name")
+        self.tree.heading("Values", text="Values")
 
-        # Store default styles
-        self.default_borderwidth = self.cget("borderwidth")
-        self.default_relief = self.cget("relief")
+        # 트리뷰에 데이터 삽입 (부모-자식 관계)
+        self.populate_tree()
 
-        # Extract file name and path from the provided dictionary
-        file_path = file_info.get("name", "")
-        file_name = os.path.basename(file_path)
+        # 스타일 및 태그 설정
+        self.style = ttk.Style()
+        self.style.configure(
+            "Treeview.Highlighted.TLabel", foreground="red"
+        )  # 스타일 정의
 
-        # Get file modification date
-        modified_date = self.get_modified_date(file_path)
-
-        # Icon Label
-        self.icon_label = ttkb.Label(self, text=icon, font=("Arial", 12))
-        self.icon_label.pack(side="left", padx=5)
-
-        # File Details Frame
-        details_frame = ttkb.Frame(self)
-        details_frame.pack(side="left", fill="x", expand=True, anchor="w")
-
-        # File Name Label
-        self.name_label = ttkb.Label(
-            details_frame, text=file_name, font=("Arial", 10, "bold")
+        # 버튼 추가 (강조 기능 실행)
+        highlight_button = tk.Button(
+            root, text="Highlight Matches", command=self.highlight_matching_items
         )
-        self.name_label.pack(anchor="w")
+        highlight_button.pack(pady=5)
 
-        # File Path Label
-        self.path_label = ttkb.Label(
-            details_frame, text=file_path, font=("Arial", 8), foreground="gray"
+        self.tree.pack(expand=True, fill="both")
+
+    def populate_tree(self):
+        """트리뷰에 부모-자식 관계로 데이터 추가"""
+        parent1 = self.tree.insert(
+            "", "end", text="Parent 1", values=("Hello, world!",)
         )
-        self.path_label.pack(anchor="w")
-
-        # Modified Date Label
-        self.date_label = ttkb.Label(
-            self, text=modified_date, font=("Arial", 9), foreground="gray"
+        self.tree.insert(
+            parent1,
+            "end",
+            text="Child 1.1",
+            values=("Matching Value",),
+            tags=("highlight",),
         )
-        self.date_label.pack(side="right", padx=5)
+        self.tree.insert(parent1, "end", text="Child 1.2", values=("No match",))
 
-        # Bind right-click menu directly to the parent_widget
-        self.bind("<Button-3>", self.parent_widget.show_context_menu)
-        self.icon_label.bind("<Button-3>", self.parent_widget.show_context_menu)
-        self.name_label.bind("<Button-3>", self.parent_widget.show_context_menu)
-        self.date_label.bind("<Button-3>", self.parent_widget.show_context_menu)
-        self.path_label.bind("<Button-3>", self.parent_widget.show_context_menu)
-
-        # Bind hover and double-click events
-        self.bind("<Enter>", self.on_hover)
-        self.bind("<Leave>", self.on_leave)
-        self.bind("<Double-1>", self.open_file)
-
-        # Apply hover bindings to sub-elements
-        for widget in [
-            self.icon_label,
-            self.name_label,
-            self.date_label,
-            self.path_label,
-        ]:
-            widget.bind("<Enter>", self.on_hover)
-            widget.bind("<Leave>", self.on_leave)
-            widget.bind("<Double-1>", self.open_file)
-
-    def get_modified_date(self, file_path):
-        try:
-            timestamp = os.path.getmtime(file_path)
-            return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M")
-        except FileNotFoundError:
-            return "File not found"
-
-    def on_hover(self, event):
-        self.config(borderwidth=1, relief="solid")
-
-    def on_leave(self, event):
-        # Restore default styles
-        self.config(borderwidth=self.default_borderwidth, relief=self.default_relief)
-
-    def open_file(self, event):
-        file_path = self.path_label.cget("text")
-        try:
-            os.startfile(file_path)  # Opens the file with the default program
-        except Exception as e:
-            messagebox.showerror("Error", f"Unable to open {file_path}: {str(e)}")
-
-
-class RecentPinnedWidget(ttkb.Frame):
-    def __init__(self, master, app_state, **kwargs):
-        super().__init__(master, **kwargs)
-        self.app_state = app_state
-
-        # Right-click context menu
-        self.menu = Menu(self, tearoff=0)
-        self.menu.add_command(label="Open", command=self.open_item)
-        self.pin_command = self.menu.add_command(label="Pin", command=self.pin_item)
-        self.unpin_command = self.menu.add_command(
-            label="Unpin", command=self.unpin_item
+        parent2 = self.tree.insert(
+            "", "end", text="Parent 2", values=("Contains: Match!",)
         )
-        self.menu.add_command(label="Remove", command=self.remove_item)
+        self.tree.insert(parent2, "end", text="Child 2.1", values=("Some other text",))
+        self.tree.insert(parent2, "end", text="Child 2.2", values=("Match found",))
 
-        # Header
-        ttkb.Label(
-            self, text="📄 Recent Items", font=("Arial", 12, "bold"), anchor="w"
-        ).pack(fill="x", padx=10, pady=(10, 0))
-        self.recent_frame = ttkb.Frame(self)
-        self.recent_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        # 태그 스타일 적용
+        self.tree.tag_configure("highlight", foreground="red")
 
-        ttkb.Label(
-            self, text="📌 Pinned Items", font=("Arial", 12, "bold"), anchor="w"
-        ).pack(fill="x", padx=10, pady=(10, 0))
-        self.pinned_frame = ttkb.Frame(self)
-        self.pinned_frame.pack(fill="both", expand=True, padx=10, pady=5)
+    def highlight_matching_items(self):
+        """values에 특정 문자열이 포함된 항목을 붉은색으로 표시"""
+        search_term = "Match"  # 찾을 문자열
 
-        # Load initial items
-        self.load_items()
+        for item in self.tree.get_children():
+            self.check_and_highlight(item, search_term)
 
-    def load_items(self):
-        for frame in [self.recent_frame, self.pinned_frame]:
-            for widget in frame.winfo_children():
-                widget.destroy()
+    def check_and_highlight(self, item, search_term):
+        """재귀적으로 트리 아이템을 검사하고, 특정 문자열이 포함된 경우 색상을 변경"""
+        values = self.tree.item(item, "values")
 
-        for item in self.app_state.get("recent_items", []):
-            file_item = FileItem(self.recent_frame, self, "🗂️", item, is_pinned=False)
-            file_item.pack(fill="x", pady=5, padx=5)
+        if any(
+            search_term in str(value) for value in values
+        ):  # 값에 특정 문자열 포함 여부 검사
+            self.tree.item(item, tags=("highlight",))  # 태그 적용
 
-        for item in self.app_state.get("pinned_items", []):
-            file_item = FileItem(self.pinned_frame, self, "📌", item, is_pinned=True)
-            file_item.pack(fill="x", pady=5, padx=5)
-
-    def get_parent_file_item(self, widget):
-        while widget:
-            if isinstance(widget, FileItem):
-                return widget
-            widget = widget.master
-        return None
-
-    def show_context_menu(self, event):
-        self.selected_item = self.get_parent_file_item(event.widget)
-
-        if self.selected_item:
-            # Toggle Pin/Unpin visibility based on the item
-            if self.selected_item.is_pinned:
-                self.menu.entryconfig("Pin", state="disabled")
-                self.menu.entryconfig("Unpin", state="normal")
-            else:
-                self.menu.entryconfig("Pin", state="normal")
-                self.menu.entryconfig("Unpin", state="disabled")
-
-            self.menu.post(event.x_root, event.y_root)
-
-    def open_item(self):
-        file_path = self.selected_item.path_label.cget("text")
-        try:
-            os.startfile(file_path)
-        except Exception as e:
-            messagebox.showerror("Error", f"Unable to open {file_path}: {str(e)}")
-
-    def pin_item(self):
-        file_path = self.selected_item.path_label.cget("text")
-        item = next(
-            (i for i in self.app_state["recent_items"] if i["name"] == file_path), None
-        )
-        if item:
-            self.app_state["recent_items"].remove(item)
-            self.app_state["pinned_items"].append(item)
-            self.load_items()
-
-    def unpin_item(self):
-        file_path = self.selected_item.path_label.cget("text")
-        item = next(
-            (i for i in self.app_state["pinned_items"] if i["name"] == file_path), None
-        )
-        if item:
-            self.app_state["pinned_items"].remove(item)
-            self.app_state["recent_items"].append(item)
-            self.load_items()
-
-    def remove_item(self):
-        file_path = self.selected_item.path_label.cget("text")
-        self.app_state["recent_items"] = [
-            item for item in self.app_state["recent_items"] if item["name"] != file_path
-        ]
-        self.app_state["pinned_items"] = [
-            item for item in self.app_state["pinned_items"] if item["name"] != file_path
-        ]
-        self.load_items()
+        for child in self.tree.get_children(item):  # 재귀적으로 자식 항목 검사
+            self.check_and_highlight(child, search_term)
 
 
-# Demo Application
-if __name__ == "__main__":
-    root = ttkb.Window(themename="flatly")
-    root.title("Recent & Pinned Items")
-    root.geometry("400x500")
+# 실행
+root = tk.Tk()
+root.title("Treeview Highlighter Example")
+root.geometry("400x300")
 
-    # Sample App State
-    app_state = {
-        "recent_items": [
-            {"name": "C:\\MK\\MQ\\h_bimnote\\SACE2_.BNOTE"},
-            {"name": "C:\\MK\\MQ\\h_bimnote\\logo.pptx"},
-            {"name": "C:\\MK\\MQ\\h_bimnote\\화면정의서.pptx"},
-        ],
-        "pinned_items": [
-            {"name": "C:\\MK\\MQ\\h_bimnote\\백일장AI일러스트.pptx"},
-            {"name": "C:\\MK\\MQ\\h_bimnote\\백일장단문매크로용.pptx"},
-        ],
-    }
+app = TreeviewHighlighter(root)
 
-    widget = RecentPinnedWidget(root, app_state)
-    widget.pack(fill="both", expand=True, padx=10, pady=10)
-
-    root.mainloop()
+root.mainloop()

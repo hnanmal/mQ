@@ -618,7 +618,6 @@ class BaseTreeView:
         for node in data:
             if isinstance(node, dict):
                 # Extract the last value in the 'values' list to be displayed in the TreeView
-                # display_value = node["values"][-1] if node["values"] else ""
                 display_value = node["values"]
 
                 # Insert the current node with its name and the last value from 'values'
@@ -1164,6 +1163,7 @@ class TeamStd_GWMTreeView:
         return target_parent_nodes
 
     def update_editing_stdType_wmItem_in(self, new_name):
+        mode = self.data_kind.split("-")[-1]
         state = self.state
         std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
             "children"
@@ -1173,6 +1173,18 @@ class TeamStd_GWMTreeView:
         old_name = self.treeview.tree.item(selected_id, "text")
         GWM_parent_name = self.treeview.tree.item(parent_id, "text")
 
+        ## pjt-GWM의 키값에 바뀐 이름 업데이트 하기
+        old_path_str = self.selected_item.get()
+        old_path_forPjtGWMSWM = old_path_str.split(" | ")
+        new_path_forPjtGWMSWM = deepcopy(old_path_forPjtGWMSWM)
+        new_path_forPjtGWMSWM[-1] = new_name
+        new_path_str = " | ".join(new_path_forPjtGWMSWM)
+
+        state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
+            f"project-{mode}"
+        ].pop(old_path_str)
+
+        # 패밀리리스트 업데이트 구간
         print(f"check GWM_parent_name::{GWM_parent_name}")
 
         target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
@@ -2022,6 +2034,7 @@ class TeamStd_SWMTreeView:
         return target_parent_nodes
 
     def update_editing_stdType_wmItem_in(self, new_name):
+        mode = self.data_kind.split("-")[-1]
         state = self.state
         std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
             "children"
@@ -2031,6 +2044,18 @@ class TeamStd_SWMTreeView:
         old_name = self.treeview.tree.item(selected_id, "text")
         GWM_parent_name = self.treeview.tree.item(parent_id, "text")
 
+        ## pjt-GWM의 키값에 바뀐 이름 업데이트 하기
+        old_path_str = self.selected_item.get()
+        old_path_forPjtGWMSWM = old_path_str.split(" | ")
+        new_path_forPjtGWMSWM = deepcopy(old_path_forPjtGWMSWM)
+        new_path_forPjtGWMSWM[-1] = new_name
+        new_path_str = " | ".join(new_path_forPjtGWMSWM)
+
+        state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
+            f"project-{mode}"
+        ].pop(old_path_str)
+
+        # 패밀리리스트 업데이트 구간
         print(f"check SWM_parent_name::{GWM_parent_name}")
 
         target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
@@ -2243,6 +2268,11 @@ class TeamStd_SWMTreeView:
         if not full_path:
             print("Could not construct a valid path for the selected item.")
             return
+
+        self.current_column = go(
+            self.treeview.tree.item(selected_item_id, "values"),
+            lambda x: next((i for i, s in enumerate(x) if s), None),
+        )
 
         # Pass the full path to the delete_node method
         try:

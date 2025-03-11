@@ -605,13 +605,14 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
             pjt_wms = state.team_std_info[f"project-{mode}"]
 
+            # 게이지 항목 아닐 경우 경고창 출력
             if "::" not in self.sheet.get_cell_data(selected_row, 3):
                 messagebox.showinfo(
                     "WM Gauge 항목 삭제",
                     "Gauge 파생이 되지 않은 항목은 삭제할 수 없습니다.",
                 )
-
-            # delete 시, 때때로 RuntimeError: dictionary changed size during iteration 발생 해결필요
+                return
+            # 게이지 삭제로 인해 할당 여부 검사 및 삭제 키 추리기
             rm_target_keys = []
             for k in pjt_wms:
                 v = pjt_wms.get(k)
@@ -620,11 +621,17 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
 
             print(f"rm_target_keys::{rm_target_keys}")
 
+            # GWM 중 제거된 WM+Gauge와 일치하는 항목들 일괄 삭제
             if rm_target_keys:
                 for rm_k in rm_target_keys:
                     deleted_v = pjt_wms.pop(rm_k)
 
             def delGauge_forNode(node):
+                """
+                하나의 노드에 대한 게이지WM 삭제 함수
+                """
+                # std-GWM 데이터 각 item 항목 중
+                # 삭제게이지의 원소속 코드가 포함된 모든 항목 추출 및 정렬
                 tgt_db_wms = go(
                     node["children"],
                     filter(lambda x: selected_wm_code in x),
@@ -637,6 +644,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                         filter(lambda x: x.split("::")[-1] == selected_wm_gauge),
                         # next,
                     )
+                    # GWM/SWM 항목 소속 wm 중 타겟이 있으면 필터목록을 값으로만들고
+                    # 없으면 빈문자열
                     if tgt_db_wm_:
                         tgt_db_wm = next(tgt_db_wm_)
                     else:
@@ -655,6 +664,9 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                     )
                     print(f"tgt_db_wms_afterDelete::{tgt_db_wms_afterDelete}")
 
+                    # 대상 게이지 wm 항목 삭제된 std-GWM item 내 wm들
+                    # 순서대로 게이지 붙어있는 지 검사하고
+                    # 알파벳 순서대로 게이지 재조정
                     for idx, wm in enumerate(tgt_db_wms_afterDelete):
                         print(f"wm_old::{wm}")
                         if "::" in wm:
@@ -680,8 +692,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                             f"node['children'][db_index] ::{node['children'][db_index]}"
                         )
 
-                        # std-GWM/SWM 삭제로 std-GWM/SWM 항목의 게이지 변경 후,
-                        # pjt-GWM/SWM에서 기존 게이지로 할당되있던 항목들 게이지 조정 필요
                         if "::" in wm_new:
                             wmGauge_new = wm_new.split("::")[-1]
                         else:
@@ -690,52 +700,69 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                         print(f"wm_new::{wm_new}")
                         print(f"wmGauge_new::{wmGauge_new}")
 
-                        modi_tgt_dictlist = []
-                        for k in pjt_wms:
-                            v = pjt_wms.get(k)
-                            if (
-                                k != "not_assigned"
-                                and v
-                                and v[0] == wm.split("|")[0].strip()
-                                and v[1] == wmGauge_old
-                            ):
-                                old_spec = v[3]
-                                new_v = [
-                                    v[0],
-                                    wmGauge_new,
-                                    v[2],
-                                    # v[3],
-                                    old_spec,
-                                ]
-                                print(new_v)
-                                modi_tgt_dictlist.append({k: new_v})
-                        print(f"modi_tgt_dictlist::{modi_tgt_dictlist}")
-
-                        for md_k in modi_tgt_dictlist:
-                            pjt_wms.update(md_k)
-
-                        for idx, v in enumerate(pjt_wms["not_assigned"]):
-                            if wmGauge_old != wmGauge_new:
-                                if v[0] == selected_wm_code and v[1] == wmGauge_new:
-                                    del pjt_wms["not_assigned"][idx]
-                        for idx, v in enumerate(pjt_wms["not_assigned"]):
-                            if wmGauge_old != wmGauge_new:
-                                if v[0] == selected_wm_code and v[1] == wmGauge_old:
-                                    pjt_wms["not_assigned"][idx][1] = wmGauge_new
                 except:
                     pass
 
+            # std-GWM에서 모든 item 에서 해당 게이지 삭제
             data = state.team_std_info[self.data_kind]["children"]
             for grandNode in data:
                 for parentNode in grandNode["children"]:
                     for childNode in parentNode["children"]:
                         delGauge_forNode(childNode)
 
+            ############ 수정중 ######################################
+            # 게이지 변경으로 값 수정되어야 할 pjt-GWM 추리기
+            def a2_previous_a(a):
+                if a == "A":
+                    pass
+                else:
+                    res = chr(ord(a) - 1)
+                return res
+
+            same_wm_keys = []
+            pjt_wms_all_wm = []
+            for k in pjt_wms:
+                v = pjt_wms.get(k)
+                if k != "not_assigned":  # and [v[0], v[1]] not in pjt_wms_all_wm:
+                    pjt_wms_all_wm.append([v[0], v[1]])
+                if v and v[0] == selected_wm_code:  # and v[1] == selected_wm_gauge:
+                    same_wm_keys.append(k)
+
+            for swk in same_wm_keys:
+                v = pjt_wms.get(swk)
+                print(f"현재 item - {swk}")
+                print(f"현재 item v- {v}")
+                if v[1] > selected_wm_gauge:
+                    print(f"대상 item - {swk}")
+                    print(f"대상 item v- {v}")
+                    print(f"게이지 차감 {v[1]} to {a2_previous_a(v[1])}")
+                    pjt_wms[swk][1] = a2_previous_a(v[1])
+
+            ############ 수정중 ######################################
+            # 삭제 대상 게이지 pjt-GWM 에서도 제거 - 이 부분 재설계 필요 :일부 할당 일부 not assigned 일때 모두
+            modi_ref_idx = None
+            ref_idxs = []
+            for idx, v in enumerate(pjt_wms["not_assigned"]):
+                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                    modi_ref_idx = idx
+                    ref_idxs.append(idx)
+                    print(f"[v_del] {pjt_wms['not_assigned'][idx]}")
+                    del pjt_wms["not_assigned"][idx]
+            print(f"[pjt_wms_all_wm] {pjt_wms_all_wm}")
+
+            for idx, v in enumerate(pjt_wms["not_assigned"]):
+                if v[0] == selected_wm_code and v[1] > selected_wm_gauge:
+                    if [v[0], a2_previous_a(v[1])] not in pjt_wms_all_wm:
+                        old = deepcopy(pjt_wms["not_assigned"][idx][1])
+                        pjt_wms["not_assigned"][idx][1] = a2_previous_a(old)
+                        print(f"[v_new] {pjt_wms['not_assigned'][idx]}")
+                    else:
+                        del pjt_wms["not_assigned"][idx]
+
             self.update()
             self.sheet.update()
 
     def copyWM_forGauge(self, mode=None):
-        gauge = "B"
         state = self.state
 
         # Split the selected item path to find the grandparent, parent, and selected item names
@@ -931,7 +958,6 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
                                 spec_ = []
                                 if target_keys:
                                     for k in pjt_wms:
-                                        # v = pjt_wms[k]
                                         v = pjt_wms.get(k)
                                         if v and v[0] == wmCode and v[1] == wmGauge:
                                             spec_.append(v[3])
@@ -1521,13 +1547,14 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
             pjt_wms = state.team_std_info[f"project-{mode}"]
 
+            # 게이지 항목 아닐 경우 경고창 출력
             if "::" not in self.sheet.get_cell_data(selected_row, 3):
                 messagebox.showinfo(
                     "WM Gauge 항목 삭제",
                     "Gauge 파생이 되지 않은 항목은 삭제할 수 없습니다.",
                 )
-
-            # delete 시, 때때로 RuntimeError: dictionary changed size during iteration 발생 해결필요
+                return
+            # 게이지 삭제로 인해 할당 여부 검사 및 삭제 키 추리기
             rm_target_keys = []
             for k in pjt_wms:
                 v = pjt_wms.get(k)
@@ -1536,11 +1563,17 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
 
             print(f"rm_target_keys::{rm_target_keys}")
 
+            # GWM 중 제거된 WM+Gauge와 일치하는 항목들 일괄 삭제
             if rm_target_keys:
                 for rm_k in rm_target_keys:
                     deleted_v = pjt_wms.pop(rm_k)
 
             def delGauge_forNode(node):
+                """
+                하나의 노드에 대한 게이지WM 삭제 함수
+                """
+                # std-GWM 데이터 각 item 항목 중
+                # 삭제게이지의 원소속 코드가 포함된 모든 항목 추출 및 정렬
                 tgt_db_wms = go(
                     node["children"],
                     filter(lambda x: selected_wm_code in x),
@@ -1553,6 +1586,8 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                         filter(lambda x: x.split("::")[-1] == selected_wm_gauge),
                         # next,
                     )
+                    # GWM/SWM 항목 소속 wm 중 타겟이 있으면 필터목록을 값으로만들고
+                    # 없으면 빈문자열
                     if tgt_db_wm_:
                         tgt_db_wm = next(tgt_db_wm_)
                     else:
@@ -1571,6 +1606,9 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                     )
                     print(f"tgt_db_wms_afterDelete::{tgt_db_wms_afterDelete}")
 
+                    # 대상 게이지 wm 항목 삭제된 std-GWM item 내 wm들
+                    # 순서대로 게이지 붙어있는 지 검사하고
+                    # 알파벳 순서대로 게이지 재조정
                     for idx, wm in enumerate(tgt_db_wms_afterDelete):
                         print(f"wm_old::{wm}")
                         if "::" in wm:
@@ -1596,8 +1634,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                             f"node['children'][db_index] ::{node['children'][db_index]}"
                         )
 
-                        # std-GWM/SWM 삭제로 std-GWM/SWM 항목의 게이지 변경 후,
-                        # pjt-GWM/SWM에서 기존 게이지로 할당되있던 항목들 게이지 조정 필요
                         if "::" in wm_new:
                             wmGauge_new = wm_new.split("::")[-1]
                         else:
@@ -1606,41 +1642,69 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                         print(f"wm_new::{wm_new}")
                         print(f"wmGauge_new::{wmGauge_new}")
 
-                        modi_tgt_dictlist = []
-                        for k in pjt_wms:
-                            # v = pjt_wms[k]
-                            v = pjt_wms.get(k)
-                            if (
-                                v
-                                and v[0] == wm.split("|")[0].strip()
-                                and v[1] == wmGauge_old
-                            ):
-                                new_v = [
-                                    v[0],
-                                    wmGauge_new,
-                                    v[2],
-                                    v[3],
-                                ]
-                                print(new_v)
-                                modi_tgt_dictlist.append({k: new_v})
-                        print(f"modi_tgt_dictlist::{modi_tgt_dictlist}")
-
-                        for md_k in modi_tgt_dictlist:
-                            pjt_wms.update(md_k)
                 except:
                     pass
 
+            # std-GWM에서 모든 item 에서 해당 게이지 삭제
             data = state.team_std_info[self.data_kind]["children"]
             for grandNode in data:
                 for parentNode in grandNode["children"]:
                     for childNode in parentNode["children"]:
                         delGauge_forNode(childNode)
 
+            ############ 수정중 ######################################
+            # 게이지 변경으로 값 수정되어야 할 pjt-GWM 추리기
+            def a2_previous_a(a):
+                if a == "A":
+                    pass
+                else:
+                    res = chr(ord(a) - 1)
+                return res
+
+            same_wm_keys = []
+            pjt_wms_all_wm = []
+            for k in pjt_wms:
+                v = pjt_wms.get(k)
+                if k != "not_assigned":  # and [v[0], v[1]] not in pjt_wms_all_wm:
+                    pjt_wms_all_wm.append([v[0], v[1]])
+                if v and v[0] == selected_wm_code:  # and v[1] == selected_wm_gauge:
+                    same_wm_keys.append(k)
+
+            for swk in same_wm_keys:
+                v = pjt_wms.get(swk)
+                print(f"현재 item - {swk}")
+                print(f"현재 item v- {v}")
+                if v[1] > selected_wm_gauge:
+                    print(f"대상 item - {swk}")
+                    print(f"대상 item v- {v}")
+                    print(f"게이지 차감 {v[1]} to {a2_previous_a(v[1])}")
+                    pjt_wms[swk][1] = a2_previous_a(v[1])
+
+            ############ 수정중 ######################################
+            # 삭제 대상 게이지 pjt-GWM 에서도 제거 - 이 부분 재설계 필요 :일부 할당 일부 not assigned 일때 모두
+            modi_ref_idx = None
+            ref_idxs = []
+            for idx, v in enumerate(pjt_wms["not_assigned"]):
+                if v[0] == selected_wm_code and v[1] == selected_wm_gauge:
+                    modi_ref_idx = idx
+                    ref_idxs.append(idx)
+                    print(f"[v_del] {pjt_wms['not_assigned'][idx]}")
+                    del pjt_wms["not_assigned"][idx]
+            print(f"[pjt_wms_all_wm] {pjt_wms_all_wm}")
+
+            for idx, v in enumerate(pjt_wms["not_assigned"]):
+                if v[0] == selected_wm_code and v[1] > selected_wm_gauge:
+                    if [v[0], a2_previous_a(v[1])] not in pjt_wms_all_wm:
+                        old = deepcopy(pjt_wms["not_assigned"][idx][1])
+                        pjt_wms["not_assigned"][idx][1] = a2_previous_a(old)
+                        print(f"[v_new] {pjt_wms['not_assigned'][idx]}")
+                    else:
+                        del pjt_wms["not_assigned"][idx]
+
             self.update()
             self.sheet.update()
 
     def copyWM_forGauge(self, mode=None):
-        gauge = "B"
         state = self.state
 
         # Split the selected item path to find the grandparent, parent, and selected item names
@@ -1836,7 +1900,6 @@ class ProjectStd_WM_Selcet_SheetView_SWM:
                                 spec_ = []
                                 if target_keys:
                                     for k in pjt_wms:
-                                        # v = pjt_wms[k]
                                         v = pjt_wms.get(k)
                                         if v and v[0] == wmCode and v[1] == wmGauge:
                                             spec_.append(v[3])
