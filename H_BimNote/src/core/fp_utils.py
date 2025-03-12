@@ -1,4 +1,5 @@
 # src/core/fp_utils.py
+import re
 
 ################Module For Functional Programing#########################
 from functools import reduce
@@ -56,3 +57,23 @@ def grpBy(iter, key):
 
 
 #########################################################################
+
+
+def sort_func(input):
+    try:
+        try:
+            if re.match(r"^\d+", input["name"]):  # 문자열이 숫자로 시작하는 경우만 변환
+                res = go(
+                    re.split(r"(\d+)", input["name"]),
+                    filter(lambda x: x.isdigit()),
+                    next,
+                    int,
+                    chr,
+                )
+                return res
+            else:
+                return input["name"]  # 숫자로 시작하지 않는 경우 그대로 반환
+        except:
+            return input["name"]
+    except:
+        return input

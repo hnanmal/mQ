@@ -2275,7 +2275,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
         # self.update()
 
     def setup_column_style(self):
-        self.sheet.set_column_widths([25, 80, 0, 150, 40, 210])
+        self.sheet.set_column_widths([25, 100, 0, 150, 40, 210])
         # self.sheet.set_column_widths([25, 80, 10, 150, 40, 210])
 
         self.sheet["A"].align("center")
@@ -2450,7 +2450,8 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 wrapped_data.append(row)
                                 sub_rows = dropdowns[idx]
                                 # sub_rows = sorted(dropdowns[idx])
-                                for sub_row in sub_rows:
+                                # for sub_row in sub_rows:
+                                for sub_row in sorted(sub_rows):
                                     sub_row.insert(1, row[-1])
                                     wrapped_data.append(["", "", row[1], *sub_row])
 

@@ -613,6 +613,32 @@ class BaseTreeView:
 
         return data_list
 
+    # def insert_data_with_levels(self, data, parent_id=""):
+    #     """Insert sorted data into the TreeView with levels."""
+
+    #     # 데이터가 딕셔너리 리스트인지 확인하고 정렬
+    #     if isinstance(data, list):
+    #         sorted_data = sorted(data, key=lambda x: x["name"])  # name 기준 정렬
+
+    #         for node in sorted_data:
+    #             if isinstance(node, dict):
+    #                 # 'values' 리스트에서 마지막 값을 표시할 경우
+    #                 display_value = node["values"]
+
+    #                 # 트리뷰에 삽입
+    #                 node_id = self.tree.insert(
+    #                     parent_id, "end", text=node["name"], values=(display_value,)
+    #                 )
+
+    #                 # Keep the tree open to display all items
+    #                 self.tree.item(node_id, open=True)
+
+    #                 # 자식이 있는 경우 정렬하여 재귀 삽입
+    #                 if "children" in node and isinstance(node["children"], list):
+    #                     self.insert_data_with_levels(
+    #                         sorted(node["children"], key=lambda x: x["name"]), node_id
+    #                     )
+
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
         for node in data:
@@ -630,7 +656,10 @@ class BaseTreeView:
 
                 # Recursively insert children if there are any
                 if "children" in node and isinstance(node["children"], list):
-                    self.insert_data_with_levels(node["children"], node_id)
+                    # self.insert_data_with_levels(node["children"], node_id)
+                    self.insert_data_with_levels(
+                        sorted(node["children"], key=sort_func), node_id
+                    )
 
             elif isinstance(node, str):
                 # Insert the string as a leaf node without additional children
@@ -997,13 +1026,25 @@ class TeamStd_GWMTreeView:
         )
         print(f"path: {path}")
 
-        self.treeDataManager.copy_node(
+        copied_GWMSWM = self.treeDataManager.copy_node(
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
             name_depth=1,
             # name_depth=[1, 2],
         )
+
+        for item_ in copied_GWMSWM["children"]:
+            origin_path = deepcopy(path)
+            origin_path.append(item_["name"])
+            copied_path = deepcopy(origin_path)
+            copied_path[1] = new_name
+            print(f"[path] {origin_path}")
+            print(f"[origin_path] {origin_path}")
+            print(f"[copied_path] {copied_path}")
+
+            self.apply_originWMassign_forItem(origin_path, copied_path)
+
         state.observer_manager.notify_observers(state)
 
     def update_deleting_stdType_GWMSWM_in(self):
@@ -1179,10 +1220,14 @@ class TeamStd_GWMTreeView:
         new_path_forPjtGWMSWM = deepcopy(old_path_forPjtGWMSWM)
         new_path_forPjtGWMSWM[-1] = new_name
         new_path_str = " | ".join(new_path_forPjtGWMSWM)
+        print(f"[update editing] old_path_forPjtGWMSWM - {old_path_forPjtGWMSWM}")
+        print(f"[update editing] new_path_forPjtGWMSWM - {new_path_forPjtGWMSWM}")
 
-        state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
-            f"project-{mode}"
-        ].pop(old_path_str)
+        # if state.team_std_info[f"project-{mode}"].get(new_path_str):
+        if state.team_std_info[f"project-{mode}"].get(old_path_str):
+            state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
+                f"project-{mode}"
+            ].pop(old_path_str)
 
         # 패밀리리스트 업데이트 구간
         print(f"check GWM_parent_name::{GWM_parent_name}")
@@ -1279,7 +1324,23 @@ class TeamStd_GWMTreeView:
 
         return target_parent_nodes
 
+    # 복사 item 항목 마다 원본 GWM 할당 상황 조회 및 반영
+    def apply_originWMassign_forItem(self, path, copied_path):
+        mode = self.data_kind.split("-")[-1]
+        state = self.state
+        ref_WM_assign_key = " | ".join(path)
+        ref_WM_assign_val = state.team_std_info[f"project-{mode}"].get(
+            ref_WM_assign_key
+        )
+        copied_WM_assign_key = " | ".join(copied_path)
+
+        if ref_WM_assign_val:
+            state.team_std_info[f"project-{mode}"].update(
+                {copied_WM_assign_key: ref_WM_assign_val}
+            )
+
     def copy_item(self):
+        mode = self.data_kind.split("-")[-1]
         state = self.state
 
         selected_item_id = self.treeview.tree.selection()
@@ -1329,6 +1390,11 @@ class TeamStd_GWMTreeView:
         )
 
         self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+
+        copied_path = deepcopy(path)
+        copied_path[-1] = new_name
+
+        self.apply_originWMassign_forItem(path, copied_path)
 
         state.observer_manager.notify_observers(state)
 
@@ -1868,13 +1934,25 @@ class TeamStd_SWMTreeView:
         )
         print(f"path: {path}")
 
-        self.treeDataManager.copy_node(
+        copied_GWMSWM = self.treeDataManager.copy_node(
             data_kind=self.data_kind,
             path=path,
             new_name=new_name,
             name_depth=1,
             # name_depth=[1, 2],
         )
+
+        for item_ in copied_GWMSWM["children"]:
+            origin_path = deepcopy(path)
+            origin_path.append(item_["name"])
+            copied_path = deepcopy(origin_path)
+            copied_path[1] = new_name
+            print(f"[path] {origin_path}")
+            print(f"[origin_path] {origin_path}")
+            print(f"[copied_path] {copied_path}")
+
+            self.apply_originWMassign_forItem(origin_path, copied_path)
+
         state.observer_manager.notify_observers(state)
 
     def update_deleting_stdType_GWMSWM_in(self):
@@ -2051,9 +2129,13 @@ class TeamStd_SWMTreeView:
         new_path_forPjtGWMSWM[-1] = new_name
         new_path_str = " | ".join(new_path_forPjtGWMSWM)
 
-        state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
-            f"project-{mode}"
-        ].pop(old_path_str)
+        print(f"[update editing] old_path_forPjtGWMSWM - {old_path_forPjtGWMSWM}")
+        print(f"[update editing] new_path_forPjtGWMSWM - {new_path_forPjtGWMSWM}")
+
+        if state.team_std_info[f"project-{mode}"].get(old_path_str):
+            state.team_std_info[f"project-{mode}"][new_path_str] = state.team_std_info[
+                f"project-{mode}"
+            ].pop(old_path_str)
 
         # 패밀리리스트 업데이트 구간
         print(f"check SWM_parent_name::{GWM_parent_name}")
@@ -2150,6 +2232,21 @@ class TeamStd_SWMTreeView:
 
         return target_parent_nodes
 
+    # 복사 item 항목 마다 원본 GWM 할당 상황 조회 및 반영
+    def apply_originWMassign_forItem(self, path, copied_path):
+        mode = self.data_kind.split("-")[-1]
+        state = self.state
+        ref_WM_assign_key = " | ".join(path)
+        ref_WM_assign_val = state.team_std_info[f"project-{mode}"].get(
+            ref_WM_assign_key
+        )
+        copied_WM_assign_key = " | ".join(copied_path)
+
+        if ref_WM_assign_val:
+            state.team_std_info[f"project-{mode}"].update(
+                {copied_WM_assign_key: ref_WM_assign_val}
+            )
+
     def copy_item(self):
         state = self.state
 
@@ -2200,6 +2297,11 @@ class TeamStd_SWMTreeView:
         )
 
         self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+
+        copied_path = deepcopy(path)
+        copied_path[-1] = new_name
+
+        self.apply_originWMassign_forItem(path, copied_path)
 
         state.observer_manager.notify_observers(state)
 
