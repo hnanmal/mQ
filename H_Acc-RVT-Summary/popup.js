@@ -26,6 +26,20 @@ document.getElementById("fetchFamilyTypes").addEventListener("click", async () =
     });
 });
 
+// 새 기능: 룸 정보 가져오기
+document.getElementById("fetchRooms").addEventListener("click", async () => {
+    console.log("[popup.js] 버튼 클릭됨 - fetchRooms 메시지 전송");
+    let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        function: () => {
+            console.log("[popup.js] MAIN world에서 window.postMessage 실행 (fetchRooms)");
+            window.postMessage({ action: "fetchRooms" }, "*");
+        },
+        world: "MAIN"
+    });
+});
+
 // popup.js가 content.js로부터 결과 메시지를 받으면 새 창에 출력
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("[popup.js] 메시지 수신:", message);
