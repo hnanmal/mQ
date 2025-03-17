@@ -28,6 +28,7 @@ from src.views.widget.new_window import open_tab_in_new_window
 from src.views.lower_tabs.pjt_report_group_tab import create_report_group_tab
 from src.views.lower_tabs.pjt_report_TotalBD_tab import create_report_TotalBD_tab
 from src.views.widget.easter_egg import EasterEggApp
+from src.views.lower_tabs.pjt_int_matrix_tab import create_pjt_intMatrix_tab
 
 
 def create_tab_with_subtabs(state, notebook, tab_name):
@@ -210,10 +211,12 @@ def create_project_apply_tab(state, notebook):
     # Add each subtab
     main_tab = create_pjtApply_Main_tab(state, subtab_notebook)
     famlist_tab = create_pjt_familylist_tab(state, subtab_notebook)
+    intMatrix_tab = create_pjt_intMatrix_tab(state, subtab_notebook)
 
     tab_funcs = [
         create_pjtApply_Main_tab,
         create_pjt_familylist_tab,
+        create_pjt_intMatrix_tab,
     ]
 
     # # Bind double-click event to the tabs
