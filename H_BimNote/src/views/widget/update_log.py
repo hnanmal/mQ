@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.0 (2025-03-19)
+    - Project Interior Matrix 탭 추가
+    
 🔳 v1.1.8 (2025-03-12)
     - GWM / SWM 시트에서 게이지 열 직접 편집 불가하도록 수정
     - 특정 GWM / SWM 에서 WM 스펙 작업일괄로 해도 관계없도록 수정

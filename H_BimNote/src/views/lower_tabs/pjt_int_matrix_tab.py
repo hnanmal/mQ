@@ -49,11 +49,11 @@ def create_pjt_intMatrix_tab(state, subtab_notebook, exe_mode=None):
         width=1500,
         height=3000,
     )
-    section2 = ttk.Frame(
-        working_tab_paned_area,
-        width=400,
-        height=3000,
-    )
+    # section2 = ttk.Frame(
+    #     working_tab_paned_area,
+    #     width=400,
+    #     height=3000,
+    # )
 
     # section3 = ttk.Frame(
     #     working_tab_paned_area,
@@ -62,7 +62,7 @@ def create_pjt_intMatrix_tab(state, subtab_notebook, exe_mode=None):
     # )
 
     working_tab_paned_window.add(section1)
-    working_tab_paned_window.add(section2)
+    # working_tab_paned_window.add(section2)
     # working_tab_paned_window.add(section3)
 
     working_tab_paned_window.paneconfigure(
@@ -71,12 +71,12 @@ def create_pjt_intMatrix_tab(state, subtab_notebook, exe_mode=None):
         # maxsize=1000,
         height=3000,
     )
-    working_tab_paned_window.paneconfigure(
-        section2,
-        minsize=400,
-        width=400,
-        height=3000,
-    )
+    # working_tab_paned_window.paneconfigure(
+    #     section2,
+    #     minsize=400,
+    #     width=400,
+    #     height=3000,
+    # )
     # working_tab_paned_window.paneconfigure(
     #     section3,
     #     minsize=1100,

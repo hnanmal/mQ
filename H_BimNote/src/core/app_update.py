@@ -8,7 +8,7 @@ import sys
 # import subprocess
 from datetime import datetime
 
-APP_VERSION = "1.1.8"  # Your app's current version
+APP_VERSION = "1.2.0"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 
 
