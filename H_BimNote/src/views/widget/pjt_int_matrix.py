@@ -53,6 +53,8 @@ class pjt_interior_matrix_widget:
             "<<ComboboxSelected>>", lambda event: self.on_combobox_select(event, state)
         )
 
+        self.def_row_height = 15
+
         # ✅ tksheet 생성 (가로 스크롤 지원)
         self.sheet = Sheet(
             self.sheet_area,
@@ -62,6 +64,8 @@ class pjt_interior_matrix_widget:
             # headers=self.filtered_rooms,
             # row_index=self.material_rows,
             align="c",
+            index_align="w",
+            default_row_height=self.def_row_height,
         )
         self.sheet.set_options(
             header_font=("Arial", 8, "normal"),
@@ -69,6 +73,8 @@ class pjt_interior_matrix_widget:
         self.sheet.set_index_width(200)
         self.sheet.enable_bindings()
         self.sheet.pack(fill="both", expand=True)
+        # ✅ 스타일 다시 적용
+        self.apply_styles()
 
         # ✅ 클릭 이벤트 바인딩 (셀 클릭 시 체크박스 토글)
         self.sheet.extra_bindings("begin_edit_cell", self.toggle_checkbox)
@@ -115,7 +121,17 @@ class pjt_interior_matrix_widget:
         row_index = 0
 
         # for category, sub_materials in self.materials.items():
-        for category, sub_materials in sorted(self.materials.items()):
+        order_map = {
+            "Floor": 0,
+            "Skirt": 1,
+            "Wall": 2,
+            "Ceiling": 3,
+        }
+
+        # for category, sub_materials in sorted(self.materials.items()):
+        for category, sub_materials in sorted(
+            self.materials.items(), key=lambda x: order_map.get(list(x)[0], 4)
+        ):
             self.material_rows.append(category)  # ✅ 대분류 (체크 불가)
             self.category_rows.add(row_index)  # ✅ 대분류 행 인덱스 저장
             row_index += 1
@@ -126,7 +142,8 @@ class pjt_interior_matrix_widget:
 
     def apply_styles(self):
         # ✅ 폰트 크기 조정 (튜플 형식 수정)
-        self.sheet.set_options(editable=True, font=("Arial", 12, "normal"))
+        self.sheet.set_options(font=("Arial", 8, "normal"))
+        self.sheet.set_options(default_row_height=self.def_row_height)
 
         """✅ 대분류(Materials) 스타일 적용: 글자색 회색, 배경 보라색"""
         for row_idx in self.category_rows:
@@ -140,6 +157,53 @@ class pjt_interior_matrix_widget:
         self.set_floor_commbovalues()
 
         state.observer_manager.notify_observers(state)
+
+    def save_crnt_scroll(self, event=None):
+        state = self.state
+        root = state.root
+
+        # 현재 스크롤 위치 저장
+        # self.y_scroll = self.sheet.yview()[0]
+        # print(f"yscroll 위치 저장 : {self.y_scroll}")
+        # self.x_scroll = self.sheet.xview()[0]
+        # print(f"xscroll 위치 저장 : {self.x_scroll}")
+
+        self.y_scroll = self.sheet.yview()
+        print(f"yscroll 위치 저장 : {self.y_scroll}")
+        self.x_scroll = self.sheet.xview()
+        print(f"xscroll 위치 저장 : {self.x_scroll}")
+
+    def restore_scroll(self, event=None):
+        state = self.state
+        root = state.root
+        """셀을 수정할 때 스크롤 위치를 유지"""
+        # global y_scroll, x_scroll
+
+        # # 현재 스크롤 위치 저장
+        # self.y_scroll = self.sheet.yview()[0]
+        # print(self.y_scroll)
+        # self.x_scroll = self.sheet.xview()[1]
+        # print(self.x_scroll)
+
+        # 수정 후 스크롤 위치 복원 (약간의 지연을 줘야 동작함)
+        if avg(*self.y_scroll) < 0.5:
+            y_scroll_moveto = min(self.y_scroll)
+        else:
+            y_scroll_moveto = max(self.y_scroll)
+
+        if avg(*self.x_scroll) < 0.5:
+            x_scroll_moveto = min(self.x_scroll)
+        else:
+            x_scroll_moveto = max(self.x_scroll)
+
+        root.after(10, lambda: self.sheet.set_yview(y_scroll_moveto))
+        root.after(10, lambda: self.sheet.set_xview(x_scroll_moveto))
+        # root.after(10, lambda: self.sheet.set_yview(self.y_scroll[1], option="moveto"))
+        # root.after(10, lambda: self.sheet.set_xview(self.x_scroll[0], option="moveto"))
+
+        # # 스크롤 위치 변수 초기화
+        # self.y_scroll = self.sheet.yview()
+        # self.x_scroll = self.sheet.xview()
 
     def update(self, event=None, mode=None):
         state = self.state
@@ -213,9 +277,12 @@ class pjt_interior_matrix_widget:
                 headers=self.filtered_rooms,
                 row_index=self.material_rows,
                 align="c",
+                index_align="w",
             )
             self.sheet.enable_bindings()
             self.sheet.pack(fill="both", expand=True)
+            # ✅ 스타일 다시 적용
+            self.apply_styles()
 
         # ✅ 클릭 이벤트 바인딩 (셀 클릭 시 체크박스 토글)
         self.sheet.extra_bindings("begin_edit_cell", self.toggle_checkbox)
@@ -284,12 +351,13 @@ class pjt_interior_matrix_widget:
         self.sheet.set_sheet_data(new_data)  # ✅ 데이터 업데이트
         self.sheet.set_options(
             header_font=("Arial", 8, "normal"),
+            index_font=("Arial", 8, "normal"),
         )
         self.sheet.set_all_cell_sizes_to_text()
-        self.sheet.redraw()  # ✅ 화면 갱신
 
         # ✅ 스타일 다시 적용
         self.apply_styles()
+        # self.sheet.redraw()  # ✅ 화면 갱신
 
     def delete_assign_forRoom(self, roomName, material_full_name):
         state = self.state
@@ -467,9 +535,14 @@ class pjt_interior_matrix_widget:
                 except:
                     pass
 
+        self.update(event=None, mode="db_update")
+
     def toggle_checkbox(self, event, r_c=None):
         """✅ 셀 클릭 시 체크박스를 토글하는 함수"""
         state = self.state
+
+        self.save_crnt_scroll()
+
         selected_cells = list(
             self.sheet.get_selected_cells()
         )  # ✅ 'set'을 리스트로 변환
@@ -539,4 +612,6 @@ class pjt_interior_matrix_widget:
             self.add_assign_forRoom(roomName_asDBformat, material_full_name)
 
         self.update(event=None, mode="db_update")
+
+        self.restore_scroll()
         # state.observer_manager.notify_observers(state)

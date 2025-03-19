@@ -77,3 +77,7 @@ def sort_func(input):
             return input["name"]
     except:
         return input
+
+
+def avg(*args):
+    return sum(args) / len(args)

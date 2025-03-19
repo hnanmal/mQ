@@ -42,6 +42,12 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.1 (2025-03-xx)
+    - Project Interior Matrix 탭 좌측 SWM 항목 순서 기준 변경 (Floor -> Skirt -> Wall -> Ceiling)
+    - Project Interior Matrix 탭 좌측 SWM 항목 텍스트 좌측 정렬로 변경
+    - Project Interior Matrix 탭 텍스트 크기 및 행 높이 변경
+    - Project Interior Matrix 탭 더블클릭 체크 시 스크롤 초기화 현상 수정
+    
 🔳 v1.2.0 (2025-03-19)
     - Project Interior Matrix 탭 추가
     
