@@ -58,6 +58,8 @@ def create_pjt_familylist_tab(state, subtab_notebook, exe_mode=None):
 
     if not exe_mode:
         subtab_notebook.add(working_tab, text="Project Family Assign")
+    elif exe_mode == "new window":
+        working_tab.pack(expand=True, fill="both")
 
     section1 = ttk.Frame(
         working_tab_paned_area,

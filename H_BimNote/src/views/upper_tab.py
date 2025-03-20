@@ -214,16 +214,18 @@ def create_project_apply_tab(state, notebook):
     intMatrix_tab = create_pjt_intMatrix_tab(state, subtab_notebook)
 
     tab_funcs = [
-        create_pjtApply_Main_tab,
-        create_pjt_familylist_tab,
+        # create_pjtApply_Main_tab,
+        # create_pjt_familylist_tab,
+        "not_func",
+        "not_func",
         create_pjt_intMatrix_tab,
     ]
 
-    # # Bind double-click event to the tabs
-    # subtab_notebook.bind(
-    #     "<Double-1>",
-    #     lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, e),
-    # )
+    # Bind double-click event to the tabs
+    subtab_notebook.bind(
+        "<Double-1>",
+        lambda e: open_tab_in_new_window(state, subtab_notebook, tab_funcs, event=e),
+    )
 
     state.pjt_apply_notebook = subtab_notebook
 

@@ -18,6 +18,8 @@ class pjt_interior_matrix_widget:
         self.treeDataManager = TreeDataManager_treesheet(state, self)
         self.state_observer = StateObserver(state, lambda e: self.update(e))
 
+        self.widget_filtermode = False
+
         # ✅ 대분류(Materials) + 하위 항목(Sub-Materials) 데이터 구조
         self.materials = {}
 
@@ -52,6 +54,24 @@ class pjt_interior_matrix_widget:
         self.fl_combo.bind(
             "<<ComboboxSelected>>", lambda event: self.on_combobox_select(event, state)
         )
+
+        # Add filter button
+        filter_button = ttk.Button(
+            self.combobox_area,
+            text="Filter Unused",
+            command=self.on_click_filter_btn,
+            bootstyle="info-outline",
+        )
+        filter_button.pack(padx=10, pady=5, side="left")
+
+        # Add Reset button
+        reset_button = ttk.Button(
+            self.combobox_area,
+            text="Reset SheetView",
+            command=self.on_click_reset_btn,
+            bootstyle="info-outline",
+        )
+        reset_button.pack(padx=10, pady=5, side="left")
 
         self.def_row_height = 15
 
@@ -144,12 +164,13 @@ class pjt_interior_matrix_widget:
         # ✅ 폰트 크기 조정 (튜플 형식 수정)
         self.sheet.set_options(font=("Arial", 8, "normal"))
         self.sheet.set_options(default_row_height=self.def_row_height)
-
+        self.sheet.dehighlight_all()
         """✅ 대분류(Materials) 스타일 적용: 글자색 회색, 배경 보라색"""
         for row_idx in self.category_rows:
             self.sheet.highlight_rows(
                 row_idx, bg="#D8BFD8", fg="gray"
             )  # ✅ 연한 보라색 배경, 회색 글자 (underline 제거)
+        print(f"self.category_rows : {self.category_rows}")
 
     # Event handler for combo box selection
     def on_combobox_select(self, event, state):
@@ -163,11 +184,6 @@ class pjt_interior_matrix_widget:
         root = state.root
 
         # 현재 스크롤 위치 저장
-        # self.y_scroll = self.sheet.yview()[0]
-        # print(f"yscroll 위치 저장 : {self.y_scroll}")
-        # self.x_scroll = self.sheet.xview()[0]
-        # print(f"xscroll 위치 저장 : {self.x_scroll}")
-
         self.y_scroll = self.sheet.yview()
         print(f"yscroll 위치 저장 : {self.y_scroll}")
         self.x_scroll = self.sheet.xview()
@@ -177,13 +193,6 @@ class pjt_interior_matrix_widget:
         state = self.state
         root = state.root
         """셀을 수정할 때 스크롤 위치를 유지"""
-        # global y_scroll, x_scroll
-
-        # # 현재 스크롤 위치 저장
-        # self.y_scroll = self.sheet.yview()[0]
-        # print(self.y_scroll)
-        # self.x_scroll = self.sheet.xview()[1]
-        # print(self.x_scroll)
 
         # 수정 후 스크롤 위치 복원 (약간의 지연을 줘야 동작함)
         if avg(*self.y_scroll) < 0.5:
@@ -198,49 +207,28 @@ class pjt_interior_matrix_widget:
 
         root.after(10, lambda: self.sheet.set_yview(y_scroll_moveto))
         root.after(10, lambda: self.sheet.set_xview(x_scroll_moveto))
-        # root.after(10, lambda: self.sheet.set_yview(self.y_scroll[1], option="moveto"))
-        # root.after(10, lambda: self.sheet.set_xview(self.x_scroll[0], option="moveto"))
 
-        # # 스크롤 위치 변수 초기화
-        # self.y_scroll = self.sheet.yview()
-        # self.x_scroll = self.sheet.xview()
+    def on_click_filter_btn(self, event=None):
+        self.widget_filtermode = True
+        self.category_rows = []
+        self.update(event=None, mode="db_update", filter_mode=self.widget_filtermode)
+        self.apply_styles()
+        self.sheet.update()
 
-    def update(self, event=None, mode=None):
+    def on_click_reset_btn(self, event=None):
+        self.widget_filtermode = False
+        self.category_rows = []
+        self.update(event=None, mode="db_update", filter_mode=self.widget_filtermode)
+        self.apply_styles()
+        self.sheet.update()
+
+    def update(self, event=None, mode=None, filter_mode=None):
         state = self.state
         self.sheet.set_sheet_data([])
-        # self.sheet.set_header_data([])
-        # ✅ 필터 적용 후 tksheet 업데이트
-        # self.sheet.headers([])  # ✅ 헤더 초기화
 
         std_data = state.team_std_info.get("std-familylist")
         pjt_data = state.team_std_info.get(self.data_kind)
         # self.filtered_rooms = []
-        SWM = go(
-            std_data["children"][0]["children"],
-            filter(lambda x: x["name"] == "0.Room"),
-            lambda x: list(x)[0]["children"],
-            filter(lambda x: x["name"] == "0.1"),
-            lambda x: list(x)[0]["children"],
-            list,
-        )
-
-        SWM_names = go(
-            SWM,
-            map(lambda x: x["name"]),
-            list,
-        )
-        SWMitem_names = go(
-            SWM,
-            map(lambda x: x["children"]),
-            map(lambda x: list(map(lambda y: y["name"], x))),
-            list,
-        )
-
-        self.materials = dict(zip(SWM_names, SWMitem_names))
-
-        print(f"[int matrix] self.materials : {self.materials}")
-        # self.sheet.set_sheet_data([])
-        # self.setup_column_style()
 
         rooms_for_selectedBuilding = go(
             pjt_data["children"],
@@ -264,10 +252,60 @@ class pjt_interior_matrix_widget:
         self.filtered_rooms = rooms_for_selectedLevel
         print(f"[int matrix] rooms_for_selectedBuilding : {rooms_for_selectedLevel}")
 
-        # self.sheet.set_sheet_data([])  # ✅ 헤더 업데이트
-        # self.sheet.headers(self.filtered_rooms)  # ✅ 헤더 업데이트
+        SWM = go(
+            std_data["children"][0]["children"],
+            filter(lambda x: x["name"] == "0.Room"),
+            lambda x: list(x)[0]["children"],
+            filter(lambda x: x["name"] == "0.1"),
+            lambda x: list(x)[0]["children"],
+            list,
+        )
+
+        SWM_names = go(
+            SWM,
+            map(lambda x: x["name"]),
+            list,
+        )
+        SWMitem_names_ = go(
+            SWM,
+            map(lambda x: x["children"]),
+            map(lambda x: list(map(lambda y: y["name"], x))),
+            list,
+        )
+
+        if state.current_building.get():
+            # SWM item 사용 여부 체크 기준 리스트
+            usedChecklist = go(
+                pjt_data["children"],
+                filter(lambda x: x["values"][1] == state.current_building.get()),
+                filter(lambda x: x["values"][-1] == "Top | 0.Room | 0.1"),
+                map(lambda x: x.get("children", ["", "", ""])),
+                lambda x: chain(*x),
+                list,
+                filter(lambda x: x),
+                map(lambda x: x[2]),
+                map(lambda x: x.split(" | ")[-1]),
+                list,
+            )
+            # print(f"usedChecklist : {usedChecklist}")
+
+        if filter_mode:
+            SWMitem_names = go(
+                SWMitem_names_,
+                map(lambda x: list(filter(lambda i: i in usedChecklist, x))),
+                list,
+            )
+            # print(f"SWMitem_names - {SWMitem_names}")
+        else:
+            SWMitem_names = SWMitem_names_
+
+        self.materials = dict(zip(SWM_names, SWMitem_names))
+        self.set_row_idx()
+
+        print(f"[int matrix] self.materials : {self.materials}")
+
         if mode == "db_update":
-            pass
+            self.apply_styles()
         else:
             self.sheet.pack_forget()
             self.sheet = Sheet(
@@ -535,7 +573,7 @@ class pjt_interior_matrix_widget:
                 except:
                     pass
 
-        self.update(event=None, mode="db_update")
+        self.update(event=None, mode="db_update", filter_mode=self.widget_filtermode)
 
     def toggle_checkbox(self, event, r_c=None):
         """✅ 셀 클릭 시 체크박스를 토글하는 함수"""
@@ -583,9 +621,6 @@ class pjt_interior_matrix_widget:
             return
 
         # ✅ 현재 상태 반전 (체크/해제)
-        # self.check_status[room][material_name] = not self.check_status[room][
-        #     material_name
-        # ]
         tgt_room_db = go(
             state.team_std_info[self.data_kind]["children"],
             filter(lambda x: x["name"] == roomName_asDBformat),
@@ -611,7 +646,8 @@ class pjt_interior_matrix_widget:
             # DB에 해당 항목 추가
             self.add_assign_forRoom(roomName_asDBformat, material_full_name)
 
-        self.update(event=None, mode="db_update")
+        self.update(event=None, mode="db_update", filter_mode=self.widget_filtermode)
+        # self.sheet.redraw()
 
         self.restore_scroll()
         # state.observer_manager.notify_observers(state)

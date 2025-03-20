@@ -413,7 +413,10 @@ class BaseTreeView:
 
     def clear_treeview(self):
         """Clear all items from the Treeview."""
-        self.tree.delete(*self.tree.get_children())
+        try:
+            self.tree.delete(*self.tree.get_children())
+        except:
+            pass
 
     def get_tree_data(self):
         """Get the current data from the Treeview as a list of dictionaries."""

@@ -43,6 +43,8 @@ def create_pjt_intMatrix_tab(state, subtab_notebook, exe_mode=None):
 
     if not exe_mode:
         subtab_notebook.add(working_tab, text="Project Interior Matrix")
+    elif exe_mode == "new window":
+        working_tab.pack(expand=True, fill="both")
 
     section1 = ttk.Frame(
         working_tab_paned_area,
@@ -112,3 +114,5 @@ def create_pjt_intMatrix_tab(state, subtab_notebook, exe_mode=None):
     ######## notify_targets 등록 ###############################################
     # state.notify_targets.append(pjt_interior_matrix)
     ############################################################################
+
+    return working_tab
