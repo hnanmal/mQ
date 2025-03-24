@@ -126,7 +126,7 @@ class pjt_interior_matrix_widget:
                 set,
                 list,
                 sorted,
-            )
+            ) + ["All"]
             print(f"[int matrix] floors : {floors}")
         else:
             floors = ["건물선택필요"]
@@ -237,6 +237,7 @@ class pjt_interior_matrix_widget:
             map(lambda x: x["name"]),
             map(lambda x: x.replace("\t", "_")),
             list,
+            sorted,
         )
         self.all_rooms = rooms_for_selectedBuilding
         # ✅ 레벨 콤보박스 업데이트
@@ -248,8 +249,13 @@ class pjt_interior_matrix_widget:
             rooms_for_selectedBuilding,
             filter(lambda x: self.get_level_fromRoomName(x) == selected_lv),
             list,
+            sorted,
         )
-        self.filtered_rooms = rooms_for_selectedLevel
+
+        if selected_lv == "All":
+            self.filtered_rooms = rooms_for_selectedBuilding
+        else:
+            self.filtered_rooms = rooms_for_selectedLevel
         print(f"[int matrix] rooms_for_selectedBuilding : {rooms_for_selectedLevel}")
 
         SWM = go(
