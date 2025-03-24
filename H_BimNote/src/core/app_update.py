@@ -8,6 +8,8 @@ import sys
 # import subprocess
 from datetime import datetime
 
+from src.core.web import open_url_in_browser
+
 APP_VERSION = "1.2.2"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 
@@ -22,10 +24,14 @@ def check_for_update():
         if latest_version > APP_VERSION:
             answer = messagebox.askyesno(
                 "Update Available",
-                f"새 버전({latest_version}) 을 이용할 수 있습니다. 업데이트 하시겠습니까?",
+                # f"새 버전({latest_version}) 을 이용할 수 있습니다. 업데이트 하시겠습니까?",
+                f"새 버전({latest_version}) 을 이용할 수 있습니다. 설치파일 다운로드 페이지로 이동하시겠습니까까?",
             )
             if answer:
-                download_update(download_url)
+                # download_update(download_url)
+                open_url_in_browser(
+                    "https://henginmc6eaoutlook.sharepoint.com/:f:/s/jhjh/EhMNiYh8PkBDsCKr7gg8UeoBvhpHni-Bm2umKis-lf_-qg?e=Ab6njo"
+                )
         else:
             messagebox.showinfo("No Update", "현재 최신버전입니다.")
 
