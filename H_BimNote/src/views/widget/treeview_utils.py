@@ -669,6 +669,39 @@ class BaseTreeView:
                 # self.tree.insert(parent_id, "end", text=node, values=(node,))
                 pass
 
+    def insert_data_with_levels_withTag(self, data, parent_id=""):
+        """Insert data into the TreeView with levels based on the new data structure."""
+        for node in data:
+            if isinstance(node, dict):
+                # Extract the last value in the 'values' list to be displayed in the TreeView
+                display_value = node["values"]
+
+                # Insert the current node with its name and the last value from 'values'
+                if node["children"]:
+                    node_id = self.tree.insert(
+                        parent_id, "end", text=node["name"], values=(display_value)
+                    )
+                else:
+                    node_id = self.tree.insert(
+                        parent_id,
+                        "end",
+                        text=node["name"],
+                        values=(display_value),
+                        tags="red_text",
+                    )
+
+                # Recursively insert children if there are any
+                if "children" in node and isinstance(node["children"], list):
+                    # self.insert_data_with_levels(node["children"], node_id)
+                    self.insert_data_with_levels_withTag(
+                        sorted(node["children"], key=sort_func), node_id
+                    )
+
+            elif isinstance(node, str):
+                # Insert the string as a leaf node without additional children
+                # self.tree.insert(parent_id, "end", text=node, values=(node,))
+                pass
+
     def get_item_indices(self, selected_item_id):
         indices = []
         current_item = selected_item_id

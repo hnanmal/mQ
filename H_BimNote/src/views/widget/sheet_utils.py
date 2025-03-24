@@ -2577,7 +2577,7 @@ class Project_WM_perRVT_SheetView:
             [
                 ("delete", lambda e: self.on_change_sheet(e)),
                 ("end_edit_cell", lambda e: self.on_change_sheet(e)),
-                ("end_delete_rows", lambda e: self.on_change_sheet(e)),
+                ("end_delete_rows", lambda e: self.update_typeAssign(e)),
                 ("end_move_rows", lambda e: self.on_change_sheet(e)),
                 ("end_ctrl_v", lambda e: self.on_change_sheet(e)),
                 ("rc_insert_row", lambda e: self.handle_row_insert(e)),
@@ -2881,6 +2881,11 @@ class Project_WM_perRVT_SheetView:
             wrapped_data.append(wrapped_row)
 
         self.sheet.set_sheet_data(wrapped_data)
+
+    def update_typeAssign(self, e=None):
+        self.on_change_sheet(e)
+
+        self.state.typeAssign_treeview.update()
 
     def on_change_sheet(self, e=None):
         state = self.state

@@ -42,6 +42,10 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.2 (2025-03-21)
+    - Project Input > Project Interior Matrix 탭 룸 항목 순서 정렬 및 층 선택에 "All" 항목 추가
+    - Project Input > Project Family Assign 탭 레빗 타입 목록에서 WM 할당 안된 항목들 적색 표시되도록 업데이트
+    
 🔳 v1.2.1 (2025-03-20)
     - Project Input > Project Interior Matrix 탭 좌측 SWM 항목 순서 기준 변경 (Floor -> Skirt -> Wall -> Ceiling)
     - Project Input > Project Interior Matrix 탭 좌측 SWM 항목 텍스트 좌측 정렬로 변경

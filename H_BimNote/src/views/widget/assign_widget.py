@@ -353,6 +353,9 @@ class WMapply_button:
         ## project_WM_perRVT_SheetView 업데이트
         state.project_WM_perRVT_SheetView.update()
 
+        ## typeAssign_treeview 업데이트
+        state.typeAssign_treeview.update()
+
 
 class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 선택항목 반영하도록 수정필요
     def __init__(self, state, parent, relate_widget, view_level=2, *args, **kwargs):
@@ -413,6 +416,9 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
         # set treeview_editor class
         self.treeviewEditor = TreeviewEditor(state, self)
+
+        # 태그 스타일 설정 (이 방식은 충돌 없음)
+        self.treeview.tree.tag_configure("red_text", foreground="red")
 
         # Bind selection events
         self.treeview.tree.bind(
@@ -491,10 +497,27 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
             f"\n선택된 레빗 타입 : {'  ,  '.join(selected_item_names)}\n"
         )
 
+    def apply_red_to_empty_nodes(self, tree):
+        for item in tree.get_children():
+            self.check_and_tag(tree, item)
+
+    def check_and_tag(self, tree, item):
+        if not tree.get_children(item):
+            tree.item(item, tags=("red_text",))
+        else:
+            for child in tree.get_children(item):
+                self.check_and_tag(tree, child)
+
     def update(self, event=None, view_level=None):
         state = self.state
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
         selected_stdType = self.relate_widget.selected_item_relate_widget.get()
+
+        # 1. 현재 선택 항목 저장
+        tree_ = self.treeview.tree
+        selected = tree_.selection()
+        selected_id = selected[0] if selected else None
+        selected_name = tree_.item(selected_id, "text") if selected_id else None
 
         """Update the TreeView whenever the state changes."""
         if self.data_kind in state.team_std_info:
@@ -509,11 +532,28 @@ class TypeAssign_treeview:  ## delete 함수 수정 & 항목 클릭시 state에 
 
             # Clear the TreeView and reload data from the updated state
             self.treeview.clear_treeview()
-            self.treeview.insert_data_with_levels(data)
-
+            # self.treeview.insert_data_with_levels(data)
+            self.treeview.insert_data_with_levels_withTag(data)
             self.treeview.expand_tree_to_level(level=view_level)
+
         elif not selected_stdType:
             self.treeview.clear_treeview()
+
+        # 4. 다시 선택 적용 (존재할 경우)
+        tree_item_names = go(
+            tree_.get_children(),
+            map(lambda x: tree_.item(x, "text")),
+            list,
+        )
+
+        if selected_name in tree_item_names:
+            new_selected_id = go(
+                tree_.get_children(),
+                filter(lambda x: tree_.item(x, "text") == selected_name),
+                next,
+            )
+            tree_.selection_set(new_selected_id)
+            tree_.see(new_selected_id)  # 선택 항목이 보이도록 스크롤
 
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
