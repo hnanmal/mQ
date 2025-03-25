@@ -295,6 +295,7 @@ class pjt_interior_matrix_widget:
             )
             # print(f"usedChecklist : {usedChecklist}")
 
+        # floor_usedChecklist, skirt_usedChecklist 등 분리해서 filter_mode 적용
         if filter_mode:
             SWMitem_names = go(
                 SWMitem_names_,
