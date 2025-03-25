@@ -6,6 +6,7 @@ from ttkbootstrap.constants import *
 from PIL import ImageTk, Image
 from PIL.Image import Resampling
 
+from src.core.web import open_url_in_browser
 from src.core.recent_file_widget import RecentPinnedWidget
 from src.core.fp_utils import *
 from src.core.file_utils import load_from_json
@@ -153,6 +154,28 @@ def create_recentBnotes_tab(state, notebook):
         bootstyle="info-outline",
     )
     start_withStd_btn.pack(side=tk.TOP, padx=20, anchor="ne")
+
+    bottom_area = ttk.Frame(
+        section1,
+        width=200,
+        style="Custom.TFrame",
+    )
+    bottom_area.pack(side="bottom", anchor="w")
+    downlink_label = ttk.Label(
+        bottom_area,
+        text="최신 B-note 설치파일 다운로드 페이지",
+        background="#e3e3e3",
+        foreground="blue",
+        cursor="hand2",
+        # style="Custom.TFrame",
+    )
+    downlink_label.pack(anchor="w", padx=30)
+    downlink_label.bind(
+        "<Button-1>",
+        lambda e: open_url_in_browser(
+            "https://henginmc6eaoutlook.sharepoint.com/:f:/s/jhjh/Ele1tr-icRxHtzTvnb3iqcgBlL8RMFu-p0fiL0sXeLJMSg?e=2sdPPM"
+        ),
+    )
 
     ##############################################################
     ## section 2###########

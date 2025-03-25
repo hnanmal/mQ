@@ -42,6 +42,11 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.3 (2025-03-25)
+    - 설치 및 업데이트 방식 변경 : 설치파일 실행시 정해진 경로로 자동 설치
+    - Home 페이지 좌하단 : 설치 파일 다운로드 페이지 링크 추가
+    - 업데이트 체크시, 최신 버전 있는 경우 확인 누르면 다운로드 페이지로 이동
+
 🔳 v1.2.2 (2025-03-21)
     - Project Input > Project Interior Matrix 탭 룸 항목 순서 정렬 및 층 선택에 "All" 항목 추가
     - Project Input > Project Family Assign 탭 레빗 타입 목록에서 WM 할당 안된 항목들 적색 표시되도록 업데이트
