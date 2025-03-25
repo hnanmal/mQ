@@ -42,6 +42,11 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.4 (2025-03-26)
+    - Project Standard > Project Family List 탭의 Export to Excel 기능에서 산출타입 매개변수도 출력하도록 수정
+    - Family List 엑셀 저장 후 자동 열기 반영
+    - Family List 엑셀 저장양식 일부 수정(셀 색상 적용, 빈 행 삽입 등)
+    
 🔳 v1.2.3 (2025-03-25)
     - 설치 및 업데이트 방식 변경 : 설치파일 실행시 정해진 경로로 자동 설치
     - Home 페이지 좌하단 : 설치 파일 다운로드 페이지 링크 추가

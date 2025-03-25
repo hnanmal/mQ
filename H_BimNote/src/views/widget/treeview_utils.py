@@ -1,4 +1,5 @@
 # src/views/widget/treeview_utils.py
+import os
 from tkinter import filedialog, messagebox
 
 import openpyxl
@@ -2867,10 +2868,28 @@ class TeamStd_FamlistTreeView:
 
         # Recursive function to write only visible treeview data
         def write_visible_data(parent="", level=0, row_index=2):
+            green_fill = PatternFill(
+                start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
+            )
+            pink_fill = PatternFill(
+                start_color="f173ff", end_color="f173ff", fill_type="solid"
+            )
+            mild_pink_fill = PatternFill(
+                start_color="f6a6ff", end_color="f6a6ff", fill_type="solid"
+            )
+
+            def check_str_inRow(row, str_):
+                res = False
+                for c in row:
+                    if str_ in c:
+                        res = True
+                return res
+
             for item in treeview.get_children(parent):
                 if not treeview.item(
                     item, "open"
                 ):  # Folded items should not be included
+                    name = treeview.item(item, "text")
                     values = treeview.item(item, "values")
 
                     # Process values (avoid Excel formula issues with '=')
@@ -2883,22 +2902,49 @@ class TeamStd_FamlistTreeView:
                     for col_num, value in enumerate(values_, 1):
                         cell = ws.cell(row=row_index, column=col_num)
                         # cell.alignment = center_align
-                        # cell.border = border_style
+                        # if col_num > 5:
+                        #     cell.border = border_style
+
+                    # print(f"현재레벨 - {self.level_combobox.get()}")
+                    if self.level_combobox.get() == "4":
+                        ws.cell(row=row_index, column=6).border = border_style
+                        ws.cell(row=row_index, column=7).border = border_style
 
                     row_index += 1  # Move to next row
                     continue  # Skip folded items
 
+                name = treeview.item(item, "text")
                 values = treeview.item(item, "values")
                 values_ = [v.replace("=", "'=") if "=" in v else v for v in values]
+
+                # print(f"row ~ {values_}")
+                if check_str_inRow(values, "GWM") or check_str_inRow(values, "SWM"):
+                    ws.append([""])
+                    row_index += 1  # Move to next row
 
                 # Write row to Excel
                 ws.append(values_)
 
-                # Apply formatting to each row
-                for col_num, value in enumerate(values_, 1):
-                    cell = ws.cell(row=row_index, column=col_num)
-                    # cell.alignment = center_align
-                    # cell.border = border_style
+                # # Apply formatting to each row
+
+                row_data = list(enumerate(values_, 1))
+                for col_num, value in row_data:
+                    if re.match(r"\d+\.[A-Za-z]+", value):
+                        for c in range(col_num, len(columns)):
+                            cell = ws.cell(row=row_index, column=c)
+                            cell.fill = green_fill
+                    elif re.match(r"^\d+", value):
+                        # print(
+                        #     f"check_asterisk_inRow(value) {check_asterisk_inRow(value)}"
+                        # )
+                        if check_str_inRow(values_, "***"):
+                            for c in range(col_num, len(columns)):
+                                cell = ws.cell(row=row_index, column=c)
+                                cell.fill = pink_fill
+                        else:
+                            for c in range(col_num, len(columns)):
+                                cell = ws.cell(row=row_index, column=c)
+                                cell.fill = mild_pink_fill
 
                 row_index += 1
 
@@ -2920,9 +2966,60 @@ class TeamStd_FamlistTreeView:
                 max_length + 2
             )
 
+        ########## std-calcdict 출력 부 #########
+        ws2 = wb.create_sheet(title="표준산출유형사전")
+        green_fill = PatternFill(
+            start_color="C6EFCE", end_color="C6EFCE", fill_type="solid"
+        )
+
+        row_idx = 1  # 엑셀의 행 번호는 1부터 시작
+        data = go(
+            self.state.team_std_info["std-calcdict"]["children"],
+            deepcopy,
+            lambda x: sorted(x, key=lambda i: sort_func_forCalctype(i)),
+        )
+        for node in data:
+            # calcType 추가 + 스타일 적용
+            calcType = [node["name"], "", ""]
+            ws2.append(calcType)
+            ws2.cell(row=row_idx, column=1).fill = green_fill
+            ws2.cell(row=row_idx, column=2).fill = green_fill
+            ws2.cell(row=row_idx, column=3).fill = green_fill
+            row_idx += 1
+
+            for childnode in node["children"]:
+                ws2.append(childnode["values"])
+                row_idx += 1
+
+            ws2.append([""])  # 빈 줄
+            row_idx += 1
+
+        # Auto-adjust column widths based on content length
+        for col_num, column_title in enumerate(columns, 1):
+            max_length = max(
+                len(str(ws2.cell(row=row, column=col_num).value) or "")
+                for row in range(1, ws2.max_row + 1)
+            )
+            ws2.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = (
+                max_length + 2
+            )
+
         # Save the Excel file
         wb.save(file_path)
         print(f"Formatted Treeview data exported successfully to {file_path}")
+
+        # 6. 메시지 박스 띄우기
+        open_file = messagebox.askyesno(
+            "저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+        )
+
+        # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
+        if open_file:
+            try:
+                os.startfile(file_path)  # Windows에서 엑셀 파일 열기
+                # subprocess.Popen(["start", file_path])
+            except Exception as e:
+                messagebox.showerror("오류", f"파일을 열 수 없습니다.\n{e}")
 
     def set_title(self, parent, text=None):
         if not text:
