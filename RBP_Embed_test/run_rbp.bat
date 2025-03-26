@@ -1,0 +1,1 @@
+"D:\mQ\RBP_Embed_test\Resources\RBP\BatchRvt.exe" -script "D:\mQ\RBP_Embed_test\Scripts\my_task.py" -filelist "D:\mQ\RBP_Embed_test\revit_file_list.txt" -settings "D:\mQ\RBP_Embed_test\Resources\rbp_settings.xml" -version 2025
