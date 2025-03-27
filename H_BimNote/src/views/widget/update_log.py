@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.6 (2025-03-xx)
+    - GWM / SWM 위젯, Family list 위젯 에 검색 시 검색 결과 존재하는 스크롤바 위치에 황색 단선 표시 기능 추가
+
 🔳 v1.2.5 (2025-03-27)
     - GWM / SWM 위젯, Family list 위젯 에 검색 기능 추가 (- 엔터키 혹은 Search 버튼으로 검색 내용 포함 항목 순차 회람)
 

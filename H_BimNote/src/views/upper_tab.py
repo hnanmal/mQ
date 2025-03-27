@@ -199,8 +199,10 @@ def create_team_standard_tab(state, notebook):
     main_tab = create_std_Main_tab(state, subtab_notebook)
     g_wm_tab = create_stdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_stdSWM_tab(state, subtab_notebook)
-    common_input_tab = create_common_input_tab(state, subtab_notebook)
-    std_Famlist_tab = create_stdFamList_tab(state, subtab_notebook)
+
+    ### common_input_tab / std_Famlist_tab 일단 제거 - 추후 팀 스탠다드 용 위젯으로 재편 후 추가 ###
+    # common_input_tab = create_common_input_tab(state, subtab_notebook)
+    # std_Famlist_tab = create_stdFamList_tab(state, subtab_notebook)
 
 
 def create_project_standard_tab(state, notebook):

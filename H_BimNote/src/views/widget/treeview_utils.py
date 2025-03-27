@@ -320,13 +320,12 @@ class TreeviewSearchManager:
 
         # UI
         self.search_frame = tk.Frame(self.parent)
-        self.search_frame.pack(pady=5)
+        self.search_frame.pack(fill="x", pady=5)
 
         self.search_entry = tk.Entry(self.search_frame)
-        self.search_entry.pack(side="left", padx=5)
-        self.search_entry.bind(
-            "<Return>", lambda event: self.search_or_next()
-        )  # ⏎ 바인드
+        # self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.search_entry.pack(side="left", padx=(30, 10))
+        self.search_entry.bind("<Return>", lambda event: self.search_or_next())
 
         self.search_button = tk.Button(
             self.search_frame, text="Search", command=self.search_or_next
@@ -338,11 +337,32 @@ class TreeviewSearchManager:
         self.current_index = -1
         self.previous_search = ""
 
+        # 마커를 위한 캔버스
+        self.marker_canvas = tk.Canvas(
+            self.parent, width=10, bg="white", highlightthickness=0
+        )
+        self.marker_canvas.pack(
+            side="right", fill="y", padx=(2, 0)
+        )  # 트리뷰 오른쪽 끝에 붙이기
+
+        self.tree.bind(
+            "<Configure>", lambda e: self.draw_markers()
+        )  # 리사이즈 시 마커 업데이트
+
     def search_or_next(self):
         """처음엔 검색, 이후엔 다음 결과로 이동"""
         search_text = self.search_entry.get().strip().lower()
 
+        # if not search_text:
+        #     return
+
         if not search_text:
+            # 👉 검색어 없을 때: 결과 초기화 + 마커 제거
+            self.previous_search = ""
+            self.matched_items = []
+            self.current_index = -1
+            self.marker_canvas.delete("all")  # 마커 리셋
+            self.tree.selection_remove(self.tree.selection())  # 선택 제거 (선택사항)
             return
 
         # 검색어가 바뀌었으면 새로 검색
@@ -366,6 +386,8 @@ class TreeviewSearchManager:
 
             self.highlight_and_focus(self.matched_items[self.current_index])
 
+        self.draw_markers()
+
     def find_matches(self, search_text):
         """트리 전체에서 검색어 포함 항목 찾기"""
         for item in self.tree.get_children():
@@ -386,6 +408,110 @@ class TreeviewSearchManager:
         self.tree.selection_set(item)
         self.tree.focus(item)
         self.tree.see(item)
+
+    def draw_markers(self):
+        """검색 결과 위치 마커 표시"""
+        self.marker_canvas.delete("all")
+        if not self.matched_items:
+            return
+
+        all_items = self._get_all_items()
+        canvas_height = int(self.marker_canvas.winfo_height())
+        self.marker_canvas.update_idletasks()
+
+        for match_id in self.matched_items:
+            if match_id in all_items:
+                index = all_items.index(match_id)
+                y = int(canvas_height * (index / max(1, len(all_items))))
+                self.marker_canvas.create_line(0, y, 10, y, fill="#d17e0a", width=2)
+
+    def _get_all_items(self):
+        items = []
+
+        def walk(node):
+            items.append(node)
+            for child in self.tree.get_children(node):
+                walk(child)
+
+        for root in self.tree.get_children():
+            walk(root)
+
+        return items
+
+
+# class TreeviewSearchManager:
+#     def __init__(self, treeview: ttk.Treeview, container: tk.Widget):
+#         self.tree = treeview
+#         self.parent = container
+
+#         # UI
+#         self.search_frame = tk.Frame(self.parent)
+#         self.search_frame.pack(pady=5)
+
+#         self.search_entry = tk.Entry(self.search_frame)
+#         self.search_entry.pack(side="left", padx=5)
+#         self.search_entry.bind(
+#             "<Return>", lambda event: self.search_or_next()
+#         )  # ⏎ 바인드
+
+#         self.search_button = tk.Button(
+#             self.search_frame, text="Search", command=self.search_or_next
+#         )
+#         self.search_button.pack(side="left")
+
+#         # 검색 상태
+#         self.matched_items = []
+#         self.current_index = -1
+#         self.previous_search = ""
+
+#     def search_or_next(self):
+#         """처음엔 검색, 이후엔 다음 결과로 이동"""
+#         search_text = self.search_entry.get().strip().lower()
+
+#         if not search_text:
+#             return
+
+#         # 검색어가 바뀌었으면 새로 검색
+#         if search_text != self.previous_search:
+#             self.previous_search = search_text
+#             self.matched_items = []
+#             self.current_index = -1
+#             self.find_matches(search_text)
+
+#             if self.matched_items:
+#                 self.current_index = 0
+#                 self.highlight_and_focus(self.matched_items[0])
+#         else:
+#             # 동일 검색어이면 다음 결과로 이동
+#             if not self.matched_items:
+#                 return
+
+#             self.current_index += 1
+#             if self.current_index >= len(self.matched_items):
+#                 self.current_index = 0  # 순환
+
+#             self.highlight_and_focus(self.matched_items[self.current_index])
+
+#     def find_matches(self, search_text):
+#         """트리 전체에서 검색어 포함 항목 찾기"""
+#         for item in self.tree.get_children():
+#             self._recursive_match(item, search_text)
+
+#     def _recursive_match(self, item, search_text):
+#         text = self.tree.item(item, "text").lower()
+#         values = [str(v).lower() for v in self.tree.item(item, "values")]
+
+#         if search_text in text or any(search_text in val for val in values):
+#             self.matched_items.append(item)
+
+#         for child in self.tree.get_children(item):
+#             self._recursive_match(child, search_text)
+
+#     def highlight_and_focus(self, item):
+#         """포커스 이동 및 강조"""
+#         self.tree.selection_set(item)
+#         self.tree.focus(item)
+#         self.tree.see(item)
 
 
 class BaseTreeView:
