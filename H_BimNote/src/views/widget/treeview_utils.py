@@ -313,6 +313,81 @@ class TreeViewContextMenu:
         func()
 
 
+class TreeviewSearchManager:
+    def __init__(self, treeview: ttk.Treeview, container: tk.Widget):
+        self.tree = treeview
+        self.parent = container
+
+        # UI
+        self.search_frame = tk.Frame(self.parent)
+        self.search_frame.pack(pady=5)
+
+        self.search_entry = tk.Entry(self.search_frame)
+        self.search_entry.pack(side="left", padx=5)
+        self.search_entry.bind(
+            "<Return>", lambda event: self.search_or_next()
+        )  # ⏎ 바인드
+
+        self.search_button = tk.Button(
+            self.search_frame, text="Search", command=self.search_or_next
+        )
+        self.search_button.pack(side="left")
+
+        # 검색 상태
+        self.matched_items = []
+        self.current_index = -1
+        self.previous_search = ""
+
+    def search_or_next(self):
+        """처음엔 검색, 이후엔 다음 결과로 이동"""
+        search_text = self.search_entry.get().strip().lower()
+
+        if not search_text:
+            return
+
+        # 검색어가 바뀌었으면 새로 검색
+        if search_text != self.previous_search:
+            self.previous_search = search_text
+            self.matched_items = []
+            self.current_index = -1
+            self.find_matches(search_text)
+
+            if self.matched_items:
+                self.current_index = 0
+                self.highlight_and_focus(self.matched_items[0])
+        else:
+            # 동일 검색어이면 다음 결과로 이동
+            if not self.matched_items:
+                return
+
+            self.current_index += 1
+            if self.current_index >= len(self.matched_items):
+                self.current_index = 0  # 순환
+
+            self.highlight_and_focus(self.matched_items[self.current_index])
+
+    def find_matches(self, search_text):
+        """트리 전체에서 검색어 포함 항목 찾기"""
+        for item in self.tree.get_children():
+            self._recursive_match(item, search_text)
+
+    def _recursive_match(self, item, search_text):
+        text = self.tree.item(item, "text").lower()
+        values = [str(v).lower() for v in self.tree.item(item, "values")]
+
+        if search_text in text or any(search_text in val for val in values):
+            self.matched_items.append(item)
+
+        for child in self.tree.get_children(item):
+            self._recursive_match(child, search_text)
+
+    def highlight_and_focus(self, item):
+        """포커스 이동 및 강조"""
+        self.tree.selection_set(item)
+        self.tree.focus(item)
+        self.tree.see(item)
+
+
 class BaseTreeView:
     def __init__(self, state, parent, headers):
         self.state = state
@@ -812,6 +887,10 @@ class TeamStd_GWMTreeView:
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
         self.set_title(tree_frame)
+
+        # 검색 매니저 붙이기
+        self.search = TreeviewSearchManager(self.treeview.tree, tree_frame)
+
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -1720,6 +1799,10 @@ class TeamStd_SWMTreeView:
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
         self.set_title(tree_frame)
+
+        # 검색 매니저 붙이기
+        self.search = TreeviewSearchManager(self.treeview.tree, tree_frame)
+
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -2784,6 +2867,10 @@ class TeamStd_FamlistTreeView:
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
         self.set_title(tree_frame)
+
+        # 검색 매니저 붙이기
+        self.search = TreeviewSearchManager(self.treeview.tree, tree_frame)
+
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)

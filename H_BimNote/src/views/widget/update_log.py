@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.5 (2025-03-27)
+    - GWM / SWM 위젯, Family list 위젯 에 검색 기능 추가 (- 엔터키 혹은 Search 버튼으로 검색 내용 포함 항목 순차 회람)
+
 🔳 v1.2.4 (2025-03-26)
     - Project Standard > Project Family List 탭의 Export to Excel 기능에서 산출타입 매개변수도 출력하도록 수정
     - Family List 엑셀 저장 후 자동 열기 반영
