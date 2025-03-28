@@ -15,6 +15,7 @@ from PIL import ImageTk, Image
 # import time
 
 # from src.controllers.db_update_manager import DBUpdateManager
+from src.core.app_update import APP_VERSION
 from src.core.file_utils import load_from_json, on_closing, save_to_json_teamStdInfo
 from src.views.upper_tab import (
     create_project_apply_tab,
@@ -129,7 +130,7 @@ def show_splash_screen():
     text_label2 = tk.Label(
         text_area,
         # text="HEC BIM Note, now Loading...",
-        text="시작하는중...",
+        text=f"B-note 시작하는중...\n\nversion : v{APP_VERSION}",
         font=("Arial", 12),
     )
     text_label2.configure(bg="#ebebeb")

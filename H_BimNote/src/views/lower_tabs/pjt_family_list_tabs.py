@@ -125,7 +125,8 @@ def create_pjtFamList_tab(state, subtab_notebook):
         default_width=600,
     )
     ######### notify_targets 등록 ###############################################
-    state.notify_targets.append(widgetSwitcher)
+    # state.notify_targets.append(widgetSwitcher)
+    ## 상기 코드 활성화 시 트리뷰 항목 더블클릭 에러 발생
     #############################################################################
     # state.widgetSwitcher_team = widgetSwitcher
 

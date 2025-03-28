@@ -322,13 +322,20 @@ class TreeviewSearchManager:
         self.search_frame = tk.Frame(self.parent)
         self.search_frame.pack(fill="x", pady=5)
 
+        self.search_imoji = ttk.Label(self.search_frame, text="🔎 항목 검색:")
+        self.search_imoji.pack(side="left", padx=(5, 5))
+
         self.search_entry = tk.Entry(self.search_frame)
         # self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        self.search_entry.pack(side="left", padx=(30, 10))
+        self.search_entry.pack(side="left", padx=(0, 10))
         self.search_entry.bind("<Return>", lambda event: self.search_or_next())
 
         self.search_button = tk.Button(
             self.search_frame, text="Search", command=self.search_or_next
+        )
+        self.search_button.config(
+            bg="#b6d1c5",
+            activebackground="#81998e",
         )
         self.search_button.pack(side="left")
 
@@ -338,11 +345,20 @@ class TreeviewSearchManager:
         self.previous_search = ""
 
         # 마커를 위한 캔버스
-        self.marker_canvas = tk.Canvas(
-            self.parent, width=10, bg="white", highlightthickness=0
+        self.marker_canvas = ttk.Canvas(
+            self.parent,
+            width=10,
+            # bg="white",
+            # bg="gray",
+            highlightthickness=0,
+            # bootstyle="info",
         )
+        self.marker_canvas.config(bg="#fafafa")
+        self.marker_canvas.update()
         self.marker_canvas.pack(
-            side="right", fill="y", padx=(2, 0)
+            side="right",
+            fill="y",
+            # padx=(2, 0),
         )  # 트리뷰 오른쪽 끝에 붙이기
 
         self.tree.bind(
@@ -352,9 +368,6 @@ class TreeviewSearchManager:
     def search_or_next(self):
         """처음엔 검색, 이후엔 다음 결과로 이동"""
         search_text = self.search_entry.get().strip().lower()
-
-        # if not search_text:
-        #     return
 
         if not search_text:
             # 👉 검색어 없을 때: 결과 초기화 + 마커 제거
@@ -405,9 +418,15 @@ class TreeviewSearchManager:
 
     def highlight_and_focus(self, item):
         """포커스 이동 및 강조"""
-        self.tree.selection_set(item)
-        self.tree.focus(item)
-        self.tree.see(item)
+        try:
+            self.tree.selection_set(item)
+            self.tree.focus(item)
+            self.tree.see(item)
+        except:
+            # 검색상태 초기화
+            self.matched_items = []
+            self.current_index = -1
+            self.previous_search = ""
 
     def draw_markers(self):
         """검색 결과 위치 마커 표시"""
@@ -1027,7 +1046,7 @@ class TeamStd_GWMTreeView:
 
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
-        # Bind selection events
+
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
         # Create and integrate context menu
@@ -2902,7 +2921,8 @@ class TeamStd_FamlistTreeView:
             "Description",
             "표준산출유형 번호",
         ]
-        hdr_widths = [0, 60, 20, 150, 100, 100, 100, 230, 20]
+        # hdr_widths = [0, 60, 20, 150, 100, 100, 100, 230, 20]
+        hdr_widths = [0, 60, 5, 150, 100, 100, 100, 230, 20]
 
         # Compose TreeView, Style Manager, and State Observer
         tree_frame = ttk.Frame(parent, width=600, height=2000)
@@ -3466,15 +3486,6 @@ class TeamStd_FamlistTreeView:
 
             # Handle focused item visibility
             self.place_selected_item_at_top()
-            # focused_item = self.treeview.tree.focus()
-            # if focused_item:
-            #     self.treeview.bring_item_to_top(focused_item)
-            #     self.treeview.tree.focus(focused_item)
-            # else:
-            #     # Optionally, focus on the first visible item if no item is focused
-            #     first_root = self.treeview.tree.get_children("")[0]
-            #     self.treeview.bring_item_to_top(first_root)
-            #     self.treeview.tree.focus(first_root)
 
         except ValueError as e:
             self.state.log_widget.write(f"Invalid level selected: {e}")

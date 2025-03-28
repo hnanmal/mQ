@@ -17,18 +17,24 @@ class TreeviewEditor:
         self.data_manager = TreeDataManager_treeview(state)
 
         # Bind double-click to initiate edit
-        self.tree.bind("<Double-1>", self.on_double_click)
+        self.tree.bind("<Double-Button-1>", self.on_double_click)
 
     def enable_edit(self):
         # Bind double-click to initiate edit
-        self.tree.bind("<Double-1>", self.on_double_click)
+        self.tree.bind("<Double-Button-1>", self.on_double_click)
 
     def disable_edit(self):
-        self.tree.unbind("<Double-1>")
+        self.tree.unbind("<Double-Button-1>")
 
     def on_double_click(self, event):
         # Identify the column and item that was double-clicked
-        region = self.tree.identify("region", event.x, event.y)
+        print(f"[더블클릭] x={event.x}, y={event.y}")
+        # region = self.tree.identify("region", event.x, event.y)
+        region = self.tree.identify_region(event.x, event.y)
+        row = self.tree.identify_row(event.y)
+        col = self.tree.identify_column(event.x)
+        print(f"region={region}, row={row}, col={col}")
+
         if region != "cell":
             return
 
@@ -67,11 +73,15 @@ class TreeviewEditor:
         self.entry_widget.focus()
 
         # Bind events for Entry widget
-        self.entry_widget.bind("<Return>", self.on_edit_complete)
+        self.entry_widget.bind(
+            "<Return>", lambda e: self.on_edit_complete(e, current_value)
+        )
         self.entry_widget.bind("<Escape>", self.on_edit_cancel)
         self.tree.bind("<MouseWheel>", self.on_edit_cancel)
-        # self.entry_widget.bind("<FocusOut>", self.on_edit_complete)
-        self.entry_widget.bind("<FocusOut>", self.on_edit_cancel)
+        self.entry_widget.bind(
+            "<FocusOut>", lambda e: self.on_edit_complete(e, current_value)
+        )
+        # self.entry_widget.bind("<FocusOut>", self.on_edit_cancel)
 
     def on_scroll(self, event):
         """Ask the user whether to cancel editing when they scroll."""
@@ -82,12 +92,18 @@ class TreeviewEditor:
             if response:
                 self.on_edit_cancel(None)
 
-    def on_edit_complete(self, event):
+    def on_edit_complete(self, event, current_value):
         if self.current_item is None or self.current_column is None:
             return
 
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
+
+        if current_value == new_value:
+            # Destroy the Entry widget
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            return
 
         # Calc-Dict 자동 업데이트
         if self.current_column == 8 and new_value.startswith("Q"):
@@ -161,13 +177,19 @@ class TreeviewEditor:
 
 
 class TreeviewEditor_stdGWMSWM(TreeviewEditor):
-    def on_edit_complete(self, event):
+    def on_edit_complete(self, event, current_value):
         if self.current_item is None or self.current_column is None:
             return
 
         print(f"트리뷰수정이벤트::{event}")
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
+
+        if current_value == new_value:
+            # Destroy the Entry widget
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            return
 
         # Calc-Dict 자동 업데이트
         if self.current_column == 8 and new_value.startswith("Q"):
@@ -227,12 +249,18 @@ class TreeviewEditor_stdGWMSWM(TreeviewEditor):
 
 class TreeviewEditor_forAssignTreeview(TreeviewEditor):
 
-    def on_edit_complete(self, event):
+    def on_edit_complete(self, event, current_value):
         if self.current_item is None or self.current_column is None:
             return
 
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
+
+        if current_value == new_value:
+            # Destroy the Entry widget
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            return
 
         # Update the state with the new value using TreeDataManager
         selected_name = self.tree.item(self.current_item, "text")
@@ -269,12 +297,18 @@ class TreeviewEditor_forAssignTreeview(TreeviewEditor):
 
 class TreeviewEditor_forBuildingList(TreeviewEditor):
 
-    def on_edit_complete(self, event):
+    def on_edit_complete(self, event, current_value):
         if self.current_item is None or self.current_column is None:
             return
 
         # Get the updated value from the Entry widget
         new_value = self.entry_widget.get()
+
+        if current_value == new_value:
+            # Destroy the Entry widget
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            return
 
         # Update the state with the new value using TreeDataManager
         selected_name = self.tree.item(self.current_item, "text")
