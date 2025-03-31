@@ -1,3 +1,9 @@
+import os
+from tkinter import filedialog
+from tkinter import messagebox
+
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from src.controllers.tree_data_navigator import TreeDataManager_treesheet
 from src.core.fp_utils import *
 import tkinter as tk
@@ -93,6 +99,16 @@ class pjt_interior_matrix_widget:
         self.sheet.set_index_width(200)
         self.sheet.enable_bindings()
         self.sheet.pack(fill="both", expand=True)
+
+        # Create Extract Excel Button
+        export_btn = ttk.Button(
+            self.combobox_area,
+            text="Export to Excel",
+            command=self.export_tksheet_to_excel,
+            bootstyle="success-outline",
+        )
+        export_btn.pack(side="left", padx=100)
+
         # ✅ 스타일 다시 적용
         self.apply_styles()
 
@@ -120,13 +136,13 @@ class pjt_interior_matrix_widget:
     def set_floor_commbovalues(self):
         state = self.state
         if state.current_building:
-            floors = go(
+            floors = ["All"] + go(
                 self.all_rooms,
                 map(self.get_level_fromRoomName),
                 set,
                 list,
                 sorted,
-            ) + ["All"]
+            )
             print(f"[int matrix] floors : {floors}")
         else:
             floors = ["건물선택필요"]
@@ -658,3 +674,254 @@ class pjt_interior_matrix_widget:
 
         self.restore_scroll()
         # state.observer_manager.notify_observers(state)
+
+    def export_tksheet_to_excel(self):
+        """tksheet 위젯 데이터를 엑셀 파일로 저장하며 서식도 적용"""
+        state = self.state
+        sheet = self.sheet
+
+        brief_pjtName = state.team_std_info.get("project-info").get("abbr")
+        brief_buildingName = go(
+            state.current_building.get(),
+            lambda x: x.split(" "),
+            map(lambda x: x[0]),
+            lambda x: "".join(x),
+        )
+
+        # 파일 저장 경로 선택
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx")],
+            title="Save as Excel",
+            initialfile=f"{brief_pjtName}_{brief_buildingName}-Interior Matrix",
+        )
+
+        if not file_path:  # 사용자가 취소한 경우
+            return
+
+        # 새로운 워크북 생성
+        wb = openpyxl.Workbook()
+        ws = wb.active
+
+        ws.title = f"{brief_buildingName}-Interior Matrix"
+        # 틀 고정 추가 (Index 열과 Header 행을 동시에 고정)
+        ws.freeze_panes = "B3"  # ✅ A열과 1행 고정
+
+        purple_fill = PatternFill(
+            # start_color="D9B3FF", end_color="D9B3FF", fill_type="solid"
+            start_color="D8BFD8",
+            end_color="D8BFD8",
+            fill_type="solid",
+        )
+        special_index_keywords = {"Floor", "Skirt", "Wall", "Ceiling"}
+        thin_border = Border(
+            right=Side(style="thin", color="CCCCCC")
+        )  # 오른쪽 세로선만
+
+        # 헤더 가져오기
+        headers = sheet.headers()
+        max_header_length = 0  # 헤더 중 가장 긴 텍스트 길이 저장용
+
+        # 행 인덱스 라벨 가져오기
+        row_indices = sheet.row_index()
+
+        # 0. 엑셀 첫 번째 행에 타이틀 입력
+        ws.cell(
+            row=1,
+            column=1,
+            value=f"{brief_pjtName} - {state.current_building.get()} Interior Matrix",
+        )
+        ws.merge_cells(
+            start_row=1, start_column=1, end_row=1, end_column=len(headers) + 1
+        )
+        ws.cell(row=1, column=1).font = Font(name="Calibri", size=14, bold=True)
+        ws.cell(row=1, column=1).alignment = Alignment(
+            horizontal="center", vertical="center"
+        )
+        ws.row_dimensions[1].height = 20
+
+        # 1. 헤더 (2행부터)
+        header_row = 2
+        ws.cell(row=header_row, column=1, value="SWM for Rooms")  # 인덱스 열
+        ws.cell(row=header_row, column=1).border = (
+            thin_border  # ✅ 인덱스 열도 세로선 추가
+        )
+        # for col_idx, header in enumerate(headers, start=1):
+        for col_idx, header in enumerate(headers, start=2):
+            max_header_length = max(max_header_length, len(str(header)))  # 길이 체크
+            cell = ws.cell(row=2, column=col_idx, value=header)
+
+            # 헤더 스타일 (Bold, 가운데 정렬)
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(
+                horizontal="center",
+                vertical="bottom",
+                textRotation=90,  # ✅ 90도 회전
+                wrap_text=True,
+            )
+
+            # 헤더 배경색 (회색)
+            cell.fill = PatternFill(
+                start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+            )
+            cell.border = thin_border  # ✅ 세로 구분선 추가
+
+        # 헤더 행 높이 조정 (길이에 따라 적당히 계산, 약간 여유있게)
+        ws.row_dimensions[2].height = max(150, max_header_length * 4)
+
+        # 2. tksheet 데이터는 3행부터
+        data = sheet.get_sheet_data()
+        column_widths = sheet.get_column_widths()
+
+        # tksheet 셀 스타일 가져오기 (배경색, 글꼴, 정렬)
+        # for row_idx, row_data in enumerate(data, start=2):
+        for row_idx, (row_data, row_label) in enumerate(
+            zip(data, row_indices), start=3
+        ):
+            # 인덱스 열 작성
+            index_cell = ws.cell(row=row_idx, column=1, value=row_label)
+            index_cell.font = Font(name="Calibri", size=9, bold=True)
+            index_cell.alignment = Alignment(horizontal="left", vertical="center")
+            index_cell.border = thin_border  # ✅ 세로 구분선 추가
+
+            is_special_index = row_label in special_index_keywords
+
+            if is_special_index:
+                index_cell.fill = purple_fill
+            #####
+
+            # 데이터 셀 작성
+            for col_idx, cell_value in enumerate(row_data, start=2):
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+
+                # 정렬 설정
+                cell.alignment = Alignment(
+                    horizontal="center", vertical="center", wrap_text=True
+                )
+
+                # 기본 폰트 설정 (Calibri, Bold)
+                cell.font = Font(name="Calibri", size=7, bold=False)
+
+                cell.border = thin_border  # ✅ 오른쪽 경계선 추가
+
+                if is_special_index:
+                    cell.fill = purple_fill
+
+        # 컬럼 너비 조정
+        # print(f"열 너비 들 {column_widths}")
+        # ws.column_dimensions["A"].width = column_widths[0] / 3
+        ws.column_dimensions["A"].width = 30
+        for col_idx, width in enumerate(column_widths, start=2):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 3.3
+
+        #### Transpose 시트 생성 ####
+        ws_transposed = wb.create_sheet(title=f"{brief_buildingName}-Transposed Matrix")
+        ws_transposed.freeze_panes = "B3"  # ✅ A열과 1행 고정
+
+        # 1행: 타이틀
+        title_transposed = f"{brief_pjtName} - {state.current_building.get()} Interior Matrix (Transposed)"
+        ws_transposed.cell(row=1, column=1, value=title_transposed)
+        ws_transposed.merge_cells(
+            start_row=1, start_column=1, end_row=1, end_column=len(data) + 1
+        )
+        ws_transposed.cell(row=1, column=1).font = Font(
+            name="Calibri", size=14, bold=True
+        )
+        ws_transposed.cell(row=1, column=1).alignment = Alignment(
+            horizontal="center", vertical="center"
+        )
+        ws_transposed.row_dimensions[1].height = 20
+
+        # 2행: 인덱스 헤더 (수직 텍스트 적용!)
+        ws_transposed.cell(row=2, column=1, value="Rooms")
+        ws_transposed.cell(row=2, column=1).font = Font(
+            name="Calibri", size=10, bold=True
+        )
+        ws_transposed.cell(row=2, column=1).alignment = Alignment(
+            horizontal="left", vertical="bottom"
+        )
+        ws_transposed.cell(row=2, column=1).border = thin_border
+
+        for idx, col in enumerate(sheet.get_sheet_data(), start=2):
+            ws_transposed.cell(row=2, column=idx).fill = PatternFill(
+                start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+            )
+
+        highlighted_columns = set()
+        for col, row_label in enumerate(row_indices, start=2):
+            cell = ws_transposed.cell(row=2, column=col, value=row_label)
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(
+                horizontal="center",
+                vertical="bottom",
+                textRotation=90,  # ✅ 헤더를 90도 회전시킴
+                wrap_text=False,
+            )
+            cell.border = thin_border
+
+            if row_label in special_index_keywords:
+                cell.fill = purple_fill
+                highlighted_columns.add(col)
+
+        # 헤더 행 높이 조정 (길이에 따라 적당히 계산, 약간 여유있게)
+        ws_transposed.row_dimensions[2].height = max(150, max_header_length * 4)
+
+        # # 2행 높이도 늘리기
+        # ws_transposed.row_dimensions[2].height = max(
+        #     40, max(len(r) for r in row_indices) * 3.5
+        # )
+
+        # 3행부터: 헤더와 데이터
+        for row_idx, header in enumerate(headers, start=3):
+
+            header_cell = ws_transposed.cell(row=row_idx, column=1, value=header)
+            header_cell.font = Font(name="Calibri", size=10, bold=True)
+            header_cell.alignment = Alignment(horizontal="center", vertical="center")
+            header_cell.border = thin_border
+
+            if row_idx > 2:
+                ws_transposed.cell(row=row_idx, column=1).alignment = Alignment(
+                    horizontal="left", vertical="center", wrap_text=False
+                )
+
+            for col_idx, row_data in enumerate(data, start=2):
+                cell_value = data[col_idx - 2][row_idx - 3]  # Transpose
+                cell = ws_transposed.cell(row=row_idx, column=col_idx, value=cell_value)
+                cell.font = Font(name="Calibri", size=7)
+                cell.alignment = Alignment(
+                    horizontal="center", vertical="center", wrap_text=True
+                )
+                cell.border = thin_border
+
+                # 💡 강조된 열이면 배경색 칠함
+                if col_idx in highlighted_columns:
+                    cell.fill = purple_fill
+
+        # 컬럼 너비 조정
+        # print(f"열 너비 들 {column_widths}")
+        column_tr = sheet.get_sheet_data()
+        # ws_transposed.column_dimensions["A"].width = column_widths[0] / 3
+        ws_transposed.column_dimensions["A"].width = 30
+        for col_idx, width in enumerate(column_tr, start=2):
+            ws_transposed.column_dimensions[
+                openpyxl.utils.get_column_letter(col_idx)
+            ].width = 3.3
+
+        #### Transpose 시트 생성 ####
+
+        # 엑셀 파일 저장
+        wb.save(file_path)
+        print(f"엑셀 파일 저장 완료: {file_path}")
+
+        # 6. 메시지 박스 띄우기
+        open_file = messagebox.askyesno(
+            "저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+        )
+
+        # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
+        if open_file:
+            try:
+                os.startfile(file_path)  # Windows에서 엑셀 파일 열기
+                # subprocess.Popen(["start", file_path])
+            except Exception as e:
+                messagebox.showerror("오류", f"파일을 열 수 없습니다.\n{e}")

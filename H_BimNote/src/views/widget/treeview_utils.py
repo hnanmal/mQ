@@ -428,6 +428,8 @@ class TreeviewSearchManager:
             self.current_index = -1
             self.previous_search = ""
 
+        DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(self.tree)
+
     def draw_markers(self):
         """검색 결과 위치 마커 표시"""
         self.marker_canvas.delete("all")
@@ -836,32 +838,6 @@ class BaseTreeView:
                 item["children"] = clean_children(item["children"], 1)
 
         return data_list
-
-    # def insert_data_with_levels(self, data, parent_id=""):
-    #     """Insert sorted data into the TreeView with levels."""
-
-    #     # 데이터가 딕셔너리 리스트인지 확인하고 정렬
-    #     if isinstance(data, list):
-    #         sorted_data = sorted(data, key=lambda x: x["name"])  # name 기준 정렬
-
-    #         for node in sorted_data:
-    #             if isinstance(node, dict):
-    #                 # 'values' 리스트에서 마지막 값을 표시할 경우
-    #                 display_value = node["values"]
-
-    #                 # 트리뷰에 삽입
-    #                 node_id = self.tree.insert(
-    #                     parent_id, "end", text=node["name"], values=(display_value,)
-    #                 )
-
-    #                 # Keep the tree open to display all items
-    #                 self.tree.item(node_id, open=True)
-
-    #                 # 자식이 있는 경우 정렬하여 재귀 삽입
-    #                 if "children" in node and isinstance(node["children"], list):
-    #                     self.insert_data_with_levels(
-    #                         sorted(node["children"], key=lambda x: x["name"]), node_id
-    #                     )
 
     def insert_data_with_levels(self, data, parent_id=""):
         """Insert data into the TreeView with levels based on the new data structure."""
@@ -3039,6 +3015,12 @@ class TeamStd_FamlistTreeView:
         )
         self.treeview.tree.bind(
             "<<TreeviewClose>>",
+            DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
+                self.treeview.tree
+            ),
+        )
+        self.treeview.tree.bind(
+            "<<TreeviewSelect>>",
             DefaultTreeViewStyleManager.apply_dynamic_alternate_row_colors(
                 self.treeview.tree
             ),

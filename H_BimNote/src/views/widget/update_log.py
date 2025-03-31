@@ -42,10 +42,12 @@ def open_update_log_newWindow():
 
 
 update_log = """
-🔳 v1.2.6 (2025-03-xx)
+🔳 v1.2.6 (2025-03-31)
     - GWM / SWM 위젯, Family list 위젯 에 검색 시 검색 결과 존재하는 스크롤바 위치에 황색 단선 표시 기능 추가
     - GWM / SWM 위젯, Family list 위젯 에 검색 시 GWM / SWM 항목 추가-삭제 로 인한 업데이트 시 검색기능 오류 해결
     - Project Group Work Master / Project Single Work Master / Project Family List 탭에서 간헐적 더블클릭 미인식 오류 해결
+    - Project Input > Project Interior Matrix 탭의 층 선택 콤보박스에서 "All"이 가장 먼저 배치되도록 수정
+    - Project Input > Project Interior Matrix 탭에 Export to Excel 버튼 추가(좌측열 WM, Room 버전 시트 2개 출력)
 
 🔳 v1.2.5 (2025-03-27)
     - GWM / SWM 위젯, Family list 위젯 에 검색 기능 추가 (- 엔터키 혹은 Search 버튼으로 검색 내용 포함 항목 순차 회람)
