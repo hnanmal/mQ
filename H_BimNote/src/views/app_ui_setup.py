@@ -142,6 +142,7 @@ def initialize_app(root, _state=None):
         # style="Main.TNotebook",
         bootstyle=state.tab_bootStyle,
     )
+    state.main_notebook = notebook
     paned_window.add(notebook)
 
     # Ctrl+S 단축키를 'Save Team Standard' 기능에 연결

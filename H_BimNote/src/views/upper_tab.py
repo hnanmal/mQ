@@ -207,11 +207,13 @@ def create_team_standard_tab(state, notebook):
 
 def create_project_standard_tab(state, notebook):
     subtab_notebook = create_tab_with_subtabs(state, notebook, "   Project Standard   ")
+    state.pjtStd_tab = subtab_notebook
 
     # Add each subtab
     main_tab = create_pjtStd_Main_tab(state, subtab_notebook)
     g_wm_tab = create_pjtStdGWM_tab(state, subtab_notebook)
     s_wm_tab = create_pjtStdSWM_tab(state, subtab_notebook)
+    state.s_wm_tab = s_wm_tab
     common_input_tab = create_common_input_tab(state, subtab_notebook)
     pjt_Famlist_tab = create_pjtFamList_tab(state, subtab_notebook)
 

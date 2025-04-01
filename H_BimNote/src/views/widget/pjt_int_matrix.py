@@ -115,6 +115,53 @@ class pjt_interior_matrix_widget:
         # ✅ 클릭 이벤트 바인딩 (셀 클릭 시 체크박스 토글)
         self.sheet.extra_bindings("begin_edit_cell", self.toggle_checkbox)
 
+        # Right Click pop up - SWM 이동 메뉴 추가
+        self.sheet.popup_menu_add_command(
+            label="선택항목 SWM 탭 에서 조회",
+            func=self.move_toTgtSWM,
+        )
+
+    def move_toTgtSWM(self):
+        state = self.state
+        current_selection = self.sheet.get_currently_selected()
+        print(f"current_selection :: {current_selection}")
+        print(f"current_selection.row :: {current_selection.row}")
+        print(f"self.material_rows :: {self.material_rows}")
+
+        crnt_row = current_selection.row
+
+        for cat_row in sorted(list(self.category_rows)):
+            if crnt_row - cat_row > 0:
+                tgt_father_row = cat_row
+
+        tgt_grand_name = "00 Room Finish"
+        tgt_father_name = self.material_rows[tgt_father_row]
+        tgt_item_name = self.material_rows[crnt_row]
+
+        state.main_notebook.select(2)
+        state.pjtStd_tab.select(2)
+
+        tgt_tree = state.pjtStdSWM_treeview.treeview.tree
+        grand = go(
+            tgt_tree.get_children(""),
+            filter(lambda x: tgt_tree.item(x, "text") == tgt_grand_name),
+            next,
+        )
+        swm = go(
+            tgt_tree.get_children(grand),
+            filter(lambda x: tgt_tree.item(x, "text") == tgt_father_name),
+            next,
+        )
+        tgt_item = go(
+            tgt_tree.get_children(swm),
+            filter(lambda x: tgt_tree.item(x, "text") == tgt_item_name),
+            next,
+        )
+        print(f"tgt_item {tgt_item}")
+        tgt_tree.selection_set(tgt_item)
+        tgt_tree.focus(tgt_item)
+        tgt_tree.see(tgt_item)
+
     def setup_sheet(self, headers):
         # 헤더 설정
 
@@ -136,7 +183,7 @@ class pjt_interior_matrix_widget:
     def set_floor_commbovalues(self):
         state = self.state
         if state.current_building:
-            floors = ["All"] + go(
+            floors = ["WM 할당 확인", "All"] + go(
                 self.all_rooms,
                 map(self.get_level_fromRoomName),
                 set,
@@ -268,7 +315,9 @@ class pjt_interior_matrix_widget:
             sorted,
         )
 
-        if selected_lv == "All":
+        if selected_lv == "WM 할당 확인":
+            self.filtered_rooms = ["WM info"]
+        elif selected_lv == "All":
             self.filtered_rooms = rooms_for_selectedBuilding
         else:
             self.filtered_rooms = rooms_for_selectedLevel
@@ -349,6 +398,12 @@ class pjt_interior_matrix_widget:
         self.sheet.extra_bindings("begin_edit_cell", self.toggle_checkbox)
         self.sheet.extra_bindings("end_paste", self.toggle_forPaste)
 
+        # Right Click pop up - SWM 이동 메뉴 추가
+        self.sheet.popup_menu_add_command(
+            label="선택항목 SWM 탭 에서 조회",
+            func=self.move_toTgtSWM,
+        )
+
         # ✅ 테이블을 위한 행 구성 (대분류 & 하위 항목)
         self.set_row_idx()
         self.sheet.set_index_width(150)
@@ -394,17 +449,37 @@ class pjt_interior_matrix_widget:
             res = material_full_name in tgt_room_material_names
             return res
 
+        swmDB = state.team_std_info["project-SWM"]
         new_data = []
+        crnt_father = None
         for row_idx, row_name in enumerate(self.material_rows):
             if row_idx in self.category_rows:
                 new_data.append(
                     [""] * len(self.filtered_rooms)
                 )  # ✅ 대분류 행은 체크 없음
+                crnt_father = row_name
+                print(f"crnt_father {crnt_father}")
             else:
-                row_data = [
-                    "✅" if get_db_status_forRoom(room, row_idx) else ""
-                    for room in self.filtered_rooms
-                ]
+                if selected_lv == "WM 할당 확인":
+                    swm_key_name = " | ".join(
+                        [
+                            "00 Room Finish",
+                            crnt_father,
+                            row_name,
+                        ]
+                    )
+                    row_data = [
+                        (
+                            " | ".join(swmDB.get(swm_key_name))
+                            if swmDB.get(swm_key_name)
+                            else ""
+                        )
+                    ]
+                else:
+                    row_data = [
+                        "✅" if get_db_status_forRoom(room, row_idx) else ""
+                        for room in self.filtered_rooms
+                    ]
 
                 new_data.append(row_data)
         # print(f"new_data {new_data}")
@@ -434,16 +509,32 @@ class pjt_interior_matrix_widget:
                         res = i["children"].pop(idx)
                         # print(f"[delete_assign_forRoom] deleting end {res}")
 
+    # def go_toSWMtab(self):
+    #     state = self.state
+    #     state.main_notebook.select(state.pjtStd_tab)
+    #     state.pjtStd_tab.select(state.s_wm_tab)
+
     def add_assign_forRoom(self, roomName, material_full_name):
         state = self.state
         pjt_SWM_key = " | ".join(["00 Room Finish", material_full_name])
         print(f"[add_assign_forRoom] pjt_SWM_key {pjt_SWM_key}")
         pjt_swm_data = state.team_std_info.get("project-SWM")
-        tgt_wm_data = pjt_swm_data[pjt_SWM_key]
-        tgt_wm_code = tgt_wm_data[0]
-        tgt_wm_gauge = tgt_wm_data[1]
-        tgt_wm_unit = tgt_wm_data[2]
-        tgt_wm_spec = tgt_wm_data[3]
+        # tgt_wm_data = pjt_swm_data[pjt_SWM_key]
+        tgt_wm_data = pjt_swm_data.get(pjt_SWM_key)
+        if tgt_wm_data:
+            tgt_wm_code = tgt_wm_data[0]
+            tgt_wm_gauge = tgt_wm_data[1]
+            tgt_wm_unit = tgt_wm_data[2]
+            tgt_wm_spec = tgt_wm_data[3]
+        else:
+            tab_move = messagebox.askyesno(
+                "add_assign_forRoom",
+                f"[ {pjt_SWM_key} ] SWM 항목이 wm 지정이 되지 않았습니다.\nProject Single Work Master 탭에서 해당항목의 wm을 지정하시겠습니까?",
+            )
+            print(f"tab_move {tab_move}")
+            if tab_move:
+                self.move_toTgtSWM()
+            return False
 
         WMs = state.team_std_info.get("WMs")
 
@@ -482,16 +573,26 @@ class pjt_interior_matrix_widget:
         tgt_SWM_name, tgt_item_name = material_full_name.split(" | ")
         print(f"[int matrix] tgt_item_name {tgt_item_name}")
 
-        tgt_std_formula = go(
+        tgt_item_ = go(
             std_famlist_room_item,
             lambda x: x[0]["children"],
             filter(lambda x: x["name"] == tgt_SWM_name),
             list,
             lambda x: x[0]["children"],
             filter(lambda x: x["name"] == tgt_item_name),
-            list,
-            lambda x: x[0]["values"][6],
+            # list,
+            # lambda x: x[0]["values"][6],
+            next,
         )
+        try:
+            tgt_std_formula = go(
+                tgt_item_,
+                lambda x: x["values"],
+                filter(lambda x: x.startswith("=")),
+                next,
+            )
+        except:
+            tgt_std_formula = ""
         # print(f"[int matrix] std_famlist_room_item {std_famlist_room_item}")
         print(f"[int matrix] tgt_std_formula {tgt_std_formula}")
 
@@ -521,6 +622,7 @@ class pjt_interior_matrix_widget:
                 i["children"].sort()
 
         print(f"[add_assign_forRoom] add_data_form {add_data_form}")
+        return True
 
     def toggle_forPaste(self, event):
         state = self.state
@@ -535,6 +637,40 @@ class pjt_interior_matrix_widget:
         paste_data_src = event["data"]
         print(f"toggle_forPaste : paste_data_src {paste_data_src}")
 
+        oneCol_Cellcount = len(self.materials.keys()) + len(
+            list(chain(*self.materials.values()))
+        )
+        print(f"col copy event {event}")
+        print(f"oneCol_Cellcount {oneCol_Cellcount}")
+        print(f"len(paste_data_src) {len(paste_data_src)}")
+        from_c = go(
+            event["selection_boxes"],
+            lambda x: x.items(),
+            list,
+            lambda x: list(x[0])[0],
+            lambda x: x.from_c,
+        )
+        upto_c = go(
+            event["selection_boxes"],
+            lambda x: x.items(),
+            list,
+            lambda x: list(x[0])[0],
+            lambda x: x.upto_c,
+        )
+        print(f"from_c!! {from_c}")
+        print(f"upto_c!! {upto_c}")
+        if upto_c - from_c > 1:
+            messagebox.showinfo(
+                "toggle_forPaste",
+                "열 복사 기능은 열에서만 작동합니다.(1번에 1열씩)",
+            )
+            self.update(
+                event=None,
+                mode="db_update",
+                filter_mode=self.widget_filtermode,
+            )
+            return
+
         SWM_names = [
             "Floor",
             "Skirt",
@@ -548,6 +684,61 @@ class pjt_interior_matrix_widget:
         roomName_asDBformat = room.replace("_", "\t")
 
         db_data = state.team_std_info[self.data_kind]["children"]
+        pjt_swm_data = state.team_std_info.get("project-SWM")
+
+        chkd_material_names = []
+        chkd_material_full_names_effBln = []
+        for _row, v in enumerate(paste_data_src):
+            # print(f"_row {_row}")
+            row = _row + stt_row
+            # print(f"row로우 {row}")
+            # print(f"v \ {v}")
+            try:
+                row_dist = [x - row for x in SWM_idxes]
+                min_row_dist = go(
+                    row_dist,
+                    filter(lambda x: x < 0),
+                    max,
+                )
+                parent_SWM_idx = row_dist.index(min_row_dist)
+
+                SWM_name = SWM_names[parent_SWM_idx]
+                material_name = self.material_rows[row]  # ✅ 원래 데이터 가져오기
+                material_full_name = " | ".join([SWM_name, material_name])
+
+                if v == ["✅"]:
+                    chkd_material_names.append(material_name)
+                    pjt_SWM_key = " | ".join(["00 Room Finish", material_full_name])
+                    chkd_material_full_names_effBln.append(
+                        pjt_swm_data.get(pjt_SWM_key)
+                    )
+            except:
+                material_full_name = "기준열"
+        print(f"chkd_material_names \ {chkd_material_names}")
+        print(f"chkd_material_full_names_effBln \ {chkd_material_full_names_effBln}")
+
+        # if "N.A" in chkd_material_names:
+        #     messagebox.showinfo(
+        #         "toggle_forPaste",
+        #         "열 복사 기능은 해당 열의 항목 체크 항목 중 N.A 항목이 없을때만 가능합니다.",
+        #     )
+        #     self.update(
+        #         event=None,
+        #         mode="db_update",
+        #         filter_mode=self.widget_filtermode,
+        #     )
+        #     return
+        if not all(chkd_material_full_names_effBln):
+            messagebox.showinfo(
+                "toggle_forPaste",
+                "열 복사 기능은 해당 열의 체크된 모든 항목에 wm 지정이 되었을때만 가능합니다.",
+            )
+            self.update(
+                event=None,
+                mode="db_update",
+                filter_mode=self.widget_filtermode,
+            )
+            return
 
         for _row, v in enumerate(paste_data_src):
             print(f"_row {_row}")
@@ -569,6 +760,7 @@ class pjt_interior_matrix_widget:
                 material_full_name = "기준열"
             print(f"material_full_name!_!  {material_full_name}")
             print(self.sheet.get_cell_data(row, stt_col))
+
             if v == ["✅"] and material_full_name != "기준열":
                 # add
                 add_bln = None
@@ -582,11 +774,15 @@ class pjt_interior_matrix_widget:
                                 add_bln = False
                 if not add_bln:
                     try:
+                        pjt_SWM_key = " | ".join(["00 Room Finish", material_full_name])
                         self.add_assign_forRoom(roomName_asDBformat, material_full_name)
                         print(f"{row}행 데이터 {v} 추가 완료")
                     except:
                         print(f"{row}행 데이터 {v} 추가 실패")
-                        pass
+                        messagebox.showinfo(
+                            "toggle_forPaste",
+                            f"{row}행 데이터 {v} 추가 실패",
+                        )
                 else:
                     print(f"{row}행 데이터 add_bln 대상 아님")
             else:
