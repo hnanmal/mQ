@@ -4,6 +4,7 @@ import json
 from tkinter import filedialog, ttk
 
 import openpyxl
+import xlwings as xw
 
 from src.core.fp_utils import *
 from src.core.app_update import APP_VERSION
@@ -205,6 +206,53 @@ def load_from_excel(state, _file_path=None):
         return sheet_data
     except Exception as e:
         print(f"Error loading data from Excel: {e}")
+
+
+def read_excel_data_with_xw(
+    file_path: str,
+    sheet_name: str = "AR",
+    header_row_index: int = 8,
+    password: str = None,
+):
+    """
+    엑셀 파일에서 특정 시트의 헤더와 데이터를 리스트로 읽어옵니다.
+
+    :param file_path: 엑셀 파일 경로
+    :param sheet_name: 시트 이름 (기본값 "AR")
+    :param header_row_index: 헤더로 사용할 행 번호 (1부터 시작, 기본값 8)
+    :param password: 암호가 걸린 경우 비밀번호 입력
+    :return: (header: list, data: list of lists)
+    """
+    # 엑셀 파일 열기
+    if password:
+        wb = xw.Book(file_path, password=password)
+    else:
+        wb = xw.Book(file_path)
+
+    try:
+        sheet = wb.sheets[sheet_name]
+
+        # 1. 헤더 읽기 (8행)
+        header_range = sheet.range(f"A{header_row_index}").expand("right")
+        header = header_range.value
+        num_cols = header_range.columns.count
+
+        # 2. 전체 행 수 직접 계산 (UsedRange 활용)
+        used_range = sheet.used_range
+        last_row = used_range.last_cell.row
+
+        # 3. 데이터 읽기 (빈 행 포함)
+        data_start_row = header_row_index + 1
+        data_range = sheet.range((data_start_row, 1), (last_row, num_cols)).value
+
+        # 4. 보장: 2차원 리스트 형태
+        if isinstance(data_range[0], (str, int, float, type(None))):
+            data_range = [data_range]
+
+        return header, data_range
+
+    finally:
+        wb.close()
 
 
 # Load HTML file content

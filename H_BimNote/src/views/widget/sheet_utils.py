@@ -1,5 +1,7 @@
 # src/views/widget/sheet_utils.py
 from tkinter import messagebox
+from openpyxl.utils import column_index_from_string
+from src.core.file_utils import read_excel_data_with_xw
 from src.models.sheet_utils import find_matched_pjtGWM, find_wmStr
 from src.controllers.tree_data_navigator import (
     TreeDataManager_treesheet,
@@ -62,7 +64,10 @@ class SheetSearchManager:
         self.sheet_widget.setup_column_style()
 
         if self.data_kind == "std-GWM" or "std-SWM":
-            self.sheet_widget.apply_wrap(tgt_idx=3, tgt_width=1000)
+            try:
+                self.sheet_widget.apply_wrap(tgt_idx=3, tgt_width=1000)
+            except:
+                pass
             self.sheet.set_all_cell_sizes_to_text()
             self.sheet.set_all_row_heights(
                 height=50,
@@ -160,8 +165,8 @@ class ProjectStd_WM_Selcet_SheetView_GWM:
             "paste",
             "ctrl_click_select",
             "right_click_popup_menu",
-            "rc_insert_row",
-            "rc_delete_row",
+            # "rc_insert_row",
+            # "rc_delete_row",
             "arrowkeys",
         )
 
@@ -2039,6 +2044,9 @@ class TeamStd_WMsSheetView:
         # Add Search Box
         self.add_search_box(self.title_frame)
 
+        # Add DB update Button
+        self.add_updateDB_button(self.title_frame)
+
         # action binding
         self.sheetview.sheet.extra_bindings(
             [
@@ -2104,11 +2112,16 @@ class TeamStd_WMsSheetView:
         # self.sheet.set_options(font=("Arial", 8, "normal"))
         # self.sheet.set_options(default_row_height=18)
 
-    def update(self, event=None):
+    def update(self, event=None, data=None):
         # Updating tksheet in the UI
         state = self.state
         self.sheet.set_sheet_data([])
-        data_forSheet = state.team_std_info.get(self.data_kind)
+        if data:
+            data_forSheet = data
+            # state 변경도 추가
+            state.team_std_info[self.data_kind] = data_forSheet
+        else:
+            data_forSheet = state.team_std_info.get(self.data_kind)
 
         self.sheetview.sheet.set_sheet_data(data_forSheet)
 
@@ -2117,7 +2130,7 @@ class TeamStd_WMsSheetView:
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""
         search_frame = ttk.Frame(parent)
-        search_frame.pack(padx=5, pady=5, anchor="w")
+        search_frame.pack(side="left", padx=5, pady=5, anchor="w")
 
         # Search Label
         search_label = ttk.Label(search_frame, text="Search:")
@@ -2148,6 +2161,120 @@ class TeamStd_WMsSheetView:
             command=lambda: self.search_manager.reset_search(self.search_entry),
         )
         reset_button.pack(side="left", padx=5)
+
+    def add_updateDB_button(self, parent):
+        widget_frame = ttk.Frame(parent)
+        widget_frame.pack(side="right", padx=5, pady=5, anchor="e")
+
+        # widget Label
+        widget_label = ttk.Label(widget_frame, text="엑셀에서 로드하기")
+        widget_label.pack(side="left", padx=5)
+
+        updateOldv_button = ttk.Button(
+            widget_frame,
+            text="구버전 WorkMaster 로드",
+            command=lambda: self.loadWMs_fromResourceDB(load_mode="old"),
+            bootstyle="info-outline",
+        )
+        updateOldv_button.pack(side="left", padx=5)
+
+        updateNewv_button = ttk.Button(
+            widget_frame,
+            text="신버전 WorkMaster 로드\n(2024.12.19 업데이트 기준)",
+            command=lambda: self.loadWMs_fromResourceDB(load_mode="new"),
+            bootstyle="info-outline",
+        )
+        updateNewv_button.pack(side="left", padx=5)
+
+    def loadWMs_fromResourceDB(self, load_mode="new"):
+        src_path = "resource/WorkMaster_DB_src.xlsx"
+        ref_colIdx_a = [
+            "E",
+            "F",
+            "J",
+            "K",
+            "L",
+            "M",
+            "N",
+            "O",
+            "P",
+            "Q",
+            "R",
+            "S",
+            "T",
+            "U",
+            "Z",
+            "AA",
+            "AB",
+            "AC",
+            "AD",
+            "AE",
+            "AF",
+            "AG",
+            "AL",
+            "AM",
+            "AV",
+            "AW",
+            "AX",
+            "AY",
+            "AZ",
+            "BA",
+            "BB",
+            "BC",  # ,
+            "BD",
+            "BE",
+            "C",
+            "E",
+            # "BG",
+        ]
+        ref_colIdx_n = go(
+            ref_colIdx_a,
+            map(lambda x: column_index_from_string(x) - 1),
+            list,
+        )
+        print(f"ref_colIdx_n : {ref_colIdx_n}")
+
+        header, data = read_excel_data_with_xw(
+            file_path=src_path,
+            sheet_name="AR",
+            header_row_index=8,
+        )
+        if load_mode == "old":
+            filter_rule = "B"
+        else:
+            filter_rule = "A"
+
+        def replace_NoneToSpace(x):
+            if not x:
+                return ""
+            elif x == "None":
+                return ""
+            else:
+                return x
+
+        filtered_data = go(
+            data,
+            filter(lambda x: not all(x)),
+            filter(lambda x: x[column_index_from_string("BG") - 1] != "BOQ_Formula"),
+            filter(lambda x: x[column_index_from_string("BG") - 1] != filter_rule),
+            map(lambda x: list(map(replace_NoneToSpace, x))),
+            list,
+        )
+
+        formated_data = []
+        for row in filtered_data:
+            new_row = []
+            for i in ref_colIdx_n:
+
+                new_row.append(row[i])
+            new_row.insert(32, "")
+            formated_data.append(new_row)
+
+        # print(f"header : {header}")
+        print(f"formated_data : {formated_data[:3]}")
+        self.update(event=None, data=formated_data)
+
+        return formated_data
 
     def set_title(self, parent):
         self.widget_name = "WorkMaster DB"
