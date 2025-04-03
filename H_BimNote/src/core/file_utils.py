@@ -223,6 +223,10 @@ def read_excel_data_with_xw(
     :param password: 암호가 걸린 경우 비밀번호 입력
     :return: (header: list, data: list of lists)
     """
+    app = xw.App(visible=False)  # 엑셀 창 안 띄우고 백그라운드에서 실행
+    app.display_alerts = False  # 경고창 비활성화
+    app.screen_updating = False  # 화면 업데이트 비활성화
+
     # 엑셀 파일 열기
     if password:
         wb = xw.Book(file_path, password=password)
@@ -253,6 +257,7 @@ def read_excel_data_with_xw(
 
     finally:
         wb.close()
+        app.quit()
 
 
 # Load HTML file content

@@ -42,12 +42,13 @@ def open_update_log_newWindow():
 
 
 update_log = """
-🔳 v1.2.7 (2025-04-02)
+🔳 v1.2.7 (2025-04-03)
     - Project Input > Project Interior Matrix 탭 레벨 선택 콤보박스에 'WM 할당 확인' 항목 추가
     - Project Input > Project Interior Matrix 탭 우측 버튼 메뉴에서 '선택항목 SWM 탭 에서 조회' 메뉴 추가 (현재 선택 행 기준 SWM 지정 탭으로 이동)
     - Project Input > Project Interior Matrix 탭 더블클릭 시 wm 미지정 항목은 아무 반응 없던 문제 수정(알림창 팝업 > Project Single Workmaster 탭으로 이동)
     - Project Input > Project Interior Matrix 탭 열 복사 시 wm 미지정 SWM 항목 존재하는 경우 발생하던 오류 수정(알림창 팝업)
     - Project Input > Project Interior Matrix 탭 일부 SWM 항목 더블 클릭시 수식 검출 실패로 무반응이던 현상 수정
+    - Team Standard > Standard Group Work Master/Standard Single Work Master 탭 하단 워크마스터 엑셀 파일 로드 버튼 추가(구버전, 신버전 구분)
 
 🔳 v1.2.6 (2025-03-31)
     - GWM / SWM 위젯, Family list 위젯 에 검색 시 검색 결과 존재하는 스크롤바 위치에 황색 단선 표시 기능 추가

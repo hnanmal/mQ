@@ -1,4 +1,5 @@
 # src/views/widget/sheet_utils.py
+import threading
 from tkinter import messagebox
 from openpyxl.utils import column_index_from_string
 from src.core.file_utils import read_excel_data_with_xw
@@ -2027,8 +2028,14 @@ class TeamStd_WMsSheetView:
 
         # Set up UI
         self.title_frame = ttk.Frame(parent)
-        self.title_frame.pack(anchor="nw")
+        self.title_frame.pack(fill="x", anchor="nw")
         self.set_title(self.title_frame)
+
+        # Add Search Box
+        self.search_frame = ttk.Frame(parent)
+        self.search_frame.pack(fill="x", anchor="nw")
+        self.add_search_box(self.search_frame)
+
         self.sheetview.sheet.pack(expand=True, fill="both", anchor="nw")
         self.sheetview.sheet.header_font(("Arial", 8, "normal"))
         self.setup_column_style()
@@ -2040,12 +2047,6 @@ class TeamStd_WMsSheetView:
         self.sheetview.sheet.config(height=2000)
         # Initialize the search manager
         self.search_manager = SheetSearchManager(self.state, self)
-
-        # Add Search Box
-        self.add_search_box(self.title_frame)
-
-        # Add DB update Button
-        self.add_updateDB_button(self.title_frame)
 
         # action binding
         self.sheetview.sheet.extra_bindings(
@@ -2060,6 +2061,9 @@ class TeamStd_WMsSheetView:
                 ),
             ]
         )
+
+        # Add DB update Button
+        self.add_updateDB_button(parent)
 
     def setup_column_style(self):
         wide = 120
@@ -2130,7 +2134,7 @@ class TeamStd_WMsSheetView:
     def add_search_box(self, parent):
         """Add search box to filter the sheet data."""
         search_frame = ttk.Frame(parent)
-        search_frame.pack(side="left", padx=5, pady=5, anchor="w")
+        search_frame.pack(padx=5, pady=5, anchor="w")
 
         # Search Label
         search_label = ttk.Label(search_frame, text="Search:")
@@ -2164,15 +2168,13 @@ class TeamStd_WMsSheetView:
 
     def add_updateDB_button(self, parent):
         widget_frame = ttk.Frame(parent)
-        widget_frame.pack(side="right", padx=5, pady=5, anchor="e")
-
-        # widget Label
-        widget_label = ttk.Label(widget_frame, text="엑셀에서 로드하기")
-        widget_label.pack(side="left", padx=5)
+        widget_frame.pack(
+            expand=True, fill="x", side="left", padx=(5, 5), pady=5, anchor="e"
+        )
 
         updateOldv_button = ttk.Button(
             widget_frame,
-            text="구버전 WorkMaster 로드",
+            text="구버전 WorkMaster 로드\n(구버전 WM 적용 프로젝트를 위한 한시적 메뉴)",
             command=lambda: self.loadWMs_fromResourceDB(load_mode="old"),
             bootstyle="info-outline",
         )
@@ -2186,50 +2188,154 @@ class TeamStd_WMsSheetView:
         )
         updateNewv_button.pack(side="left", padx=5)
 
-    def loadWMs_fromResourceDB(self, load_mode="new"):
-        src_path = "resource/WorkMaster_DB_src.xlsx"
+        # widget Label
+        widget_label = ttk.Label(
+            widget_frame,
+            text="""
+엑셀에서 로드:  (설치경로/resource폴더/A_04_Work_Master_AR.xlsx)     ※ wm 데이터베이스 최신본은 팀 내  Work Master 담당자에게 확인 필요
+                      (설치경로/resource폴더/A_06_Work_Master_SS.xlsx)
+                      (설치경로/resource폴더/A_07_Work_Master_FP.xlsx)
+""".strip(),
+        )
+        widget_label.pack(side="left", padx=5)
+
+    def my_a2n(self, a):
+        if a != "열삽입":
+            res = column_index_from_string(a) - 1
+        else:
+            res = a
+        return res
+
+    def replace_NoneToSpace(self, x):
+        if not x:
+            return ""
+        elif x == "None":
+            return ""
+        else:
+            return x
+
+    def loadWMs_fromResourceDB(self, load_mode):
+        state = self.state
+        # 1. 로딩 애니 띄우기
+        self.show_loading_animation()
+
+        # 2. 백그라운드 쓰레드로 로딩 작업 시작
+        threading.Thread(
+            target=lambda: self._do_WM_loading(load_mode), daemon=True
+        ).start()
+
+    def _do_WM_loading(self, load_mode):
+        state = self.state
+        # 실제 로딩 작업
+        ar_data = self.loadWMs_fromResourceDB_AR("BG", load_mode)
+        ss_data = self.loadWMs_fromResourceDB_SS("AH", load_mode)
+        fp_data = self.loadWMs_fromResourceDB_FP("W", load_mode)
+
+        res_data = ar_data + ss_data + fp_data
+        self.update(event=None, data=res_data)
+
+        state.observer_manager.notify_observers(state)
+        # 로딩 애니메이션 제거
+        self.hide_loading_animation()
+
+        # 완료 메시지
+        messagebox.showinfo("완료", "WM 로딩이 완료되었습니다.")
+
+    # 🔄 로딩 애니메이션 보여주기
+    def show_loading_animation(self):
+        state = self.state
+        state.root.config(cursor="wait")
+
+        self.loading_frame = ttk.Frame(
+            state.root,
+            width=1000,
+            height=150,
+            bootstyle="default",
+            relief="solid",
+            borderwidth=3,
+        )
+        self.loading_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.loading_frame.pack_propagate(False)
+        self.loading_frame.grid_propagate(False)
+
+        self.loading_label1 = ttk.Label(
+            self.loading_frame,
+            text="로딩 중입니다...",
+            font=("맑은 고딕", 12),
+            bootstyle="default",
+        )
+        self.loading_label1.pack(
+            fill="x", side="top", anchor="center", padx=20, pady=10
+        )
+
+        self.loading_label2 = ttk.Label(
+            self.loading_frame,
+            text="잠시 기다리시면 로딩 완료 확인창이 뜹니다",
+            font=("맑은 고딕", 12),
+            bootstyle="default",
+        )
+        self.loading_label2.pack(
+            fill="x", side="top", anchor="center", padx=300, pady=10
+        )
+
+        self.progress = ttk.Progressbar(
+            self.loading_frame, mode="indeterminate", bootstyle="info-striped"
+        )
+        self.progress.pack(side="bottom", padx=20, pady=10)
+        self.progress.start(10)  # 10ms 간격으로 애니메이션 시작
+
+    # 🔚 로딩 애니메이션 숨기기
+    def hide_loading_animation(self):
+        state = self.state
+        state.root.config(cursor="arrow")
+        self.progress.stop()
+        self.loading_frame.destroy()
+
+    def loadWMs_fromResourceDB_AR(self, calc_logic_col, load_mode="new"):
+        src_path = "resource/A_04_Work_Master_AR.xlsx"
         ref_colIdx_a = [
-            "E",
-            "F",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-            "Z",
-            "AA",
-            "AB",
-            "AC",
-            "AD",
-            "AE",
-            "AF",
-            "AG",
-            "AL",
-            "AM",
-            "AV",
-            "AW",
-            "AX",
-            "AY",
-            "AZ",
-            "BA",
-            "BB",
-            "BC",  # ,
-            "BD",
-            "BE",
-            "C",
-            "E",
-            # "BG",
+            "E",  # Work Master / 14
+            "F",  # 데이터사양 / (부서)
+            "J",  # L01 / Code
+            "K",  # L01 / Work Group
+            "L",  # L02 / Code
+            "M",  # L02 / Work Group
+            "N",  # L03 / Code
+            "O",  # L03 / Work Group
+            "P",  # L04 / Code
+            "Q",  # L04 / Attribute
+            "R",  # L05 / Code
+            "S",  # L05 / Attribute
+            "T",  # L06 / Code
+            "U",  # L06 / Attribute
+            "Z",  # L07 / Code
+            "AA",  # L07 / Attribute
+            "AB",  # L08 / Code
+            "AC",  # L08 / Attribute
+            "AD",  # L09 / Code
+            "AE",  # L09 / Attribute
+            "AF",  # L10 / Code
+            "AG",  # L10 / Attribute
+            "AL",  # L11 / Code
+            "AM",  # L11 / Attribute
+            "AV",  # B01 / BOQ_Spec
+            "AW",  # B02 / BOQ_Spec
+            "AX",  # B03 / BOQ_Spec
+            "AY",  # B04 / BOQ_Spec
+            "AZ",  # B05 / BOQ_Spec
+            "BA",  # B06 / BOQ_Spec
+            "BB",  # B07 / BOQ_Spec
+            "BC",  # B08 / BOQ_Spec
+            "열삽입",  # B09 / BOQ_Spec
+            "BD",  # UoM1 / UoM01
+            "BE",  # UoM2 / UoM02
+            "C",  # Work Group / 8
+            "E",  # Work Master / 14
         ]
+
         ref_colIdx_n = go(
             ref_colIdx_a,
-            map(lambda x: column_index_from_string(x) - 1),
+            map(lambda x: self.my_a2n(x)),
             list,
         )
         print(f"ref_colIdx_n : {ref_colIdx_n}")
@@ -2244,20 +2350,17 @@ class TeamStd_WMsSheetView:
         else:
             filter_rule = "A"
 
-        def replace_NoneToSpace(x):
-            if not x:
-                return ""
-            elif x == "None":
-                return ""
-            else:
-                return x
-
         filtered_data = go(
             data,
             filter(lambda x: not all(x)),
-            filter(lambda x: x[column_index_from_string("BG") - 1] != "BOQ_Formula"),
-            filter(lambda x: x[column_index_from_string("BG") - 1] != filter_rule),
-            map(lambda x: list(map(replace_NoneToSpace, x))),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1]
+                != "BOQ_Formula"
+            ),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1] != filter_rule
+            ),
+            map(lambda x: list(map(self.replace_NoneToSpace, x))),
             list,
         )
 
@@ -2265,14 +2368,187 @@ class TeamStd_WMsSheetView:
         for row in filtered_data:
             new_row = []
             for i in ref_colIdx_n:
-
-                new_row.append(row[i])
-            new_row.insert(32, "")
+                if i == "열삽입":
+                    new_row.append("")
+                else:
+                    new_row.append(row[i])
             formated_data.append(new_row)
 
-        # print(f"header : {header}")
         print(f"formated_data : {formated_data[:3]}")
-        self.update(event=None, data=formated_data)
+
+        return formated_data
+
+    def loadWMs_fromResourceDB_SS(self, calc_logic_col, load_mode="new"):
+        src_path = "resource/A_06_Work_Master_SS.xlsx"
+        ref_colIdx_a = [
+            "E",  # Work Master / 14
+            "F",  # 데이터사양 / (부서)
+            "J",  # L01 / Code
+            "K",  # L01 / Work Group
+            "L",  # L02 / Code
+            "M",  # L02 / Work Group
+            "N",  # L03 / Code
+            "O",  # L03 / Work Group
+            "P",  # L04 / Code
+            "Q",  # L04 / Attribute
+            "R",  # L05 / Code
+            "S",  # L05 / Attribute
+            "T",  # L06 / Code
+            "U",  # L06 / Attribute
+            "열삽입",  # L07 / Code
+            "열삽입",  # L07 / Attribute
+            "열삽입",  # L08 / Code
+            "열삽입",  # L08 / Attribute
+            "열삽입",  # L09 / Code
+            "열삽입",  # L09 / Attribute
+            "열삽입",  # L10 / Code
+            "열삽입",  # L10 / Attribute
+            "열삽입",  # L11 / Code
+            "열삽입",  # L11 / Attribute
+            "V",  # B01 / BOQ_Spec
+            "W",  # B02 / BOQ_Spec
+            "X",  # B03 / BOQ_Spec
+            "Y",  # B04 / BOQ_Spec
+            "Z",  # B05 / BOQ_Spec
+            "AA",  # B06 / BOQ_Spec
+            "AB",  # B07 / BOQ_Spec
+            "AC",  # B08 / BOQ_Spec
+            "AD",  # B09 / BOQ_Spec
+            "AE",  # UoM1 / UoM01
+            "AF",  # UoM2 / UoM02
+            "C",  # Work Group / 8
+            "E",  # Work Master / 14
+        ]
+
+        ref_colIdx_n = go(
+            ref_colIdx_a,
+            map(lambda x: self.my_a2n(x)),
+            list,
+        )
+        print(f"ref_colIdx_n : {ref_colIdx_n}")
+
+        header, data = read_excel_data_with_xw(
+            file_path=src_path,
+            sheet_name="SS",
+            header_row_index=8,
+        )
+        if load_mode == "old":
+            filter_rule = "B"
+        else:
+            filter_rule = "A"
+
+        filtered_data = go(
+            data,
+            filter(lambda x: not all(x)),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1]
+                != "BOQ_Formula"
+            ),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1] != filter_rule
+            ),
+            map(lambda x: list(map(self.replace_NoneToSpace, x))),
+            list,
+        )
+
+        formated_data = []
+        for row in filtered_data:
+            new_row = []
+            for i in ref_colIdx_n:
+                if i == "열삽입":
+                    new_row.append("")
+                else:
+                    new_row.append(row[i])
+            formated_data.append(new_row)
+
+        print(f"formated_data : {formated_data[:3]}")
+
+        return formated_data
+
+    def loadWMs_fromResourceDB_FP(self, calc_logic_col, load_mode="new"):
+        src_path = "resource/A_07_Work_Master_FP.xlsx"
+        ref_colIdx_a = [
+            "E",  # Work Master / 14
+            "F",  # 데이터사양 / (부서)
+            "J",  # L01 / Code
+            "K",  # L01 / Work Group
+            "L",  # L02 / Code
+            "M",  # L02 / Work Group
+            "N",  # L03 / Code
+            "O",  # L03 / Work Group
+            "P",  # L04 / Code
+            "Q",  # L04 / Attribute
+            "열삽입",  # L05 / Code
+            "열삽입",  # L05 / Attribute
+            "열삽입",  # L06 / Code
+            "열삽입",  # L06 / Attribute
+            "열삽입",  # L07 / Code
+            "열삽입",  # L07 / Attribute
+            "열삽입",  # L08 / Code
+            "열삽입",  # L08 / Attribute
+            "열삽입",  # L09 / Code
+            "열삽입",  # L09 / Attribute
+            "열삽입",  # L10 / Code
+            "열삽입",  # L10 / Attribute
+            "열삽입",  # L11 / Code
+            "열삽입",  # L11 / Attribute
+            "R",  # B01 / BOQ_Spec
+            "S",  # B02 / BOQ_Spec
+            "열삽입",  # B03 / BOQ_Spec
+            "열삽입",  # B04 / BOQ_Spec
+            "열삽입",  # B05 / BOQ_Spec
+            "열삽입",  # B06 / BOQ_Spec
+            "열삽입",  # B07 / BOQ_Spec
+            "열삽입",  # B08 / BOQ_Spec
+            "열삽입",  # B09 / BOQ_Spec
+            "T",  # UoM1 / UoM01
+            "U",  # UoM2 / UoM02
+            "C",  # Work Group / 8
+            "E",  # Work Master / 14
+        ]
+
+        ref_colIdx_n = go(
+            ref_colIdx_a,
+            map(lambda x: self.my_a2n(x)),
+            list,
+        )
+        print(f"ref_colIdx_n : {ref_colIdx_n}")
+
+        header, data = read_excel_data_with_xw(
+            file_path=src_path,
+            sheet_name="FP",
+            header_row_index=8,
+        )
+        if load_mode == "old":
+            filter_rule = "B"
+        else:
+            filter_rule = "A"
+
+        filtered_data = go(
+            data,
+            filter(lambda x: not all(x)),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1]
+                != "BOQ_Formula"
+            ),
+            filter(
+                lambda x: x[column_index_from_string(calc_logic_col) - 1] != filter_rule
+            ),
+            map(lambda x: list(map(self.replace_NoneToSpace, x))),
+            list,
+        )
+
+        formated_data = []
+        for row in filtered_data:
+            new_row = []
+            for i in ref_colIdx_n:
+                if i == "열삽입":
+                    new_row.append("")
+                else:
+                    new_row.append(row[i])
+            formated_data.append(new_row)
+
+        print(f"formated_data : {formated_data[:3]}")
 
         return formated_data
 
@@ -2280,7 +2556,7 @@ class TeamStd_WMsSheetView:
         self.widget_name = "WorkMaster DB"
         title_font = tk.font.Font(family="맑은 고딕", size=12)
         title_label = ttk.Label(parent, text=self.widget_name, font=title_font)
-        title_label.pack(padx=5, pady=5, anchor="w")
+        title_label.pack(side="left", padx=5, pady=5, anchor="w")
 
     def on_cell_select(self, event, state, sheet, color="#fffec0"):
         # 선택된 셀의 위치 가져오기
