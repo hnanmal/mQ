@@ -2192,7 +2192,7 @@ class TeamStd_WMsSheetView:
         widget_label = ttk.Label(
             widget_frame,
             text="""
-엑셀에서 로드:  (설치경로/resource폴더/A_04_Work_Master_AR.xlsx)     ※ wm 데이터베이스 최신본은 팀 내  Work Master 담당자에게 확인 필요
+엑셀에서 로드:  (설치경로/resource폴더/A_04_Work_Master_AR.xlsx)     ※ wm 업데이트된 경우 좌기의 3파일을 최신으로 교체 요망
                       (설치경로/resource폴더/A_06_Work_Master_SS.xlsx)
                       (설치경로/resource폴더/A_07_Work_Master_FP.xlsx)
 """.strip(),
