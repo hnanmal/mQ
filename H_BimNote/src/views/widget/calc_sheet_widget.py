@@ -1246,12 +1246,12 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         else:
             self.sheet.set_column_widths(
                 [
-                    150,  # Work Master Code
-                    150,  # Gauge Code
-                    300,  # Description
+                    110,  # Work Master Code
+                    50,  # Gauge Code
+                    250,  # Description
                     380,  # Spec.
                     250,  # Additional Spec.
-                    150,  # Reference to
+                    50,  # Reference to
                     50,  # UoM
                     200,  # Current Building
                 ]
@@ -1263,26 +1263,41 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
     def load_data(self):
         state = self.state
         """Load data from Excel file and set headers and data."""
-        try:
-            # Extract headers
-            src_data = state.team_std_info[self.data_kind].get(
-                state.current_building.get()
+        if state.current_building.get() == "All":
+            all_buildings = go(
+                state.team_std_info["project-buildinglist"]["children"],
+                map(lambda x: x["name"]),
+                list,
             )
-            # self.column_headers = src_data[0]
-            # self.sheet.headers(self.column_headers)
-
-            # Extract data
-            self.data = src_data[1:]
-            # self.data = src_data
-
-            # self.sheet.set_sheet_data(self.data)
-            print("ok~")
-        except Exception as e:
-            # self.sheet.set_sheet_data([])
+            print(f"all_buildings_load_data::{all_buildings}")
             self.data = []
-            print(f"Error loading data: {e}")
+            # src_data = []
+            for bd in all_buildings:
+                try:
+                    self.data.append(
+                        state.team_std_info[self.data_kind].get(bd)[1:],
+                    )
+                except:
+                    self.data.append([])
+        else:
+            try:
+                # Extract headers
+                src_data = state.team_std_info[self.data_kind].get(
+                    state.current_building.get()
+                )
 
-    def get_manula_item_data(self):
+                # Extract data
+                self.data = src_data[1:]
+                # self.data = src_data
+
+                # self.sheet.set_sheet_data(self.data)
+                print("ok~")
+            except Exception as e:
+                # self.sheet.set_sheet_data([])
+                self.data = []
+                print(f"Error loading data: {e}")
+
+    def get_manula_item_data(self, cur_bd=None):
         ## dynamo 로직 준용
         def calc_formula(formula, calc_param_list):
 
@@ -1325,7 +1340,12 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         maunal_node = go(
             state.team_std_info["project-assigntype"],
             lambda x: x.get("children"),
-            filter(lambda x: x["values"][1] == state.current_building.get()),
+            filter(
+                lambda x: (
+                    x["values"][1]
+                    == (cur_bd if cur_bd else state.current_building.get())
+                )
+            ),
             filter(lambda x: "14." in x["values"][2].split("|")[1].strip()),
             # map(lambda x: x["children"]),
             list,
@@ -1507,31 +1527,104 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
         print(f"{self.__class__.__name__} > update 메소드 시작")
 
-        self.column_headers = [
-            "Work Master Code",
-            "Gauge Code",
-            "Description",
-            "Spec.",
-            "Additional Spec.",
-            "Reference to",
-            "UoM",
-            f"{state.current_building.get()}",
-        ]
-
-        self.sheet.headers(self.column_headers)
+        if state.current_building.get() == "All":
+            all_buildings = state.team_std_info["project-buildinglist"]["children"]
+            self.column_headers = [
+                "Work Master Code",
+                "Gauge Code",
+                "Description",
+                "Spec.",
+                "Additional Spec.",
+                "Reference to",
+                "UoM",
+                "Total",
+                *[i["name"] for i in all_buildings],
+            ]
+            self.sheet.headers(self.column_headers)
+            self.sheet.set_column_widths(
+                [
+                    110,  # Work Master Code
+                    50,  # Gauge Code
+                    250,  # Description
+                    380,  # Spec.
+                    250,  # Additional Spec.
+                    50,  # Reference to
+                    50,  # UoM
+                    70,  # Total
+                    *[200] * (len(all_buildings)),  # Current Building
+                ]
+            )
+        else:
+            self.column_headers = [
+                "Work Master Code",
+                "Gauge Code",
+                "Description",
+                "Spec.",
+                "Additional Spec.",
+                "Reference to",
+                "UoM",
+                f"{state.current_building.get()}",
+            ]
+            self.sheet.headers(self.column_headers)
+            self.set_colums_widths()
 
         # Reload data
         self.load_data()
+        print(f"self.data길이 {len(self.data)}")
 
-        try:
-            self.manual_data = self.get_manula_item_data()
-        except:
-            self.manual_data = [[]]
-        self.total_data = self.data + self.manual_data
+        if state.current_building.get() == "All":
+            all_buildings = go(
+                state.team_std_info["project-buildinglist"]["children"],
+                map(lambda x: x["name"]),
+                list,
+            )
+            print(f"all_buildings::{all_buildings}")
+            self.total_data = []
+            for idx, bd in enumerate(all_buildings):
+                try:
+                    self.manual_data = self.get_manula_item_data(bd)
+                except:
+                    self.manual_data = [[]]
+                self.total_data.append(self.data[idx] + self.manual_data)
+
+        else:
+            try:
+                self.manual_data = self.get_manula_item_data()
+            except:
+                self.manual_data = [[]]
+            self.total_data = self.data + self.manual_data
+            self.sheet.set_column_widths()
 
         # Formatting to Total BOQ form
-        self.building_total_data = self.format_data(self.total_data)
-        # print(f"self.building_total_data::{self.building_total_data[0]}")
+        if state.current_building.get() == "All":
+            all_buildings_data = [self.format_data(i) for i in self.total_data]
+            first_building, *others = all_buildings_data
+
+            building_total_data_ = []
+            for rIdx, row in enumerate(first_building):
+                new_row = deepcopy(row)
+                for bd_data in others:
+                    bd_last = bd_data[rIdx][-1]
+                    new_row.append(bd_last)
+                new_row_forTotal = deepcopy(new_row)
+
+                res_forSum = []
+                for i in new_row_forTotal[7:]:
+                    try:
+                        res_forSum.append(float(i))
+                    except:
+                        pass
+                if sum(res_forSum):
+                    new_row_qty_sum = round(sum(res_forSum), 3)
+                else:
+                    new_row_qty_sum = ""
+
+                new_row.insert(7, new_row_qty_sum)
+                building_total_data_.append(new_row)
+
+            self.building_total_data = building_total_data_
+        else:
+            self.building_total_data = self.format_data(self.total_data)
 
         # Set headers and data
         self.sheet.set_sheet_data(
@@ -1542,24 +1635,56 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         )
 
         # # Ensure cell sizes and redraw
-        self.set_colums_widths()
 
         self.highlight_category_row()
 
         self.sheet.redraw()
 
+        if state.current_building.get() == "All":
+            self.sheet.set_column_widths(
+                [
+                    110,  # Work Master Code
+                    50,  # Gauge Code
+                    250,  # Description
+                    380,  # Spec.
+                    250,  # Additional Spec.
+                    50,  # Reference to
+                    50,  # UoM
+                    70,  # Total
+                    *[200] * (len(all_buildings)),  # Current Building
+                ]
+            )
+        else:
+            self.sheet.set_column_widths(
+                [
+                    110,  # Work Master Code
+                    50,  # Gauge Code
+                    250,  # Description
+                    380,  # Spec.
+                    250,  # Additional Spec.
+                    50,  # Reference to
+                    50,  # UoM
+                    200,  # Current Building
+                ]
+            )
+
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
-    def format_data(self, data):
+    def format_data(self, _data=None):
         """
         Processes Total BOQ format
         """
         state = self.state
 
+        if _data:
+            data = _data
+        else:
+            data = self.total_data
+
         if state.team_std_info.get(self.data_kind):
             unique_wm_inBuilding = go(
-                self.total_data,
+                data,
                 filter(lambda x: x[7] != ""),
                 map(
                     lambda x: "|".join(
@@ -1638,7 +1763,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
             # for i in unique_wm_inBuilding:
             for i in unique_wm_inPjt:
                 calc_sum = 0
-                for row in self.total_data:
+                for row in data:
                     if row[7] == i[0] and row[8] == i[1] and row[11] == i[4]:
                         try:
                             value = row[14] if row[14] != "M2" else row[15]

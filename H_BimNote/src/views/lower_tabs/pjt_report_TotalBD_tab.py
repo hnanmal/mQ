@@ -53,7 +53,9 @@ def create_report_TotalBD_tab(state, subtab_notebook, exe_mode=None):
     ##############################################################
     ## tab_common_area###########
 
-    builing_select_combobox = Builing_select_combobox(state, working_tab_common_area)
+    builing_select_combobox = Builing_select_combobox(
+        state, working_tab_common_area, allMode=True
+    )
     state.builing_select_combobox = builing_select_combobox
 
     ## refresh 버튼

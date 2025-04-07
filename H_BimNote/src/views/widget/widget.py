@@ -413,8 +413,9 @@ class TabNavigationButton(tk.Frame):
 
 
 class Builing_select_combobox:
-    def __init__(self, state, parent):
+    def __init__(self, state, parent, allMode=False):
         self.state = state
+        self.allMode = allMode
         self.data_kind = "project-buildinglist"
         self.state_observer = StateObserver(state, lambda e: self.update(e))
 
@@ -462,7 +463,10 @@ class Builing_select_combobox:
                 map(lambda node: node["name"]),
                 list,
             )
-            self.combobox.config(values=self.combovalues)
+            if self.allMode:
+                self.combobox.config(values=["All"] + self.combovalues)
+            else:
+                self.combobox.config(values=self.combovalues)
             try:
                 self.combobox.set(state.current_building.get())
             except:

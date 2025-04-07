@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.8 (2025-04-07)
+    - Project Report > Q'ty Report to Total BOQ 탭 빌딩 선택 콤보박스에 "All" 항목 추가 및 Total 칼럼 추가
+
 🔳 v1.2.7 (2025-04-03)
     - Project Input > Project Interior Matrix 탭 레벨 선택 콤보박스에 'WM 할당 확인' 항목 추가
     - Project Input > Project Interior Matrix 탭 우측 버튼 메뉴에서 '선택항목 SWM 탭 에서 조회' 메뉴 추가 (현재 선택 행 기준 SWM 지정 탭으로 이동)
