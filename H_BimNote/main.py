@@ -123,10 +123,6 @@ def show_splash_screen():
     logo_label.pack(padx=20)
     logo_label.pack()
 
-    # text_labe1 = tk.Label(text_area, text="B-Note", font=("Tw Cen MT", 60, "bold"))
-    # text_labe1.configure(bg="#ebebeb")
-    # text_labe1.pack(padx=20, pady=20, anchor="nw")
-
     text_label2 = tk.Label(
         text_area,
         # text="HEC BIM Note, now Loading...",
