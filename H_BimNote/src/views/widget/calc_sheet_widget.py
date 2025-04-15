@@ -1598,6 +1598,9 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
         # Formatting to Total BOQ form
         if state.current_building.get() == "All":
             all_buildings_data = [self.format_data(i) for i in self.total_data]
+
+            # 스틸 플레이트 물량 분개 구간
+
             first_building, *others = all_buildings_data
 
             building_total_data_ = []
@@ -1624,7 +1627,48 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
 
             self.building_total_data = building_total_data_
         else:
-            self.building_total_data = self.format_data(self.total_data)
+            # 스틸 플레이트 물량 분개 구간
+            formated_data = self.format_data(self.total_data)
+            plate_itmes_amount = go(
+                formated_data,
+                filter(lambda x: x[0] == "S01AA009-00001"),
+                map(lambda x: x[7] if x[7] else 0),
+                sum,
+            )
+            print(f"plate_itmes_amount {plate_itmes_amount}")
+            indig_tgt_wmcodes = [
+                "S03AA081-00001",
+                "S03AA082-00001",
+                "S03AA083-00001",
+                "S03AA084-00001",
+                "S03AA085-00001",
+                # "S03AA007-00001", #PnG
+            ]
+
+            indig_tgt_rows_amount = go(
+                formated_data,
+                filter(lambda x: x[0] in indig_tgt_wmcodes),
+                map(lambda x: x[7] if x[7] else 0),
+                sum,
+            )
+            print(f"indig_tgt_rows_amount {indig_tgt_rows_amount}")
+
+            if plate_itmes_amount and indig_tgt_rows_amount:
+                for row in formated_data:
+                    if row[0] in indig_tgt_wmcodes:
+                        row_origin_qty = deepcopy(row[7]) if row[7] else 0
+                        print(f"row_origin_qty {row_origin_qty}")
+                        add_qty_forRow = (
+                            float(row_origin_qty) / indig_tgt_rows_amount
+                        ) * plate_itmes_amount
+                        row[7] = (
+                            round(row_origin_qty + add_qty_forRow, 3)
+                            if (row_origin_qty + add_qty_forRow)
+                            else ""
+                        )
+
+            # 클래스 변수에 등록
+            self.building_total_data = formated_data
 
         # Set headers and data
         self.sheet.set_sheet_data(
