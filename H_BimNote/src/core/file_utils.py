@@ -68,6 +68,10 @@ def save_to_json_teamStdInfo(state, _file_path=None):
         print(f"Error saving data to JSON: {e}")
 
 
+def load_std_calcdict(state, _file_path=None):
+    pass
+
+
 def load_from_json(state, _file_path=None):
     # 파일 열기 위치 선택
     if _file_path:

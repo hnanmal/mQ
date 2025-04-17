@@ -16,6 +16,14 @@ filter, map, reduce = curry(filter), curry(map), curry(reduce)
 go = lambda *args: reduce(lambda a, f: f(a), args)  ## 함수도 축약 가능 ##
 
 
+def tap(fn, x):
+    return lambda x: (fn(x), x)[1]
+
+
+def trace(label):
+    return tap(lambda x: print(f"[{label}]:", x))
+
+
 def dictUpdate(dic1, dic2):
     dic1.update(dic2)
     return dic1

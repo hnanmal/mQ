@@ -21,6 +21,7 @@ from src.views.widget.treeview_editor import (
     TreeviewEditor_stdGWMSWM,
 )
 from src.views.widget.widget import StateObserver
+from src.core.fp_utils import *
 
 
 # Composition for Style Management
@@ -2651,7 +2652,11 @@ class TeamStd_CommonInputTreeView:
         hdr_widths = [127, 125, 200, 50, 50, 200]
 
         # Compose TreeView, Style Manager, and State Observer
+        title_frame = ttk.Frame(parent, width=600, height=500)
+        title_frame.pack()
+
         tree_frame = ttk.Frame(parent, width=600, height=2000)
+        tree_frame.pack()
         self.tree_frame = tree_frame
         self.treeview = BaseTreeView(state, tree_frame, headers)
         self.treeview.tree.config(height=3000)
@@ -2662,7 +2667,9 @@ class TeamStd_CommonInputTreeView:
         # self.treeview.tree.tag_configure("bold", font=("Arial", 10, "bold"))
         self.treeview.tree.tag_configure("normal", font=("Arial Narrow", 10))
         # Set up UI
-        self.set_title(tree_frame)
+        self.set_title(title_frame)
+        self.set_bulkUpdateBtn(title_frame)
+        self.set_rollbackBtn(title_frame)
         self.scroll_widget = ScrollbarWidget(tree_frame, self.treeview.tree)
         self.treeview.tree.pack(expand=True, fill="both", side="left")
         self.treeview.setup_columns(headers, hdr_widths)
@@ -2695,7 +2702,111 @@ class TeamStd_CommonInputTreeView:
         title_label = ttk.Label(
             parent, text="Standard Common Input Setting", font=title_font
         )
-        title_label.pack(padx=5, pady=5, anchor="w")
+        title_label.pack(side="left", padx=5, pady=5, anchor="nw")
+
+    def set_bulkUpdateBtn(self, parent):
+        state = self.state
+        bulkUp_btn = ttk.Button(
+            parent,
+            text="변경내용 → 산출타입 사전 전체 업데이트",
+            bootstyle="info-outline",
+            command=self.bulkUpdate_commoninfo,
+        )
+        bulkUp_btn.pack(side="left", padx=5, pady=5, anchor="nw")
+
+    def set_rollbackBtn(self, parent):
+        state = self.state
+        bulkUp_btn = ttk.Button(
+            parent,
+            text="Common Input 값 팀표준에서 가져오기",
+            bootstyle="warning-outline",
+            command=self.rollback_commoninfo,
+        )
+        bulkUp_btn.pack(side="left", padx=5, pady=5, anchor="nw")
+
+    def update_target_byRef(self, dbKey, target_qItemName):
+        state = self.state
+
+        selected_qItem_name = target_qItemName
+        data = state.team_std_info["std-calcdict"]["children"]
+        selected_node = next(
+            (node for node in data if node["name"] == selected_qItem_name),
+            None,
+        )
+        print(f"selected_node : {str(selected_node)}")
+
+        refData = state.team_std_info[dbKey]
+        targetData = selected_node
+        # Flatten A data into a dictionary with 'name' as key and 'values' as value
+        a_values_map = {}
+
+        def flatten_a_data(data):
+            if isinstance(data, list):
+                for item in data:
+                    flatten_a_data(item)
+            elif isinstance(data, dict):
+                a_values_map[data["name"]] = data["values"]
+                flatten_a_data(data.get("children", []))
+
+        # Flatten A data for easy lookup
+        flatten_a_data(refData["children"])
+        print(f'flatten_a_data : {flatten_a_data(refData["children"])}')
+
+        # Update B data
+        for child in targetData["children"]:
+            if child["name"] in a_values_map:
+                # Get the fourth value of the matched A data
+                a_value_to_update = (
+                    a_values_map[child["name"]][3]
+                    if len(a_values_map[child["name"]]) > 3
+                    else None
+                )
+                if a_value_to_update:
+                    # Update the second value of B data
+                    # child["values"].insert(2, a_value_to_update)
+                    child["values"][2] = a_value_to_update
+
+        for idx, node in enumerate(state.team_std_info[self.data_kind]["children"]):
+            if node["name"] == selected_qItem_name:
+                state.team_std_info["std-calcdict"]["children"].remove(node)
+                state.team_std_info["std-calcdict"]["children"].insert(idx, targetData)
+                state.log_widget.write(str(targetData))
+
+        # state.log_widget.write(str(targetData))
+        self.update(view_level=self.view_level)
+        return targetData
+
+    def bulkUpdate_commoninfo(self):
+        state = self.state
+        # 일괄 적용 안내 메시지 구간
+        will_act = messagebox.askyesno(
+            "변경 반영 확인", "현재 세팅값을 산출유형 전체에 반영하시겠습니까?"
+        )
+
+        all_keys = go(
+            state.team_std_info["std-calcdict"]["children"],
+            map(lambda x: x["name"]),
+            # lambda x: tap(print, x),
+            list,
+        )
+        print(f"all_keys {all_keys}")
+        # 안내 메시지 결과가 참인 경우 수행할 코드 구간
+        if will_act:
+            for k in all_keys:
+                try:
+                    self.update_target_byRef("common-input", k)
+                except:
+                    pass
+            messagebox.showinfo("업데이트", "업데이트 완료")
+
+    def rollback_commoninfo(self):
+        state = self.state
+        # 롤백 안내 메시지 구간
+        will_act = messagebox.askyesno(
+            "팀표준 복원 확인", "현재 세팅값을 팀표준 값으로 복원하시겠습니까?"
+        )
+        # 안내 메시지 결과가 참인 경우 수행할 코드 구간
+        pass
 
     def update(self, event=None, view_level=None):
         state = self.state
