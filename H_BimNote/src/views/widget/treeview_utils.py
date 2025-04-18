@@ -1,4 +1,5 @@
 # src/views/widget/treeview_utils.py
+import json
 import os
 from tkinter import filedialog, messagebox
 
@@ -2718,7 +2719,7 @@ class TeamStd_CommonInputTreeView:
         state = self.state
         bulkUp_btn = ttk.Button(
             parent,
-            text="Common Input 값 팀표준에서 가져오기",
+            text="Common Input 값 팀표준으로 복원하기",
             bootstyle="warning-outline",
             command=self.rollback_commoninfo,
         )
@@ -2797,6 +2798,7 @@ class TeamStd_CommonInputTreeView:
                     self.update_target_byRef("common-input", k)
                 except:
                     pass
+            state.observer_manager.notify_observers(state)
             messagebox.showinfo("업데이트", "업데이트 완료")
 
     def rollback_commoninfo(self):
@@ -2805,8 +2807,27 @@ class TeamStd_CommonInputTreeView:
         will_act = messagebox.askyesno(
             "팀표준 복원 확인", "현재 세팅값을 팀표준 값으로 복원하시겠습니까?"
         )
+        std_calcdict_path = "resource/PlantArch_BIM Standard.bnote"
+        print("현재 작업 디렉토리:", os.getcwd())
+        print("file_path:", std_calcdict_path)
+        print("파일 존재 여부:", os.path.exists(std_calcdict_path))
         # 안내 메시지 결과가 참인 경우 수행할 코드 구간
-        pass
+        if will_act:
+            try:
+                with open(std_calcdict_path, "r", encoding="utf-8") as file:
+                    print(f"file ! {file}")
+                    team_std_filedata = json.load(file)
+                    # print(f"템플릿 로딩? {team_std_filedata}")
+            except Exception as e:
+                print(f"Error loading data from JSON: {e}\n")
+                return False
+        if team_std_filedata:
+            state.team_std_info["common-input"] = deepcopy(
+                team_std_filedata["common-input"]
+            )
+            # self.update()
+            state.observer_manager.notify_observers(state)
+            messagebox.showinfo("common-input 복원", "common-input 복원 완료")
 
     def update(self, event=None, view_level=None):
         state = self.state

@@ -42,6 +42,11 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.2.9 (2025-04-22)
+    - Project Standard > Common Input 탭에 변경내용 산출타입 전체 업데이트 버튼, 팀표준 값 복원하기 버튼 추가
+    - Project Report > Q'ty Report to Total BOQ 탭에서 Fabrication 에 Plates - Gusset, Stiffener, ETC (S01AA009-00001) 항목 물량이 있는 경우,
+      Erection에 있는 Heavy Steel (S03AA082-00001), Medium Steel (S03AA083-00001), Light Steel (S03AA084-00001) 항목 등 철골 이렉션 wm 항목에 각각 중량비로 분개해서 넣어주도록 로직 수정
+
 🔳 v1.2.8 (2025-04-07)
     - Project Report > Q'ty Report to Total BOQ 탭 빌딩 선택 콤보박스에 "All" 항목 추가 및 Total 칼럼 추가
 
