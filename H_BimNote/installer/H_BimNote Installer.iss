@@ -1,4 +1,4 @@
-#define MyVersion "1.2.8"
+#define MyVersion "1.2.9"
 
 [Setup]
 AppName=H_BimNote

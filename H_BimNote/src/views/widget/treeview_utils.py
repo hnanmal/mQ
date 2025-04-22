@@ -1039,12 +1039,65 @@ class TeamStd_GWMTreeView:
             copy_GWM=self.copy_GWM,
             copy_item=self.copy_item,
         )
-        # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
+
+        self.treeview.tree.tag_configure(
+            "bold", foreground="#a000cc", font=("맑은 고딕", 10, "bold")
+        )
 
     def set_title(self, parent):
         title_font = ttk.font.Font(family="맑은 고딕", size=12)
         title_label = ttk.Label(parent, text="Standard Types for GWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
+
+    def should_highlight(self, item_text):
+        state = self.state
+        # print(f"used_names !!")
+        used_names = go(
+            state.team_std_info["project-assigntype"]["children"],
+            map(lambda x: x["children"]),
+            lambda x: list(chain(*x)),
+            filter(lambda x: list(x)[0] == "GWM"),
+            map(lambda x: x[2]),
+            list,
+        )
+        # print(f"used_names !!{used_names}[0]")
+        used_WM_names = go(
+            used_names,
+            map(lambda x: x.split(" | ")),
+            list,
+            map(lambda x: x[0]),
+            set,
+            list,
+        )
+        # print(f"used_WM_names !!{used_WM_names}")
+
+        used_item_names = go(
+            used_names,
+            map(lambda x: x.split(" | ")),
+            list,
+            map(lambda x: x[1]),
+            set,
+            list,
+        )
+        # print(f"used_item_names !!{used_item_names}")
+
+        return item_text in used_WM_names  # or (item_text in used_item_names)
+
+    def apply_highlight_to_items(self):
+        for item_id in self.treeview.tree.get_children(""):
+            self._apply_highlight_recursive(item_id)
+
+    def _apply_highlight_recursive(self, item_id):
+        item_text = self.treeview.tree.item(item_id, "text")
+        if self.should_highlight(item_text):
+            self.treeview.tree.item(item_id, tags=("bold",))
+            # print("하이라이트!if")
+        else:
+            self.treeview.tree.item(item_id, tags=("normal",))
+            # print("하이라이트!else")
+
+        for child_id in self.treeview.tree.get_children(item_id):
+            self._apply_highlight_recursive(child_id)
 
     def update(self, event=None, view_level=None):
         state = self.state
@@ -1085,6 +1138,7 @@ class TeamStd_GWMTreeView:
             except Exception as e:
                 self.state.log_widget.write(f"Item selection failed: {e}")
 
+        self.apply_highlight_to_items()
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
@@ -1156,6 +1210,8 @@ class TeamStd_GWMTreeView:
 
         except Exception as e:
             self.state.log_widget.write(f"Error processing selected item details: {e}")
+
+        self.apply_highlight_to_items()
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
@@ -1950,12 +2006,65 @@ class TeamStd_SWMTreeView:
             copy_SWM=self.copy_SWM,
             copy_item=self.copy_item,
         )
-        # state.edit_mode_manager.register_widgets(treeCtxtMenu=[self.context_menu])
+
+        self.treeview.tree.tag_configure(
+            "bold", foreground="#a000cc", font=("맑은 고딕", 10, "bold")
+        )
 
     def set_title(self, parent):
         title_font = ttk.font.Font(family="맑은 고딕", size=12)
         title_label = ttk.Label(parent, text="Standard Types for SWM", font=title_font)
         title_label.pack(padx=5, pady=5, anchor="w")
+
+    def should_highlight(self, item_text):
+        state = self.state
+        # print(f"used_names !!")
+        used_names = go(
+            state.team_std_info["project-assigntype"]["children"],
+            map(lambda x: x["children"]),
+            lambda x: list(chain(*x)),
+            filter(lambda x: x[0] == "SWM"),
+            map(lambda x: x[2]),
+            list,
+        )
+        # print(f"used_names !!{used_names}[0]")
+        used_WM_names = go(
+            used_names,
+            map(lambda x: x.split(" | ")),
+            list,
+            map(lambda x: x[0]),
+            set,
+            list,
+        )
+        # print(f"used_WM_names !!{used_WM_names}")
+
+        used_item_names = go(
+            used_names,
+            map(lambda x: x.split(" | ")),
+            list,
+            map(lambda x: x[1]),
+            set,
+            list,
+        )
+        # print(f"used_item_names !!{used_item_names}")
+
+        return item_text in used_item_names
+
+    def apply_highlight_to_items(self):
+        for item_id in self.treeview.tree.get_children(""):
+            self._apply_highlight_recursive(item_id)
+
+    def _apply_highlight_recursive(self, item_id):
+        item_text = self.treeview.tree.item(item_id, "text")
+        if self.should_highlight(item_text):
+            self.treeview.tree.item(item_id, tags=("bold",))
+            # print("하이라이트!if")
+        else:
+            self.treeview.tree.item(item_id, tags=("normal",))
+            # print("하이라이트!else")
+
+        for child_id in self.treeview.tree.get_children(item_id):
+            self._apply_highlight_recursive(child_id)
 
     def update(self, event=None, view_level=None):
         state = self.state
@@ -1996,6 +2105,7 @@ class TeamStd_SWMTreeView:
             except Exception as e:
                 print(f"Item selection failed: {e}")
 
+        self.apply_highlight_to_items()
         self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
@@ -2068,6 +2178,8 @@ class TeamStd_SWMTreeView:
 
         except Exception as e:
             self.state.log_widget.write(f"Error processing selected item details: {e}")
+
+        self.apply_highlight_to_items()
 
     def get_parent_ids(self, selected_item_id):
         parent_ids = []
