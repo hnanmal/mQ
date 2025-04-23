@@ -40,13 +40,11 @@ def main():
     root.iconify()
     # Apply ttkbootstrap theme
     style = ttk.Style()
-    # style.theme_use("sandstone")  # Use your preferred ttkbootstrap theme
     style.theme_use("cosmo")  # Use your preferred ttkbootstrap theme
     ################
 
     notebook, state = initialize_app(root)
 
-    # root.withdraw()  # Hide the main window while splash is shown
     state.root = root
     state.notebook = notebook
 
@@ -66,11 +64,6 @@ def main():
     create_project_apply_tab(state, notebook)
 
     create_project_report_tab(state, notebook)
-
-    # notebook.tab(0, font=("Arial", 12, "bold"))  # 첫 번째 탭만 굵게
-
-    ## 팀스탠다드 자동 임포트
-    # load_from_json(state, "resource/PlantArch_BIM Standard.bnote")
 
     root.deiconify()
 
