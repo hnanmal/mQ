@@ -1,0 +1,168 @@
+{
+  "Uuid": "f06a7fea-4c8e-4bd7-95b9-00b6b6988b8f",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "[H_PAB.RT.G4]_Revit 모델링 변경사항 추적기_0.0.1",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [
+    {
+      "Id": "2d0aba9a04284316945b65a951f4c8b0",
+      "Name": "Watch",
+      "Type": "string",
+      "InitialValue": "[속성 변경] Structural Columns 'H_SC_AR S15_RC Col-AG_600x600_C1' (Level: TOC(GF)): Top Offset: 0 → 2,000\n[속성 변경] Walls 'H_WA_AR B02_Ext Wall RC-AG_T1500_Parapet' (Level: TOC): Area: 29.81 m² → 29.06 m²; Volume: 4.472 m³ → 4.359 m³",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nimport json, os\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\napp = DocumentManager.Instance.CurrentUIApplication.Application\r\n\r\n# 📁 기본 스냅샷 폴더 경로\r\nbase_dir = r\"D:\\.Temp_forDyn\"\r\n\r\n# 📄 모델 파일명으로 폴더명 결정\r\nmodel_title = doc.Title  # 예: MyProject.rvt\r\nmodel_folder = os.path.join(base_dir, model_title.replace(\".rvt\", \"\"))\r\n\r\n# 📁 폴더 없으면 생성\r\nif not os.path.exists(model_folder):\r\n    os.makedirs(model_folder)\r\n\r\nsnapshot_file = os.path.join(model_folder, \"prev_snapshot.json\")\r\n\r\n# 🔍 현재 모델 요소 스냅샷 함수\r\ndef capture_elements(doc):\r\n    elements = []\r\n\r\n    # 일반 요소 수집\r\n    collector = FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()\r\n    for el in collector:\r\n        try:\r\n            if el.Category and el.Category.Name in [\r\n                \"Walls\", \"Floors\", \"Doors\", \"Windows\",\r\n                \"Structural Columns\", \"Structural Foundations\",\r\n                \"Structural Framing\", \"Ceilings\", \"Stairs\", \"Railings\"\r\n            ]:\r\n                # Level 추출 보완\r\n                level = \"N/A\"\r\n                if hasattr(el, \"LevelId\") and el.LevelId.IntegerValue > 0:\r\n                    level = doc.GetElement(el.LevelId).Name\r\n                elif el.LookupParameter(\"Reference Level\"):\r\n                    level = el.LookupParameter(\"Reference Level\").AsValueString()\r\n\r\n                data = {\r\n                    \"id\": el.Id.IntegerValue,\r\n                    \"category\": el.Category.Name,\r\n                    \"type\": el.Name,\r\n                    \"level\": level,\r\n                    \"params\": {}\r\n                }\r\n                for p in el.Parameters:\r\n                    if p.StorageType in [StorageType.String, StorageType.Double, StorageType.Integer]:\r\n                        try:\r\n                            val = p.AsValueString() or p.AsString() or p.AsInteger()\r\n                            data[\"params\"][p.Definition.Name] = str(val)\r\n                        except:\r\n                            pass\r\n                elements.append(data)\r\n        except:\r\n            continue\r\n\r\n    # ✅ Room 별도 수집\r\n    room_collector = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Rooms).WhereElementIsNotElementType()\r\n    for room in room_collector:\r\n        try:\r\n            data = {\r\n                \"id\": room.Id.IntegerValue,\r\n                \"category\": \"Rooms\",\r\n                \"type\": \"Room\",\r\n                \"level\": room.Level.Name if room.Level else \"N/A\",\r\n                \"params\": {\r\n                    \"Number\": room.LookupParameter(\"Number\").AsString(),\r\n                    \"Name\": room.LookupParameter(\"Name\").AsString(),\r\n                    \"Area\": room.LookupParameter(\"Area\").AsValueString()\r\n                }\r\n            }\r\n            elements.append(data)\r\n        except:\r\n            continue\r\n\r\n    return elements\r\n\r\n\r\n# 📄 이전 스냅샷 불러오기\r\nif os.path.exists(snapshot_file):\r\n    with open(snapshot_file, 'r') as f:\r\n        prev_elements = json.load(f)\r\nelse:\r\n    prev_elements = []\r\n\r\n# 📥 현재 상태\r\ncurr_elements = capture_elements(doc)\r\n\r\ndef get_room_info(el):\r\n    return {\r\n        \"number\": el.LookupParameter(\"Number\").AsString() if el.LookupParameter(\"Number\") else \"N/A\",\r\n        \"name\": el.LookupParameter(\"Name\").AsString() if el.LookupParameter(\"Name\") else \"N/A\",\r\n        \"area\": el.LookupParameter(\"Area\").AsValueString() if el.LookupParameter(\"Area\") else \"N/A\"\r\n    }\r\n\r\n# 📌 변경 탐지 함수\r\ndef get_diff(prev, curr):\r\n    diff = []\r\n    prev_dict = {str(e[\"id\"]): e for e in prev}\r\n    curr_dict = {str(e[\"id\"]): e for e in curr}\r\n\r\n    # 🔧 중요 파라미터 목록 (카테고리별)\r\n    important_params_by_category = {\r\n        \"Structural Columns\": [\"Unconnected Height\", \"Top Level\", \"Base Level\", \"Top Offset\", \"Base Offset\"],\r\n        \"Structural Foundations\": [\"Level\", \"Thickness\", \"Length\", \"Width\", \"Height Offset From Level\"],\r\n        \"Floors\": [\"Level\", \"Thickness\", \"Height Offset from Level\"],\r\n        \"Ceilings\": [\"Thickness\", \"Height Offset from Level\"],\r\n        \"Walls\": [\"Unconnected Height\", \"Location Line\", \"Base Constraint\", \"Base Offset\", \"Top Constraint\", \"Top Offset\", \"Length\", \"Area\", \"Volume\"],\r\n        \"Doors\": [\"Level\", \"Sill Height\", \"Head Height\", \"Mark\"],\r\n        \"Windows\": [\"Level\", \"Sill Height\", \"Head Height\", \"Mark\"],\r\n        \"Stairs\": [\"Top Level\", \"Top Offset\", \"Base Level\", \"Base Offset\"],\r\n        \"Railings\": [\"Base Level\", \"Base Offset\"]\r\n    }\r\n\r\n    def safe_float(val):\r\n        try:\r\n            return round(float(val), 4)\r\n        except:\r\n            return val\r\n\r\n    # 🔹 삭제된 요소\r\n    for eid in prev_dict:\r\n        if eid not in curr_dict:\r\n            el = prev_dict[eid]\r\n            if el[\"category\"] == \"Rooms\":\r\n                diff.append(f\"[삭제] Room '{el['params'].get('Number')} - {el['params'].get('Name')}' (면적: {el['params'].get('Area')})\")\r\n            else:\r\n                diff.append(f\"[삭제] {el['category']} '{el['type']}' (Level: {el['level']})\")\r\n\r\n    # 🔹 새로 추가된 요소\r\n    for eid in curr_dict:\r\n        if eid not in prev_dict:\r\n            el = curr_dict[eid]\r\n            if el[\"category\"] == \"Rooms\":\r\n                diff.append(f\"[추가] Room '{el['params'].get('Number')} - {el['params'].get('Name')}' (면적: {el['params'].get('Area')})\")\r\n            else:\r\n                diff.append(f\"[추가] {el['category']} '{el['type']}' (Level: {el['level']})\")\r\n\r\n    # 🔹 수정된 요소\r\n    for eid in curr_dict:\r\n        if eid in prev_dict:\r\n            prev_el = prev_dict[eid]\r\n            curr_el = curr_dict[eid]\r\n\r\n            # ✅ Room 변경 감지\r\n            if curr_el[\"category\"] == \"Rooms\":\r\n                prev_info = prev_el[\"params\"]\r\n                curr_info = curr_el[\"params\"]\r\n                room_number = curr_info.get(\"Number\", \"N/A\")\r\n                room_name = curr_info.get(\"Name\", \"N/A\")\r\n                if prev_info.get(\"Name\") != curr_info.get(\"Name\"):\r\n                    diff.append(f\"[이름 변경] Room '{room_number}': '{prev_info.get('Name')}' → '{curr_info.get('Name')}'\")\r\n                if prev_info.get(\"Area\") != curr_info.get(\"Area\"):\r\n                    diff.append(f\"[면적 변경] Room '{room_number} - {room_name}': {prev_info.get('Area')} → {curr_info.get('Area')}\")\r\n                continue\r\n\r\n            # ✅ 타입 변경 감지\r\n            if prev_el[\"type\"] != curr_el[\"type\"]:\r\n                diff.append(f\"[타입 변경] {curr_el['category']} ID {eid} : '{prev_el['type']}' → '{curr_el['type']}'\")\r\n\r\n            # ✅ 중요 파라미터 변경 감지\r\n            important_params = important_params_by_category.get(curr_el[\"category\"], [])\r\n            param_changes = []\r\n            for param_name in important_params:\r\n                prev_val = prev_el[\"params\"].get(param_name)\r\n                curr_val = curr_el[\"params\"].get(param_name)\r\n                if safe_float(prev_val) != safe_float(curr_val):\r\n                    param_changes.append(f\"{param_name}: {prev_val} → {curr_val}\")\r\n            if param_changes:\r\n                diff.append(\r\n                    f\"[속성 변경] {curr_el['category']} '{curr_el['type']}' (Level: {curr_el['level']}): \" +\r\n                    \"; \".join(param_changes)\r\n                )\r\n\r\n    return diff\r\n\r\n\r\n\r\n# 결과 생성\r\ndiff = get_diff(prev_elements, curr_elements)\r\nsummary = \"\\n\".join(diff) if diff else \"변경 사항 없음 ✅\"\r\n\r\n# 📥 현재 상태 저장\r\nwith open(snapshot_file, 'w') as f:\r\n    json.dump(curr_elements, f, indent=2)\r\n\r\nOUT = summary\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "01278f1715984ac9b9b69e901e2ac838",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "a5dab74e55b3418db1cfc5a8d7b4b376",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "b7dc1372c2b54707ab8af18d2b5c9aab",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Watch, CoreNodeModels",
+      "WatchWidth": 420.0,
+      "WatchHeight": 200.0,
+      "Id": "2d0aba9a04284316945b65a951f4c8b0",
+      "NodeType": "ExtensionNode",
+      "Inputs": [
+        {
+          "Id": "7c548a5e745346c59ed80bd1ddd78328",
+          "Name": "",
+          "Description": "Node to show output from",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "60e99d7a0e2d4ac7922bbf8ec1742725",
+          "Name": "",
+          "Description": "Node output",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Visualizes a node's output"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "b7dc1372c2b54707ab8af18d2b5c9aab",
+      "End": "7c548a5e745346c59ed80bd1ddd78328",
+      "Id": "52e0ed9ac7894ed18574f1013a27e99c",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "01278f1715984ac9b9b69e901e2ac838",
+        "Name": "tracking",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 257.6968938215259,
+        "Y": 232.3039681923819
+      },
+      {
+        "Id": "2d0aba9a04284316945b65a951f4c8b0",
+        "Name": "Watch",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": true,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 510.6335776662605,
+        "Y": 74.26556547271787
+      }
+    ],
+    "Annotations": [],
+    "X": -225.09057980519634,
+    "Y": 104.82336642132702,
+    "Zoom": 0.9378671321184455
+  }
+}
