@@ -1,0 +1,427 @@
+{
+  "Uuid": "4c514459-e4ec-4625-8aec-981009c6da28",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "페인트 적용면적 추출 테스트",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "Dynamo.Nodes.DSModelElementSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "6eb0926c-d14a-4fcf-a916-ef6f96fd8e29-002f23e7"
+      ],
+      "Id": "d139e98a200b4c8b82e74e2eaebc4751",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b9f2a800e4614507a64f84123791045a",
+          "Name": "Element",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\nelement = UnwrapElement(IN[0])\r\nopt = Options()\r\ngeom = element.get_Geometry(opt)\r\n\r\nindividual_faces = []  # (재질명, 면적) 튜플 리스트\r\n\r\nfor geom_obj in geom:\r\n    if hasattr(geom_obj, 'Faces'):\r\n        for face in geom_obj.Faces:\r\n            mat_id = doc.GetPaintedMaterial(element.Id, face)\r\n            if mat_id and mat_id.IntegerValue != -1:\r\n                material = doc.GetElement(mat_id)\r\n                mat_name = material.Name\r\n                area = face.Area  # ft² 단위\r\n                individual_faces.append((mat_name, area))\r\n\r\nOUT = individual_faces\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "32b1d40312764ed58a6cb560bf311318",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "0168b038f73e4cd7bf89b78593efd88b",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0199b412946b4566868e806aee2fb659",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import sqlite3\r\nimport urllib.request\r\n\r\ndb_path = 'D:/shared/bnote_sample.db'\r\nconn = sqlite3.connect(db_path)\r\ncursor = conn.cursor()\r\n\r\n# 예: 데이터 추가\r\ncursor.execute(\"INSERT INTO standard_nodes (name, path, level, std_values) VALUES (?, ?, ?, ?)\",\r\n               (\"계단\", '[\"건축\", \"내부계단\"]', 2, '[\"노출콘크리트\"]'))\r\n\r\nconn.commit()\r\nconn.close()\r\nOUT = \"저장 완료\"\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "be73a9c6cd2344329866290001d3fd42",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "92e8dac95f574cc3b017b6373e239f61",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "3861634f27ef4907b044b91eaafcff74",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "edd49da72378446d9d732a01a8dd89db",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "050e96ff80fd4af99087b8d6c00eb24d",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "2c8df9734a8a48f5853c9c6bc26b6139",
+          "Name": "Parameter[]",
+          "Description": "Parameter[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "Revit.Elements.Element.Parameters",
+      "Replication": "Auto",
+      "Description": "Obtain all of the Parameters from an Element, sorted by Name.\n\nElement.Parameters: Parameter[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamo Python (IronPython) 예제\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nelement = UnwrapElement(IN[0])\r\n\r\nopts = Options()\r\ngeomElem = element.get_Geometry(opts)\r\n\r\nresults = []  # [(materialId, faceId, area), ...]\r\n\r\nfor geomObj in geomElem:\r\n    solid = geomObj if isinstance(geomObj, Solid) else None\r\n    if solid and solid.Faces.Size > 0:\r\n        for face in solid.Faces:\r\n            # 해당 면이 페인트된 면인지 확인\r\n            matId = doc.GetPaintedMaterial(element.Id, face)\r\n            if matId.IntegerValue != ElementId.InvalidElementId.IntegerValue:\r\n                # PlanarFace이면 .Area 사용\r\n                if isinstance(face, PlanarFace):\r\n                    area = face.Area\r\n                    # :contentReference[oaicite:4]{index=4}\r\n                else:\r\n                    # 비평면(face)은 메시로 근사 계산\r\n                    mesh = face.Triangulate()\r\n                    area = mesh.ComputeSurfaceArea()\r\n                    # :contentReference[oaicite:5]{index=5}\r\n\r\n                results.append((matId, face.Id, area))\r\n\r\n# OUT[0]에 결과 출력\r\nOUT = results\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "fd3e19029da145d89f25338e177cd8c6",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "7b35e6bec2574c18ab8c30fa85e5aff8",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cb00bacc9f434201be61b26e73f553ce",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\n# Revit API 참조\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\n# Dynamo → Revit 문서 접근\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\n# 현재 문서 가져오기\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Dynamo 입력: 단일 요소 (IN[0])\r\nelement = UnwrapElement(IN[0])\r\n\r\n# 결과를 담을 리스트 [(재질명, 총면적), ...]\r\nresults = []\r\n\r\n# ① 기본(material) 및 프로젝트 Paint Override 재질 ID 모두 가져오기\r\n#    False: 기본(material) 포함, True: Paint Override만\r\nmaterial_ids = element.GetMaterialIds(False)\r\nprint(material_ids)\r\n\r\n# ② 각 재질별 총면적 계산\r\nfor mat_id in material_ids:\r\n    # mat_id가 유효한 경우에만\r\n    if mat_id != ElementId.InvalidElementId:\r\n        mat_elem = doc.GetElement(mat_id)\r\n        mat_name = mat_elem.Name\r\n        # False: 기본(material) 포함, True: Paint Override만\r\n        area = element.GetMaterialArea(mat_id, False)\r\n        results.append((mat_name, area))\r\n\r\n# Dynamo 출력\r\nOUT = results\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d9a1b64154ef4106be23bf116e135b9e",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "89800afd36824caca8adab4a95c28ca2",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "87b59c9435a845249ae5ca07bd0c0991",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "e62403da556b43fcb599edbea740b147",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "1a370b5223744fa095acbd9b565874e0",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "88f1f4443bcc4fc587fc2732e2685394",
+          "Name": "geometry[]",
+          "Description": "List of geometry from the element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "Revit.Elements.Element.Geometry",
+      "Replication": "Auto",
+      "Description": "Returns all geometry associated with an element. Ignores transforms when used with linked elements.\n\nElement.Geometry ( ): var[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "0ca3aab6cbd6438f9a3a4bd2f39cb23c",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "025e1c223b8c4585b179bf254efcb168",
+          "Name": "solid",
+          "Description": "Autodesk.DesignScript.Geometry.Solid",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "12581d7dc52a458aba7fb51b503750f4",
+          "Name": "double",
+          "Description": "double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "Autodesk.DesignScript.Geometry.Solid.Area",
+      "Replication": "Auto",
+      "Description": "Returns the surface area -- sum of all the areas of all faces\n\nSolid.Area: double"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "b9f2a800e4614507a64f84123791045a",
+      "End": "0168b038f73e4cd7bf89b78593efd88b",
+      "Id": "06f292f468254ccbaebea50c4e52300e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9f2a800e4614507a64f84123791045a",
+      "End": "050e96ff80fd4af99087b8d6c00eb24d",
+      "Id": "c4bc011e83a342bdae574b9fe17fb8b6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9f2a800e4614507a64f84123791045a",
+      "End": "7b35e6bec2574c18ab8c30fa85e5aff8",
+      "Id": "c9cac91dbcad415c96fbc2d3a879bcb9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9f2a800e4614507a64f84123791045a",
+      "End": "89800afd36824caca8adab4a95c28ca2",
+      "Id": "90fa28e953b54407881b45cc5b15301b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b9f2a800e4614507a64f84123791045a",
+      "End": "1a370b5223744fa095acbd9b565874e0",
+      "Id": "a6eedb4da1fd414d827ef5c54dfba2b6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "88f1f4443bcc4fc587fc2732e2685394",
+      "End": "025e1c223b8c4585b179bf254efcb168",
+      "Id": "d1f2f4aa2d5540758c1c8d71d1623ceb",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -16494.84765625,
+      "EyeY": 21482.955078125,
+      "EyeZ": 65381.33203125,
+      "LookX": 26108.92578125,
+      "LookY": -30050.072265625,
+      "LookZ": -36348.67578125,
+      "UpX": 0.32521000504493713,
+      "UpY": 0.8302115797996521,
+      "UpZ": -0.45275530219078064
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "d139e98a200b4c8b82e74e2eaebc4751",
+        "Name": "Select Model Element",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 394.5,
+        "Y": 345.0
+      },
+      {
+        "Id": "32b1d40312764ed58a6cb560bf311318",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 406.9878272413338,
+        "Y": 29.85946666767596
+      },
+      {
+        "Id": "be73a9c6cd2344329866290001d3fd42",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "ShowGeometry": true,
+        "X": 591.6394836372201,
+        "Y": 604.8682884148529
+      },
+      {
+        "Id": "edd49da72378446d9d732a01a8dd89db",
+        "Name": "Element.Parameters",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 948.1504566232408,
+        "Y": 618.5832523433897
+      },
+      {
+        "Id": "fd3e19029da145d89f25338e177cd8c6",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1415.8622498171835,
+        "Y": -89.15241916575029
+      },
+      {
+        "Id": "d9a1b64154ef4106be23bf116e135b9e",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1041.0015125098664,
+        "Y": 278.7369672554073
+      },
+      {
+        "Id": "e62403da556b43fcb599edbea740b147",
+        "Name": "Element.Geometry",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 844.7809440138609,
+        "Y": -333.50827668389223
+      },
+      {
+        "Id": "0ca3aab6cbd6438f9a3a4bd2f39cb23c",
+        "Name": "Solid.Area",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1118.2595838486563,
+        "Y": 22.50133239579405
+      }
+    ],
+    "Annotations": [],
+    "X": -703.8724058150415,
+    "Y": -17.11223934299329,
+    "Zoom": 0.9545188444871815
+  }
+}
