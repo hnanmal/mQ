@@ -1,0 +1,207 @@
+{
+  "Uuid": "32ba6f65-4bf2-44fe-9856-c3854dc5c961",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "(개발중)내벽높이자동조정_20250716_수정본",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamo Python Script for Batch Room Height Adjustment via Limit Offset\r\n# IN: (없음)\r\n\r\nimport clr\r\n\r\n# --- Revit API & Services ---\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector,\r\n    BuiltInCategory,\r\n    BuiltInParameter,\r\n    UnitUtils,\r\n    UnitTypeId,\r\n    ElementId\r\n)\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1) 모든 Room 수집\r\nrooms = FilteredElementCollector(doc)\\\r\n    .OfCategory(BuiltInCategory.OST_Rooms)\\\r\n    .WhereElementIsNotElementType()\\\r\n    .ToElements()\r\n\r\nmodified_rooms = []\r\nerror_logs     = []\r\n\r\n# 트랜잭션 시작 (한 번만)\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nfor room in rooms:\r\n    # 2) \"H_Room H or CH\" 파라미터 읽기\r\n    p = room.LookupParameter(\"H_Room H or CH\")\r\n    if p is None:\r\n        continue\r\n\r\n    # 3) 파라미터 값 취득 (내부 단위(ft) 또는 문자열)\r\n    height_mm = None\r\n    try:\r\n        ft_val = p.AsDouble()\r\n        if ft_val and ft_val != 0.0:\r\n            # 내부 단위(ft) → mm\r\n            height_mm = UnitUtils.ConvertFromInternalUnits(ft_val, UnitTypeId.Millimeters)\r\n    except:\r\n        s = p.AsString()\r\n        if s:\r\n            try:\r\n                height_mm = float(s)\r\n            except:\r\n                pass\r\n\r\n    # 값이 없거나 0이면 건너뜀\r\n    if not height_mm:\r\n        continue\r\n\r\n    # 4) 원하는 총 높이를 유지하기 위해,\r\n    #    Limit Offset = height_mm (mm) → 내부 단위(ft) 로 변환\r\n    offset_param = room.get_Parameter(BuiltInParameter.ROOM_UPPER_OFFSET)\r\n    if offset_param is None:\r\n        error_logs.append(f\"Room {room.Id.IntegerValue}: Limit Offset 파라미터 없음\")\r\n        continue\r\n\r\n    # mm → 내부 단위(ft)\r\n    offset_internal = UnitUtils.ConvertToInternalUnits(height_mm, UnitTypeId.Millimeters)\r\n\r\n    # 5) Limit Offset 값 설정\r\n    try:\r\n        offset_param.Set(offset_internal)\r\n        modified_rooms.append(room)\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room {room.Id.IntegerValue}: Limit Offset 설정 실패 – {ex}\")\r\n\r\n# 트랜잭션 완료\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# OUT: 수정된 Room IDs, 에러 로그\r\nOUT = modified_rooms, error_logs\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "684c2b05d4754e0c873fa54bae9e1a39",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "0136377c02f54a7fb0154a013700ef05",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0bb55428962a4a029cbd8fcb5a117850",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "0192eeb0d71348ba9371fd9d174cead9",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "b45c4d71e9944424bf67c549f62ab9ff",
+          "Name": "element",
+          "Description": "Revit.Elements.Element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "4ca3f5d5ba9c4751b24b8fa1cdfbe06b",
+          "Name": "geometry[]",
+          "Description": "List of geometry from the element",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "Revit.Elements.Element.Geometry",
+      "Replication": "Auto",
+      "Description": "Returns all geometry associated with an element. Ignores transforms when used with linked elements.\n\nElement.Geometry ( ): var[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamo Python Script for Wall Top Constraint Adjustment Based on Room Heights\r\n# IN: (없음)\r\n\r\nimport clr\r\nimport sys\r\n\r\n# --- Revit API & Services ---\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector,\r\n    BuiltInCategory,\r\n    BuiltInParameter,\r\n    SpatialElementBoundaryOptions,\r\n    SpatialElementBoundaryLocation,\r\n    UnitUtils,\r\n    UnitTypeId,\r\n    ElementId,\r\n    Wall\r\n)\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1) Build mapping: Wall.Id → {'heights': [...], 'has_missing': bool}\r\nopts = SpatialElementBoundaryOptions()\r\nopts.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Center\r\n\r\nroom_col = FilteredElementCollector(doc) \\\r\n    .OfCategory(BuiltInCategory.OST_Rooms) \\\r\n    .WhereElementIsNotElementType() \\\r\n    .ToElements()\r\n\r\nwall_info = {}  # wid → {'heights': [], 'has_missing': False}\r\n\r\nfor room in room_col:\r\n    # 룸 식별\r\n    room_id = room.LookupParameter(\"Number\").AsString() + \"_\" + room.LookupParameter(\"Name\").AsString()\r\n    # H_Room H or CH 파라미터 읽기\r\n    p = room.LookupParameter(\"H_Room H or CH\")\r\n    # 값 없거나 0 → missing\r\n    missing = False\r\n    height_mm = None\r\n\r\n    if p is None:\r\n        missing = True\r\n    else:\r\n        try:\r\n            ft = p.AsDouble()\r\n            if ft == 0.0:\r\n                missing = True\r\n            else:\r\n                height_mm = UnitUtils.ConvertFromInternalUnits(ft, UnitTypeId.Millimeters)\r\n        except:\r\n            s = p.AsString()\r\n            if not s:\r\n                missing = True\r\n            else:\r\n                try:\r\n                    height_mm = float(s)\r\n                except:\r\n                    missing = True\r\n\r\n    # 룸 경계 세그먼트\r\n    seg_lists = room.GetBoundarySegments(opts)\r\n    if not seg_lists:\r\n        continue\r\n\r\n    # 각 세그먼트를 만든 벽체에 매핑\r\n    for segList in seg_lists:\r\n        for seg in segList:\r\n            wid = seg.ElementId.IntegerValue\r\n            info = wall_info.setdefault(wid, {'heights': [], 'has_missing': False})\r\n            # missing 룸이 하나라도 있으면 플래그 세트\r\n            if missing:\r\n                info['has_missing'] = True\r\n            else:\r\n                info['heights'].append(height_mm)\r\n\r\n# 2) Filter walls and adjust top constraint\r\nwalls = FilteredElementCollector(doc) \\\r\n    .OfCategory(BuiltInCategory.OST_Walls) \\\r\n    .WhereElementIsNotElementType() \\\r\n    .ToElements()\r\n\r\nmodified = []\r\nerrors   = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nfor wall in walls:\r\n    # Wall 타입 이름 읽기\r\n    type_id   = wall.GetTypeId()\r\n    wall_type = doc.GetElement(type_id)\r\n    type_name = wall_type.get_Name()\r\n    # \"_Int\" 타입만 처리\r\n    if \"_Int\" not in type_name:\r\n        continue\r\n\r\n    wid  = wall.Id.IntegerValue\r\n    info = wall_info.get(wid)\r\n    # 매핑 정보 없거나, missing 룸 플래그 세워졌으면 스킵\r\n    if info is None or info['has_missing']:\r\n        continue\r\n\r\n    heights = info['heights']\r\n    if not heights:\r\n        continue\r\n\r\n    # 최대 룸 높이에 150mm 추가\r\n    target_mm       = max(heights) + 150.0\r\n    target_internal = UnitUtils.ConvertToInternalUnits(target_mm, UnitTypeId.Millimeters)\r\n\r\n    try:\r\n        # Top Constraint → Unconnected\r\n        param_top = wall.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE)\r\n        param_top.Set(ElementId.InvalidElementId)\r\n        # Unconnected Height 설정\r\n        param_unconn = wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM)\r\n        if param_unconn:\r\n            param_unconn.Set(target_internal)\r\n            modified.append(wid)\r\n    except Exception as ex:\r\n        errors.append(f\"Wall {wid}: {ex}\")\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\n# OUT: modified wall IDs, any errors\r\nOUT = (modified, errors)\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "dcbfcd967ae546c8bf39ed17b201a8ad",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "7570276b5cb74090a79ebe648b3243bd",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "389d2216d77541a79a708449e4c573c4",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "0bb55428962a4a029cbd8fcb5a117850",
+      "End": "b45c4d71e9944424bf67c549f62ab9ff",
+      "Id": "222bcb74c5a146bea862aa276027e8d5",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0bb55428962a4a029cbd8fcb5a117850",
+      "End": "7570276b5cb74090a79ebe648b3243bd",
+      "Id": "900088958ea14a17acd866203033584b",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": 41861.86328125,
+      "EyeY": 31617.767578125,
+      "EyeZ": 38538.02734375,
+      "LookX": -25314.94921875,
+      "LookY": -17962.556640625,
+      "LookZ": -29316.5625,
+      "UpX": -0.27496108412742615,
+      "UpY": 0.9071941375732422,
+      "UpZ": -0.31842637062072754
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "684c2b05d4754e0c873fa54bae9e1a39",
+        "Name": "룸 높이 일괄 수정",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 295.0,
+        "Y": 390.0
+      },
+      {
+        "Id": "0192eeb0d71348ba9371fd9d174cead9",
+        "Name": "Element.Geometry",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": false,
+        "X": 634.5044688215048,
+        "Y": 52.035598647819256
+      },
+      {
+        "Id": "dcbfcd967ae546c8bf39ed17b201a8ad",
+        "Name": "벽높이 일괄 수정",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 763.5551828323768,
+        "Y": 582.5607711639269
+      }
+    ],
+    "Annotations": [],
+    "X": -185.45434034591796,
+    "Y": 50.50053788085222,
+    "Zoom": 0.7988254250495583
+  }
+}

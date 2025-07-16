@@ -1,0 +1,929 @@
+{
+  "Uuid": "f0d2bbc5-d522-4160-a9ce-7c8d755442ea",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "내벽높이자동조정",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# IN: (없음, 혹은 필요에 따라 CeilingType 등 다른 입력을 무시)\r\nimport clr\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\n\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector,\r\n    BuiltInCategory,\r\n    SpatialElementBoundaryOptions,\r\n    CurveLoop\r\n)\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\n# 문서 가져오기\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1) 모든 Room 수집\r\nrooms = FilteredElementCollector(doc)\\\r\n    .OfCategory(BuiltInCategory.OST_Rooms)\\\r\n    .WhereElementIsNotElementType()\\\r\n    .ToElements()\r\n\r\nboundaryLoops = []\r\n\r\nfor room in rooms:\r\n    # 2) H_Room H or CH 파라미터에 값 있는 방만\r\n    p = room.LookupParameter(\"H_Room H or CH\")\r\n    if not p:\r\n        continue\r\n    # 값이 없거나 0이면 건너뛰기\r\n    try:\r\n        if p.AsDouble() == 0.0:\r\n            continue\r\n    except:\r\n        if not p.AsString():\r\n            continue\r\n\r\n    # 3) 경계 세그먼트 가져오기\r\n    opts = SpatialElementBoundaryOptions()\r\n    segments = room.GetBoundarySegments(opts)\r\n    if not segments:\r\n        continue\r\n\r\n    # 4) 각 세그리스트를 CurveLoop으로 변환\r\n    for segList in segments:\r\n        loop = CurveLoop()\r\n        for seg in segList:\r\n            loop.Append(seg.GetCurve())\r\n        boundaryLoops.append(loop)\r\n\r\n# 5) 결과 출력: CurveLoop 객체 리스트\r\nOUT = boundaryLoops\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "e9c46b1e018046dbbb52e4952e8a8d30",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "f1a8216dde6248bca3e07e2d38756b11",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "618d6be5d2764eb8a04478da8f49f359",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.CeilingTypes, DSRevitNodesUI",
+      "SelectedIndex": 0,
+      "SelectedString": "H_CE_AR_B09_Acoustic Ceiling_T Bar_600x600x9T",
+      "Id": "b6c33f6153a24a3a9368287f8426647e",
+      "NodeType": "ExtensionNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a012e5648d48434899fec420a571756c",
+          "Name": "Ceiling Type",
+          "Description": "The selected Ceiling Type",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "All ceiling types available in the document."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# IN[0] : List of Autodesk.Revit.DB.CurveLoop (from your boundary‐extraction script)\r\n\r\nimport clr\r\n# DesignScript Geometry\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import PolyCurve\r\n# Revit⇄Dynamo 변환 확장 메서드\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.GeometryConversion)  # ToProtoType() 지원 :contentReference[oaicite:0]{index=0}\r\n\r\n# 실제 변환 처리\r\ndynamoLoops = []\r\nfor loop in IN[0]:\r\n    # loop: Autodesk.Revit.DB.CurveLoop → 각 Revit Curve\r\n    dsCurves = []\r\n    for rvtCurve in loop:\r\n        # Revit Curve → Dynamo Curve (DesignScript)  \r\n        dsCurves.append(rvtCurve.ToProtoType())  # ToProtoType() 사용 :contentReference[oaicite:1]{index=1}\r\n    # 여러 Curve를 하나의 PolyCurve(Joined Curves)로 묶기\r\n    poly = PolyCurve.ByJoinedCurves(dsCurves)\r\n    dynamoLoops.append(poly)\r\n\r\n# 결과 출력: Dynamo PolyCurve 리스트\r\nOUT = dynamoLoops\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "0c79a397b1e2422ebfe88c73def3a6df",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "4ce9d82d359648f68eade68af8a400ae",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "18522622167e4bd3ba39703410637b4c",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# IN: (없음)\r\nimport clr\r\n# Revit API\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector,\r\n    BuiltInCategory,\r\n    SpatialElementBoundaryOptions,\r\n    CurveLoop,\r\n    UnitUtils,\r\n    UnitTypeId\r\n)\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# 1) 모든 Room 수집\r\nrooms = FilteredElementCollector(doc)\\\r\n    .OfCategory(BuiltInCategory.OST_Rooms)\\\r\n    .WhereElementIsNotElementType()\\\r\n    .ToElements()\r\n\r\n# 2) 결과 저장할 리스트: [[CurveLoop, height_mm, Level], ...]\r\nboundaryWithInfo = []\r\n\r\nfor room in rooms:\r\n    # 파라미터 읽기\r\n    p = room.LookupParameter(\"H_Room H or CH\")\r\n    roomNo = room.LookupParameter(\"Number\").AsString()\r\n    roomName = room.LookupParameter(\"Name\").AsString()\r\n    roomNoName = f\"{roomNo}_{roomName}\"\r\n    if not p:\r\n        continue\r\n\r\n    # 값이 없거나 0이면 스킵\r\n    try:\r\n        val_ft = p.AsDouble()\r\n        if val_ft == 0.0:\r\n            continue\r\n        height_mm = UnitUtils.ConvertFromInternalUnits(val_ft, UnitTypeId.Millimeters)\r\n    except:\r\n        s = p.AsString()\r\n        if not s:\r\n            continue\r\n        try:\r\n            height_mm = float(s)\r\n        except:\r\n            continue\r\n\r\n    # 해당 방의 Level 객체\r\n    level = doc.GetElement(room.LevelId)\r\n\r\n    # 경계 세그먼트 가져오기\r\n    opts = SpatialElementBoundaryOptions()\r\n    segments = room.GetBoundarySegments(opts)\r\n    if not segments:\r\n        continue\r\n\r\n    # 각 루프별로 정보 저장\r\n    for segList in segments:\r\n        loop = CurveLoop()\r\n        for seg in segList:\r\n            loop.Append(seg.GetCurve())\r\n        boundaryWithInfo.append([loop, height_mm, roomNoName, level])\r\n\r\n# OUT: [[CurveLoop, height_mm, Level], …]\r\nOUT = boundaryWithInfo\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "d97b1a8e1c6b4e51bbc1f791ce992d53",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "62d43577a52542ddac842066453cbc6c",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6328a8829a984306be8ef455169effc5",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "47f16137ca1347448352e4fd196f5514",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "15b22e9705d5400da25417a07e1dd4b7",
+          "Name": "list",
+          "Description": "List to get the last item of\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": true,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "de55709622f24018b2ce6366d4840a2d",
+          "Name": "item",
+          "Description": "Last item in the list",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.LastItem@var[]..[]",
+      "Replication": "Auto",
+      "Description": "Retrieves the last item in a list.\n\nList.LastItem (list: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamo Python Script for Ceiling Creation with Room Names and Error Logging\r\n# IN[0] : CeilingType (Revit.Elements.CeilingType)\r\n# IN[1] : List of curve lists            (List of Autodesk.DesignScript.Geometry.Curve[])\r\n# IN[2] : List of room name strings      (List of str)\r\n# IN[3] : List of Level objects          (List of Revit.Elements.Level)\r\n# IN[4] : List of heights in mm (double) (List of float)\r\n\r\nimport clr\r\n\r\n# --- Dynamo & Revit.Elements references ---\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)    # ZeroTouch nodes support\r\n\r\n# --- Revit API for parameter setting ---\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import UnitUtils, UnitTypeId\r\n\r\n# --- RevitServices for document & transactions ---\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Inputs\r\nceiling_type = IN[0]\r\ncurve_lists  = IN[1]\r\nroom_names   = IN[2]\r\nlevels       = IN[3]\r\nheights_mm   = IN[4]\r\n\r\n# Outputs\r\ncreated_ceilings = []\r\nerror_logs       = []\r\n\r\n# Correct input order: curves, roomName, lvl, h_mm\r\nfor curves, room_name, lvl, h_mm in zip(curve_lists, room_names, levels, heights_mm):\r\n    # 1) Create ceiling via ZeroTouch node\r\n    try:\r\n        ceiling_wrapper = Revit.Elements.Ceiling.ByOutlineTypeAndLevel(curves, ceiling_type, lvl)\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room '{room_name}': Ceiling creation failed: {ex}\")\r\n        continue\r\n\r\n    # 2) Get native Revit element\r\n    revit_ceiling = ceiling_wrapper.InternalElement\r\n\r\n    # 3) Convert height to internal units\r\n    try:\r\n        h_internal = UnitUtils.ConvertToInternalUnits(h_mm, UnitTypeId.Millimeters)\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room '{room_name}': Height conversion failed: {ex}\")\r\n        continue\r\n\r\n    # 4) Set \"Height Offset From Level\"\r\n    param = revit_ceiling.LookupParameter(\"Height Offset From Level\")\r\n    if param:\r\n        try:\r\n            TransactionManager.Instance.EnsureInTransaction(doc)\r\n            param.Set(h_internal)\r\n            TransactionManager.Instance.TransactionTaskDone()\r\n        except Exception as ex:\r\n            error_logs.append(f\"Room '{room_name}': Setting offset failed: {ex}\")\r\n            # ensure transaction closed\r\n            try:\r\n                TransactionManager.Instance.TransactionTaskDone()\r\n            except:\r\n                pass\r\n            continue\r\n    else:\r\n        error_logs.append(f\"Room '{room_name}': Parameter 'Height Offset From Level' not found.\")\r\n        continue\r\n\r\n    # 5) Record success\r\n    created_ceilings.append(ceiling_wrapper)\r\n\r\n# OUT: (created_ceilings, error_logs)\r\nOUT = (created_ceilings, error_logs)\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "7812093d17234e3f807896059e5af9bb",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "53c8714cbfd64d7ea69544b120d7e7c7",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9d1e06c8dfaf4e5786fde491c3b295d7",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "bd89cbf2e79a463e80fb60fd3db38efd",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "025d57ed91e14b959a67f5df3eceda64",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c090630f76b04e87830da4c9b715e0de",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "cf830537fe9a42ef8b4f27cfaa15af2f",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "cb00fdeb1ff9456b892a6f23d5fdc04c",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "81e8b66ef0eb412eaf538cc1c6c671e6",
+          "Name": "list",
+          "Description": "List to get the first item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": true,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "aeed3822db6a4790b9aa5a66f491b113",
+          "Name": "item",
+          "Description": "First item in the list.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.FirstItem@var[]..[]",
+      "Replication": "Auto",
+      "Description": "Returns the first item in a list.\n\nList.FirstItem (list: var[]..[]): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "394959c8147b40a48e90b9f8d1b1def3",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "e11a3874608e435aa6993168a738f59b",
+          "Name": "list",
+          "Description": "List to fetch an item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": true,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "07b30ca4373b410b866359531245c30e",
+          "Name": "index",
+          "Description": "Index of the item to be fetched.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "d989247912564c65a71c4ba2c5bb801a",
+          "Name": "item",
+          "Description": "Item in the list at the given index.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
+      "Replication": "Auto",
+      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "027dcdacef0b429ca756daf5f3b7fa4c",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "43228502e9e548208089671ceda916f5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "1;"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "6103762316fa40ba94363400567e36da",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "2f3724c4770144508adcd9f72b85f0a5",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "2;"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "b18f3c09b3e14e56a73019d29975b86b",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "d28af3d8a9cb46c9a58504446203068d",
+          "Name": "list",
+          "Description": "List to fetch an item from.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 3,
+          "UseLevels": true,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "b72673ec42a14230b36ec8ce2e3d1dc5",
+          "Name": "index",
+          "Description": "Index of the item to be fetched.\n\nint",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e792db0ae3a24cac8e6041d68b2f3069",
+          "Name": "item",
+          "Description": "Item in the list at the given index.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.GetItemAtIndex@var[]..[],int",
+      "Replication": "Auto",
+      "Description": "Returns an item from the given list that's located at the specified index.\n\nList.GetItemAtIndex (list: var[]..[], index: int): var[]..[]"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# Dynamo Python Script for Ceiling Creation with Room Names and Error Logging\r\n# IN[0] : CeilingType (Revit.Elements.CeilingType)\r\n# IN[1] : List of curve lists            (List of Autodesk.DesignScript.Geometry.Curve[] or single Curve)\r\n# IN[2] : List of room name strings      (List of str)\r\n# IN[3] : List of Level objects          (List of Revit.Elements.Level)\r\n# IN[4] : List of heights in mm (double) (List of float)\r\n# IN[5] : Threshold in mm for sliver curves (double), e.g. 5.0\r\n# IN[6] : Buffer distance in mm for fallback offset (double), e.g. 1.0\r\n\r\nimport clr, math\r\n\r\n# --- Dynamo & Revit Elements ---\r\nclr.AddReference('ProtoGeometry')\r\nfrom Autodesk.DesignScript.Geometry import Curve, PolyCurve, Line, Vector\r\n\r\nclr.AddReference('RevitNodes')\r\nimport Revit\r\nclr.ImportExtensions(Revit.Elements)\r\n\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import UnitUtils, UnitTypeId\r\n\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# Inputs\r\nceiling_type  = IN[0]\r\ncurve_lists   = IN[1]\r\nroom_names    = IN[2]\r\nlevels        = IN[3]\r\nheights_mm    = IN[4]\r\nthreshold_mm  = IN[5]\r\nbuffer_mm     = IN[6]\r\n\r\n# Internal constants (기본값)\r\nangle_tol_deg = 5.0    # 병합 허용 각도 (°)\r\ngap_tol_mm    = 1.0    # 인접 간격 허용치 (mm)\r\n\r\n# Unit conversions\r\nthreshold_m = threshold_mm / 1000.0\r\nbuffer_m    = buffer_mm    / 1000.0\r\ngap_tol_m   = gap_tol_mm   / 1000.0\r\n\r\ncreated_ceilings = []\r\nerror_logs       = []\r\n\r\ndef try_make_loop(curves):\r\n    try:\r\n        pc = PolyCurve.ByJoinedCurves(curves)\r\n        return pc if pc.IsClosed else None\r\n    except:\r\n        return None\r\n\r\ndef merge_colinear_segments(segments, angle_tol, gap_tol):\r\n    used = set()\r\n    merged = []\r\n    for i, seg in enumerate(segments):\r\n        if i in used: continue\r\n        group = [seg]; used.add(i)\r\n        v1 = Vector.ByTwoPoints(seg.StartPoint, seg.EndPoint).Normalized()\r\n        for j, other in enumerate(segments):\r\n            if j in used: continue\r\n            v2 = Vector.ByTwoPoints(other.StartPoint, other.EndPoint).Normalized()\r\n            ang = abs(v1.AngleTo(v2) * 180.0 / math.pi)\r\n            ang = min(ang, abs(180-ang))\r\n            if ang <= angle_tol:\r\n                dists = [\r\n                    seg.StartPoint.DistanceTo(other.StartPoint),\r\n                    seg.StartPoint.DistanceTo(other.EndPoint),\r\n                    seg.EndPoint  .DistanceTo(other.StartPoint),\r\n                    seg.EndPoint  .DistanceTo(other.EndPoint),\r\n                ]\r\n                if min(dists) <= gap_tol:\r\n                    group.append(other); used.add(j)\r\n        pts = []\r\n        for g in group:\r\n            pts.extend([g.StartPoint, g.EndPoint])\r\n        p1, p2 = max(\r\n            ((a,b) for a in pts for b in pts),\r\n            key=lambda ab: ab[0].DistanceTo(ab[1])\r\n        )\r\n        merged.append(Line.ByStartPointEndPoint(p1, p2))\r\n    return merged\r\n\r\n# Main loop\r\nfor curves, room_name, lvl, h_mm in zip(curve_lists, room_names, levels, heights_mm):\r\n    # 1) Normalize\r\n    try:\r\n        curves_seq = list(curves)\r\n    except:\r\n        curves_seq = [curves]\r\n\r\n    # 2) Remove slivers\r\n    filtered = [c for c in curves_seq if c.Length >= threshold_m]\r\n    if not filtered:\r\n        error_logs.append(f\"Room '{room_name}': 모든 커브가 {threshold_mm}mm 이하라 제거됨.\")\r\n        continue\r\n\r\n    # 3) Merge colinear segments\r\n    merged = merge_colinear_segments(filtered, angle_tol_deg, gap_tol_m)\r\n\r\n    # 4) Try closed loop\r\n    loop = try_make_loop(merged)\r\n    # 5) Fallback: buffer offset → join → offset back → join\r\n    if loop is None:\r\n        out_segs = [Curve.Offset(c, buffer_m) for c in merged]\r\n        tmp     = try_make_loop(out_segs)\r\n        if tmp:\r\n            in_segs = [Curve.Offset(c, -buffer_m) for c in tmp.Curves()]\r\n            loop    = try_make_loop(in_segs)\r\n    if loop is None:\r\n        error_logs.append(f\"Room '{room_name}': PolyCurve 생성 실패 (버퍼 fallback 포함).\")\r\n        continue\r\n\r\n    # 6) Extract outline\r\n    try:\r\n        outline = list(loop.Curves())\r\n    except:\r\n        outline = [loop]\r\n\r\n    # 7) Create ceiling\r\n    try:\r\n        cw = Revit.Elements.Ceiling.ByOutlineTypeAndLevel(outline, ceiling_type, lvl)\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room '{room_name}': Ceiling 생성 실패: {ex}\")\r\n        continue\r\n\r\n    # 8) Set height offset\r\n    rev_ceil = cw.InternalElement\r\n    try:\r\n        h_int = UnitUtils.ConvertToInternalUnits(h_mm, UnitTypeId.Millimeters)\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room '{room_name}': 높이 변환 실패: {ex}\")\r\n        continue\r\n\r\n    param = rev_ceil.LookupParameter(\"Height Offset From Level\")\r\n    if not param:\r\n        error_logs.append(f\"Room '{room_name}': 'Height Offset From Level' 파라미터 없음.\")\r\n        continue\r\n\r\n    try:\r\n        TransactionManager.Instance.EnsureInTransaction(doc)\r\n        param.Set(h_int)\r\n        TransactionManager.Instance.TransactionTaskDone()\r\n    except Exception as ex:\r\n        error_logs.append(f\"Room '{room_name}': Offset 설정 실패: {ex}\")\r\n        try: TransactionManager.Instance.TransactionTaskDone()\r\n        except: pass\r\n        continue\r\n\r\n    created_ceilings.append(cw)\r\n\r\n# OUT\r\nOUT = (created_ceilings, error_logs)\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a081e4abb14b4b2ca5679928d1f8bad4",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "43ff0334e8044a179cbd8531fd896576",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fca9b161f2ca4e939d0c247d74998ca4",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9ca34f2a493b430e8fde88b6a174a62a",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "80b168b56fd04cca84a171fa99a6c996",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c6d04abd380144de930e27b6811dddfa",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fce62ed301a04016afd9e1c72e773641",
+          "Name": "IN[5]",
+          "Description": "Input #5",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "3b742bae69394f109c2d0716470d3a27",
+          "Name": "IN[6]",
+          "Description": "Input #6",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "6a88aa84f2ea44a389a0b3ad391c95e3",
+          "Name": "IN[7]",
+          "Description": "Input #7",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "38247d3b3cda43d384ccaa485c2c4da4",
+          "Name": "IN[8]",
+          "Description": "Input #8",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "e2d597fe222940c7b309f2bd98596934",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "4a1e0b78861a4b1faa7619c30da7c4ca",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "8fe2b692a60d4215842471678f3f4c26",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d9dd0335bcf14e678f48d071b472c59f",
+          "Name": "",
+          "Description": "Value of expression at line 2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "fdbf83aced9c46e0a26db49d9b18b98b",
+          "Name": "",
+          "Description": "Value of expression at line 3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "297509e20b014fc29d4acc373b39c6cd",
+          "Name": "",
+          "Description": "Value of expression at line 4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "5;\n1;\n5;\n1;"
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# IN: (없음)\r\nimport clr\r\n# Revit API\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector,\r\n    BuiltInCategory,\r\n    SpatialElementBoundaryOptions,\r\n    SpatialElementBoundaryLocation,\r\n    CurveLoop,\r\n    UnitUtils,\r\n    UnitTypeId\r\n)\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n\r\n# 1) Prepare your boundary options to use the wall centerline:\r\nopts = SpatialElementBoundaryOptions()\r\n#opts.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Center      # centerline of wall thickness :contentReference[oaicite:0]{index=0}\r\n# or, if you want the core‑centre (i.e. mid‑thickness of the wall’s core structure), use:\r\nopts.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.CoreCenter #:contentReference[oaicite:1]{index=1}\r\n\r\n\r\n# 1) 모든 Room 수집\r\nrooms = FilteredElementCollector(doc)\\\r\n    .OfCategory(BuiltInCategory.OST_Rooms)\\\r\n    .WhereElementIsNotElementType()\\\r\n    .ToElements()\r\n\r\n# 2) 결과 저장할 리스트: [[CurveLoop, height_mm, Level], ...]\r\nboundaryWithInfo = []\r\n\r\nfor room in rooms:\r\n    # 파라미터 읽기\r\n    p = room.LookupParameter(\"H_Room H or CH\")\r\n    roomNo = room.LookupParameter(\"Number\").AsString()\r\n    roomName = room.LookupParameter(\"Name\").AsString()\r\n    roomNoName = f\"{roomNo}_{roomName}\"\r\n    if not p:\r\n        continue\r\n\r\n    # 값이 없거나 0이면 스킵\r\n    try:\r\n        val_ft = p.AsDouble()\r\n        if val_ft == 0.0:\r\n            continue\r\n        height_mm = UnitUtils.ConvertFromInternalUnits(val_ft, UnitTypeId.Millimeters)\r\n    except:\r\n        s = p.AsString()\r\n        if not s:\r\n            continue\r\n        try:\r\n            height_mm = float(s)\r\n        except:\r\n            continue\r\n\r\n    # 해당 방의 Level 객체\r\n    level = doc.GetElement(room.LevelId)\r\n\r\n    # 경계 세그먼트 가져오기\r\n    opts = SpatialElementBoundaryOptions()\r\n    segments = room.GetBoundarySegments(opts)\r\n    if not segments:\r\n        continue\r\n\r\n    # 각 루프별로 정보 저장\r\n    for segList in segments:\r\n        loop = CurveLoop()\r\n        for seg in segList:\r\n            loop.Append(seg.GetCurve())\r\n        boundaryWithInfo.append([loop, height_mm, roomNoName, level])\r\n\r\n# OUT: [[CurveLoop, height_mm, Level], …]\r\nOUT = boundaryWithInfo\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "088925d7cd3e4be3922c61351c27d77b",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "ce4ce20a09ee4a49abe23b12a90032f0",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "ca22ac47edf042c6835b110dfa72c898",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "d2388943175e43b092d2353edd53535e",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [
+        {
+          "Id": "bd4f06055dfb4ff3be673ca18c8d45bd",
+          "Name": "slot",
+          "Description": "slot",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "01f53c0df14b4cd3aff7afeb93e16aac",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "slot;"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "a012e5648d48434899fec420a571756c",
+      "End": "53c8714cbfd64d7ea69544b120d7e7c7",
+      "Id": "7806f7c881064b2c92ad51ae1940d996",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a012e5648d48434899fec420a571756c",
+      "End": "43ff0334e8044a179cbd8531fd896576",
+      "Id": "8bbace2ac1c040e48e5bab9be75313aa",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "18522622167e4bd3ba39703410637b4c",
+      "End": "9d1e06c8dfaf4e5786fde491c3b295d7",
+      "Id": "b17b3666a1044b4ea67cfec18c105ead",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "18522622167e4bd3ba39703410637b4c",
+      "End": "fca9b161f2ca4e939d0c247d74998ca4",
+      "Id": "06dc1b84d21349d5a4f1da1930593ad7",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "de55709622f24018b2ce6366d4840a2d",
+      "End": "025d57ed91e14b959a67f5df3eceda64",
+      "Id": "f286b48591c64b1897ef664a9e4c055e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "de55709622f24018b2ce6366d4840a2d",
+      "End": "80b168b56fd04cca84a171fa99a6c996",
+      "Id": "fe73e86d1fb043c6859383358cfd840c",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "aeed3822db6a4790b9aa5a66f491b113",
+      "End": "4ce9d82d359648f68eade68af8a400ae",
+      "Id": "38e361d7981647cf98e6009930cf2cd9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d989247912564c65a71c4ba2c5bb801a",
+      "End": "c090630f76b04e87830da4c9b715e0de",
+      "Id": "37811c20ce1441f6b26d207e93e2f42b",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d989247912564c65a71c4ba2c5bb801a",
+      "End": "c6d04abd380144de930e27b6811dddfa",
+      "Id": "3fae043505f94e03a0522ac27355243d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "43228502e9e548208089671ceda916f5",
+      "End": "07b30ca4373b410b866359531245c30e",
+      "Id": "326c0a7fa15a4bc081dfcf8c220bc005",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "2f3724c4770144508adcd9f72b85f0a5",
+      "End": "b72673ec42a14230b36ec8ce2e3d1dc5",
+      "Id": "928cc6f956674a0ea4382903d1df6ad2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e792db0ae3a24cac8e6041d68b2f3069",
+      "End": "bd89cbf2e79a463e80fb60fd3db38efd",
+      "Id": "6ae873085580416eab8f84650565e533",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "e792db0ae3a24cac8e6041d68b2f3069",
+      "End": "9ca34f2a493b430e8fde88b6a174a62a",
+      "Id": "d4fc9d7200e448daaf74c82de8a3c35a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "8fe2b692a60d4215842471678f3f4c26",
+      "End": "fce62ed301a04016afd9e1c72e773641",
+      "Id": "870a49ed139f40c9ba5d1782e222dcf7",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "d9dd0335bcf14e678f48d071b472c59f",
+      "End": "3b742bae69394f109c2d0716470d3a27",
+      "Id": "c2fbd2bde48c4bee9227e9cf614a6239",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fdbf83aced9c46e0a26db49d9b18b98b",
+      "End": "6a88aa84f2ea44a389a0b3ad391c95e3",
+      "Id": "20c9ad4169cc40bf9b5fd5d5c2e3caf6",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "297509e20b014fc29d4acc373b39c6cd",
+      "End": "38247d3b3cda43d384ccaa485c2c4da4",
+      "Id": "cc6cdabc3b444fa49b4cfe8087e6794e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "ca22ac47edf042c6835b110dfa72c898",
+      "End": "bd4f06055dfb4ff3be673ca18c8d45bd",
+      "Id": "aa98cb1f16db436fb8d4a5a3f438529d",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "01f53c0df14b4cd3aff7afeb93e16aac",
+      "End": "81e8b66ef0eb412eaf538cc1c6c671e6",
+      "Id": "c024a3a89621490ba50740e466ed7343",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "01f53c0df14b4cd3aff7afeb93e16aac",
+      "End": "d28af3d8a9cb46c9a58504446203068d",
+      "Id": "425a01ae48784036acf338b5f4748b84",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "01f53c0df14b4cd3aff7afeb93e16aac",
+      "End": "15b22e9705d5400da25417a07e1dd4b7",
+      "Id": "2cbf938fd0964b6d8b75038987b06af9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "01f53c0df14b4cd3aff7afeb93e16aac",
+      "End": "e11a3874608e435aa6993168a738f59b",
+      "Id": "2ad93fa4316d45388f2c030833189b6f",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -8565.63671875,
+      "EyeY": 39265.8125,
+      "EyeZ": 17294.12890625,
+      "LookX": 17153.927734375,
+      "LookY": -26345.2265625,
+      "LookZ": -12837.671875,
+      "UpX": 0.6211386322975159,
+      "UpY": 0.6309524178504944,
+      "UpZ": -0.4648504853248596
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "e9c46b1e018046dbbb52e4952e8a8d30",
+        "Name": "룸별 실링 바운더리 라인 생성",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -384.6016272817436,
+        "Y": 150.58274794739367
+      },
+      {
+        "Id": "b6c33f6153a24a3a9368287f8426647e",
+        "Name": "Ceiling Types",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 709.2397020949975,
+        "Y": -215.15518500630412
+      },
+      {
+        "Id": "0c79a397b1e2422ebfe88c73def3a6df",
+        "Name": "라인 시각화",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 934.5551666422001,
+        "Y": 8.1704346463423
+      },
+      {
+        "Id": "d97b1a8e1c6b4e51bbc1f791ce992d53",
+        "Name": "룸별 실링 바운더리 라인 생성2",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -271.60257954267263,
+        "Y": 371.69697957259626
+      },
+      {
+        "Id": "47f16137ca1347448352e4fd196f5514",
+        "Name": "List.LastItem",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 905.2695908276932,
+        "Y": 689.6914685011177
+      },
+      {
+        "Id": "7812093d17234e3f807896059e5af9bb",
+        "Name": "실링 생성",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1703.6040002323803,
+        "Y": -85.25040715462009
+      },
+      {
+        "Id": "cb00fdeb1ff9456b892a6f23d5fdc04c",
+        "Name": "List.FirstItem",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 555.4141149812483,
+        "Y": 10.089391975160481
+      },
+      {
+        "Id": "394959c8147b40a48e90b9f8d1b1def3",
+        "Name": "List.GetItemAtIndex",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 878.9812144518561,
+        "Y": 1160.552564382143
+      },
+      {
+        "Id": "027dcdacef0b429ca756daf5f3b7fa4c",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 583.7007691729665,
+        "Y": 1190.444609121992
+      },
+      {
+        "Id": "6103762316fa40ba94363400567e36da",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 580.1497175283996,
+        "Y": 647.9802507082258
+      },
+      {
+        "Id": "b18f3c09b3e14e56a73019d29975b86b",
+        "Name": "List.GetItemAtIndex",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 866.8361024605988,
+        "Y": 461.96277633683314
+      },
+      {
+        "Id": "a081e4abb14b4b2ca5679928d1f8bad4",
+        "Name": "실링 생성_new",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": true,
+        "ShowGeometry": true,
+        "X": 1798.9823026204876,
+        "Y": 611.1425441623179
+      },
+      {
+        "Id": "4a1e0b78861a4b1faa7619c30da7c4ca",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1488.0,
+        "Y": 817.0
+      },
+      {
+        "Id": "088925d7cd3e4be3922c61351c27d77b",
+        "Name": "룸별 실링 바운더리 라인 생성3",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -314.5728445860065,
+        "Y": 557.7024128661234
+      },
+      {
+        "Id": "d2388943175e43b092d2353edd53535e",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 178.0,
+        "Y": 431.0
+      }
+    ],
+    "Annotations": [],
+    "X": -531.8610759813948,
+    "Y": 92.53181177068987,
+    "Zoom": 0.5619489279700316
+  }
+}
