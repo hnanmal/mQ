@@ -1,0 +1,247 @@
+{
+  "Uuid": "0e5389df-8af6-451b-9ba6-533f25012ff4",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "계단 길이 산출 테스트",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "Dynamo.Nodes.DSModelElementSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "13e678f5-15cc-457e-a626-b4ae9cd930dd-002cf480"
+      ],
+      "Id": "c7759059339041ad9f622fe5ff092a32",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "921dae76727a4def9abd41ed4f282538",
+          "Name": "Element",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nstairs = UnwrapElement(IN[0])  # 계단 요소\r\n\r\ntotal_length = 0.0\r\n\r\n# 스트링거(서포트) 요소 ID들\r\nsupport_ids = stairs.GetStairsSupports()\r\n\r\nfor sid in support_ids:\r\n    support = doc.GetElement(sid)\r\n    if support is None:\r\n        continue\r\n\r\n    # Geometry에서 길이 추출\r\n    opts = Options()\r\n    geom = support.get_Geometry(opts)\r\n    for g in geom:\r\n        if isinstance(g, Solid):\r\n            for edge in g.Edges:\r\n                total_length += edge.ApproximateLength\r\n        elif isinstance(g, Curve):\r\n            total_length += g.Length\r\n\r\n# 바깥쪽 스트링거 길이 추정 (2개 기준)\r\nouter_stringer_length = total_length / 2.0\r\n\r\n# 피트 → 미터 변환\r\nlength_m = outer_stringer_length * 0.3048\r\n\r\nOUT = length_m\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "ed2c06627bea4b298d57ec0e5b23ad50",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "ee248db9a5b44722b45172aed00a321e",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "fcdab280d4ca4629a13d48d1b4714035",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nstairs = UnwrapElement(IN[0])  # Stairs element\r\n\r\ntotal_short_length = 0.0\r\n\r\n# 계단의 랜딩(landing) 요소들 가져오기\r\nlanding_ids = stairs.GetStairsLandings()\r\n\r\nfor lid in landing_ids:\r\n    landing = doc.GetElement(lid)\r\n    if landing is None:\r\n        continue\r\n\r\n    bbox = landing.get_BoundingBox(doc.ActiveView)\r\n    if bbox is None:\r\n        continue\r\n\r\n    # XYZ 빼기 연산은 직접 안 되므로 축별로 처리\r\n    dx = abs(bbox.Max.X - bbox.Min.X)\r\n    dy = abs(bbox.Max.Y - bbox.Min.Y)\r\n\r\n    short_len = min(dx, dy)\r\n    total_short_length += short_len\r\n\r\n# 단위: 피트 → 미터\r\ntotal_short_length_m = total_short_length * 0.3048\r\n\r\nOUT = total_short_length_m\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "a6310a615cac4b71a52e9856a8f7426c",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "85530843f11549ccb55b7b625dc9af29",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "0ec07b60b9af4bb79099130421b3b977",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import *\r\n\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\nimport math\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\nstairs = UnwrapElement(IN[0])  # Stairs instance\r\n\r\ntotal_run_length = 0.0\r\n\r\nrun_ids = stairs.GetStairsRuns()\r\n\r\nfor rid in run_ids:\r\n    run = doc.GetElement(rid)\r\n    if run is None:\r\n        continue\r\n\r\n    # ✅ 파라미터로 접근\r\n    riser_param = run.LookupParameter(\"Actual Riser Height\")\r\n    tread_param = run.LookupParameter(\"Actual Tread Depth\")\r\n    treads_param = run.LookupParameter(\"Actual Number of Treads\")\r\n\r\n    if not (riser_param and tread_param and treads_param):\r\n        continue\r\n\r\n    if not (riser_param.HasValue and tread_param.HasValue and treads_param.HasValue):\r\n        continue\r\n\r\n    # 파라미터 값 추출\r\n    riser_height = riser_param.AsDouble()\r\n    tread_depth = tread_param.AsDouble()\r\n    num_treads = treads_param.AsInteger()\r\n\r\n    # 러닝 길이 = 대각선 길이 × 단수\r\n    step_length = math.sqrt(riser_height**2 + tread_depth**2)\r\n    run_length = step_length * num_treads\r\n    total_run_length += run_length\r\n\r\n# 단위 변환: 피트 → 미터\r\ntotal_run_length_m = total_run_length * 0.3048\r\n\r\nOUT = total_run_length_m\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "608eaf592be14dafb7cd09e329025929",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "ded4ebc1499e401e924eff6c73a4ba31",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "5a9d895c16894047a3ca412efef9b34a",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "921dae76727a4def9abd41ed4f282538",
+      "End": "ee248db9a5b44722b45172aed00a321e",
+      "Id": "f25a6ddf176245b1a3770122365255a9",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "921dae76727a4def9abd41ed4f282538",
+      "End": "85530843f11549ccb55b7b625dc9af29",
+      "Id": "b21aade07166471f9d26bb18bd9f6a76",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "921dae76727a4def9abd41ed4f282538",
+      "End": "ded4ebc1499e401e924eff6c73a4ba31",
+      "Id": "98c3b8a7ce494979ab60e4430dd4bb6a",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "2.16",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "3.0",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 100.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "c7759059339041ad9f622fe5ff092a32",
+        "Name": "Select Model Element",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 160.71809172498388,
+        "Y": 323.2116893316977
+      },
+      {
+        "Id": "ed2c06627bea4b298d57ec0e5b23ad50",
+        "Name": "스트링거 길이 평균",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 767.2795569909903,
+        "Y": -170.59770596427734
+      },
+      {
+        "Id": "a6310a615cac4b71a52e9856a8f7426c",
+        "Name": "랜딩 길이",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 692.3709928368695,
+        "Y": 370.8238967702789
+      },
+      {
+        "Id": "608eaf592be14dafb7cd09e329025929",
+        "Name": "런 길이",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 709.9338063175923,
+        "Y": 148.21484645825808
+      }
+    ],
+    "Annotations": [],
+    "X": -13.500002153153787,
+    "Y": 244.86603707233496,
+    "Zoom": 0.5866725002636762
+  }
+}

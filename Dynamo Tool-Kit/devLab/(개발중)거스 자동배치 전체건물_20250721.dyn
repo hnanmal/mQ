@@ -1,0 +1,195 @@
+{
+  "Uuid": "f5f0d203-318c-4bd7-b7e1-66af97adccdf",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "(개발중)거스 자동배치 전체건물_20250721",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "import clr\r\nimport math\r\nfrom collections import defaultdict\r\n\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# ──────────────────────────────────────────────────────────────\r\n# ⚙️ 입력값 (허용 오차)\r\nalign_tol_mm = IN[0] if IN[0] else 300  # 그룹화 간격 기준\r\nalign_tol_ft = align_tol_mm / 304.8\r\n\r\ngrid_tol_mm = 1000  # Grid 교차점 근접 허용 범위\r\ngrid_tol_ft = grid_tol_mm / 304.8\r\n\r\n# ──────────────────────────────────────────────────────────────\r\n# 🔎 1. 그리드 교차점 추출\r\ngrids = FilteredElementCollector(doc).OfClass(Grid).ToElements()\r\new_lines = []\r\nns_lines = []\r\n\r\nfor g in grids:\r\n    curve = g.Curve\r\n    dir = curve.Direction.Normalize()\r\n    if abs(dir.X) > abs(dir.Y):  # 동서 방향\r\n        ew_lines.append(curve)\r\n    else:  # 남북 방향\r\n        ns_lines.append(curve)\r\n\r\ndef line_line_intersection(l1, l2):\r\n    \"\"\"2D 선분 교차점 계산\"\"\"\r\n    p1 = l1.GetEndPoint(0)\r\n    p2 = l1.GetEndPoint(1)\r\n    p3 = l2.GetEndPoint(0)\r\n    p4 = l2.GetEndPoint(1)\r\n\r\n    x1, y1 = p1.X, p1.Y\r\n    x2, y2 = p2.X, p2.Y\r\n    x3, y3 = p3.X, p3.Y\r\n    x4, y4 = p4.X, p4.Y\r\n\r\n    denom = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4)\r\n    if abs(denom) < 1e-9:\r\n        return None  # 평행 or 일치\r\n\r\n    px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom\r\n    py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom\r\n    z = (p1.Z + p2.Z + p3.Z + p4.Z) / 4  # 평균 Z\r\n    return XYZ(px, py, z)\r\n\r\ngrid_intersections = []\r\nfor l1 in ew_lines:\r\n    for l2 in ns_lines:\r\n        pt = line_line_intersection(l1, l2)\r\n        if pt:\r\n            grid_intersections.append(pt)\r\n\r\ndef is_near_grid_intersection(pt, intersections, tol):\r\n    return any(pt.DistanceTo(gp) < tol for gp in intersections)\r\n\r\n# ──────────────────────────────────────────────────────────────\r\n# 🧱 2. 구조 기둥 필터링 (Grid 교차점 인근만)\r\ncolumns = FilteredElementCollector(doc)\\\r\n    .OfCategory(BuiltInCategory.OST_StructuralColumns)\\\r\n    .WhereElementIsNotElementType().ToElements()\r\n\r\ndef get_column_point(col):\r\n    loc = col.Location\r\n    if hasattr(loc, \"Curve\"):\r\n        return loc.Curve.GetEndPoint(0)\r\n    elif hasattr(loc, \"Point\"):\r\n        return loc.Point\r\n    return None\r\n\r\nmain_col_pts = []\r\nfor col in columns:\r\n    pt = get_column_point(col)\r\n    if pt and is_near_grid_intersection(pt, grid_intersections, grid_tol_ft):\r\n        main_col_pts.append((col, pt))\r\n\r\n# ──────────────────────────────────────────────────────────────\r\n# 📏 3. E-W / N-S 그룹화\r\new_groups = defaultdict(list)\r\nns_groups = defaultdict(list)\r\n\r\nfor col, pt in main_col_pts:\r\n    x, y = pt.X, pt.Y\r\n    rounded_y = round(y / align_tol_ft)\r\n    rounded_x = round(x / align_tol_ft)\r\n    ew_groups[rounded_y].append((col, pt))\r\n    ns_groups[rounded_x].append((col, pt))\r\n\r\n# ──────────────────────────────────────────────────────────────\r\n# 📐 4. Segment 생성\r\nsegments = []\r\n\r\ndef create_segment_from_group(pt_list, direction):\r\n    if len(pt_list) < 2:\r\n        return\r\n    if direction == \"E-W\":\r\n        pt_list.sort(key=lambda x: x[1].X)\r\n    else:\r\n        pt_list.sort(key=lambda x: x[1].Y)\r\n\r\n    start = pt_list[0]\r\n    end = pt_list[-1]\r\n    length = start[1].DistanceTo(end[1])\r\n    height = abs(start[1].Z - end[1].Z)\r\n    if height == 0:\r\n        height = 3000 / 304.8  # 기본 높이 설정\r\n\r\n    segments.append({\r\n        \"segment_id\": f\"S{len(segments)+1:03}\",\r\n        \"start_point\": start[1],\r\n        \"end_point\": end[1],\r\n        \"direction\": direction,\r\n        \"length\": length,\r\n        \"height\": height,\r\n        \"col_pair\": (start[0], end[0]),\r\n        \"group_count\": len(pt_list)\r\n    })\r\n\r\nfor group in ew_groups.values():\r\n    create_segment_from_group(group, \"E-W\")\r\nfor group in ns_groups.values():\r\n    create_segment_from_group(group, \"N-S\")\r\n\r\n# ──────────────────────────────────────────────────────────────\r\nOUT = segments\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "555004a7e57d4ed5ad2e85d832bf0a68",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "ca964653348240bd9fa0f53cd5dcf6a3",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "56be22aac8134d28a8955665f6637a05",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "b2e891c9e19447d1902b75ee0a2dcb7e",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "1f20fffe87ab48d58fba763b363fda07",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "600;"
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.ZeroTouch.DSFunction, DynamoCore",
+      "Id": "26474d3871324a1fbb2e034264447c34",
+      "NodeType": "FunctionNode",
+      "Inputs": [
+        {
+          "Id": "d2d74c12063340b59202a108e7b02c35",
+          "Name": "list",
+          "Description": "List to get the item count of.\n\nvar[]..[]",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "6efa4be2120b4bf1856264c9d992c3ed",
+          "Name": "int",
+          "Description": "List length.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "FunctionSignature": "DSCore.List.Count@var[]..[]",
+      "Replication": "Auto",
+      "Description": "Returns the number of items stored in the given list.\n\nList.Count (list: var[]..[]): int"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "56be22aac8134d28a8955665f6637a05",
+      "End": "d2d74c12063340b59202a108e7b02c35",
+      "Id": "dfe4f48f571942e8ab3059e014a0044e",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "1f20fffe87ab48d58fba763b363fda07",
+      "End": "ca964653348240bd9fa0f53cd5dcf6a3",
+      "Id": "6c20f36cebef47ac971266335e9897ac",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "555004a7e57d4ed5ad2e85d832bf0a68",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 552.0,
+        "Y": 126.0
+      },
+      {
+        "Id": "b2e891c9e19447d1902b75ee0a2dcb7e",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 184.0,
+        "Y": 245.0
+      },
+      {
+        "Id": "26474d3871324a1fbb2e034264447c34",
+        "Name": "List.Count",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 833.3471810089021,
+        "Y": 10.747774480712195
+      }
+    ],
+    "Annotations": [],
+    "X": -107.37771384932603,
+    "Y": 99.5535360445773,
+    "Zoom": 1.029885639470986
+  }
+}

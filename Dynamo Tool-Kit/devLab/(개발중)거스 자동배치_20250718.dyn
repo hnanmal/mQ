@@ -1,0 +1,664 @@
+{
+  "Uuid": "120691b5-4156-44d9-8e6c-dee733948700",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "(개발중)거스 자동배치_20250718",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [
+    {
+      "Id": "a142ed499f43424290a90a62cf0be672",
+      "Name": "1st 기준 기둥 선택",
+      "Type": "selection",
+      "Type2": "hostSelection",
+      "Value": "0b2f299c-8582-411b-8b02-b686bf77f1cb-002c919f",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "Id": "a7ad3740c26045a885dc82bcb5052244",
+      "Name": "2nd 기준 기둥 선택",
+      "Type": "selection",
+      "Type2": "hostSelection",
+      "Value": "0b2f299c-8582-411b-8b02-b686bf77f1cb-002c92f7",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "Id": "1d8ac2bd0c4844b9a53537f703d4c70a",
+      "Name": "Structural Framing Types",
+      "Type": "selection",
+      "Type2": "dropdownSelection",
+      "Value": "H_SB_AR_B04_LC-200x75x25x4.0_Girth",
+      "Description": "Select a structural framing type in the active document",
+      "SelectedIndex": 23
+    },
+    {
+      "Id": "4c01a1cc8fdd4f9f96bf4ba82e0eaa71",
+      "Name": "퍼린 간격",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "1000",
+      "NumberType": "Double",
+      "Description": "Creates a number"
+    },
+    {
+      "Id": "89fa4c33085c49e8aea506bbb04e84e8",
+      "Name": "시작레벨",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "6000",
+      "NumberType": "Double",
+      "Description": "Creates a number"
+    },
+    {
+      "Id": "660611be426b479a95c9e96ed9e2a703",
+      "Name": "끝레벨",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "14500",
+      "NumberType": "Double",
+      "Description": "Creates a number"
+    },
+    {
+      "Id": "9df8bb5edd4148ebb2a0c60a1b6e6ca2",
+      "Name": "기둥으로부터 오프셋",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "800",
+      "NumberType": "Double",
+      "Description": "Creates a number"
+    },
+    {
+      "Id": "a15b622d2a154079963bea5a8d742aa6",
+      "Name": "Custom Selection",
+      "Type": "selection",
+      "Type2": "dropdownSelection",
+      "Value": "남",
+      "Description": "A dropdown menu with customizable values.",
+      "SelectedIndex": 2
+    },
+    {
+      "Id": "56a64ea64705452b9a2f581514464983",
+      "Name": "그리드 연장 길이",
+      "Type": "number",
+      "Type2": "number",
+      "Value": "600",
+      "NumberType": "Double",
+      "Description": "Creates a number"
+    }
+  ],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# IN[0] ~ IN[8] 동일\r\n# IN[9] : girth 연장 길이 (mm, 양쪽 끝에 적용)\r\n\r\nimport clr\r\nimport math\r\n\r\nclr.AddReference('RevitAPI')\r\nclr.AddReference('RevitServices')\r\nfrom Autodesk.Revit.DB import *\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\ncol1 = UnwrapElement(IN[0])\r\ncol2 = UnwrapElement(IN[1])\r\ngirth_type = UnwrapElement(IN[2])\r\nspacing = IN[3] / 304.8\r\nstart_z = IN[4] / 304.8\r\nend_z = IN[5] / 304.8\r\noffset = IN[6] / 304.8\r\ndir_str = IN[7]\r\nrotation_deg = IN[8]\r\nextension_mm = IN[9] if IN[9] else 0\r\nextension_ft = extension_mm / 304.8\r\n\r\napply_rotation = isinstance(rotation_deg, (int, float))\r\n\r\ndef get_base_point(elem):\r\n    loc = elem.Location\r\n    if hasattr(loc, \"Point\"):\r\n        return loc.Point\r\n    elif hasattr(loc, \"Curve\"):\r\n        return loc.Curve.GetEndPoint(0)\r\n    else:\r\n        return None\r\n\r\npt1 = get_base_point(col1)\r\npt2 = get_base_point(col2)\r\n\r\n# 방향 벡터\r\nline_vec = XYZ(pt2.X - pt1.X, pt2.Y - pt1.Y, pt2.Z - pt1.Z)\r\nline_dir = line_vec.Normalize()\r\n\r\n# offset 방향 처리\r\noffset_dir = None\r\nif isinstance(dir_str, str):\r\n    dir_str = dir_str.strip().lower()\r\n    if dir_str == \"n\":\r\n        offset_dir = XYZ(0, 1, 0)\r\n    elif dir_str == \"s\":\r\n        offset_dir = XYZ(0, -1, 0)\r\n    elif dir_str == \"e\":\r\n        offset_dir = XYZ(1, 0, 0)\r\n    elif dir_str == \"w\":\r\n        offset_dir = XYZ(-1, 0, 0)\r\n\r\nif not offset_dir:\r\n    z_axis = XYZ.BasisZ\r\n    offset_dir = z_axis.CrossProduct(line_dir).Normalize()\r\n\r\noffset_vec = offset_dir.Multiply(offset)\r\nextend_vec = line_dir.Multiply(extension_ft)\r\n\r\n# Family 활성화\r\nif not girth_type.IsActive:\r\n    TransactionManager.Instance.EnsureInTransaction(doc)\r\n    girth_type.Activate()\r\n    doc.Regenerate()\r\n    TransactionManager.Instance.TransactionTaskDone()\r\n\r\ncollector = FilteredElementCollector(doc).OfClass(Level)\r\nbase_level = collector.FirstElement()\r\n\r\nz = start_z\r\ngirth_elems = []\r\n\r\nTransactionManager.Instance.EnsureInTransaction(doc)\r\n\r\nwhile z <= end_z:\r\n    base1 = XYZ(pt1.X, pt1.Y, z).Add(offset_vec).Subtract(extend_vec)\r\n    base2 = XYZ(pt2.X, pt2.Y, z).Add(offset_vec).Add(extend_vec)\r\n\r\n    girth_line = Line.CreateBound(base1, base2)\r\n\r\n    girth = doc.Create.NewFamilyInstance(\r\n        girth_line,\r\n        girth_type,\r\n        base_level,\r\n        Structure.StructuralType.Beam\r\n    )\r\n\r\n    if apply_rotation:\r\n        param = girth.LookupParameter(\"Cross-Section Rotation\")\r\n        if param and not param.IsReadOnly:\r\n            param.Set(math.radians(rotation_deg))\r\n\r\n    girth_elems.append(girth)\r\n    z += spacing\r\n\r\nTransactionManager.Instance.TransactionTaskDone()\r\n\r\nOUT = girth_elems\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "62498d6ffcd4487ba2139c79562a2776",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "37a6fc617fad4fdab38e06d234313df3",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "7d58ac2217624f748aa367a068c5d293",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "c3e70cccd3fe4672a62cd9ed9412312a",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "749faeb14fae48f4a8a646c458cc6b40",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "54051f2130be448fb846721763d267a7",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "1a572a52b8cb464eb939c40ccb389e90",
+          "Name": "IN[5]",
+          "Description": "Input #5",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "772bbd1961354e9d9f65f612367ad788",
+          "Name": "IN[6]",
+          "Description": "Input #6",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "d1c4620de12f42b2b5de250ef72be711",
+          "Name": "IN[7]",
+          "Description": "Input #7",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "cbed46a4e9684b73b33b3b21ed8da59b",
+          "Name": "IN[8]",
+          "Description": "Input #8",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "88e60b20bba949e688fbe0b4060bb2ba",
+          "Name": "IN[9]",
+          "Description": "Input #9",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "bfeabbe6e0704ed7988bc11f9dd1f7e9",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "Dynamo.Nodes.DSModelElementSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "0b2f299c-8582-411b-8b02-b686bf77f1cb-002c919f"
+      ],
+      "Id": "a142ed499f43424290a90a62cf0be672",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "9196289259aa459581dad539664a177a",
+          "Name": "Element",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "ConcreteType": "Dynamo.Nodes.DSModelElementSelection, DSRevitNodesUI",
+      "NodeType": "ExtensionNode",
+      "InstanceId": [
+        "0b2f299c-8582-411b-8b02-b686bf77f1cb-002c92f7"
+      ],
+      "Id": "a7ad3740c26045a885dc82bcb5052244",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b753a88936ae4185aeb0c878f094c8e7",
+          "Name": "Element",
+          "Description": "The selected elements.",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a model element from the document."
+    },
+    {
+      "ConcreteType": "DSRevitNodesUI.StructuralFramingTypes, DSRevitNodesUI",
+      "SelectedIndex": 23,
+      "SelectedString": "H_SB_AR_B04_LC-200x75x25x4.0_Girth",
+      "Id": "1d8ac2bd0c4844b9a53537f703d4c70a",
+      "NodeType": "ExtensionNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "bd04749062724331a49bb7006c72904f",
+          "Name": "Framing Types",
+          "Description": "The selected Framing Types",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Select a structural framing type in the active document"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NumberType": "Double",
+      "Id": "4c01a1cc8fdd4f9f96bf4ba82e0eaa71",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "f527906588ae49da8597e49bc53dd374",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number",
+      "InputValue": 1000.0
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NumberType": "Double",
+      "Id": "89fa4c33085c49e8aea506bbb04e84e8",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "fd9187d7abb94c7883874b2a01868d5d",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number",
+      "InputValue": 6000.0
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NumberType": "Double",
+      "Id": "660611be426b479a95c9e96ed9e2a703",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "5fcbcfe31a3b4004a15ad274add97d95",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number",
+      "InputValue": 14500.0
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NumberType": "Double",
+      "Id": "9df8bb5edd4148ebb2a0c60a1b6e6ca2",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "4b74638e206d45608ab9aebbae7e0fff",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number",
+      "InputValue": 800.0
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "ccfc3ea0a0124ad3a9778a7f23b024d0",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "0ea0dc2cc5fb455987f1bf66f7d35674",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "180;"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.CustomSelection, CoreNodeModels",
+      "IsVisibleDropDownTextBlock": true,
+      "SerializedItems": [
+        {
+          "Name": "동",
+          "Item": "e"
+        },
+        {
+          "Name": "서",
+          "Item": "w"
+        },
+        {
+          "Name": "남",
+          "Item": "s"
+        },
+        {
+          "Name": "북",
+          "Item": "n"
+        }
+      ],
+      "SelectedIndex": 2,
+      "SelectedString": "남",
+      "Id": "a15b622d2a154079963bea5a8d742aa6",
+      "NodeType": "ExtensionNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "a8475d8f17884a8c835a2d266ca74b43",
+          "Name": "value",
+          "Description": "Selected value",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "A dropdown menu with customizable values."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.DoubleInput, CoreNodeModels",
+      "NumberType": "Double",
+      "Id": "56a64ea64705452b9a2f581514464983",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "3949780652d64cd9be649574ef3cdc91",
+          "Name": "",
+          "Description": "Double",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a number",
+      "InputValue": 600.0
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "9196289259aa459581dad539664a177a",
+      "End": "37a6fc617fad4fdab38e06d234313df3",
+      "Id": "924978077b2c4dbc967f32b5bb2157fe",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "b753a88936ae4185aeb0c878f094c8e7",
+      "End": "7d58ac2217624f748aa367a068c5d293",
+      "Id": "0f17b9d77eaf41be9e8be2f168b2bacd",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "bd04749062724331a49bb7006c72904f",
+      "End": "c3e70cccd3fe4672a62cd9ed9412312a",
+      "Id": "0b38ab55e83d40fcaaee182cfe88a8d3",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "f527906588ae49da8597e49bc53dd374",
+      "End": "749faeb14fae48f4a8a646c458cc6b40",
+      "Id": "a12c7a41c9f8467caf7aa989114f54a2",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fd9187d7abb94c7883874b2a01868d5d",
+      "End": "54051f2130be448fb846721763d267a7",
+      "Id": "463ef55dec8d4ebaa6d62798429faf9f",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "5fcbcfe31a3b4004a15ad274add97d95",
+      "End": "1a572a52b8cb464eb939c40ccb389e90",
+      "Id": "a0886e58b94541799f59e33579bcb532",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "4b74638e206d45608ab9aebbae7e0fff",
+      "End": "772bbd1961354e9d9f65f612367ad788",
+      "Id": "ed683e4f38744a3da65add4cdbacfdd4",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "0ea0dc2cc5fb455987f1bf66f7d35674",
+      "End": "cbed46a4e9684b73b33b3b21ed8da59b",
+      "Id": "8b189d776c174dd8a99e9592a1330608",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "a8475d8f17884a8c835a2d266ca74b43",
+      "End": "d1c4620de12f42b2b5de250ef72be711",
+      "Id": "ffeacc1762444422853865e908f0b2b7",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3949780652d64cd9be649574ef3cdc91",
+      "End": "88e60b20bba949e688fbe0b4060bb2ba",
+      "Id": "1434c18a317f470aa578447b5ffeab20",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "62498d6ffcd4487ba2139c79562a2776",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1014.1625113129267,
+        "Y": 713.4127376309663
+      },
+      {
+        "Id": "a142ed499f43424290a90a62cf0be672",
+        "Name": "1st 기준 기둥 선택",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 316.0,
+        "Y": 156.0
+      },
+      {
+        "Id": "a7ad3740c26045a885dc82bcb5052244",
+        "Name": "2nd 기준 기둥 선택",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 323.48185104760967,
+        "Y": 327.3693420962071
+      },
+      {
+        "Id": "1d8ac2bd0c4844b9a53537f703d4c70a",
+        "Name": "Structural Framing Types",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 211.5242671245203,
+        "Y": 549.8482696056105
+      },
+      {
+        "Id": "4c01a1cc8fdd4f9f96bf4ba82e0eaa71",
+        "Name": "퍼린 간격",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 208.74902808369092,
+        "Y": 689.0393913303857
+      },
+      {
+        "Id": "89fa4c33085c49e8aea506bbb04e84e8",
+        "Name": "시작레벨",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 210.8925135950547,
+        "Y": 823.266197541646
+      },
+      {
+        "Id": "660611be426b479a95c9e96ed9e2a703",
+        "Name": "끝레벨",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 209.04904324381533,
+        "Y": 957.0027868559537
+      },
+      {
+        "Id": "9df8bb5edd4148ebb2a0c60a1b6e6ca2",
+        "Name": "기둥으로부터 오프셋",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 205.747710404761,
+        "Y": 1082.9271972726915
+      },
+      {
+        "Id": "ccfc3ea0a0124ad3a9778a7f23b024d0",
+        "Name": "단면회전",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 263.3725244155579,
+        "Y": 1351.6258269457435
+      },
+      {
+        "Id": "a15b622d2a154079963bea5a8d742aa6",
+        "Name": "Custom Selection",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 99.23924415122235,
+        "Y": 1210.5822419483143
+      },
+      {
+        "Id": "56a64ea64705452b9a2f581514464983",
+        "Name": "그리드 연장 길이",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 182.24830946300818,
+        "Y": 1502.209452781368
+      }
+    ],
+    "Annotations": [],
+    "X": 299.0777242950604,
+    "Y": -67.55222598918203,
+    "Zoom": 0.5220615231226374
+  }
+}
