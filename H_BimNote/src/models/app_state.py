@@ -146,48 +146,6 @@ class AppState:
         pass
 
     def match_GWM_to_stdFam(self, related_widget):
-        def show_auto_warning(content):
-            """Display a warning window that disappears after 2 seconds."""
-            window_width = 300
-            window_height = 200
-
-            warning_window = tk.Toplevel(takefocus=1)
-            warning_window.iconbitmap(self.icon_path)
-            warning_window.title("Warning")
-
-            screen_width = warning_window.winfo_screenwidth()
-            screen_height = warning_window.winfo_screenheight()
-
-            x = (screen_width // 2) - (window_width // 2)
-            y = (screen_height // 2) - (window_height // 2)
-            warning_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-            warning_window.overrideredirect(
-                True
-            )  # Remove window decorations (close, minimize, etc.)
-            # Set the new window to always be on top
-            warning_window.attributes("-topmost", True)
-            warning_window.configure(
-                bg="white",
-                highlightthickness=2,
-            )
-
-            label = ttk.Label(
-                warning_window,
-                text=content,
-                font=("Arial", 9),
-                background="white",
-            )
-            label.pack(expand=True, padx=20, pady=20)
-
-            close_button = ttk.Button(
-                warning_window, text="Close", command=warning_window.destroy
-            )
-            close_button.pack(pady=5)
-
-            # Close window after 2 seconds
-            # warning_window.after(3500, warning_window.destroy)
-
         print("match_wms_to_stdType_시작")
         data_kind = related_widget.data_kind
         print(f"data_kind:::::{data_kind}")
