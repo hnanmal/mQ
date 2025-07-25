@@ -2829,23 +2829,34 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 lambda x: sorted(x, key=lambda x: x["name"]),
                                 list,
                             )
-                            # print(f"풀::{pool}")
+                            print(f"풀::{pool}")
                             wrapped_data_ = go(
                                 pool,
                                 map(lambda x: ["", x["name"], calc_no]),
                                 list,
                             )
 
+                            def find_formula_forWMsMenu(data):
+                                try:
+                                    if data["values"][6] != "":
+                                        res = [data["name"], data["values"][6]]
+                                    else:
+                                        res = [data["name"], "# 수식 확인 !!"]
+                                except:
+                                    res = [data["name"], "# 수식 확인 !!"]
+                                return res
+
                             dropdowns = go(
                                 pool,
                                 map(lambda x: x["children"]),
                                 map(
                                     lambda x: list(
-                                        map(lambda y: [y["name"], y["values"][-1]], x)
+                                        map(lambda y: find_formula_forWMsMenu(y), x)
                                     )
                                 ),
                                 list,
                             )
+                            print(f"dropdowns::{dropdowns}")
 
                             wrapped_data = []
                             # bunch = []

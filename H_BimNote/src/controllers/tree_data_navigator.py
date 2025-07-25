@@ -238,6 +238,69 @@ class TreeDataManager:
         except Exception as e:
             print(f"Error adding child node: {e}")
 
+    def add_child_node_forFamilyList(self, data_kind, selected_name, new_child):
+        """Add a new child node to the specified selected node."""
+        try:
+            # Try to find the selected node at any level
+            def find_node_recursive(data, target_name):
+                if not isinstance(data, list):
+                    return None
+                for node in data:
+                    if isinstance(node, dict) and node.get("name") == target_name:
+                        return node
+                    if "children" in node:
+                        found_node = find_node_recursive(node["children"], target_name)
+                        if found_node:
+                            return found_node
+                return None
+
+            selected_node = find_node_recursive(
+                self.team_std_info[data_kind]["children"], selected_name
+            )
+
+            if selected_node is not None and "children" in selected_node:
+
+                # Determine the depth level of the selected node
+                depth = selected_node["values"].index(selected_node["name"]) + 1
+
+                # Create the values list with empty strings, setting the name in the appropriate column
+                values = [""] * (depth + 1)
+                values[depth] = new_child
+                newCalcNum = f"Q{new_child}"
+                values.extend(["", "", "", "", "", newCalcNum])
+
+                selected_node["children"].append(
+                    {
+                        "name": new_child,
+                        "values": values,
+                        "children": [],
+                    }
+                )
+
+                # Calc-Dict 자동 업데이트
+                std_calcdict = self.state.team_std_info["std-calcdict"]["children"]
+                calcdict_nums = go(
+                    std_calcdict,
+                    map(lambda x: x["name"]),
+                    list,
+                )
+                if newCalcNum not in calcdict_nums:
+                    std_calcdict.append(
+                        {
+                            "name": newCalcNum,
+                            "values": [newCalcNum],
+                            "children": [],
+                        }
+                    )
+
+                print(f"Added child node: {new_child} to {selected_name}")
+            else:
+                print(
+                    f"Could not find selected node '{selected_name}' or 'children' key is missing."
+                )
+        except Exception as e:
+            print(f"Error adding child node: {e}")
+
     def delete_node(self, data_kind, path):
         """Delete the specified node from the tree based on its path."""
         try:
@@ -573,9 +636,10 @@ class TreeDataManager_treeview(TreeDataManager):
                     # Copy formula from the matching reference if available
                     new_child_value = list(child["values"])  # The new child's values
                     if matching_reference:
-                        formula_index = (
-                            len(matching_reference["values"]) - 1
-                        )  # Assuming formula is the last value
+                        # formula_index = (
+                        #     len(matching_reference["values"]) - 1
+                        # )  # Assuming formula is the last value
+                        formula_index = 6
                         new_child_value[-1] = matching_reference["values"][
                             formula_index
                         ]
