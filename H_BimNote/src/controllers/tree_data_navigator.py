@@ -640,9 +640,7 @@ class TreeDataManager_treeview(TreeDataManager):
                         #     len(matching_reference["values"]) - 1
                         # )  # Assuming formula is the last value
                         formula_index = 6
-                        new_child_value[-1] = matching_reference["values"][
-                            formula_index
-                        ]
+                        new_child_value[6] = matching_reference["values"][formula_index]
 
                     # Add placeholders for columns
                     new_child_value.insert(0, "")
@@ -736,13 +734,14 @@ class TreeDataManager_treeview(TreeDataManager):
             # Copy formula from the matching reference if available
             new_child_value = list(selected_GWMitem["values"])  # The new child's values
             if matching_reference:
-                formula_index = (
-                    len(matching_reference["values"]) - 1
-                )  # Assuming formula is the last value
+                # formula_index = (
+                #     len(matching_reference["values"]) - 1
+                # )  # Assuming formula is the last value
+                formula_index = 6
                 try:
-                    new_child_value[-1] = matching_reference["values"][formula_index]
+                    new_child_value[6] = matching_reference["values"][formula_index]
                 except:
-                    new_child_value[-1] = ""
+                    new_child_value[6] = ""
 
             # # Update the children of the derived item
             selected_GWMitem.update({"values": new_child_value})

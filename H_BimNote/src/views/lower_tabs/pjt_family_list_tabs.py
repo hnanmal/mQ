@@ -49,12 +49,12 @@ def create_pjtFamList_tab(state, subtab_notebook):
 
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=1500,
+        width=1200,
         height=3000,
     )
     section1 = ttk.Frame(
         working_tab_paned_area,
-        width=400,
+        width=500,
         height=3000,
     )
     section3 = ttk.Frame(
@@ -65,10 +65,10 @@ def create_pjtFamList_tab(state, subtab_notebook):
 
     working_tab_paned_window.add(section1, minsize=300)
     working_tab_paned_window.add(section2, minsize=400)
-    working_tab_paned_window.add(section3, minsize=300)
+    working_tab_paned_window.add(section3, minsize=270)
 
-    working_tab_paned_window.paneconfigure(section1, width=300, height=3000)
-    working_tab_paned_window.paneconfigure(section2, width=1500, height=3000)
+    working_tab_paned_window.paneconfigure(section1, width=500, height=3000)
+    working_tab_paned_window.paneconfigure(section2, width=1100, height=3000)
     working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
@@ -101,14 +101,14 @@ def create_pjtFamList_tab(state, subtab_notebook):
     )
 
     std_GWMTreeView = TeamStd_GWMTreeView(
-        state, std_matching_widget_area, showmode="project_fl", view_level=1
+        state, std_matching_widget_area, showmode="project_fl", view_level=2
     )
     state.std_GWMTreeView = std_GWMTreeView
     # std_GWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
     std_GWMTreeView.tree_frame.pack_forget()
 
     std_SWMTreeView = TeamStd_SWMTreeView(
-        state, std_matching_widget_area, showmode="project_fl", view_level=1
+        state, std_matching_widget_area, showmode="project_fl", view_level=2
     )
     state.std_SWMTreeView = std_SWMTreeView
     # std_SWMTreeView.treeview.tree.column(2, width=0, minwidth=0, stretch=False)
@@ -118,8 +118,10 @@ def create_pjtFamList_tab(state, subtab_notebook):
         state,
         std_matching_widget_area,
         {
-            "GWM": std_GWMTreeView.tree_frame,
-            "SWM": std_SWMTreeView.tree_frame,
+            "GWM": std_GWMTreeView,
+            "SWM": std_SWMTreeView,
+            # "GWM": std_GWMTreeView.tree_frame,
+            # "SWM": std_SWMTreeView.tree_frame,
         },
         default_selection="GWM",
         default_width=600,
@@ -144,6 +146,7 @@ def create_pjtFamList_tab(state, subtab_notebook):
             state,
             # data_kind="std-GWM",
             related_widget=stdFamlist_treeview,
+            other_widget=widgetSwitcher,
         ),  # Function to call when clicked
         font=("Arial", 10),  # Custom font for button text
         bg="#fffec0",  # Background color

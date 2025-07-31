@@ -61,6 +61,15 @@ class pjt_interior_matrix_widget:
             "<<ComboboxSelected>>", lambda event: self.on_combobox_select(event, state)
         )
 
+        # Add project-only filter button
+        filter_button_ptOnly = ttk.Button(
+            self.combobox_area,
+            text="Filter Project Type Only",
+            command=self.on_click_filter_btn_pjtOnly,
+            bootstyle="info-outline",
+        )
+        filter_button_ptOnly.pack(padx=10, pady=5, side="left")
+
         # Add filter button
         filter_button = ttk.Button(
             self.combobox_area,
@@ -278,6 +287,15 @@ class pjt_interior_matrix_widget:
         self.apply_styles()
         self.sheet.update()
 
+    def on_click_filter_btn_pjtOnly(self, event=None):
+        self.widget_filtermode = True
+        self.category_rows = []
+        self.update(
+            event=None, mode="db_update_pjtOnly", filter_mode=self.widget_filtermode
+        )
+        self.apply_styles()
+        self.sheet.update()
+
     def on_click_reset_btn(self, event=None):
         self.widget_filtermode = False
         self.category_rows = []
@@ -303,6 +321,8 @@ class pjt_interior_matrix_widget:
             sorted,
         )
         self.all_rooms = rooms_for_selectedBuilding
+        print(f"pjt_data {pjt_data["children"][0]}")
+        print(f"rooms_for_selectedBuilding {rooms_for_selectedBuilding}")
         # ✅ 레벨 콤보박스 업데이트
         self.set_floor_commbovalues()
 
@@ -321,7 +341,7 @@ class pjt_interior_matrix_widget:
             self.filtered_rooms = rooms_for_selectedBuilding
         else:
             self.filtered_rooms = rooms_for_selectedLevel
-        print(f"[int matrix] rooms_for_selectedBuilding : {rooms_for_selectedLevel}")
+        print(f"[int matrix] rooms_for_selectedLevel : {rooms_for_selectedLevel}")
 
         SWM = go(
             std_data["children"][0]["children"],
@@ -358,16 +378,29 @@ class pjt_interior_matrix_widget:
                 map(lambda x: x.split(" | ")[-1]),
                 list,
             )
-            # print(f"usedChecklist : {usedChecklist}")
+            pjtOnly_Checklist = go(
+                SWMitem_names_,
+                map(lambda x: list(filter(lambda y: "::" in y, x))),
+                lambda x: chain(*x),
+                list,
+            )
+            print(f"SWMitem_names_ : {SWMitem_names_}")
+            print(f"pjtOnly_Checklist : {pjtOnly_Checklist}")
 
         # floor_usedChecklist, skirt_usedChecklist 등 분리해서 filter_mode 적용
-        if filter_mode:
+        if filter_mode and mode == "db_update":
             SWMitem_names = go(
                 SWMitem_names_,
                 map(lambda x: list(filter(lambda i: i in usedChecklist, x))),
                 list,
             )
             # print(f"SWMitem_names - {SWMitem_names}")
+        elif filter_mode and mode == "db_update_pjtOnly":
+            SWMitem_names = go(
+                SWMitem_names_,
+                map(lambda x: list(filter(lambda i: i in pjtOnly_Checklist, x))),
+                list,
+            )
         else:
             SWMitem_names = SWMitem_names_
 
@@ -376,7 +409,7 @@ class pjt_interior_matrix_widget:
 
         print(f"[int matrix] self.materials : {self.materials}")
 
-        if mode == "db_update":
+        if mode == "db_update" or "db_update_pjtOnly":
             self.apply_styles()
         else:
             self.sheet.pack_forget()
@@ -484,6 +517,7 @@ class pjt_interior_matrix_widget:
                 new_data.append(row_data)
         # print(f"new_data {new_data}")
 
+        self.sheet.set_header_data(self.filtered_rooms)
         self.sheet.set_sheet_data(new_data)  # ✅ 데이터 업데이트
         self.sheet.set_options(
             header_font=("Arial", 8, "normal"),
@@ -714,20 +748,9 @@ class pjt_interior_matrix_widget:
                     )
             except:
                 material_full_name = "기준열"
-        print(f"chkd_material_names \ {chkd_material_names}")
-        print(f"chkd_material_full_names_effBln \ {chkd_material_full_names_effBln}")
+        # print(f"chkd_material_names : {chkd_material_names}")
+        # print(f"chkd_material_full_names_effBln : {chkd_material_full_names_effBln}")
 
-        # if "N.A" in chkd_material_names:
-        #     messagebox.showinfo(
-        #         "toggle_forPaste",
-        #         "열 복사 기능은 해당 열의 항목 체크 항목 중 N.A 항목이 없을때만 가능합니다.",
-        #     )
-        #     self.update(
-        #         event=None,
-        #         mode="db_update",
-        #         filter_mode=self.widget_filtermode,
-        #     )
-        #     return
         if not all(chkd_material_full_names_effBln):
             messagebox.showinfo(
                 "toggle_forPaste",

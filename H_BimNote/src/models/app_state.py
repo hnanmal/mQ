@@ -2,6 +2,7 @@
 import hashlib
 import json
 import re
+import multiprocessing as mp
 
 # import threading
 # from tkinter import messagebox, simpledialog
@@ -60,7 +61,8 @@ class AppState:
         self.init_db_hash = "not loaded yet"
         self.quit_response = None
 
-    def _notify_selected_change(self, *args):
+    def _notify_selected_change(self, *args, targets=None):
+        pass
         for noti_tgt in self.notify_targets:
             try:
                 noti_tgt.update(self)

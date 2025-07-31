@@ -18,6 +18,7 @@ from ttkbootstrap.constants import *
 from src.views.widget.treeview_editor import (
     TreeviewEditor,
     TreeviewEditor_forBuildingList,
+    TreeviewEditor_forFamilyList,
     TreeviewEditor_stdGWMSWM,
 )
 from src.views.widget.widget import StateObserver
@@ -25,6 +26,7 @@ from src.core.fp_utils import *
 from src.views.widget.treeview_contextmenu import (
     TreeViewContextMenu,
     TreeViewContextMenu_FamilyList,
+    TreeViewContextMenu_GWMSWM,
 )
 
 
@@ -842,12 +844,14 @@ class TeamStd_GWMTreeView:
         self.data_kind = "std-GWM"
         self.showmode = showmode
         self.treeDataManager = TreeDataManager_treeview(state, self)
-        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+        self.state_observer = StateObserver(
+            state, lambda e: self.update(e, view_level), tag="GWM"
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "G-WM", "Item"]
-        hdr_widths = [107, 80, 100]
+        hdr_widths = [100, 140, 180]
 
         def set_tree_row(event=None):
             # rowheight = round(rowheight_scalebar.get())
@@ -906,7 +910,7 @@ class TeamStd_GWMTreeView:
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
         # Create and integrate context menu
-        self.context_menu = TreeViewContextMenu(
+        self.context_menu = TreeViewContextMenu_GWMSWM(
             state,
             self.treeview,
             data_kind=self.data_kind,
@@ -916,6 +920,7 @@ class TeamStd_GWMTreeView:
             copy_Topitem=self.copy_Topitem,
             copy_GWM=self.copy_GWM,
             copy_item=self.copy_item,
+            edit_item=self.treeviewEditor.edit_current_selectedRowAndCol,
         )
 
         self.treeview.tree.tag_configure(
@@ -1117,7 +1122,11 @@ class TeamStd_GWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -1156,7 +1165,7 @@ class TeamStd_GWMTreeView:
             name_depth=0,
             # name_depth=[1, 2],
         )
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
     def copy_GWM(self):
         state = self.state
@@ -1168,7 +1177,11 @@ class TeamStd_GWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -1218,7 +1231,7 @@ class TeamStd_GWMTreeView:
 
             self.apply_originWMassign_forItem(origin_path, copied_path)
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
     def update_deleting_stdType_GWMSWM_in(self):
         state = self.state
@@ -1267,7 +1280,7 @@ class TeamStd_GWMTreeView:
                 path,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
 
     def update_deleting_stdType_wmItem_in(self):
@@ -1317,7 +1330,7 @@ class TeamStd_GWMTreeView:
                 path,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
 
     def update_editing_stdType_GWMSWM_in(self, new_name):
@@ -1373,7 +1386,7 @@ class TeamStd_GWMTreeView:
                 new_name,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
 
     def update_editing_stdType_wmItem_in(self, new_name):
@@ -1449,7 +1462,7 @@ class TeamStd_GWMTreeView:
                 new_name,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
 
     def update_copying_stdType_wmItem_in(self, copied_node, parent_item_name):
@@ -1495,6 +1508,8 @@ class TeamStd_GWMTreeView:
                 [copied_node],
             )
 
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
+
         return target_parent_nodes
 
     # 복사 item 항목 마다 원본 GWM 할당 상황 조회 및 반영
@@ -1523,7 +1538,11 @@ class TeamStd_GWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -1569,7 +1588,7 @@ class TeamStd_GWMTreeView:
 
         self.apply_originWMassign_forItem(path, copied_path)
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
     def add_top_item(self):
         state = self.state
@@ -1580,7 +1599,7 @@ class TeamStd_GWMTreeView:
         if new_item_name:
             self.treeDataManager.add_top_level_node(self.data_kind, new_item_name)
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
     def add_item(self):
         state = self.state
@@ -1600,7 +1619,7 @@ class TeamStd_GWMTreeView:
                 self.data_kind, selected_item_name, new_item_name
             )
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
     def delete_item(self):
         state = self.state
@@ -1656,7 +1675,7 @@ class TeamStd_GWMTreeView:
             self.update_deleting_stdType_GWMSWM_in()
 
         # Notify observers about the state update
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
 
 
 class PjtStd_GWMTreeView(TeamStd_GWMTreeView):
@@ -1809,13 +1828,15 @@ class TeamStd_SWMTreeView:
         self.data_kind = "std-SWM"
         self.showmode = showmode
         self.treeDataManager = TreeDataManager_treeview(state, self)
-        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+        self.state_observer = StateObserver(
+            state, lambda e: self.update(e, view_level), tag="SWM"
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
         headers = ["분류", "S-WM", "Item"]
         # headers = ["분류-1", "S-WM", "Item"]
-        hdr_widths = [107, 80, 100]
+        hdr_widths = [100, 90, 250]
 
         def set_tree_row(event=None):
             # rowheight = round(rowheight_scalebar.get())
@@ -1873,7 +1894,7 @@ class TeamStd_SWMTreeView:
         self.treeview.tree.bind("<<TreeviewSelect>>", self.on_item_selected)
 
         # Create and integrate context menu
-        self.context_menu = TreeViewContextMenu(
+        self.context_menu = TreeViewContextMenu_GWMSWM(
             state,
             self.treeview,
             self.data_kind,
@@ -1883,6 +1904,7 @@ class TeamStd_SWMTreeView:
             copy_Topitem=self.copy_Topitem,
             copy_SWM=self.copy_SWM,
             copy_item=self.copy_item,
+            edit_item=self.treeviewEditor.edit_current_selectedRowAndCol,
         )
 
         self.treeview.tree.tag_configure(
@@ -2085,7 +2107,11 @@ class TeamStd_SWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -2124,7 +2150,7 @@ class TeamStd_SWMTreeView:
             name_depth=0,
             # name_depth=[1, 2],
         )
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
 
     def copy_SWM(self):
         state = self.state
@@ -2136,7 +2162,11 @@ class TeamStd_SWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -2186,7 +2216,7 @@ class TeamStd_SWMTreeView:
 
             self.apply_originWMassign_forItem(origin_path, copied_path)
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
 
     def update_deleting_stdType_GWMSWM_in(self):
         state = self.state
@@ -2235,7 +2265,7 @@ class TeamStd_SWMTreeView:
                 path,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes
 
     def update_deleting_stdType_wmItem_in(self):
@@ -2285,7 +2315,7 @@ class TeamStd_SWMTreeView:
                 path,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes
 
     def update_editing_stdType_GWMSWM_in(self, new_name):
@@ -2341,7 +2371,7 @@ class TeamStd_SWMTreeView:
                 new_name,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes
 
     def update_editing_stdType_wmItem_in(self, new_name):
@@ -2417,7 +2447,7 @@ class TeamStd_SWMTreeView:
                 new_name,
             )
 
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes
 
     def update_copying_stdType_wmItem_in(self, copied_node, parent_item_name):
@@ -2463,6 +2493,8 @@ class TeamStd_SWMTreeView:
                 [copied_node],
             )
 
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
+
         return target_parent_nodes
 
     # 복사 item 항목 마다 원본 GWM 할당 상황 조회 및 반영
@@ -2490,7 +2522,11 @@ class TeamStd_SWMTreeView:
             filter(lambda x: x != ""),
             list,
         )[0]
-        new_name = selected_item_name + "::copy"
+        # new_name = selected_item_name + "::copy"
+        new_name = (
+            selected_item_name
+            + f"::[{state.team_std_info.get("project-info").get("abbr", "??")}]"
+        )
 
         parent_item_id = self.treeview.tree.parent(selected_item_id)
         if parent_item_id:
@@ -2547,7 +2583,7 @@ class TeamStd_SWMTreeView:
         if new_item_name:
             self.treeDataManager.add_top_level_node(self.data_kind, new_item_name)
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
 
     def add_item(self):
         state = self.state
@@ -2567,7 +2603,7 @@ class TeamStd_SWMTreeView:
                 self.data_kind, selected_item_name, new_item_name
             )
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
 
     def delete_item(self):
         state = self.state
@@ -2622,7 +2658,7 @@ class TeamStd_SWMTreeView:
             self.update_deleting_stdType_GWMSWM_in()
 
         # Notify observers about the state update
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
 
 
 ###################for common_input################################################################
@@ -3004,7 +3040,9 @@ class TeamStd_FamlistTreeView:
         self.relate_widget = relate_widget
 
         self.treeDataManager = TreeDataManager_treeview(state, self)
-        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+        self.state_observer = StateObserver(
+            state, lambda e: self.update(e, view_level), tag="famlist"
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)
@@ -3121,7 +3159,8 @@ class TeamStd_FamlistTreeView:
         self.treeview.tree.column("GWM/SWM", anchor="center")  # Center-align
 
         # set treeview_editor class
-        self.treeviewEditor = TreeviewEditor(state, self)
+        # self.treeviewEditor = TreeviewEditor(state, self)
+        self.treeviewEditor = TreeviewEditor_forFamilyList(state, self)
 
         # Track the last selected item with an instance attribute
         self.last_selected_item = None
@@ -3399,7 +3438,7 @@ class TeamStd_FamlistTreeView:
 
     def update(self, event=None, view_level=None, filter_mode=False):
         state = self.state
-        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        # self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         self.valid_names = []
         if (
@@ -3433,7 +3472,7 @@ class TeamStd_FamlistTreeView:
                     _depth=3,
                     _rule="::",
                 )
-                print(f"\n걸러진데이터!\n")
+                # print(f"\n걸러진데이터!\n")
             else:
                 if filter_mode:
                     data = self.remove_items_unused(
@@ -3466,7 +3505,7 @@ class TeamStd_FamlistTreeView:
         except:
             pass
 
-        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
+        # self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
 
     def on_item_selected(self, event):
         # Get the currently selected item
@@ -3720,7 +3759,9 @@ class TeamStd_calcDict_TreeView:
         self.view_level = view_level
         self.treeDataManager = TreeDataManager_treeview(state, self)
         self.state_observer = StateObserver(
-            state, lambda e: self.update(event=e, view_level=self.view_level)
+            state,
+            lambda e: self.update(event=e, view_level=self.view_level),
+            tag="calcDict",
         )
         self.selected_item_relate_widget = relate_widget.selected_item
         headers = [
@@ -3789,19 +3830,23 @@ class TeamStd_calcDict_TreeView:
     def update_target_byRef(self, dbKey):
         state = self.state
 
-        pattern = r"^\d+\.\d+$"
+        # pattern = r"^\d+\.\d+$"
+        pattern = r"^\d+\.\d+[a-zA-Z]?$"
         selected_NoItem = go(
             self.selected_item_relate_widget.get().split(" | "),
             filter(lambda x: re.match(pattern, x)),
             next,
         )
+        print(f"selected_NoItem{selected_NoItem}")
         selected_qItem_name = f"Q{selected_NoItem}"
+        print(f"selected_qItem_name{selected_qItem_name}")
         # Ensure the data kind exists in the team standard information
         data = state.team_std_info[self.data_kind]["children"]
         selected_node = next(
             (node for node in data if node["name"] == selected_qItem_name),
             None,
         )
+        print(f"selected_node{selected_node}")
         # state.log_widget.write(str(selected_node))
 
         refData = state.team_std_info[dbKey]
@@ -3865,7 +3910,8 @@ class TeamStd_calcDict_TreeView:
 
         try:
             # # Split the selected item path to find the grandparent, parent, and selected item names
-            pattern = r"^\d+\.\d+$"
+            # pattern = r"^\d+\.\d+$"
+            pattern = r"^\d+\.\d+[a-zA-Z]?$"
             _selected_NoItem = go(
                 self.selected_item_relate_widget.get().split(" | "),
                 reversed,
@@ -3967,7 +4013,7 @@ class TeamStd_calcDict_TreeView:
         if new_item_name:
             self.treeDataManager.add_top_level_node(self.data_kind, new_item_name)
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["calcDict"])
 
     def add_item(self):
         state = self.state
@@ -3987,7 +4033,7 @@ class TeamStd_calcDict_TreeView:
                 self.data_kind, selected_item_name, new_item_name
             )
             # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-            state.observer_manager.notify_observers(state)
+            state.observer_manager.notify_observers(state, targets=["calcDict"])
 
     def delete_item(self):
         state = self.state
@@ -4038,7 +4084,7 @@ class TeamStd_calcDict_TreeView:
             [selected_qItem_name, selected_item_name],
         )
         # 상태가 업데이트되었을 때 모든 관찰자에게 알림을 보냄
-        state.observer_manager.notify_observers(state)
+        state.observer_manager.notify_observers(state, targets=["calcDict"])
 
 
 class BuildingList_TreeView:

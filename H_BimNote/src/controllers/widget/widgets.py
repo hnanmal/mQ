@@ -1,7 +1,8 @@
 # src/controllers/widget
 
 import tkinter as tk
-
+from tkinter import messagebox
+from src.core.fp_utils import *
 from src.views.widget.treeview_utils import DefaultTreeViewStyleManager
 
 
@@ -90,18 +91,31 @@ class EditModeManager:
             print(f"Editing item: {tree.item(item_id, 'values')}")
 
 
-def handle_add_button_press(state, related_widget=None):
+def handle_add_button_press(state, related_widget=None, other_widget=None):
     print("handle_add_button_press_시작")
 
     data_kind = related_widget.data_kind
+
     # Pass the data to the model to be added to the state
     if "WM" in data_kind:
         state.match_wms_to_stdType(related_widget)
         state.observer_manager.notify_observers(state)
     elif "std-familylist":
-        state.match_GWM_to_stdFam(related_widget)
-        state.observer_manager.notify_observers(state)
-
+        selected_item_id = other_widget.selected_widget.treeview.tree.focus()
+        current_column = go(
+            other_widget.selected_widget.treeview.tree.item(selected_item_id, "values"),
+            lambda x: next((i for i, s in enumerate(x) if s), None),
+        )
+        if current_column == 1:
+            state.match_GWM_to_stdFam(related_widget)
+            state.observer_manager.notify_observers(state)
+        elif current_column == 2:
+            messagebox.showinfo(
+                "알림",
+                "Item 선택 불가  - 좌측 화면에서 상위항목인 GWM/SWM 을 선택해서 추가해주세요.",
+            )
+        else:
+            messagebox.showinfo("알림", "좌측 화면에서 GWM/SWM 레벨에서만 추가 가능")
     print("handle_add_button_press_종료")
 
 

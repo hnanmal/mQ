@@ -42,6 +42,27 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.3.4 (2025-08-01)
+    - 패밀리리스트 항목 번호 알파벳 포함 항목들 정렬 문제 해결
+    - 매개변수 사전에 Q3.4a와 같은 항목 등장하지 않던 오류 수정
+    
+🔳 v1.3.3 (2025-07-31)
+    - calcDict 업데이트 즉시 미반영 문제 수정
+    - GWM, SWM 항목 복사 시, ::[프로젝트약자] 가 자동으로 추가되도록 수정
+    - Project Standard > Project Main에서 Project Abbreviation 수정시, GWM, SWM, FamilyList의 항목의 프로젝트약자값도 변경하도록 수정
+    - Project Input > Project Interior Matrix 탭에 Filter Project Type Only 버튼 추가
+    
+🔳 v1.3.2 (2025-07-30)
+    - 패밀리리스트 위젯에서 항목별 수식 수정시 시, 패밀리리스트만 새로고침하게 하여 수정 후 반영시간 단축
+    - GWM, SWM 위젯에서 우측메뉴에 Edit Item Name 버튼 추가(더블클릭 수정시 트리항목이 열렸다 닫혔다 하는 불편함 해소를 위한 수정)
+    - GWM, SWM 위젯 기본 폭 넓게 변경
+    - Project Family List 탭 내의 GWM, SWM 위젯의 기본 레벨 보기를 한단계 하위까지로 수정
+
+🔳 v1.3.1 (2025-07-29)
+    - Team Standard 탭에서 WM 추가 불가 현상 수정
+    - Project Family List 에서 GWM/SWM 과 Item 칼럼 수정 불가로 변경
+    - Project Family List 에서 Item 항목에는 Delete 버튼 비활성화로 변경
+    
 🔳 v1.3.0 (2025-07-25)
     - 패밀리리스트의 레벨4 항목에서 Description 내용이  있을 경우 Project Input 에서 항목별 수식이 Description으로 들어오는 오류를 수정
     - 패밀리리스트의 레벨1항목에서만 마우스 우측메뉴의 Add Item 버튼 활성화. 다른 레벨에서는 Delete Item만 활성화 되도록 수정
@@ -224,5 +245,5 @@ update_log = """
     - GWM 복사  와 하위아이템 복사 명령메뉴 구분
 """
 
-## Bnote 개발 8월 초에 시작
+## Bnote 개발 2024년 8월 초에 시작
 ## 총 7개월 / 비슷하게 다른 프로젝트 시작한다고 하면 예상 소요 3개월?

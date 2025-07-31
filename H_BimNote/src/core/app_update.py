@@ -10,7 +10,7 @@ from datetime import datetime
 
 from src.core.web import open_url_in_browser
 
-APP_VERSION = "1.3.0"  # Your app's current version
+APP_VERSION = "1.3.4"  # Your app's current version
 UPDATE_URL = "https://raw.githubusercontent.com/hnanmal/mQ/refs/heads/master/H_BimNote/resource/version.json"  # Replace with your real URL
 
 

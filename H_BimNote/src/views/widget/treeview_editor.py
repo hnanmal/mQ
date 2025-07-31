@@ -82,6 +82,7 @@ class TreeviewEditor:
             "<FocusOut>", lambda e: self.on_edit_complete(e, current_value)
         )
         # self.entry_widget.bind("<FocusOut>", self.on_edit_cancel)
+        # return "break"
 
     def on_scroll(self, event):
         """Ask the user whether to cancel editing when they scroll."""
@@ -142,7 +143,14 @@ class TreeviewEditor:
             )
 
         # Notify observers that the state has been updated
-        self.state.observer_manager.notify_observers(self.state)
+        self.state.observer_manager.notify_observers(
+            self.state,
+            targets=[
+                # "GWM",
+                # "SWM",
+                "calcDict",
+            ],
+        )
 
         # Destroy the Entry widget
         self.entry_widget.destroy()
@@ -177,6 +185,59 @@ class TreeviewEditor:
 
 
 class TreeviewEditor_stdGWMSWM(TreeviewEditor):
+    def edit_current_selectedRowAndCol(self):
+        print("[수동 편집 진입]")
+        item_id = self.tree.focus()
+        if not item_id:
+            print("선택된 아이템이 없습니다.")
+            return
+
+        current_values = self.tree.item(item_id, "values")
+        for idx, value in enumerate(current_values):
+            if value.strip():
+                self.current_column = idx
+                break
+        else:
+            print("해당 행에 유효한 값이 없습니다.")
+            return
+
+        column_id = f"#{self.current_column + 1}"
+        current_value = current_values[self.current_column]
+
+        # row가 보이도록 먼저 보장
+        self.tree.see(item_id)
+
+        bbox = self.tree.bbox(item_id, column_id)
+        print(f"item_id = {item_id}")
+        print(f"column_id = {column_id}")
+        print(f"current_value = {current_value}")
+        print(f"bbox = {bbox}")
+
+        if not bbox:
+            print("Error: Bounding box could not be determined")
+            return
+
+        x, y, width, height = bbox
+        if width <= 0 or height <= 0:
+            print("Error: Bounding box width or height is invalid")
+            return
+
+        self.entry_widget = tk.Entry(self.tree, width=width)
+        self.entry_widget.place(x=x, y=y, width=width, height=height)
+        self.entry_widget.insert(0, current_value)
+        self.entry_widget.focus()
+
+        self.entry_widget.bind(
+            "<Return>", lambda e: self.on_edit_complete(e, current_value)
+        )
+        self.entry_widget.bind("<Escape>", self.on_edit_cancel)
+        self.tree.bind("<MouseWheel>", self.on_edit_cancel)
+        self.entry_widget.bind(
+            "<FocusOut>", lambda e: self.on_edit_complete(e, current_value)
+        )
+
+        self.current_item = item_id
+
     def on_edit_complete(self, event, current_value):
         if self.current_item is None or self.current_column is None:
             return
@@ -190,23 +251,6 @@ class TreeviewEditor_stdGWMSWM(TreeviewEditor):
             self.entry_widget.destroy()
             self.entry_widget = None
             return
-
-        # Calc-Dict 자동 업데이트
-        if self.current_column == 8 and new_value.startswith("Q"):
-            std_calcdict = self.state.team_std_info["std-calcdict"]["children"]
-            calcdict_nums = go(
-                std_calcdict,
-                map(lambda x: x["name"]),
-                list,
-            )
-            if new_value not in calcdict_nums:
-                std_calcdict.append(
-                    {
-                        "name": new_value,
-                        "values": [new_value],
-                        "children": [],
-                    }
-                )
 
         # Update the state with the new value using TreeDataManager
         selected_name = self.tree.item(self.current_item, "text")
@@ -240,7 +284,9 @@ class TreeviewEditor_stdGWMSWM(TreeviewEditor):
                 self.impl_treeview.update_editing_stdType_GWMSWM_in(new_value)
 
         # Notify observers that the state has been updated
-        self.state.observer_manager.notify_observers(self.state)
+        self.state.observer_manager.notify_observers(
+            self.state, targets=["GWM", "SWM", "famlist"]
+        )
 
         # Destroy the Entry widget
         self.entry_widget.destroy()
@@ -347,3 +393,79 @@ class TreeviewEditor_forBuildingList(TreeviewEditor):
             self.impl_treeview.place_selected_item_at_top()
         except:
             pass
+
+
+class TreeviewEditor_forFamilyList(TreeviewEditor):
+    def on_edit_complete(self, event, current_value):
+        if self.current_item is None or self.current_column is None:
+            return
+
+        print(f"트리뷰수정이벤트::{event}")
+        # Get the updated value from the Entry widget
+        new_value = self.entry_widget.get()
+
+        if current_value == new_value:
+            # Destroy the Entry widget
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            return
+        elif self.current_column == 4 or self.current_column == 5:
+            self.entry_widget.destroy()
+            self.entry_widget = None
+            messagebox.showinfo("알림", "패밀리 리스트에서 변경 불가!")
+            return
+
+        # Calc-Dict 자동 업데이트
+        if self.current_column == 8 and new_value.startswith("Q"):
+            std_calcdict = self.state.team_std_info["std-calcdict"]["children"]
+            calcdict_nums = go(
+                std_calcdict,
+                map(lambda x: x["name"]),
+                list,
+            )
+            if new_value not in calcdict_nums:
+                std_calcdict.append(
+                    {
+                        "name": new_value,
+                        "values": [new_value],
+                        "children": [],
+                    }
+                )
+
+        # Update the state with the new value using TreeDataManager
+        selected_name = self.tree.item(self.current_item, "text")
+        parent_path = self.get_item_path(self.current_item)
+        self.data_manager.update_node_value(
+            data_kind=self.impl_treeview.data_kind,
+            path=parent_path,
+            column_index=self.current_column,
+            new_value=new_value,
+        )
+
+        # If the modified column matches the level depth, update the name as well
+        depth = self.get_item_depth(self.current_item)
+        if self.current_column == depth:
+            self.data_manager.update_node_name(
+                data_kind=self.impl_treeview.data_kind,
+                path=parent_path,
+                new_name=new_value,
+            )
+
+        # Update the GWM/SWM item name in std-familylist
+        print(f"손잭스 - column : {self.current_column}")
+        # self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+        if (
+            self.impl_treeview.data_kind == "std-GWM"
+            or self.impl_treeview.data_kind == "std-SWM"
+        ):
+            if self.current_column == 2:
+                self.impl_treeview.update_editing_stdType_wmItem_in(new_value)
+            elif self.current_column == 1:
+                self.impl_treeview.update_editing_stdType_GWMSWM_in(new_value)
+
+        # Notify observers that the state has been updated
+        self.state.observer_manager.notify_observers(self.state, targets=["famlist"])
+
+        # Destroy the Entry widget
+        self.entry_widget.destroy()
+        self.entry_widget = None

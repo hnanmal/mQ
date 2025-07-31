@@ -2563,7 +2563,7 @@ class TeamStd_WMsSheetView:
         selected_cells = list(sheet.get_selected_cells())
         if selected_cells:
             # 기존 스타일 초기화
-            sheet.dehighlight_rows()
+            sheet.dehighlight_rows("all")
 
             # 선택된 행 강조 표시 (예: 노란색으로 설정)
             selected_rows = list(map(lambda x: x[0], selected_cells))

@@ -286,9 +286,9 @@ def select_tab(notebook, parent_index, subtab_index=None):
 
 # Composition for State Management
 class StateObserver:
-    def __init__(self, state, updateFunc):
+    def __init__(self, state, updateFunc, tag=None):
         self.state = state
-        self.state.observer_manager.add_observer(lambda e: updateFunc(e))
+        self.state.observer_manager.add_observer(lambda e: updateFunc(e), tag)
 
 
 class WidgetSwitcher:
@@ -329,7 +329,7 @@ class WidgetSwitcher:
 
         # Hide all widgets initially
         for widget in self.widgets.values():
-            widget.pack_forget()
+            widget.tree_frame.pack_forget()
 
         # Show the default widget
         self.show_widget(self.combo_box.get())
@@ -354,13 +354,14 @@ class WidgetSwitcher:
         state = self.state
         # Hide all widgets
         for widget in self.widgets.values():
-            widget.pack_forget()
+            widget.tree_frame.pack_forget()
 
         # Show the selected widget
         selected_widget = self.widgets.get(widget_name)
+        self.selected_widget = selected_widget
         if selected_widget:
-            selected_widget.pack(fill=tk.BOTH, expand=True)
-            selected_widget.config(width=self.default_width)
+            selected_widget.tree_frame.pack(fill=tk.BOTH, expand=True)
+            selected_widget.tree_frame.config(width=self.default_width)
 
             # state.switch_widget_status.set(widget_name)
             state.log_widget.write(f"switch status: {widget_name}")

@@ -52,28 +52,21 @@ def create_pjtStdGWM_tab(state, subtab_notebook, exe_mode=None):
 
     section1 = ttk.Frame(
         working_tab_paned_area,
-        width=1000,
+        width=950,
         height=3000,
     )
     # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=2000,
+        width=1450,
         height=3000,
     )
-    # section3 = ttk.Frame(
-    #     working_tab_paned_area,
-    #     width=600,
-    #     height=3000,
-    # )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    # working_tab_paned_window.add(section3, minsize=600)
 
-    working_tab_paned_window.paneconfigure(section1, height=3000)
+    working_tab_paned_window.paneconfigure(section1, width=500, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=2000, height=3000)
-    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(
@@ -194,28 +187,20 @@ def create_pjtStdSWM_tab(state, subtab_notebook):
 
     section1 = ttk.Frame(
         working_tab_paned_area,
-        width=1000,
+        width=950,
         height=3000,
     )
-    # state.GWMsection = section1
     section2 = ttk.Frame(
         working_tab_paned_area,
-        width=2000,
+        width=1450,
         height=3000,
     )
-    # section3 = ttk.Frame(
-    #     working_tab_paned_area,
-    #     width=600,
-    #     height=3000,
-    # )
 
     working_tab_paned_window.add(section1, minsize=400)
     working_tab_paned_window.add(section2, minsize=400)
-    # working_tab_paned_window.add(section3, minsize=600)
 
-    working_tab_paned_window.paneconfigure(section1, height=3000)
+    working_tab_paned_window.paneconfigure(section1, width=500, height=3000)
     working_tab_paned_window.paneconfigure(section2, width=2000, height=3000)
-    # working_tab_paned_window.paneconfigure(section3, height=3000)
 
     # common 영역 라벨링
     working_tab_font = tk.font.Font(

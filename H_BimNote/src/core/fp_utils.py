@@ -67,22 +67,38 @@ def grpBy(iter, key):
 #########################################################################
 
 
+# def sort_func(input):
+#     try:
+#         try:
+#             if re.match(r"^\d+", input["name"]):  # 문자열이 숫자로 시작하는 경우만 변환
+#                 res = go(
+#                     re.split(r"(\d+)", input["name"]),
+#                     filter(lambda x: x.isdigit()),
+#                     next,
+#                     int,
+#                     chr,
+#                 )
+#                 return res
+#             else:
+#                 return input["name"]  # 숫자로 시작하지 않는 경우 그대로 반환
+#         except:
+#             return input["name"]
+#     except:
+#         return input
+
+
 def sort_func(input):
     try:
-        try:
-            if re.match(r"^\d+", input["name"]):  # 문자열이 숫자로 시작하는 경우만 변환
-                res = go(
-                    re.split(r"(\d+)", input["name"]),
-                    filter(lambda x: x.isdigit()),
-                    next,
-                    int,
-                    chr,
-                )
-                return res
-            else:
-                return input["name"]  # 숫자로 시작하지 않는 경우 그대로 반환
-        except:
-            return input["name"]
+        name = input.get("name", "")
+
+        # 문자열을 숫자/문자 블록으로 분리: "10.Floor" → [10, ".", "Floor"]
+        def alphanum_key(text):
+            return [
+                int(part) if part.isdigit() else part.lower()
+                for part in re.split(r"(\d+)", text)
+            ]
+
+        return alphanum_key(name)
     except:
         return input
 
