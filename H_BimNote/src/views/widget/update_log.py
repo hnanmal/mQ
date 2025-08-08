@@ -42,6 +42,9 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.3.5 (2025-xx-xx)
+    - Project Input > Project Interior Matrix 좌측 열의 기본 폭 수정 (150->300)
+    
 🔳 v1.3.4 (2025-08-01)
     - 패밀리리스트 항목 번호 알파벳 포함 항목들 정렬 문제 해결
     - 매개변수 사전에 Q3.4a와 같은 항목 등장하지 않던 오류 수정

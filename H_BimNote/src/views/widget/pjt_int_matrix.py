@@ -105,7 +105,7 @@ class pjt_interior_matrix_widget:
         self.sheet.set_options(
             header_font=("Arial", 8, "normal"),
         )
-        self.sheet.set_index_width(200)
+        self.sheet.set_index_width(300)
         self.sheet.enable_bindings()
         self.sheet.pack(fill="both", expand=True)
 
@@ -439,7 +439,7 @@ class pjt_interior_matrix_widget:
 
         # ✅ 테이블을 위한 행 구성 (대분류 & 하위 항목)
         self.set_row_idx()
-        self.sheet.set_index_width(150)
+        self.sheet.set_index_width(300)
 
         # ✅ DB 체크 상태 반영
         def get_db_status_forRoom(room, row_idx):
