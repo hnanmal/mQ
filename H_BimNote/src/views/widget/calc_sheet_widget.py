@@ -1759,7 +1759,11 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                 map(lambda x: x.get("children")),
                 lambda x: list(chain(*x)),
             )
-            print(f"unique_wm_inPjt_preModi::{unique_wm_inPjt_preModi[0]}")
+            # print(f"unique_wm_inPjt_preModi::{unique_wm_inPjt_preModi}")
+            for i in unique_wm_inPjt_preModi:
+                if "trowel" in i:
+                    print(i)
+
             unique_wm_inPjt_ = []
             for r_ in unique_wm_inPjt_preModi:
                 r = deepcopy(r_)
@@ -1788,7 +1792,9 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                     r[7],  # UoM
                 ]
                 unique_wm_inPjt_.append(new_r)
-            print(f"unique_wm_inPjt::{unique_wm_inPjt_[0]}")
+                # if "SteelTrowel" in r:
+                #     print(r)
+            # print(f"unique_wm_inPjt::{unique_wm_inPjt_[0]}")
             unique_wm_inPjt = go(
                 unique_wm_inPjt_,
                 map(lambda x: "|".join(x)),
@@ -1798,6 +1804,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                 map(lambda x: x.split("|")),
                 list,
             )
+            # print(f"ttt:{unique_wm_inPjt}")
 
         else:
             unique_wm_inPjt = []
@@ -1838,7 +1845,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
             list,
         )
         state.unique_Cat_large = unique_Cat_large
-        # print(f"unique_Cat_large:: {unique_Cat_large}")
+        print(f"unique_Cat_large:: {unique_Cat_large}")
 
         unique_Cat_middle = go(
             WMs_data,
@@ -1861,6 +1868,7 @@ class ReportBuildingTotal_SheetWidget(ttk.Frame):
                 if large[0] == middle[0]:
                     grp_row = []
                     for wm_row in unique_wm_inBuilding_withCalc:
+                        # print(wm_row)
                         if "".join([middle[0], middle[2]]) in wm_row[0]:
                             if (
                                 len(wm_row) > 8

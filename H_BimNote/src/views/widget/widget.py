@@ -434,6 +434,7 @@ class Builing_select_combobox:
             values=self.combovalues,
             bootstyle="danger",
             state="readonly",
+            width=50,
         )
         self.combobox.pack(side="left", anchor="nw", padx=5)
 

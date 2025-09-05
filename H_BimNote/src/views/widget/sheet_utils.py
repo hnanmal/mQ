@@ -3006,24 +3006,43 @@ class Project_WM_perRVT_SheetView:
 
     def handle_row_insert(self, event):
         """Handle the End_Insert_row event to add 'etc' in the first column of the new row."""
-        newly_added_row = list(event["added"]["rows"]["index"].keys())[
+        print("handle_row_insert 시작")
+        print(event)
+        newly_added_row = list(event["added"]["rows"]["table"].keys())[
             0
         ]  # Get the index of the newly added row
         # print(event)
-        # print(newly_added_row)
+        print(newly_added_row)
 
         pjt_assign_famlist_tree = self.state.pjt_assign_famlist.tree
+        # print(f"pjt_assign_famlist_tree: {pjt_assign_famlist_tree}")
         selected_std_id = pjt_assign_famlist_tree.selection()
+        # print(f"selected_std_id: {selected_std_id}")
         selected_std_name = pjt_assign_famlist_tree.item(selected_std_id, "values")[3]
-        # print(pjt_assign_famlist_tree.item(selected_std_id, "values"))
+
+        seleceted_std_calctype = pjt_assign_famlist_tree.item(
+            selected_std_id, "values"
+        )[8]
+
+        print(pjt_assign_famlist_tree.item(selected_std_id, "values"))
+        print(f"selected_std_name: {selected_std_name}")
 
         if newly_added_row is not None:
-            self.sheet.set_cell_data(
-                newly_added_row, 0, "etc"
-            )  # Set "etc" in the first column of the new row
-            self.sheet.set_cell_data(
-                newly_added_row, 1, selected_std_name
-            )  # Set "etc" in the first column of the new row
+            self.sheet.set_row_data(
+                newly_added_row,
+                (
+                    "etc",
+                    selected_std_name,
+                    f"Tmp-Grp | Tmp-Item",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    seleceted_std_calctype,
+                ),
+                redraw=True,
+            )
             self.sheet.refresh()  # Refresh the sheet to reflect changes
 
     def setup_sheet(self):

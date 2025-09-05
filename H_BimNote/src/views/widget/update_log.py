@@ -42,8 +42,13 @@ def open_update_log_newWindow():
 
 
 update_log = """
-🔳 v1.3.5 (2025-xx-xx)
+🔳 v1.3.5 (2025-09-05)
     - Project Input > Project Interior Matrix 좌측 열의 기본 폭 수정 (150->300)
+    - Project Family Assign > Work Master 장바구니 위젯에서 신규 행 생성 시 자동으로 etc 부여 안되는 현상 수정
+    - Project Family Assign > Work Master 장바구니 위젯에서 신규 행 생성 시 자동으로 산출유형 부여하도록 개선
+    - Project GWM/SWM 에서 패밀리 리스트 할당되지 않은 항목 복사시 화면 업데이트 안되던 현상 수정
+    - 빌딩 선택 콤보박스 폭 넓게 수정 20 -> 50
+    
     
 🔳 v1.3.4 (2025-08-01)
     - 패밀리리스트 항목 번호 알파벳 포함 항목들 정렬 문제 해결

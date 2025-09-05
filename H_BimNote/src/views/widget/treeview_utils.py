@@ -1581,7 +1581,10 @@ class TeamStd_GWMTreeView:
             # name_depth=[1, 2],
         )
 
-        self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+        try:
+            self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+        except:
+            pass
 
         copied_path = deepcopy(path)
         copied_path[-1] = new_name
@@ -2564,8 +2567,10 @@ class TeamStd_SWMTreeView:
             name_depth=2,
             # name_depth=[1, 2],
         )
-
-        self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+        try:
+            self.update_copying_stdType_wmItem_in(copied_node, parent_item_name)
+        except:
+            pass
 
         copied_path = deepcopy(path)
         copied_path[-1] = new_name
