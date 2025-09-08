@@ -42,6 +42,17 @@ def open_update_log_newWindow():
 
 
 update_log = """
+🔳 v1.3.7 (2025-09-08)
+    - Q'ty Report by Group 탭에서 GUID 칼럼을 '타입별 부재수' 로 변경하고 해당 개수 자동 산출하도록 수정
+    - Project GWM/SWM 탭에서 G-WM/S-WM 칼럼의 값을 수정하면 wm 할당이 풀리는 문제 해결
+    
+🔳 v1.3.6 (2025-09-08)
+    - common-input 탭 내용 수정시 db 수정은 되지만 뷰 업데이트가 안되는 현상 수정
+    - Q'ty Report by Meber 탭에 Export Excel 버튼 추가
+    - Q'ty Report by Group 탭에 Export Excel 버튼 추가
+    - Q'ty Report by Group 탭을 부재 계산에 반영된 타입 정보를 보여주는 보고서 탭으로 개편
+      (구버전 대의 etc 로 생성하여 표준타입 정보가 없는 경우 에러 발생하여 빈화면 출력되므로 확인필요)
+    
 🔳 v1.3.5 (2025-09-05)
     - Project Input > Project Interior Matrix 좌측 열의 기본 폭 수정 (150->300)
     - Project Family Assign > Work Master 장바구니 위젯에서 신규 행 생성 시 자동으로 etc 부여 안되는 현상 수정

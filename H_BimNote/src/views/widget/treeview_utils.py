@@ -1334,6 +1334,7 @@ class TeamStd_GWMTreeView:
         return target_parent_nodes
 
     def update_editing_stdType_GWMSWM_in(self, new_name):
+        mode = self.data_kind.split("-")[-1]
         state = self.state
         std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
             "children"
@@ -1342,6 +1343,32 @@ class TeamStd_GWMTreeView:
         parent_id = self.treeview.tree.parent(selected_id)
         old_name = self.treeview.tree.item(selected_id, "text")
 
+        # project-GWMSWM 업데이트
+        pjt_GWMSWM_db = state.team_std_info[f"project-{mode}"]
+        parent_name = self.treeview.tree.item(parent_id, "text")
+        children_names = go(
+            self.treeview.tree.get_children(selected_id),
+            list,
+            map(lambda x: self.treeview.tree.item(x, "text")),
+            list,
+        )
+        exist_pathes = go(
+            children_names,
+            map(lambda x: " | ".join([parent_name, old_name, x])),
+            list,
+        )
+        new_pathes = go(
+            children_names,
+            map(lambda x: " | ".join([parent_name, new_name, x])),
+            list,
+        )
+
+        print(f"exist_pathes::{exist_pathes}")
+
+        for exist_path, new_path in zip(exist_pathes, new_pathes):
+            pjt_GWMSWM_db[new_path] = pjt_GWMSWM_db[exist_path]
+
+        # std-familylist 업데이트
         target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
             std_familylist_db,
             old_name,
@@ -1385,6 +1412,8 @@ class TeamStd_GWMTreeView:
                 path,
                 new_name,
             )
+
+        # project-assigntype 업데이트 필요
 
         state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
@@ -2322,6 +2351,7 @@ class TeamStd_SWMTreeView:
         return target_parent_nodes
 
     def update_editing_stdType_GWMSWM_in(self, new_name):
+        mode = self.data_kind.split("-")[-1]
         state = self.state
         std_familylist_db = state.team_std_info["std-familylist"]["children"][0][
             "children"
@@ -2330,6 +2360,32 @@ class TeamStd_SWMTreeView:
         parent_id = self.treeview.tree.parent(selected_id)
         old_name = self.treeview.tree.item(selected_id, "text")
 
+        # project-GWMSWM 업데이트
+        pjt_GWMSWM_db = state.team_std_info[f"project-{mode}"]
+        parent_name = self.treeview.tree.item(parent_id, "text")
+        children_names = go(
+            self.treeview.tree.get_children(selected_id),
+            list,
+            map(lambda x: self.treeview.tree.item(x, "text")),
+            list,
+        )
+        exist_pathes = go(
+            children_names,
+            map(lambda x: " | ".join([parent_name, old_name, x])),
+            list,
+        )
+        new_pathes = go(
+            children_names,
+            map(lambda x: " | ".join([parent_name, new_name, x])),
+            list,
+        )
+
+        print(f"exist_pathes::{exist_pathes}")
+
+        for exist_path, new_path in zip(exist_pathes, new_pathes):
+            pjt_GWMSWM_db[new_path] = pjt_GWMSWM_db[exist_path]
+
+        # std-familylist 업데이트
         target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
             std_familylist_db,
             old_name,
@@ -2676,7 +2732,9 @@ class TeamStd_CommonInputTreeView:
         self.data_kind = data_kind
 
         self.treeDataManager = TreeDataManager_treeview(state, self)
-        self.state_observer = StateObserver(state, lambda e: self.update(e, view_level))
+        self.state_observer = StateObserver(
+            state, lambda e: self.update(e, view_level), tag="common-input"
+        )
 
         self.selected_item = tk.StringVar()
         self.selected_item.trace_add("write", state._notify_selected_change)

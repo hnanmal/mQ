@@ -145,11 +145,6 @@ class SearchManager_report_Group(SearchManager):
             print("No matches found.")
 
     def cycle_through_matches(self):
-        # self.search_and_scroll()
-        # if not self.matched_rows:
-        #     return
-        # if self.current_match_index == 0:
-        #     self.search_and_scroll()
         if self.previous_query != self.search_entry.get().strip().lower():
             self.matched_rows.clear()
             self.current_match_index = 0  # Reset index
@@ -248,6 +243,15 @@ class ReportMember_SheetWidget(ttk.Frame):
 
         # Add search functionality
         self.search_manager = SearchManager(self.control_frame, self.sheet)
+
+        # Create Extract Excel Button
+        export_btn = ttk.Button(
+            self.control_frame,
+            text="Export to Excel",
+            command=self.export_tksheet_to_excel,
+            bootstyle="success-outline",
+        )
+        export_btn.pack(side="left", padx=100)
 
         # 상태 변경 감지를 위한 옵저버 설정
         self.state_observer = StateObserver(state, lambda e: self.update(e))
@@ -674,6 +678,94 @@ class ReportMember_SheetWidget(ttk.Frame):
         self.set_colums_widths()
         self.sheet.redraw()
 
+    def export_tksheet_to_excel(self):
+        """tksheet 위젯 데이터를 엑셀 파일로 저장하며 서식도 적용"""
+        state = self.state
+        sheet = self.sheet
+
+        brief_pjtName = state.team_std_info.get("project-info").get("abbr")
+        brief_buildingName = go(
+            state.current_building.get(),
+            lambda x: x.split(" "),
+            map(lambda x: x[0]),
+            lambda x: "".join(x),
+        )
+
+        # 파일 저장 경로 선택
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx")],
+            title="Save as Excel",
+            initialfile=f"{brief_pjtName}_{brief_buildingName}-Members Report",
+        )
+
+        if not file_path:  # 사용자가 취소한 경우
+            return
+
+        # 새로운 워크북 생성
+        wb = openpyxl.Workbook()
+        ws = wb.active
+
+        ws.title = f"{brief_buildingName}-Members Report"
+
+        # 헤더 가져오기
+        headers = sheet.headers()
+
+        # 1. 엑셀 첫 번째 행에 헤더 입력
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+
+            # 헤더 스타일 (Bold, 가운데 정렬)
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(
+                horizontal="center", vertical="center", wrap_text=True
+            )
+
+            # 헤더 배경색 (회색)
+            cell.fill = PatternFill(
+                start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+            )
+
+        # 2. tksheet 데이터 가져오기 (헤더 제외)
+        data = sheet.get_sheet_data()
+        column_widths = sheet.get_column_widths()
+
+        # tksheet 셀 스타일 가져오기 (배경색, 글꼴, 정렬)
+        for row_idx, row_data in enumerate(data, start=2):
+            for col_idx, cell_value in enumerate(row_data, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+
+                # 정렬 설정
+                cell.alignment = Alignment(
+                    horizontal="left", vertical="center", wrap_text=True
+                )
+
+                # 기본 폰트 설정 (Calibri, Bold)
+                cell.font = Font(name="Calibri", size=9, bold=False)
+
+        # 컬럼 너비 조정
+        for col_idx, width in enumerate(column_widths, start=1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = (
+                width / 7
+            )  # Excel 너비 조정
+
+        # 엑셀 파일 저장
+        wb.save(file_path)
+        print(f"엑셀 파일 저장 완료: {file_path}")
+
+        # 6. 메시지 박스 띄우기
+        open_file = messagebox.askyesno(
+            "저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+        )
+
+        # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
+        if open_file:
+            try:
+                os.startfile(file_path)  # Windows에서 엑셀 파일 열기
+                # subprocess.Popen(["start", file_path])
+            except Exception as e:
+                messagebox.showerror("오류", f"파일을 열 수 없습니다.\n{e}")
+
 
 class ReportGroup_SheetWidget(ttk.Frame):
     def __init__(self, state, parent, data_kind=None, *args, **kwargs):
@@ -734,6 +826,30 @@ class ReportGroup_SheetWidget(ttk.Frame):
         # self.search_manager = SearchManager(self.control_frame, self.sheet)
         self.search_manager = SearchManager_report_Group(self.control_frame, self.sheet)
 
+        self.only_types_btn = ttk.Button(
+            self.control_frame,
+            text="show only types",
+            command=lambda: self.update(mode="only_types"),
+            bootstyle="info",
+        )
+        self.only_types_btn.pack(side="left", anchor="w", padx=5)
+        self.reset_btn = ttk.Button(
+            self.control_frame,
+            text="reset view",
+            command=lambda: self.update(),
+            bootstyle="info",
+        )
+        self.reset_btn.pack(side="left", anchor="w", padx=5)
+
+        # Create Extract Excel Button
+        export_btn = ttk.Button(
+            self.control_frame,
+            text="Export to Excel",
+            command=self.export_tksheet_to_excel,
+            bootstyle="success-outline",
+        )
+        export_btn.pack(side="left", padx=100)
+
         # 상태 변경 감지를 위한 옵저버 설정
         self.state_observer = StateObserver(state, lambda e: self.update(e))
 
@@ -742,7 +858,7 @@ class ReportGroup_SheetWidget(ttk.Frame):
             "표준타입번호",
             "표준타입",
             "name",
-            "GUID",
+            "타입별 부재수",
             "분류",
             "상세분류",
             "wm_code",
@@ -775,8 +891,8 @@ class ReportGroup_SheetWidget(ttk.Frame):
                     70,  # 표준타입번호
                     140,  # 표준타입
                     200,  # name
-                    40,  # GUID
-                    # 150,  # GUID
+                    70,  # 타입별 부재수
+                    # 150,  # 타입별 부재수
                     40,  # 분류
                     180,  # 상세분류
                     100,  # wm_code
@@ -798,7 +914,7 @@ class ReportGroup_SheetWidget(ttk.Frame):
             default_row_height=33,
         )
 
-    def update(self, event=None):
+    def update(self, event=None, mode=None):
         """Update the Sheet widget whenever the state changes."""
         state = self.state
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
@@ -814,8 +930,10 @@ class ReportGroup_SheetWidget(ttk.Frame):
         self.total_data = self.data + self.manual_data
 
         # Formatting to Grouped form
-        self.grped_total_data = self.format_data(self.total_data)
-        print(f"self.grped_total_data::{self.grped_total_data[0]}")
+        if mode == "only_types":
+            self.grped_total_data = self.format_data_onlyTypes(self.total_data)
+        elif not mode:
+            self.grped_total_data = self.format_data(self.total_data)
 
         # Set headers and data
         self.sheet.set_sheet_data(
@@ -826,11 +944,6 @@ class ReportGroup_SheetWidget(ttk.Frame):
         )
         # self.sheet.headers(self.column_headers)
 
-        # # Reinitialize dropdowns
-        # self.add_dropdowns()
-
-        # self.clear_filters()
-
         # # Ensure cell sizes and redraw
         self.set_colums_widths()
         self.sheet.redraw()
@@ -838,31 +951,27 @@ class ReportGroup_SheetWidget(ttk.Frame):
         state.log_widget.write(f"{self.__class__.__name__} > update 메소드 종료")
         print(f"{self.__class__.__name__} > update 메소드 종료")
 
-    def format_data(self, data):
+    def format_data_onlyTypes(self, data):
         """
         Processes hierarchical tabular data and groups it by the first two columns.
         """
         try:
-            # structured_data = []
-            # for row in data:
-            #     structured_data.append(row)
-
             sorted_data = go(
                 data,
                 lambda x: sorted(x, key=lambda c: float(c[1])),
             )
-
+            # print(f"sorted_data:: {sorted_data}")
             grouped_data = {}
 
             # for row in structured_data:
             for row in sorted_data:
-                category, sub1, sub2, sub3, sub4, sub5 = (
-                    row[0],
-                    row[1],
-                    row[2],
-                    row[4],
-                    row[5],
-                    row[3],
+                (category, sub1, sub2, sub3, sub4, sub5) = (
+                    row[0],  # 카테고리
+                    row[1],  # 표준타입번호
+                    row[2],  # 표준타입 명
+                    row[4],  # revit type
+                    row[5],  # GUID
+                    row[3],  # 분류(GWM/SWM)
                 )
                 if category not in grouped_data:
                     grouped_data[category] = {}
@@ -874,6 +983,7 @@ class ReportGroup_SheetWidget(ttk.Frame):
                     grouped_data[category][sub1][sub2][sub3] = {}
                 if sub4 not in grouped_data[category][sub1][sub2][sub3]:
                     grouped_data[category][sub1][sub2][sub3][sub4] = {}
+                    # grouped_data[category][sub1][sub2][sub3][sub4] = []
                 if sub5 not in grouped_data[category][sub1][sub2][sub3][sub4]:
                     grouped_data[category][sub1][sub2][sub3][sub4][sub5] = []
                 grouped_data[category][sub1][sub2][sub3][sub4][sub5].append(row[6:])
@@ -895,22 +1005,162 @@ class ReportGroup_SheetWidget(ttk.Frame):
                     # sheet.append(["", "", "", sub2])  # Third level header
 
                     for sub3, sub4s in sub3s.items():
-                        sheet.append(["", "", "", sub3])  # Third level header
-
-                        for sub4, sub5s in sub4s.items():
-                            sheet.append(["", "", "", "", sub4])  # Third level header
-
-                            for sub5, rows in sub5s.items():
-                                sheet.append(
-                                    ["", "", "", "", "", sub5]
-                                )  # Third level header
-
-                                for row in rows:
-                                    sheet.append(
-                                        ["", "", "", "", "", "", *row]
-                                    )  # Data rows indented
+                        sheet.append(
+                            ["", "", "", sub3, len(sub4s.keys())]
+                        )  # Third level header
 
         return sheet
+
+    def format_data(self, data):
+        """
+        Processes hierarchical tabular data and groups it by the first two columns.
+        """
+        try:
+            sorted_data = go(
+                data,
+                lambda x: sorted(x, key=lambda c: float(c[1])),
+            )
+            # print(f"sorted_data:: {sorted_data}")
+            grouped_data = {}
+
+            # for row in structured_data:
+            for row in sorted_data:
+                (category, sub1, sub2, sub3, sub4, sub5) = (
+                    row[0],  # 카테고리
+                    row[1],  # 표준타입번호
+                    row[2],  # 표준타입 명
+                    row[4],  # revit type
+                    row[5],  # GUID
+                    row[3],  # 분류(GWM/SWM)
+                )
+                if category not in grouped_data:
+                    grouped_data[category] = {}
+                if sub1 not in grouped_data[category]:
+                    grouped_data[category][sub1] = {}
+                if sub2 not in grouped_data[category][sub1]:
+                    grouped_data[category][sub1][sub2] = {}
+                if sub3 not in grouped_data[category][sub1][sub2]:
+                    grouped_data[category][sub1][sub2][sub3] = {}
+                if sub4 not in grouped_data[category][sub1][sub2][sub3]:
+                    grouped_data[category][sub1][sub2][sub3][sub4] = {}
+                    # grouped_data[category][sub1][sub2][sub3][sub4] = []
+                if sub5 not in grouped_data[category][sub1][sub2][sub3][sub4]:
+                    grouped_data[category][sub1][sub2][sub3][sub4][sub5] = []
+                grouped_data[category][sub1][sub2][sub3][sub4][sub5].append(row[6:])
+
+        except:
+            grouped_data = {}
+
+        print(f"grouped_data:: {grouped_data}")
+
+        # Populate Excel with hierarchical data
+        sheet = []
+        for category, sub1s in grouped_data.items():
+            sheet.append([category])  # First level header
+
+            for sub1, sub2s in sub1s.items():
+                sub2 = list(sub2s.keys())[0]
+                sheet.append(["", sub1, sub2])  # Second level header
+
+                # for sub2, sub3s in sub2s.items():
+                for sub2, sub3s in sub2s.items():
+                    # sheet.append(["", "", "", sub2])  # Third level header
+                    for sub3, sub4s in sub3s.items():
+                        sheet.append(
+                            ["", "", "", sub3, len(sub4s.keys())]
+                        )  # Third level header
+                        sub4, sub5s = list(sub4s.items())[0]
+                        for sub5, rows in sub5s.items():
+                            sheet.append(["", "", "", "", "", sub5])  # Thir
+                            tmp = []
+                            for row in rows:
+                                res_row = [
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    "",
+                                    *row[:7],
+                                    "",
+                                    "",
+                                    *row[9:11],
+                                ]
+                                if res_row not in tmp:
+                                    tmp.append(res_row)
+                                    sheet.append(res_row)  # Data rows indented
+
+        return sheet
+
+    # def format_data(self, data):
+    #     """
+    #     Processes hierarchical tabular data and groups it by the first two columns.
+    #     """
+    #     try:
+    #         sorted_data = go(
+    #             data,
+    #             lambda x: sorted(x, key=lambda c: float(c[1])),
+    #         )
+    #         print(f"sorted_data:: {sorted_data}")
+    #         grouped_data = {}
+
+    #         # for row in structured_data:
+    #         for row in sorted_data:
+    #             category, sub1, sub2, sub3, sub4, sub5 = (
+    #                 row[0],
+    #                 row[1],
+    #                 row[2],
+    #                 row[4],
+    #                 row[5],
+    #                 row[3],
+    #             )
+    #             if category not in grouped_data:
+    #                 grouped_data[category] = {}
+    #             if sub1 not in grouped_data[category]:
+    #                 grouped_data[category][sub1] = {}
+    #             if sub2 not in grouped_data[category][sub1]:
+    #                 grouped_data[category][sub1][sub2] = {}
+    #             if sub3 not in grouped_data[category][sub1][sub2]:
+    #                 grouped_data[category][sub1][sub2][sub3] = {}
+    #             if sub4 not in grouped_data[category][sub1][sub2][sub3]:
+    #                 grouped_data[category][sub1][sub2][sub3][sub4] = {}
+    #             if sub5 not in grouped_data[category][sub1][sub2][sub3][sub4]:
+    #                 grouped_data[category][sub1][sub2][sub3][sub4][sub5] = []
+    #             grouped_data[category][sub1][sub2][sub3][sub4][sub5].append(row[6:])
+
+    #     except:
+    #         grouped_data = {}
+
+    #     # Populate Excel with hierarchical data
+    #     sheet = []
+    #     for category, sub1s in grouped_data.items():
+    #         sheet.append([category])  # First level header
+
+    #         for sub1, sub2s in sub1s.items():
+    #             sub2 = list(sub2s.keys())[0]
+    #             sheet.append(["", sub1, sub2])  # Second level header
+
+    #             # for sub2, sub3s in sub2s.items():
+    #             for sub2, sub3s in sub2s.items():
+    #                 # sheet.append(["", "", "", sub2])  # Third level header
+
+    #                 for sub3, sub4s in sub3s.items():
+    #                     sheet.append(["", "", "", sub3])  # Third level header
+
+    #                     for sub4, sub5s in sub4s.items():
+    #                         sheet.append(["", "", "", "", sub4])  # Third level header
+
+    #                         for sub5, rows in sub5s.items():
+    #                             sheet.append(
+    #                                 ["", "", "", "", "", sub5]
+    #                             )  # Third level header
+
+    #                             for row in rows:
+    #                                 sheet.append(
+    #                                     ["", "", "", "", "", "", *row]
+    #                                 )  # Data rows indented
+
+    #     return sheet
 
     def get_manula_item_data(self):
         ## dynamo 로직 준용
@@ -1152,6 +1402,94 @@ class ReportGroup_SheetWidget(ttk.Frame):
             # self.sheet.set_sheet_data([])
             self.data = []
             print(f"Error loading data: {e}")
+
+    def export_tksheet_to_excel(self):
+        """tksheet 위젯 데이터를 엑셀 파일로 저장하며 서식도 적용"""
+        state = self.state
+        sheet = self.sheet
+
+        brief_pjtName = state.team_std_info.get("project-info").get("abbr")
+        brief_buildingName = go(
+            state.current_building.get(),
+            lambda x: x.split(" "),
+            map(lambda x: x[0]),
+            lambda x: "".join(x),
+        )
+
+        # 파일 저장 경로 선택
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel Files", "*.xlsx")],
+            title="Save as Excel",
+            initialfile=f"{brief_pjtName}_{brief_buildingName}-Types Report",
+        )
+
+        if not file_path:  # 사용자가 취소한 경우
+            return
+
+        # 새로운 워크북 생성
+        wb = openpyxl.Workbook()
+        ws = wb.active
+
+        ws.title = f"{brief_buildingName}-Types Report"
+
+        # 헤더 가져오기
+        headers = sheet.headers()
+
+        # 1. 엑셀 첫 번째 행에 헤더 입력
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+
+            # 헤더 스타일 (Bold, 가운데 정렬)
+            cell.font = Font(name="Calibri", size=10, bold=True)
+            cell.alignment = Alignment(
+                horizontal="center", vertical="center", wrap_text=True
+            )
+
+            # 헤더 배경색 (회색)
+            cell.fill = PatternFill(
+                start_color="D9D9D9", end_color="D9D9D9", fill_type="solid"
+            )
+
+        # 2. tksheet 데이터 가져오기 (헤더 제외)
+        data = sheet.get_sheet_data()
+        column_widths = sheet.get_column_widths()
+
+        # tksheet 셀 스타일 가져오기 (배경색, 글꼴, 정렬)
+        for row_idx, row_data in enumerate(data, start=2):
+            for col_idx, cell_value in enumerate(row_data, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=cell_value)
+
+                # 정렬 설정
+                cell.alignment = Alignment(
+                    horizontal="left", vertical="center", wrap_text=True
+                )
+
+                # 기본 폰트 설정 (Calibri, Bold)
+                cell.font = Font(name="Calibri", size=9, bold=False)
+
+        # 컬럼 너비 조정
+        for col_idx, width in enumerate(column_widths, start=1):
+            ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = (
+                width / 7
+            )  # Excel 너비 조정
+
+        # 엑셀 파일 저장
+        wb.save(file_path)
+        print(f"엑셀 파일 저장 완료: {file_path}")
+
+        # 6. 메시지 박스 띄우기
+        open_file = messagebox.askyesno(
+            "저장 완료", "엑셀 파일 저장이 완료되었습니다.\n파일을 여시겠습니까?"
+        )
+
+        # 7. 사용자가 "예(Yes)"를 선택한 경우 엑셀 파일 열기
+        if open_file:
+            try:
+                os.startfile(file_path)  # Windows에서 엑셀 파일 열기
+                # subprocess.Popen(["start", file_path])
+            except Exception as e:
+                messagebox.showerror("오류", f"파일을 열 수 없습니다.\n{e}")
 
 
 class ReportBuildingTotal_SheetWidget(ttk.Frame):

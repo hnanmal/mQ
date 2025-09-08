@@ -149,6 +149,7 @@ class TreeviewEditor:
                 # "GWM",
                 # "SWM",
                 "calcDict",
+                "common-input",
             ],
         )
 
