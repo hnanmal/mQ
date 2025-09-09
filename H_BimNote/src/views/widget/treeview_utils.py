@@ -811,7 +811,7 @@ class BaseTreeView:
             current_item = parent_id
 
         # Debug: print the final indices
-        self.state.log_widget.write(f"Final Indices: {indices}")
+        # self.state.log_widget.write(f"Final Indices: {indices}")
         return indices
 
     def select_item_by_indices(self, indices):
@@ -984,7 +984,7 @@ class TeamStd_GWMTreeView:
 
     def update(self, event=None, view_level=None):
         state = self.state
-        self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
+        # self.state.log_widget.write(f"{self.__class__.__name__} > update 메소드 시작")
 
         selected_item_id = self.treeview.tree.focus()
         origin_indices = None
@@ -1414,9 +1414,62 @@ class TeamStd_GWMTreeView:
             )
 
         # project-assigntype 업데이트 필요
+        pjt_assign_db = state.team_std_info["project-assigntype"]["children"]
+
+        for idx, asgn_item in enumerate(pjt_assign_db):
+            try:
+                pjt_assign_db[idx] = self.update_GWMSWM_editing_to_pjtAssign(
+                    exist_pathes, new_pathes, asgn_item
+                )
+                # print("asgn update succes")
+            except:
+                pass
+                # print("asgn update failed")
 
         state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
+
+    def update_GWMSWM_editing_to_pjtAssign(self, exist_pathes, new_pathes, asgn_item):
+        mode = self.data_kind.split("-")[-1]
+        state = self.state
+
+        exist_brief_pathes = go(
+            exist_pathes,
+            map(lambda x: x.split(" | ")),
+            map(lambda x: x[1:]),
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        # print(f"exist_pathes::{exist_pathes}")
+        # print(f"exist_brief_pathes::{exist_brief_pathes}")
+        new_brief_pathes = go(
+            new_pathes,
+            map(lambda x: x.split(" | ")),
+            map(lambda x: x[1:]),
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        # print(f"new_pathes::{new_pathes}")
+        # print(f"new_brief_pathes::{new_brief_pathes}")
+        asgn_children = asgn_item["children"]
+
+        for idx, item in enumerate(asgn_children):
+            for old_brief_name, new_brief_name in zip(
+                exist_brief_pathes, new_brief_pathes
+            ):
+                # print(f"item::{item}")
+                # print(f"mode:{mode}")
+                # print(f"old_brief_name:{old_brief_name}")
+                if mode == item[0] and old_brief_name == item[2]:
+                    print("찾았다!")
+                    try:
+                        print("asgn 변경시도")
+                        item[2] = new_brief_name
+                        # asgn_children[idx] = item
+                        print(f"asgn 변경성공 {old_brief_name} to {new_brief_name}")
+                    except:
+                        print(f"asgn 변경실패 {old_brief_name} to {new_brief_name}")
+        return asgn_item
 
     def update_editing_stdType_wmItem_in(self, new_name):
         mode = self.data_kind.split("-")[-1]
@@ -1490,6 +1543,19 @@ class TeamStd_GWMTreeView:
                 path,
                 new_name,
             )
+
+        # project-assigntype 업데이트 필요
+        pjt_assign_db = state.team_std_info["project-assigntype"]["children"]
+
+        for idx, asgn_item in enumerate(pjt_assign_db):
+            try:
+                pjt_assign_db[idx] = self.update_GWMSWM_editing_to_pjtAssign(
+                    [old_path_str], [new_path_str], asgn_item
+                )
+                # print("asgn update succes")
+            except:
+                pass
+                # print("asgn update failed")
 
         state.observer_manager.notify_observers(state, targets=["GWM", "famlist"])
         return target_parent_nodes
@@ -2430,8 +2496,62 @@ class TeamStd_SWMTreeView:
                 new_name,
             )
 
+        # project-assigntype 업데이트 필요
+        pjt_assign_db = state.team_std_info["project-assigntype"]["children"]
+
+        for idx, asgn_item in enumerate(pjt_assign_db):
+            try:
+                pjt_assign_db[idx] = self.update_GWMSWM_editing_to_pjtAssign(
+                    exist_pathes, new_pathes, asgn_item
+                )
+                # print("asgn update succes")
+            except:
+                pass
+                # print("asgn update failed")
+
         state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes
+
+    def update_GWMSWM_editing_to_pjtAssign(self, exist_pathes, new_pathes, asgn_item):
+        mode = self.data_kind.split("-")[-1]
+        state = self.state
+
+        exist_brief_pathes = go(
+            exist_pathes,
+            map(lambda x: x.split(" | ")),
+            map(lambda x: x[1:]),
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        # print(f"exist_pathes::{exist_pathes}")
+        # print(f"exist_brief_pathes::{exist_brief_pathes}")
+        new_brief_pathes = go(
+            new_pathes,
+            map(lambda x: x.split(" | ")),
+            map(lambda x: x[1:]),
+            map(lambda x: " | ".join(x)),
+            list,
+        )
+        # print(f"new_pathes::{new_pathes}")
+        # print(f"new_brief_pathes::{new_brief_pathes}")
+        asgn_children = asgn_item["children"]
+
+        for idx, item in enumerate(asgn_children):
+            for old_brief_name, new_brief_name in zip(
+                exist_brief_pathes, new_brief_pathes
+            ):
+                # print(f"item::{item}")
+                # print(f"mode:{mode}")
+                # print(f"old_brief_name:{old_brief_name}")
+                if mode == item[0] and old_brief_name == item[2]:
+                    try:
+                        print("asgn 변경시도")
+                        item[2] = new_brief_name
+                        # asgn_children[idx] = item
+                        print(f"asgn 변경성공 {old_brief_name} to {new_brief_name}")
+                    except:
+                        print(f"asgn 변경실패 {old_brief_name} to {new_brief_name}")
+        return asgn_item
 
     def update_editing_stdType_wmItem_in(self, new_name):
         mode = self.data_kind.split("-")[-1]
@@ -2505,6 +2625,19 @@ class TeamStd_SWMTreeView:
                 path,
                 new_name,
             )
+
+        # project-assigntype 업데이트 필요
+        pjt_assign_db = state.team_std_info["project-assigntype"]["children"]
+
+        for idx, asgn_item in enumerate(pjt_assign_db):
+            try:
+                pjt_assign_db[idx] = self.update_GWMSWM_editing_to_pjtAssign(
+                    [old_path_str], [new_path_str], asgn_item
+                )
+                # print("asgn update succes")
+            except:
+                pass
+                # print("asgn update failed")
 
         state.observer_manager.notify_observers(state, targets=["SWM", "famlist"])
         return target_parent_nodes

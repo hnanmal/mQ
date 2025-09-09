@@ -384,8 +384,8 @@ class pjt_interior_matrix_widget:
                 lambda x: chain(*x),
                 list,
             )
-            print(f"SWMitem_names_ : {SWMitem_names_}")
-            print(f"pjtOnly_Checklist : {pjtOnly_Checklist}")
+            # print(f"SWMitem_names_ : {SWMitem_names_}")
+            # print(f"pjtOnly_Checklist : {pjtOnly_Checklist}")
 
         # floor_usedChecklist, skirt_usedChecklist 등 분리해서 filter_mode 적용
         if filter_mode and mode == "db_update":
@@ -407,7 +407,7 @@ class pjt_interior_matrix_widget:
         self.materials = dict(zip(SWM_names, SWMitem_names))
         self.set_row_idx()
 
-        print(f"[int matrix] self.materials : {self.materials}")
+        # print(f"[int matrix] self.materials : {self.materials}")
 
         if mode == "db_update" or "db_update_pjtOnly":
             self.apply_styles()
@@ -551,9 +551,8 @@ class pjt_interior_matrix_widget:
     def add_assign_forRoom(self, roomName, material_full_name):
         state = self.state
         pjt_SWM_key = " | ".join(["00 Room Finish", material_full_name])
-        print(f"[add_assign_forRoom] pjt_SWM_key {pjt_SWM_key}")
+        # print(f"[add_assign_forRoom] pjt_SWM_key {pjt_SWM_key}")
         pjt_swm_data = state.team_std_info.get("project-SWM")
-        # tgt_wm_data = pjt_swm_data[pjt_SWM_key]
         tgt_wm_data = pjt_swm_data.get(pjt_SWM_key)
         if tgt_wm_data:
             tgt_wm_code = tgt_wm_data[0]
@@ -605,7 +604,7 @@ class pjt_interior_matrix_widget:
         )
 
         tgt_SWM_name, tgt_item_name = material_full_name.split(" | ")
-        print(f"[int matrix] tgt_item_name {tgt_item_name}")
+        # print(f"[int matrix] tgt_item_name {tgt_item_name}")
 
         tgt_item_ = go(
             std_famlist_room_item,
@@ -628,7 +627,7 @@ class pjt_interior_matrix_widget:
         except:
             tgt_std_formula = ""
         # print(f"[int matrix] std_famlist_room_item {std_famlist_room_item}")
-        print(f"[int matrix] tgt_std_formula {tgt_std_formula}")
+        # print(f"[int matrix] tgt_std_formula {tgt_std_formula}")
 
         tgt_calc_type = go(
             std_famlist_room_item[0],
@@ -655,7 +654,7 @@ class pjt_interior_matrix_widget:
                 i["children"].append(add_data_form)
                 i["children"].sort()
 
-        print(f"[add_assign_forRoom] add_data_form {add_data_form}")
+        # print(f"[add_assign_forRoom] add_data_form {add_data_form}")
         return True
 
     def toggle_forPaste(self, event):
@@ -663,20 +662,20 @@ class pjt_interior_matrix_widget:
         print(f"toggle_forPaste {event}")
 
         box_stt = list(event["selection_boxes"].keys())
-        print(f"toggle_forPaste : box_stt {box_stt}")
-        print(f"toggle_forPaste : box_sttType {type(box_stt[0])}")
-        print(f"toggle_forPaste : box_sttType {dir(box_stt[0])}")
+        # print(f"toggle_forPaste : box_stt {box_stt}")
+        # print(f"toggle_forPaste : box_sttType {type(box_stt[0])}")
+        # print(f"toggle_forPaste : box_sttType {dir(box_stt[0])}")
         stt_row = box_stt[0].from_r
         stt_col = box_stt[0].from_c
         paste_data_src = event["data"]
-        print(f"toggle_forPaste : paste_data_src {paste_data_src}")
+        # print(f"toggle_forPaste : paste_data_src {paste_data_src}")
 
         oneCol_Cellcount = len(self.materials.keys()) + len(
             list(chain(*self.materials.values()))
         )
-        print(f"col copy event {event}")
-        print(f"oneCol_Cellcount {oneCol_Cellcount}")
-        print(f"len(paste_data_src) {len(paste_data_src)}")
+        # print(f"col copy event {event}")
+        # print(f"oneCol_Cellcount {oneCol_Cellcount}")
+        # print(f"len(paste_data_src) {len(paste_data_src)}")
         from_c = go(
             event["selection_boxes"],
             lambda x: x.items(),
@@ -691,8 +690,8 @@ class pjt_interior_matrix_widget:
             lambda x: list(x[0])[0],
             lambda x: x.upto_c,
         )
-        print(f"from_c!! {from_c}")
-        print(f"upto_c!! {upto_c}")
+        # print(f"from_c!! {from_c}")
+        # print(f"upto_c!! {upto_c}")
         if upto_c - from_c > 1:
             messagebox.showinfo(
                 "toggle_forPaste",
@@ -764,9 +763,9 @@ class pjt_interior_matrix_widget:
             return
 
         for _row, v in enumerate(paste_data_src):
-            print(f"_row {_row}")
+            # print(f"_row {_row}")
             row = _row + stt_row
-            print(f"row로우 {row}")
+            # print(f"row로우 {row}")
             try:
                 row_dist = [x - row for x in SWM_idxes]
                 min_row_dist = go(
@@ -781,8 +780,8 @@ class pjt_interior_matrix_widget:
                 material_full_name = " | ".join([SWM_name, material_name])
             except:
                 material_full_name = "기준열"
-            print(f"material_full_name!_!  {material_full_name}")
-            print(self.sheet.get_cell_data(row, stt_col))
+            # print(f"material_full_name!_!  {material_full_name}")
+            # print(self.sheet.get_cell_data(row, stt_col))
 
             if v == ["✅"] and material_full_name != "기준열":
                 # add
@@ -799,9 +798,9 @@ class pjt_interior_matrix_widget:
                     try:
                         pjt_SWM_key = " | ".join(["00 Room Finish", material_full_name])
                         self.add_assign_forRoom(roomName_asDBformat, material_full_name)
-                        print(f"{row}행 데이터 {v} 추가 완료")
+                        # print(f"{row}행 데이터 {v} 추가 완료")
                     except:
-                        print(f"{row}행 데이터 {v} 추가 실패")
+                        # print(f"{row}행 데이터 {v} 추가 실패")
                         messagebox.showinfo(
                             "toggle_forPaste",
                             f"{row}행 데이터 {v} 추가 실패",
@@ -833,7 +832,7 @@ class pjt_interior_matrix_widget:
             row, col = r_c
         else:
             row, col = selected_cells[0]
-        print(f"[int matrix] self.material_rows : {self.material_rows}")
+        # print(f"[int matrix] self.material_rows : {self.material_rows}")
 
         SWM_names = [
             "Floor",
@@ -876,8 +875,8 @@ class pjt_interior_matrix_widget:
             list,
         )
 
-        print(f"[int matrix] tgt_room_material_names : {tgt_room_material_names}")
-        print(f"[int matrix] material_name : {material_name}")
+        # print(f"[int matrix] tgt_room_material_names : {tgt_room_material_names}")
+        # print(f"[int matrix] material_name : {material_name}")
 
         # DB 상태에 따라 체크하는 코드를 update로 옮기고,-> 완료
         # 여기서는 더블 클릭에 따라 DB를 조작하도록

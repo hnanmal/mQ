@@ -42,9 +42,14 @@ def open_update_log_newWindow():
 
 
 update_log = """
-🔳 v1.3.7 (2025-09-08)
+🔳 v1.3.8 (2025-09-xx)
+    - 프로젝트 약자 변경시 Project-Input > Project Family Assign 탭 까지 데이터 변경 연동
+
+🔳 v1.3.7 (2025-09-09)
     - Q'ty Report by Group 탭에서 GUID 칼럼을 '타입별 부재수' 로 변경하고 해당 개수 자동 산출하도록 수정
     - Project GWM/SWM 탭에서 G-WM/S-WM 칼럼의 값을 수정하면 wm 할당이 풀리는 문제 해결
+    - Project GWM/SWM 탭에서 G-WM/S-WM 칼럼의 값을 수정하면 Project-Input > Project Family Assign 탭 까지 데이터 변경 연동
+    - Project GWM/SWM 탭에서 Item 칼럼의 값을 수정하면 Project-Input > Project Family Assign 탭 까지 데이터 변경 연동
     
 🔳 v1.3.6 (2025-09-08)
     - common-input 탭 내용 수정시 db 수정은 되지만 뷰 업데이트가 안되는 현상 수정

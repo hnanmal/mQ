@@ -2829,7 +2829,7 @@ class ProjectApply_GWMSWM_Selcet_SheetView:
                                 lambda x: sorted(x, key=lambda x: x["name"]),
                                 list,
                             )
-                            print(f"풀::{pool}")
+                            # print(f"풀::{pool}")
                             wrapped_data_ = go(
                                 pool,
                                 map(lambda x: ["", x["name"], calc_no]),

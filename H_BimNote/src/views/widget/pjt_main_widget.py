@@ -132,12 +132,16 @@ class ProjectInfoWidget:
         pjt_GWMs = self.state.team_std_info.get("project-GWM")
         pjt_SWMs = self.state.team_std_info.get("project-SWM")
         std_famlist = self.state.team_std_info.get("std-familylist")["children"]
+        pjt_assign = self.state.team_std_info.get("project-assigntype")["children"]
 
         self.update_bracketed_value_in_tree(std_GWMs, old_abbr, new_value=new_abbr)
         self.update_bracketed_value_in_tree(std_SWMs, old_abbr, new_value=new_abbr)
         self.update_bracketed_value_in_tree(pjt_GWMs, old_abbr, new_value=new_abbr)
         self.update_bracketed_value_in_tree(pjt_SWMs, old_abbr, new_value=new_abbr)
         self.update_bracketed_value_in_tree(std_famlist, old_abbr, new_value=new_abbr)
+        self.update_bracketed_value_in_pjt_assign(
+            pjt_assign, old_abbr, new_value=new_abbr
+        )
 
         self.state.observer_manager.notify_observers(self.state)
 
@@ -147,6 +151,19 @@ class ProjectInfoWidget:
         """
         pattern = re.escape(f"::[{old_value}]")
         return re.sub(pattern, f"::[{new_value}]", text)
+
+    def update_bracketed_value_in_pjt_assign(self, data, old_value, new_value):
+        # 먼저 항목에 ::[old_value]가 포함된 항목을 찾아냄
+        for item in data:
+            if item.get("children"):
+                for asgn_item in item["children"]:
+                    if old_value in asgn_item[2]:
+                        try:
+                            asgn_item[2] = self.replace_bracketed_value(
+                                asgn_item[2], old_value, new_value
+                            )
+                        except:
+                            pass
 
     def update_bracketed_value_in_tree(self, data, old_value, new_value):
         """
