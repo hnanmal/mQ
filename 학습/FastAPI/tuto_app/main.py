@@ -1,6 +1,7 @@
 # main.py
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi import Depends
 from typing import Dict
 from pydantic import BaseModel
 
@@ -11,16 +12,37 @@ fake_db = ["Alice", "Bob", "Charlie"]
 
 
 # 요청/응답 스키마 정의
-class User(BaseModel):
-    id: int
+class UserIn(BaseModel):
     name: str
     email: str
+    password: str
+
+
+class UserOut(BaseModel):
+    name: str
+    email: str
+
+
+@app.post("/users", response_model=UserOut)
+def create_user(user: UserIn):
+    # password는 저장되지만 클라이언트엔 반환 안 함
+    return user
 
 
 # 모든 유저 조회 (GET /users)
 @app.get("/users")
 def list_users():
     return {"users": fake_users}
+
+
+def get_token_header(x_token: str):
+    if x_token != "mysecret":
+        raise HTTPException(status_code=400, detail="Invalid Token")
+
+
+@app.get("/secure-data")
+def read_secure_data(token: str = Depends(get_token_header)):
+    return {"message": "You are authorized"}
 
 
 # # 특정 유저 조회 (GET /users/{id})
@@ -58,7 +80,7 @@ def get_user(user_id: int):
 #     return {"status": "success", "user": user}  # 4) 응답 반환
 
 
-@app.post("/users")
-def create_user(user: User):
-    fake_db.append(user)
-    return user
+# @app.post("/users")
+# def create_user(user: UserIn):
+#     fake_db.append(user)
+#     return user
