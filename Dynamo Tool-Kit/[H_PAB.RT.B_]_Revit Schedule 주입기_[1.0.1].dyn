@@ -1,0 +1,375 @@
+{
+  "Uuid": "ba506522-221d-489c-bb15-3a39c1c91b2c",
+  "IsCustomNode": false,
+  "Description": "",
+  "Name": "keyschedule_내용 주입기_0.0.1",
+  "ElementResolver": {
+    "ResolutionMap": {}
+  },
+  "Inputs": [
+    {
+      "Id": "240def2625af40a0867e925d0ab8a6c7",
+      "Name": "2. 내용입력",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "Ctrl+A 후 입력",
+      "Description": "Creates a string"
+    },
+    {
+      "Id": "05041b59decd42caa1a9eabc43d0c0a0",
+      "Name": "1. 스케줄 명 입력",
+      "Type": "string",
+      "Type2": "string",
+      "Value": "Ctrl+A 후 입력",
+      "Description": "Creates a string"
+    }
+  ],
+  "Outputs": [],
+  "Nodes": [
+    {
+      "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
+      "Code": "# -*- coding: utf-8 -*-\r\nimport clr, re\r\n\r\n# RevitServices\r\nclr.AddReference('RevitServices')\r\nfrom RevitServices.Persistence import DocumentManager\r\nfrom RevitServices.Transactions import TransactionManager\r\n\r\n# RevitAPI\r\nclr.AddReference('RevitAPI')\r\nfrom Autodesk.Revit.DB import (\r\n    FilteredElementCollector, ViewSchedule, ScheduleSheetInstance,\r\n    SectionType, ElementId, StorageType, Material, UnitUtils\r\n)\r\n\r\ndoc = DocumentManager.Instance.CurrentDBDocument\r\n\r\n# ---------- Inputs ----------\r\ntry:\r\n    unwrap = UnwrapElement\r\nexcept:\r\n    def unwrap(x): return x\r\n\r\nschedule_or_name   = unwrap(IN[0])\r\npaste_text         = IN[1]\r\nstart_row          = IN[2] if len(IN) > 2 and IN[2] is not None else 0\r\nwrite_col_start    = IN[3] if len(IN) > 3 and IN[3] is not None else 1   # 0=KeyName, 보통 1부터 값 채움\r\nmaterial_alias_map = IN[4] if len(IN) > 4 and IN[4] else {}\r\ncreate_mode        = (IN[5] if len(IN) > 5 and IN[5] else \"create\").lower()  # \"create\" / \"upsert\"\r\n\r\n# ---------- Helpers ----------\r\nimport re\r\n\r\ndef parse_table(text):\r\n    if not isinstance(text, str) or not text.strip():\r\n        return []\r\n\r\n    # 줄바꿈 통일\r\n    t = text.replace(\"\\r\\n\", \"\\n\").replace(\"\\r\", \"\\n\").strip(\"\\n\")\r\n\r\n    # 행 시작 패턴: 알파벳+숫자+하이픈 (예: A2-, B1-, C3- 등)\r\n    row_start_pattern = re.compile(r\"^[A-Z]+\\d+-\")\r\n\r\n    # 전체 텍스트를 줄 단위로 나눔\r\n    lines = t.split(\"\\n\")\r\n\r\n    result = []\r\n    current_row_lines = []\r\n\r\n    for line in lines:\r\n        # 탭 기준으로 셀 분리\r\n        cells = line.split(\"\\t\")\r\n        first_cell = cells[0].strip() if cells else \"\"\r\n\r\n        # 행 시작 패턴이면 새로운 행 시작\r\n        if row_start_pattern.match(first_cell):\r\n            if current_row_lines:\r\n                result.append(current_row_lines)\r\n            current_row_lines = [line]\r\n        else:\r\n            current_row_lines.append(line)\r\n\r\n    # 마지막 행 추가\r\n    if current_row_lines:\r\n        result.append(current_row_lines)\r\n\r\n    # 각 행을 셀 단위로 정리\r\n    parsed_rows = []\r\n    for row_lines in result:\r\n        merged_line = \" // \".join(row_lines)\r\n        cells = merged_line.split(\"\\t\")\r\n        cleaned_cells = [re.sub(r\"[\\r\\n]+\", \" // \", c.strip().strip('\"').strip(\"'\")) for c in cells]\r\n        parsed_rows.append(cleaned_cells)\r\n\r\n    return parsed_rows\r\n\r\n\r\n\r\ndef resolve_viewschedule(obj):\r\n    if isinstance(obj, ViewSchedule): return obj, \"ViewSchedule\"\r\n    try:\r\n        if isinstance(obj, ScheduleSheetInstance):\r\n            vs = doc.GetElement(obj.ScheduleId)\r\n            if isinstance(vs, ViewSchedule): return vs, \"ScheduleSheetInstance->ViewSchedule\"\r\n    except: pass\r\n    if isinstance(obj, str):\r\n        name = obj.strip()\r\n        for v in FilteredElementCollector(doc).OfClass(ViewSchedule):\r\n            if v.Name == name: return v, \"ByName\"\r\n    return None, None\r\n\r\ndef get_sections(schedule):\r\n    try: doc.Regenerate()\r\n    except: pass\r\n    td = schedule.GetTableData()\r\n    header = td.GetSectionData(SectionType.Header)\r\n    body   = td.GetSectionData(SectionType.Body)\r\n    return header, body\r\n\r\ndef visible_fields(defn):\r\n    idxs, fields = [], []\r\n    for i in range(defn.GetFieldCount()):\r\n        f = defn.GetField(i)\r\n        if not getattr(f, \"IsHidden\", False):\r\n            idxs.append(i); fields.append(f)\r\n    return idxs, fields\r\n\r\ndef collect_key_elements(schedule):\r\n    return list(FilteredElementCollector(doc, schedule.Id).WhereElementIsNotElementType().ToElements())\r\n\r\ndef material_by_name(name):\r\n    if not name: return None\r\n    real = material_alias_map.get(name, name)\r\n    # 정확 일치\r\n    for m in FilteredElementCollector(doc).OfClass(Material):\r\n        if m.Name == real: return m\r\n    # 대소문자 무시\r\n    real_norm = real.strip().lower()\r\n    for m in FilteredElementCollector(doc).OfClass(Material):\r\n        if m.Name.strip().lower() == real_norm: return m\r\n    return None\r\n\r\ndef set_param(param, text):\r\n    if param is None or param.IsReadOnly: return False, \"읽기전용/없음\"\r\n    st = param.StorageType\r\n    try:\r\n        if st == StorageType.String:\r\n            return bool(param.Set(text or \"\")), None\r\n        elif st == StorageType.Integer:\r\n            iv = 0 if (text is None or text==\"\") else int(float(text))\r\n            return bool(param.Set(iv)), None\r\n        elif st == StorageType.Double:\r\n            m = re.search(r\"[-+]?\\d*\\.?\\d+(?:[eE][-+]?\\d+)?\", text or \"\")\r\n            val = float(m.group()) if m else 0.0\r\n            try:\r\n                ut = param.GetUnitTypeId()\r\n                val_int = UnitUtils.ConvertToInternalUnits(val, ut)\r\n            except:\r\n                val_int = val\r\n            return bool(param.Set(val_int)), None\r\n        elif st == StorageType.ElementId:\r\n            mat = material_by_name(text)\r\n            if mat is not None:\r\n                return bool(param.Set(mat.Id)), None\r\n            if (text or \"\").strip()==\"\":\r\n                return bool(param.Set(ElementId.InvalidElementId)), None\r\n            return False, \"ElementId 매핑 실패(재료 미발견)\"\r\n        else:\r\n            return False, \"미지원 StorageType\"\r\n    except Exception as ex:\r\n        return False, str(ex)\r\n\r\n# get_Parameter가 없는 환경 대응: 파라미터 안전 획득\r\ndef try_get_parameter(el, pid, sched_field=None):\r\n    # 1) direct\r\n    m = getattr(el, \"get_Parameter\", None)\r\n    if callable(m):\r\n        try:\r\n            p = el.get_Parameter(pid)\r\n            if p: return p\r\n        except:\r\n            pass\r\n    # 2) enumerate\r\n    try:\r\n        for p in el.Parameters:\r\n            try:\r\n                if hasattr(p, \"Id\") and p.Id.IntegerValue == pid.IntegerValue:\r\n                    return p\r\n            except:\r\n                pass\r\n    except:\r\n        pass\r\n    # 3) names from sched_field (display/heading)\r\n    if sched_field is not None:\r\n        # schedulable field name\r\n        nm = None\r\n        try:\r\n            sf = sched_field.GetSchedulableField()\r\n            nm = sf.GetName(doc) if sf else None\r\n        except:\r\n            nm = None\r\n        if nm:\r\n            try:\r\n                p = el.LookupParameter(nm)\r\n                if p: return p\r\n            except:\r\n                pass\r\n            gp = getattr(el, \"GetParameters\", None)\r\n            if callable(gp):\r\n                try:\r\n                    arr = el.GetParameters(nm)\r\n                    if arr and len(arr) > 0: return arr[0]\r\n                except:\r\n                    pass\r\n        # column heading\r\n        try:\r\n            header_nm = sched_field.ColumnHeading\r\n        except:\r\n            header_nm = None\r\n        if header_nm:\r\n            try:\r\n                p = el.LookupParameter(header_nm)\r\n                if p: return p\r\n            except:\r\n                pass\r\n            gp = getattr(el, \"GetParameters\", None)\r\n            if callable(gp):\r\n                try:\r\n                    arr = el.GetParameters(header_nm)\r\n                    if arr and len(arr) > 0: return arr[0]\r\n                except:\r\n                    pass\r\n    return None\r\n\r\ndef new_key_element_by_inserting_row(schedule, body_sec, known_ids_set):\r\n    # 행 1개 삽입 → 새 요소를 ID 차이로 추정\r\n    body_sec.InsertRow(body_sec.NumberOfRows)\r\n    doc.Regenerate()\r\n    after = collect_key_elements(schedule)\r\n    for e in after:\r\n        eid = e.Id.IntegerValue\r\n        if eid not in known_ids_set:\r\n            return e\r\n    return None\r\n\r\n# ---------- Main ----------\r\nschedule, resolved_as = resolve_viewschedule(schedule_or_name)\r\nrows = parse_table(paste_text)\r\n\r\nif schedule is None:\r\n    OUT = (\"에러: ViewSchedule을 찾을 수 없습니다.\", None)\r\nelif not rows or len(rows) <= start_row:\r\n    OUT = (\"에러: 데이터 행이 없습니다.\", {\"rows\": len(rows)})\r\nelif not schedule.Definition.IsKeySchedule:\r\n    OUT = (\"에러: Key Schedule만 지원합니다.\", {\"scheduleName\": schedule.Name})\r\nelse:\r\n    header_sec, body_sec = get_sections(schedule)\r\n    defn = schedule.Definition\r\n    vis_idx, vis_fields = visible_fields(defn)\r\n    if not vis_fields:\r\n        OUT = (\"에러: 표시(숨김 아님) 필드가 없습니다.\", None)\r\n    else:\r\n        # 전제: 첫 표시 필드가 Key Name\r\n        key_field = vis_fields[0]\r\n        key_pid   = key_field.ParameterId\r\n\r\n        # 기존 키 요소 맵(이름 -> 요소) 및 ID 집합\r\n        def key_name_of(e):\r\n            p = try_get_parameter(e, key_pid, key_field)\r\n            return p.AsString() if p else None\r\n        existing = collect_key_elements(schedule)\r\n        by_name  = { key_name_of(e): e for e in existing }\r\n        idset    = set(e.Id.IntegerValue for e in existing)\r\n\r\n        data_rows = rows[start_row:]\r\n        updated, created, skipped = 0, 0, 0\r\n        errors = []\r\n\r\n        TransactionManager.Instance.EnsureInTransaction(doc)\r\n        try:\r\n            for r in data_rows:\r\n                if not r: \r\n                    continue\r\n                key_name = r[0] if len(r) > 0 else None\r\n                if not key_name:\r\n                    skipped += 1\r\n                    continue\r\n\r\n                target_elem = None\r\n\r\n                if create_mode == \"create\":\r\n                    # 새 행 생성 시도\r\n                    target_elem = new_key_element_by_inserting_row(schedule, body_sec, idset)\r\n                    if target_elem:\r\n                        idset.add(target_elem.Id.IntegerValue)\r\n                        # Key Name 먼저 기록\r\n                        pkey = try_get_parameter(target_elem, key_pid, key_field)\r\n                        ok, why = set_param(pkey, key_name)\r\n                        if not ok:\r\n                            # 중복 등으로 실패 → 기존 키 업데이트로 폴백\r\n                            target_elem = by_name.get(key_name)\r\n                            if target_elem is None:\r\n                                errors.append(u\"[{}] KeyName 설정 실패: {}\".format(key_name, why))\r\n                                skipped += 1\r\n                                continue\r\n                        else:\r\n                            by_name[key_name] = target_elem\r\n                            created += 1\r\n                    else:\r\n                        # 새 요소 확보 실패 → 기존 사용 시도\r\n                        target_elem = by_name.get(key_name)\r\n                        if target_elem is None:\r\n                            skipped += 1\r\n                            errors.append(u\"[{}] 새 행 생성 실패\".format(key_name))\r\n                            continue\r\n\r\n                else:  # upsert\r\n                    target_elem = by_name.get(key_name)\r\n                    if target_elem is None:\r\n                        target_elem = new_key_element_by_inserting_row(schedule, body_sec, idset)\r\n                        if target_elem:\r\n                            idset.add(target_elem.Id.IntegerValue)\r\n                            pkey = try_get_parameter(target_elem, key_pid, key_field)\r\n                            ok, why = set_param(pkey, key_name)\r\n                            if ok:\r\n                                by_name[key_name] = target_elem\r\n                                created += 1\r\n                            else:\r\n                                errors.append(u\"[{}] KeyName 설정 실패: {}\".format(key_name, why))\r\n                                skipped += 1\r\n                                continue\r\n                        else:\r\n                            skipped += 1\r\n                            errors.append(u\"[{}] 새 행 생성 실패\".format(key_name))\r\n                            continue\r\n\r\n                # Key Name 이후 값들을 표시 컬럼 순서대로 기록 (계산/결합/KeyName 열은 건너뜀)\r\n                vals = r[1:]  # KeyName 제외\r\n                max_len = min(len(vals), len(vis_fields) - write_col_start)\r\n                for j in range(max_len):\r\n                    field = vis_fields[write_col_start + j]\r\n                    if getattr(field, \"IsCalculatedField\", False) or getattr(field, \"IsCombinedParameterField\", False):\r\n                        continue\r\n                    if field.ParameterId == key_pid:\r\n                        continue\r\n                    p = try_get_parameter(target_elem, field.ParameterId, field)\r\n                    ok, why = set_param(p, vals[j])\r\n                    if not ok and why:\r\n                        errors.append(u\"[{}] pid={} -> {}\".format(key_name, field.ParameterId.IntegerValue, why))\r\n                updated += 1\r\n\r\n        finally:\r\n            doc.Regenerate()\r\n            TransactionManager.Instance.TransactionTaskDone()\r\n\r\n        OUT = (\r\n            \"완료 (Key Schedule: 헤더불요 · 순서대로 생성/기록 · SetCellText 미사용 · get_Parameter 미존재 환경 지원)\",\r\n            {\r\n                \"scheduleName\": schedule.Name,\r\n                \"resolvedAs\": resolved_as,\r\n                \"mode\": create_mode,\r\n                \"rowsProcessed\": len(data_rows),\r\n                \"updatedRows\": updated,\r\n                \"createdKeys\": created,\r\n                \"skippedRows\": skipped,\r\n                \"visibleFieldCount\": len(vis_fields),\r\n                \"writeColStart\": write_col_start\r\n            },\r\n            errors\r\n        )\r\n",
+      "Engine": "CPython3",
+      "VariableInputPorts": true,
+      "Id": "89375cdb76b440e084637d8d7332b718",
+      "NodeType": "PythonScriptNode",
+      "Inputs": [
+        {
+          "Id": "03dc469cf7c54b4bacff79d6de87fbf6",
+          "Name": "IN[0]",
+          "Description": "Input #0",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "84cf1018d15341a7bce1a85f3f243ec0",
+          "Name": "IN[1]",
+          "Description": "Input #1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "a1321bd4da5b4aa1a6202d7586e243cd",
+          "Name": "IN[2]",
+          "Description": "Input #2",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "9cf115f15fbe49d8a09d4453904e7d8d",
+          "Name": "IN[3]",
+          "Description": "Input #3",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "08bde6c172b3439b9362df2b03b44520",
+          "Name": "IN[4]",
+          "Description": "Input #4",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        },
+        {
+          "Id": "8c208381d4454bf18ceef0d6298baba9",
+          "Name": "IN[5]",
+          "Description": "Input #5",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Outputs": [
+        {
+          "Id": "dac718df479b4b97a27a366c13cc3226",
+          "Name": "OUT",
+          "Description": "Result of the python script",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Runs an embedded Python script."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "Id": "240def2625af40a0867e925d0ab8a6c7",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "6d2bd116422e4fbc9bd6e7ba6fe40caa",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string",
+      "InputValue": "Ctrl+A 후 입력"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "Id": "ad3ec41d13734e3f9064d70b7c1633b6",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "310aa3596943464cb0e538e18b0c10ab",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string",
+      "InputValue": "Key Name\tFloor Finish\tH_Floor Base Material\tH_Floor Finish Remark\tH_STD_WM01\tH_STD_WM02\tH_STD_WM03\tH_STD_WM04\tH_STD_WM05\r\n"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "Id": "05041b59decd42caa1a9eabc43d0c0a0",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "c9df3d5ebff142e0beea227d13b303f1",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string",
+      "InputValue": "Ctrl+A 후 입력"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "3435e07b30454b718f1d57dad27767a2",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "b31e316ebb0040a2bce64278d5f406e1",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 0
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "3b45644dfe334aa18631c21c94307bb1",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "d626884615eb4e5cbd7647f6b721e6c3",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 0
+    },
+    {
+      "ConcreteType": "Dynamo.Graph.Nodes.CodeBlockNodeModel, DynamoCore",
+      "Id": "0d6e4df2b1094196a02231a561f69972",
+      "NodeType": "CodeBlockNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "49a326aec9a0446892bd3db1543f12b8",
+          "Name": "",
+          "Description": "Value of expression at line 1",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Allows for DesignScript code to be authored directly",
+      "Code": "\"Ctrl+A 후 입력\";"
+    }
+  ],
+  "Connectors": [
+    {
+      "Start": "6d2bd116422e4fbc9bd6e7ba6fe40caa",
+      "End": "84cf1018d15341a7bce1a85f3f243ec0",
+      "Id": "8672fffec13341528ea8c79e742a1ee1",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "c9df3d5ebff142e0beea227d13b303f1",
+      "End": "03dc469cf7c54b4bacff79d6de87fbf6",
+      "Id": "f87fd584f6e347a3bf758ff8105fde6e",
+      "IsHidden": "False"
+    }
+  ],
+  "Dependencies": [],
+  "NodeLibraryDependencies": [],
+  "EnableLegacyPolyCurveBehavior": true,
+  "Thumbnail": "",
+  "GraphDocumentationURL": null,
+  "ExtensionWorkspaceData": [
+    {
+      "ExtensionGuid": "28992e1d-abb9-417f-8b1b-05e053bee670",
+      "Name": "Properties",
+      "Version": "3.3",
+      "Data": {}
+    },
+    {
+      "ExtensionGuid": "DFBD9CC0-DB40-457A-939E-8C8555555A9D",
+      "Name": "Generative Design",
+      "Version": "8.2",
+      "Data": {}
+    }
+  ],
+  "Author": "",
+  "Linting": {
+    "activeLinter": "None",
+    "activeLinterId": "7b75fb44-43fd-4631-a878-29f4d5d8399a",
+    "warningCount": 0,
+    "errorCount": 0
+  },
+  "Bindings": [],
+  "View": {
+    "Dynamo": {
+      "ScaleFactor": 1.0,
+      "HasRunWithoutCrash": true,
+      "IsVisibleInDynamoLibrary": true,
+      "Version": "3.3.0.6316",
+      "RunType": "Manual",
+      "RunPeriod": "1000"
+    },
+    "Camera": {
+      "Name": "_Background Preview",
+      "EyeX": -17.0,
+      "EyeY": 24.0,
+      "EyeZ": 50.0,
+      "LookX": 12.0,
+      "LookY": -13.0,
+      "LookZ": -58.0,
+      "UpX": 0.0,
+      "UpY": 1.0,
+      "UpZ": 0.0
+    },
+    "ConnectorPins": [],
+    "NodeViews": [
+      {
+        "Id": "89375cdb76b440e084637d8d7332b718",
+        "Name": "Python Script",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 674.4380107656672,
+        "Y": -81.8414663560639
+      },
+      {
+        "Id": "240def2625af40a0867e925d0ab8a6c7",
+        "Name": "2. 내용입력",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -536.2880167320974,
+        "Y": -111.90876084110755
+      },
+      {
+        "Id": "ad3ec41d13734e3f9064d70b7c1633b6",
+        "Name": "헤더입력",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -260.57216356406013,
+        "Y": -705.8830724135091
+      },
+      {
+        "Id": "05041b59decd42caa1a9eabc43d0c0a0",
+        "Name": "1. 스케줄 명 입력",
+        "IsSetAsInput": true,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -542.4624166125334,
+        "Y": -337.0055908577613
+      },
+      {
+        "Id": "3435e07b30454b718f1d57dad27767a2",
+        "Name": "기준칼럼",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 60.54523124851505,
+        "Y": 247.65706210491203
+      },
+      {
+        "Id": "3b45644dfe334aa18631c21c94307bb1",
+        "Name": "기준행",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 111.82857781511859,
+        "Y": 110.83610740868676
+      },
+      {
+        "Id": "0d6e4df2b1094196a02231a561f69972",
+        "Name": "Code Block",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": -801.469271224888,
+        "Y": -212.81003005510144
+      }
+    ],
+    "Annotations": [],
+    "X": 681.8675094534417,
+    "Y": 440.211906919208,
+    "Zoom": 0.8950005042713174
+  }
+}
