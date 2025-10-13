@@ -42,8 +42,14 @@ def open_update_log_newWindow():
 
 
 update_log = """
-🔳 v1.3.8 (2025-09-xx)
+🔳 v1.3.9 (2025-10-13)
+    - Project GWM/SWM 의 항목 명 수정 시, 파생항목의 경우에는 덧붙임 말만 수정할 수 있도록 기능 변경
+    - Project GWM/SWM 의 WM 지정이 되지 않은 항목의 이름 수정할때 발생하던 오류 해결
+    
+🔳 v1.3.8 (2025-10-13)
     - 프로젝트 약자 변경시 Project-Input > Project Family Assign 탭 까지 데이터 변경 연동
+    - Project GWM/SWM 의 특정항목 복사 시, 패밀리리스트에 반영되지 않던 문제 해결 (ex. Ceiling > Insulation 등)
+    - Project GWM/SWM 의 항목 복사 시, 패밀리리스트 상에서 Description 항목도 복사되도록 수정
 
 🔳 v1.3.7 (2025-09-09)
     - Q'ty Report by Group 탭에서 GUID 칼럼을 '타입별 부재수' 로 변경하고 해당 개수 자동 산출하도록 수정

@@ -635,17 +635,37 @@ class TreeDataManager_treeview(TreeDataManager):
 
                     # Copy formula from the matching reference if available
                     new_child_value = list(child["values"])  # The new child's values
-                    if matching_reference:
-                        # formula_index = (
-                        #     len(matching_reference["values"]) - 1
-                        # )  # Assuming formula is the last value
-                        formula_index = 6
-                        new_child_value[6] = matching_reference["values"][formula_index]
-
                     # Add placeholders for columns
                     new_child_value.insert(0, "")
                     new_child_value.insert(0, "")
                     new_child_value.insert(0, "")
+
+                    if matching_reference:
+                        print("매칭 레퍼런스까지는 작동")
+                        # formula_index = (
+                        #     len(matching_reference["values"]) - 1
+                        # )  # Assuming formula is the last value
+                        formula_index = 6
+                        desc_index = 7
+                        try:
+                            new_child_value[formula_index] = matching_reference[
+                                "values"
+                            ][formula_index]
+                        except:
+                            new_child_value.append(
+                                matching_reference["values"][formula_index]
+                            )
+
+                        if len(matching_reference["values"]) == desc_index + 1:
+                            try:
+                                new_child_value[desc_index] = matching_reference[
+                                    "values"
+                                ][desc_index]
+                            except:
+                                new_child_value.append(
+                                    matching_reference["values"][desc_index]
+                                )
+
                     child.update({"values": new_child_value})
 
                 # Update the children of the derived item
@@ -733,15 +753,31 @@ class TreeDataManager_treeview(TreeDataManager):
 
             # Copy formula from the matching reference if available
             new_child_value = list(selected_GWMitem["values"])  # The new child's values
+            print(f"6. new_child_value_before: {new_child_value}")
+
             if matching_reference:
+                print("매칭 레퍼런스까지는 작동")
                 # formula_index = (
                 #     len(matching_reference["values"]) - 1
                 # )  # Assuming formula is the last value
                 formula_index = 6
+                desc_index = 7
                 try:
-                    new_child_value[6] = matching_reference["values"][formula_index]
+                    new_child_value[formula_index] = matching_reference["values"][
+                        formula_index
+                    ]
                 except:
-                    new_child_value[6] = ""
+                    new_child_value.append(matching_reference["values"][formula_index])
+
+                if len(matching_reference["values"]) == desc_index + 1:
+                    try:
+                        new_child_value[desc_index] = matching_reference["values"][
+                            desc_index
+                        ]
+                    except:
+                        new_child_value.append(matching_reference["values"][desc_index])
+
+            print(f"6. new_child_value_after: {new_child_value}")
 
             # # Update the children of the derived item
             selected_GWMitem.update({"values": new_child_value})

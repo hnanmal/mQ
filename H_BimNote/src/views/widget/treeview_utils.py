@@ -920,7 +920,7 @@ class TeamStd_GWMTreeView:
             copy_Topitem=self.copy_Topitem,
             copy_GWM=self.copy_GWM,
             copy_item=self.copy_item,
-            edit_item=self.treeviewEditor.edit_current_selectedRowAndCol,
+            edit_item=self.treeviewEditor.append_suffix_via_popup,
         )
 
         self.treeview.tree.tag_configure(
@@ -1346,27 +1346,31 @@ class TeamStd_GWMTreeView:
         # project-GWMSWM 업데이트
         pjt_GWMSWM_db = state.team_std_info[f"project-{mode}"]
         parent_name = self.treeview.tree.item(parent_id, "text")
-        children_names = go(
-            self.treeview.tree.get_children(selected_id),
-            list,
-            map(lambda x: self.treeview.tree.item(x, "text")),
-            list,
-        )
-        exist_pathes = go(
-            children_names,
-            map(lambda x: " | ".join([parent_name, old_name, x])),
-            list,
-        )
-        new_pathes = go(
-            children_names,
-            map(lambda x: " | ".join([parent_name, new_name, x])),
-            list,
-        )
+        try:
+            children_names = go(
+                self.treeview.tree.get_children(selected_id),
+                list,
+                map(lambda x: self.treeview.tree.item(x, "text")),
+                list,
+            )
+            exist_pathes = go(
+                children_names,
+                map(lambda x: " | ".join([parent_name, old_name, x])),
+                list,
+            )
+            new_pathes = go(
+                children_names,
+                map(lambda x: " | ".join([parent_name, new_name, x])),
+                list,
+            )
 
-        print(f"exist_pathes::{exist_pathes}")
+            print(f"exist_pathes::{exist_pathes}")
+            print(f"new_pathes::{new_pathes}")
 
-        for exist_path, new_path in zip(exist_pathes, new_pathes):
-            pjt_GWMSWM_db[new_path] = pjt_GWMSWM_db[exist_path]
+            for exist_path, new_path in zip(exist_pathes, new_pathes):
+                pjt_GWMSWM_db[new_path] = pjt_GWMSWM_db[exist_path]
+        except:
+            pass
 
         # std-familylist 업데이트
         target_parent_nodes = self.treeDataManager.find_parentnodes_by_childname_recur(
@@ -2002,7 +2006,7 @@ class TeamStd_SWMTreeView:
             copy_Topitem=self.copy_Topitem,
             copy_SWM=self.copy_SWM,
             copy_item=self.copy_item,
-            edit_item=self.treeviewEditor.edit_current_selectedRowAndCol,
+            edit_item=self.treeviewEditor.append_suffix_via_popup,
         )
 
         self.treeview.tree.tag_configure(
