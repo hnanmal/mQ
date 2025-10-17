@@ -983,7 +983,6 @@ class ReportGroup_SheetWidget(ttk.Frame):
                     grouped_data[category][sub1][sub2][sub3] = {}
                 if sub4 not in grouped_data[category][sub1][sub2][sub3]:
                     grouped_data[category][sub1][sub2][sub3][sub4] = {}
-                    # grouped_data[category][sub1][sub2][sub3][sub4] = []
                 if sub5 not in grouped_data[category][sub1][sub2][sub3][sub4]:
                     grouped_data[category][sub1][sub2][sub3][sub4][sub5] = []
                 grouped_data[category][sub1][sub2][sub3][sub4][sub5].append(row[6:])
